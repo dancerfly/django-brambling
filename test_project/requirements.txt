@@ -1,0 +1,4 @@
+-e git+git://github.com/django/django.git@master#egg=Django
+pytz==2013.
+unicode-slugify==0.1.1
+django-countries==2.0
