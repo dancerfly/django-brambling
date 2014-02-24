@@ -1,0 +1,5 @@
+<h1>{{ event.name }}</h1>
+<h2>{{ event.start_date }} &#8211; {{ event.end_date }}</h2>
+<h2>{{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
+
+<p><a href="{% url 'brambling_event_update' slug=event.slug %}">Edit event</a></p>

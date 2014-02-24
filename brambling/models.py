@@ -1,7 +1,8 @@
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils.crypto import get_random_string
+from django.utils.encoding import smart_text
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
@@ -20,17 +21,45 @@ class Event(models.Model):
         (RECESS, _("Recess")),
         (OTHER, _("Other")),
     )
+
+    PUBLIC = 'public'
+    LINK = 'link'
+    PRIVATE = 'private'
+
+    PRIVACY_CHOICES = (
+        (PUBLIC, _("List publicly")),
+        (LINK, _("Visible to anyone with the link")),
+        (PRIVATE, _("Only visible to owner and editors")),
+    )
     name = models.CharField(max_length=50)
-    slug = models.CharField(max_length=50)
-    tagline = models.CharField(max_length=75)
+    slug = models.SlugField(max_length=50)
+    tagline = models.CharField(max_length=75, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
     country = CountryField()
+    timezone = models.CharField(max_length=40, default='UTC')
     currency = models.CharField(max_length=10, default='USD')
     start_date = models.DateField()
     end_date = models.DateField()
-    category = models.CharField(max_length=8, choices=CATEGORIES)
+    category = models.CharField(max_length=8, choices=CATEGORIES,
+                                default=WORKSHOP)
     handle_housing = models.BooleanField(default=True)
+    privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
+                               default=PUBLIC)
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL,
+                              related_name='owner_events')
+    editors = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                     related_name='editor_events',
+                                     blank=True, null=True)
+
+    # TODO: Dance styles field.
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+    def get_absolute_url(self):
+        return reverse('brambling_event_detail', kwargs={'slug': self.slug})
 
 
 class Item(models.Model):
@@ -127,6 +156,7 @@ class EventUserInfo(models.Model):
 
     # Dancer info.
     #: "What is/are your primary role(s) for the weekend?"
+    #: TODO: Multiple choice?
     roles = models.CharField(max_length=6, choices=ROLES)
 
     # Housing info.

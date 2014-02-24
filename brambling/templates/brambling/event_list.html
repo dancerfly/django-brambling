@@ -1,0 +1,9 @@
+<p><a href="{% url 'brambling_event_create' %}">Create an event</a></p>
+
+{% if events %}
+	<ul>
+		{% for event in events %}
+			<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
+		{% endfor %}
+	</ul>
+{% endif %}
