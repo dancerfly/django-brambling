@@ -1,0 +1,9 @@
+<h2>Log in</h2>
+
+<form action="{{ request.path }}" method="post">
+    {% csrf_token %}
+    <table>
+    {{ form.as_table }}
+    </table>
+    <button type="submit">Log in</button>
+</form>
