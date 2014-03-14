@@ -31,6 +31,10 @@ class EventDetailView(DetailView):
                 raise Http404
         return obj
 
+    def get_queryset(self):
+        queryset = super(EventDetailView, self).get_queryset()
+        return queryset.prefetch_related('editors')
+
 
 class EventCreateView(CreateView):
     model = Event
