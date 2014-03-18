@@ -1,10 +1,6 @@
 {% extends 'brambling/__base.html' %}
 
 {% block content %}
-	<p>{% if request.user.is_authenticated %}<a href="{% url 'logout' %}">Log out</a>{% else %}<a href="{% url 'login' %}">Log in</a>{% endif %}</p>
-
-	<p><a href="{% url 'brambling_event_create' %}">Create an event</a></p>
-
 	{% if events %}
 		<ul>
 			{% for event in events %}
