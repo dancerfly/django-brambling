@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+	<head>
+		
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		
+		<title>{% block title %}Brambling{% endblock %}</title>
+		
+		{% block meta %}
+			<meta name="description" content="">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+		{% endblock %}
+		
+		{% block stylesheets %}
+			<link rel="stylesheet" type="text/css" href="{% static "brambling/css/styles.css" %}" />
+		{% endblock %}
+
+	</head>
+	<body class="{% block body-classes %}brambling{% endblock %}">
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/">Brambling</a>
+				</div>
+				<div class="collapse navbar-collapse" id="navbar-collapse">
+					{% block navbar-collapse %}
+						<ul class="nav navbar-nav">
+							<li><a href="#">About</a></li>
+							<li><a href="#">Or Something</a></li>
+						</ul>
+					{% endblock navbar-collapse %}
+				</div>
+			</div>
+		</nav>
+
+		<div class="container">
+			<!--[if lt IE 7]>
+				<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+			<![endif]-->
+
+			{% block content %}
+			{% endblock %}
+		</div>
+
+		{% block javascripts %}
+			<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+			<!--
+			<script>
+				(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+				function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+				e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+				e.src='//www.google-analytics.com/analytics.js';
+				r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+				ga('create','UA-XXXXX-X');ga('send','pageview');
+			</script>
+			-->
+			<script src="{% static "brambling/js/jquery-1.11.0.min.js" %}"></script>
+			<script src="{% static "brambling/js/bootstrap/transition.js" %}"></script>
+			<script src="{% static "brambling/js/bootstrap/collapse.js" %}"></script>
+		{% endblock %}
+	</body>
+</html>
