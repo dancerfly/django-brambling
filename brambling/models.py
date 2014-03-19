@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.dispatch import receiver
 from django.db import models
+from django.db.models import signals
 from django.utils.encoding import smart_text
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
@@ -43,7 +45,6 @@ class Event(models.Model):
     end_date = models.DateField()
     category = models.CharField(max_length=8, choices=CATEGORIES,
                                 default=WORKSHOP)
-    handle_housing = models.BooleanField(default=True)
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC)
 
@@ -129,13 +130,45 @@ class Payment(models.Model):
     timestamp = models.DateTimeField(default=now)
 
 
-class EventUserInfo(models.Model):
+class EnvironmentalFactor(models.Model):
+    name = models.CharField(max_length=30)
+
+
+@receiver(signals.post_migrate)
+def create_default_factors(app_config, **kwargs):
+    if not EnvironmentalFactor.objects.exists():
+        if kwargs.get('verbosity') >= 2:
+            print("Creating default environmental factors")
+        EnvironmentalFactor.objects.bulk_create((
+            EnvironmentalFactor(name="Dogs"),
+            EnvironmentalFactor(name="Cats"),
+            EnvironmentalFactor(name="Birds"),
+            EnvironmentalFactor(name="Tobacco smoke"),
+            EnvironmentalFactor(name="Other smoke"),
+        ))
+
+
+class DietaryRestriction(models.Model):
+    name = models.CharField(max_length=20)
+
+
+@receiver(signals.post_migrate)
+def create_default_restrictions(app_config, **kwargs):
+    if not DietaryRestriction.objects.exists():
+        if kwargs.get('verbosity') >= 2:
+            print("Creating default dietary restrictions")
+        DietaryRestriction.objects.bulk_create((
+            DietaryRestriction(name="Gluten free"),
+            DietaryRestriction(name="Vegetarian"),
+            DietaryRestriction(name="Vegan"),
+            DietaryRestriction(name="Kosher"),
+            DietaryRestriction(name="Halal"),
+        ))
+
+
+class UserInfo(models.Model):
     LATE = 'late'
     EARLY = 'early'
-    LEAD = 'lead'
-    FOLLOW = 'follow'
-    SWITCH = 'switch'
-    AMBI = 'ambi'
 
     BEDTIME_CHOICES = (
         (LATE, _("Staying up late")),
@@ -145,55 +178,129 @@ class EventUserInfo(models.Model):
         (LATE, _("Get up when you get up")),
         (EARLY, _("There first thing."))
     )
-    ROLES = (
-        (LEAD, _("Lead")),
-        (FOLLOW, _("Follow")),
-        (SWITCH, _("Switch")),
-        (AMBI, _("Ambi")),
-    )
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL)
+
+    dietary_restrictions = models.ManyToManyField(DietaryRestriction)
+    dietary_restrictions_text = models.TextField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+
+    ef_cause = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='user_cause',
+                                      blank=True)
+    ef_cause_text = models.TextField(blank=True)
+
+    ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
+                                             related_name='user_avoid_strong',
+                                             blank=True)
+    ef_avoid_strong_text = models.TextField(blank=True)
+
+    ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
+                                           related_name='user_avoid_weak',
+                                           blank=True)
+    ef_avoid_weak_text = models.TextField(blank=True)
+
+    user_prefer_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                                related_name='user_prefer_strong',
+                                                blank=True)
+    user_prefer_strong_text = models.TextField(blank=True)
+
+    user_prefer_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                              related_name='user_prefer_weak',
+                                              blank=True)
+    user_prefer_weak_text = models.TextField(blank=True)
+
+    user_avoid_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                               related_name='user_avoid_strong',
+                                               blank=True)
+    user_avoid_strong_text = models.TextField(blank=True)
+
+    user_avoid_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                             related_name='user_avoid_weak',
+                                             blank=True)
+    user_avoid_weak_text = models.TextField(blank=True)
+
+
+class House(models.Model):
+    # People who live in slash can edit the house.
+    residents = models.ManyToManyField(settings.AUTH_USER_MODEL)
+    residents_text = models.TextField()
+
+    address = models.CharField(max_length=200, blank=True)
+    city = models.CharField(max_length=50, blank=True)
+    state_or_province = models.CharField(max_length=50, blank=True)
+    country = CountryField(blank=True)
+
+    spaces_default = models.PositiveSmallIntegerField(default=0,
+                                                      validators=[MaxValueValidator(100)])
+
+    ef_present = models.ManyToManyField(EnvironmentalFactor,
+                                        related_name='house_present',
+                                        blank=True)
+    ef_present_text = models.TextField(blank=True)
+
+    ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
+                                             related_name='house_avoid_strong',
+                                             blank=True)
+    ef_avoid_strong_text = models.TextField(blank=True)
+
+    ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
+                                           related_name='house_avoid_weak',
+                                           blank=True)
+    ef_avoid_weak_text = models.TextField(blank=True)
+
+    user_prefer_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                                related_name='house_prefer_strong',
+                                                blank=True)
+    user_prefer_strong_text = models.TextField(blank=True)
+
+    user_prefer_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                              related_name='house_prefer_weak',
+                                              blank=True)
+    user_prefer_weak_text = models.TextField(blank=True)
+
+    user_avoid_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                               related_name='house_avoid_strong',
+                                               blank=True)
+    user_avoid_strong_text = models.TextField(blank=True)
+
+    user_avoid_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                             related_name='house_avoid_weak',
+                                             blank=True)
+    user_avoid_weak_text = models.TextField(blank=True)
+
+
+class EventUserInfo(models.Model):
+    BEDTIME_CHOICES = UserInfo.BEDTIME_CHOICES
+    MORNING_CHOICES = UserInfo.MORNING_CHOICES
+
     event = models.ForeignKey(Event)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
 
-    # Dancer info.
-    #: "What is/are your primary role(s) for the weekend?"
-    #: TODO: Multiple choice?
-    roles = models.CharField(max_length=6, choices=ROLES)
-
     # Housing info.
-    house_spaces = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(100)])
     nights = models.CommaSeparatedIntegerField(max_length=50)
-    car_spaces = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(50)])
-    bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES)
-    wakeup = models.CharField(max_length=5, choices=BEDTIME_CHOICES)
-    # These fields actually indicate things people "can't be around" /
-    # dislike. Better way of putting it?
-    # Could be a Set field?
-    avoid_problems = models.CommaSeparatedIntegerField(blank=True, max_length=16)
-    avoid_problems_other = models.CharField(max_length=50, blank=True)
-    cause_problems = models.CommaSeparatedIntegerField(blank=True, max_length=16)
-    cause_problems_other = models.CharField(max_length=50, blank=True)
+    car_spaces = models.SmallIntegerField(default=0,
+                                          validators=[MaxValueValidator(50),
+                                                      MinValueValidator(-1)])
 
-    request_matches = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                             related_name='requested_matches')
-    request_unmatches = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                               related_name='requested_unmatches')
+    bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES)
+    wakeup = models.CharField(max_length=5, choices=MORNING_CHOICES)
 
     other = models.TextField(blank=True)
 
 
-class UserPreferences(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL)
+class EventHouseInfo(models.Model):
+    event = models.ForeignKey(Event)
+    house = models.ForeignKey(House)
 
-    city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
-    country = CountryField()
-    # Number where you can be reached *during events*
-    phone = models.CharField(max_length=50)
+    spaces = models.PositiveSmallIntegerField(default=0,
+                                              validators=[MaxValueValidator(100)])
+    nights = models.CommaSeparatedIntegerField(max_length=50)
 
-    # Some defaults for housing.
-    avoid_problems = models.CommaSeparatedIntegerField(blank=True, max_length=16)
-    avoid_problems_other = models.CharField(max_length=50, blank=True)
-    match_request = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                           related_name='match_requested')
-    unmatch_request = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                             related_name='unmatch_requested')
+
+class HousingSlot(models.Model):
+    event = models.ForeignKey(Event)
+    house = models.ForeignKey(House)
+    user = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                  blank=True)
+    nights = models.CommaSeparatedIntegerField(max_length=50)
