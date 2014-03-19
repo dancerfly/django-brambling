@@ -1,6 +1,6 @@
 import floppyforms as forms
 
-from brambling.models import Event
+from brambling.models import Event, UserInfo, House
 
 
 class EventForm(forms.ModelForm):
@@ -27,3 +27,15 @@ class EventForm(forms.ModelForm):
             'privacy': forms.RadioSelect,
             'editors': forms.SelectMultiple,
         }
+
+
+class UserInfoForm(forms.ModelForm):
+    class Meta:
+        model = UserInfo
+        exclude = ('user',)
+
+
+class HouseForm(forms.ModelForm):
+    class Meta:
+        model = House
+        exclude = ()

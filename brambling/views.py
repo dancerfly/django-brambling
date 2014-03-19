@@ -2,8 +2,8 @@ from django.forms.models import modelform_factory
 from django.http import Http404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
-from brambling.forms import EventForm
-from brambling.models import Event
+from brambling.forms import EventForm, UserInfoForm, HouseForm
+from brambling.models import Event, UserInfo, House
 
 
 class EventListView(ListView):
@@ -70,3 +70,29 @@ class EventUpdateView(UpdateView):
                  obj.editors.filter(pk=user.pk).exists())):
             return obj
         raise Http404
+
+
+class UserInfoView(UpdateView):
+    model = UserInfo
+    form_class = UserInfoForm
+
+    def get_object(self):
+        try:
+            return self.request.user.userinfo
+        except UserInfo.DoesNotExist:
+            return UserInfo(user=self.request.user)
+
+
+class HouseView(UpdateView):
+    model = House
+    form_class = HouseForm
+
+    def get_object(self):
+        return (House.objects.filter(residents=self.request.user).first() or
+                House())
+
+    def get_initial(self):
+        initial = super(HouseView, self).get_initial()
+        if self.object.pk is None:
+            initial['residents'] = [self.request.user]
+        return initial

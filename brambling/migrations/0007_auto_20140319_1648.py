@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('user_prefer_weak_text', models.TextField(blank=True)),
                 ('user_avoid_strong_text', models.TextField(blank=True)),
                 ('user_avoid_weak_text', models.TextField(blank=True)),
-                ('dietary_restrictions', models.ManyToManyField(to='brambling.DietaryRestriction')),
+                ('dietary_restrictions', models.ManyToManyField(to='brambling.DietaryRestriction', blank=True)),
                 ('ef_cause', models.ManyToManyField(to='brambling.EnvironmentalFactor', blank=True)),
                 ('ef_avoid_strong', models.ManyToManyField(to='brambling.EnvironmentalFactor', blank=True)),
                 ('ef_avoid_weak', models.ManyToManyField(to='brambling.EnvironmentalFactor', blank=True)),

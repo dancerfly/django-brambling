@@ -139,6 +139,9 @@ class Payment(models.Model):
 class EnvironmentalFactor(models.Model):
     name = models.CharField(max_length=30)
 
+    def __unicode__(self):
+        return smart_text(self.name)
+
 
 @receiver(signals.post_migrate)
 def create_default_factors(app_config, **kwargs):
@@ -156,6 +159,9 @@ def create_default_factors(app_config, **kwargs):
 
 class DietaryRestriction(models.Model):
     name = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return smart_text(self.name)
 
 
 @receiver(signals.post_migrate)
@@ -187,7 +193,8 @@ class UserInfo(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL)
 
-    dietary_restrictions = models.ManyToManyField(DietaryRestriction)
+    dietary_restrictions = models.ManyToManyField(DietaryRestriction,
+                                                  blank=True)
     dietary_restrictions_text = models.TextField(blank=True)
     phone = models.CharField(max_length=50, blank=True)
 

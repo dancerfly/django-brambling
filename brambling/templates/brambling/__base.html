@@ -38,6 +38,8 @@
 						<ul class="nav navbar-nav">
 							{% if request.user.is_authenticated %}
 								<li><a href="{% url 'brambling_event_create' %}">Create an event</a></li>
+								<li><a href="{% url 'brambling_user_profile' %}">Profile settings</a></li>
+								<li><a href="{% url 'brambling_house' %}">House settings</a></li>
 								<li><a href="{% url 'logout' %}">Log out</a></li>
 							{% else %}
 								<li><a href="{% url 'login' %}">Log in</a></li>

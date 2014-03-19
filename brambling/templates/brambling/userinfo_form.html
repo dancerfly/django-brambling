@@ -1,0 +1,14 @@
+{% extends 'brambling/__base.html' %}
+
+{% load floppyforms %}
+
+{% block content %}
+	<h2>Edit settings</h2>
+
+	<form action="{{ request.path }}" method="post">
+		{% csrf_token %}
+		{% form form %}
+		<button type="submit">Save changes</button>
+		<a href="{{ event.get_absolute_url }}">Cancel</a>
+	</form>
+{% endblock %}
