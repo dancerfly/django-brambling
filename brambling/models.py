@@ -99,12 +99,18 @@ class UserItem(models.Model):
 
 
 class ItemDiscount(models.Model):
+    PERCENT = 'percent'
+    FLAT = 'flat'
+
+    TYPE_CHOICES = (
+        (PERCENT, _('Percent')),
+        (FLAT, _('Flat')),
+    )
     item = models.ForeignKey(Item)
     discount = models.ForeignKey('DiscountCode')
-    percent = models.DecimalField(max_digits=5, decimal_places=2,
-                                  blank=True, null=True,
-                                  validators=[MaxValueValidator(100),
-                                              MinValueValidator(0)])
+    discount_type = models.CharField(max_length=7,
+                                     choices=TYPE_CHOICES,
+                                     default=PERCENT)
     amount = models.DecimalField(max_digits=5, decimal_places=2,
                                  blank=True, null=True,
                                  validators=[MinValueValidator(0)])
