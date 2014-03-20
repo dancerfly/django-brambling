@@ -11,7 +11,6 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        exclude = ('owner',)
         widgets = {
             'name': forms.TextInput,
             'slug': forms.SlugInput,
@@ -26,6 +25,7 @@ class EventForm(forms.ModelForm):
             'handle_housing': forms.CheckboxInput,
             'privacy': forms.RadioSelect,
             'editors': forms.SelectMultiple,
+            'owner': forms.HiddenInput,
         }
 
 

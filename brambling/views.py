@@ -48,7 +48,13 @@ class EventCreateView(CreateView):
                 raise Http404
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
 
+    def form_valid(self, form, *args, **kwargs):
+        "Force form owner to be the current user."
+        form.instance.owner = self.request.user
+        return super(EventCreateView, self).form_valid(form, *args, **kwargs)
+
     def get_initial(self):
+        "Instantiate form with owner as current user."
         return {'owner': self.request.user}
 
     def get_form_class(self):
