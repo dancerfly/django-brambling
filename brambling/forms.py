@@ -4,11 +4,6 @@ from brambling.models import Event, UserInfo, House
 
 
 class EventForm(forms.ModelForm):
-    category = Event._meta.get_field('category'
-                                     ).formfield(widget=forms.RadioSelect)
-    privacy = Event._meta.get_field('privacy'
-                                    ).formfield(widget=forms.RadioSelect)
-
     class Meta:
         model = Event
         widgets = {
@@ -21,7 +16,6 @@ class EventForm(forms.ModelForm):
             'currency': forms.TextInput,
             'start_date': forms.DateInput,
             'end_date': forms.DateInput,
-            'category': forms.RadioSelect,
             'handle_housing': forms.CheckboxInput,
             'privacy': forms.RadioSelect,
             'editors': forms.SelectMultiple,

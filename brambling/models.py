@@ -10,20 +10,63 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 
 
+class EventType(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+
+class DanceStyle(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+    common_event_types = models.ManyToManyField(EventType,
+                                                related_name="common_for",
+                                                blank=True)
+    related = models.ManyToManyField('self', blank=True)
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+
+@receiver(signals.post_migrate)
+def create_default_styles_and_types(app_config, **kwargs):
+    if not DanceStyle.objects.exists() and not EventType.objects.exists():
+        if kwargs.get('verbosity') >= 2:
+            print("Creating default dance styles and event types")
+
+        workshop = EventType.objects.create(name="Workshop")
+        exchange = EventType.objects.create(name="Exchange")
+        recess = EventType.objects.create(name="Recess")
+        camp = EventType.objects.create(name="Camp")
+
+        alt_blues = DanceStyle.objects.create(name="Alt Blues")
+        alt_blues.common_event_types = [recess]
+
+        trad_blues = DanceStyle.objects.create(name="Trad Blues")
+        trad_blues.common_event_types = [workshop, exchange, camp]
+        trad_blues.related = [alt_blues]
+
+        fusion = DanceStyle.objects.create(name="Fusion")
+        fusion.common_event_types = [exchange]
+        fusion.related = [alt_blues]
+
+        swing = DanceStyle.objects.create(name="Swing")
+        swing.common_event_types = [workshop, exchange, camp]
+        swing.related = [trad_blues]
+
+        contra = DanceStyle.objects.create(name="Contra")
+        contra.common_event_types = [workshop, camp]
+
+        DanceStyle.objects.bulk_create((
+            DanceStyle(name="West Coast Swing"),
+            DanceStyle(name="Argentine Tango"),
+            DanceStyle(name="Ballroom"),
+            DanceStyle(name="Folk"),
+        ))
+
+
 # TODO: "meta" class for groups of events? For example, annual events?
 class Event(models.Model):
-    WORKSHOP = 'workshop'
-    EXCHANGE = 'exchange'
-    RECESS = 'recess'
-    OTHER = 'other'
-
-    CATEGORIES = (
-        (WORKSHOP, _("Workshop weekend")),
-        (EXCHANGE, _("Exchange")),
-        (RECESS, _("Recess")),
-        (OTHER, _("Other")),
-    )
-
     PUBLIC = 'public'
     LINK = 'link'
     PRIVATE = 'private'
@@ -43,8 +86,13 @@ class Event(models.Model):
     currency = models.CharField(max_length=10, default='USD')
     start_date = models.DateField()
     end_date = models.DateField()
-    category = models.CharField(max_length=8, choices=CATEGORIES,
-                                default=WORKSHOP)
+
+    dance_style = models.ForeignKey(DanceStyle, blank=True, null=True)
+    dance_style_other = models.CharField(max_length=30, blank=True)
+
+    event_type = models.ForeignKey(EventType, blank=True, null=True)
+    event_type_other = models.CharField(max_length=30, blank=True)
+
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC)
 

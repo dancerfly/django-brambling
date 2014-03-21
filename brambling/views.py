@@ -94,6 +94,8 @@ class HouseView(UpdateView):
     form_class = HouseForm
 
     def get_object(self):
+        if not self.request.user.is_authenticated():
+            raise Http404
         return (House.objects.filter(residents=self.request.user).first() or
                 House())
 
