@@ -1,13 +1,15 @@
-{% extends "brambling/__base.html" %}
+{% extends "brambling/layouts/75_25.html" %}
 
-{% block content %}
+{% block main %}
 	<h1>Recently Added</h1>
 	<ul>
 		{% for event in events|slice:"5" %}
 			<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
 		{% endfor %}
 	</ul>
+{% endblock %}
 
+{% block side %}
 	{% if your_events %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
