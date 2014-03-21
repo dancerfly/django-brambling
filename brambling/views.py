@@ -1,9 +1,35 @@
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.utils.decorators import method_decorator
 from django.forms.models import modelform_factory
 from django.http import Http404
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
+    TemplateView)
 
 from brambling.forms import EventForm, UserInfoForm, HouseForm
 from brambling.models import Event, UserInfo, House
+
+
+def home(request):
+    if request.user.is_authenticated():
+        return Dashboard.as_view()(request)
+    else:
+        return EventListView.as_view()(request)
+
+
+class Dashboard(TemplateView):
+    template_name = "brambling/dashboard.html"
+
+    def get_context_data(self):
+        current_user = self.request.user
+        events = Event.objects.filter(privacy=Event.PUBLIC)
+        query = Q(owner=current_user) | Q(editors=current_user)
+        your_events = Event.objects.filter(query)
+        return {'events': events, 'your_events': your_events}
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(Dashboard, self).dispatch(*args, **kwargs)
 
 
 class EventListView(ListView):

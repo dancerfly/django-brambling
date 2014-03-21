@@ -1,0 +1,25 @@
+{% extends "brambling/__base.html" %}
+
+{% block content %}
+	<h1>Recently Added</h1>
+	<ul>
+		{% for event in events|slice:"5" %}
+			<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
+		{% endfor %}
+	</ul>
+
+	{% if your_events %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Events You Manage</h4>
+			</header>
+			<div class="panel-body">
+				<ul>
+					{% for event in your_events %}
+						<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
