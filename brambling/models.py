@@ -243,49 +243,40 @@ class UserInfo(models.Model):
 
     dietary_restrictions = models.ManyToManyField(DietaryRestriction,
                                                   blank=True)
-    dietary_restrictions_text = models.TextField(blank=True)
     phone = models.CharField(max_length=50, blank=True)
 
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='user_cause',
                                       blank=True)
-    ef_cause_text = models.TextField(blank=True)
 
     ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
                                              related_name='user_avoid_strong',
                                              blank=True)
-    ef_avoid_strong_text = models.TextField(blank=True)
 
     ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
                                            related_name='user_avoid_weak',
                                            blank=True)
-    ef_avoid_weak_text = models.TextField(blank=True)
 
     user_prefer_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                 related_name='user_prefer_strong',
                                                 blank=True)
-    user_prefer_strong_text = models.TextField(blank=True)
 
     user_prefer_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                               related_name='user_prefer_weak',
                                               blank=True)
-    user_prefer_weak_text = models.TextField(blank=True)
 
     user_avoid_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                related_name='user_avoid_strong',
                                                blank=True)
-    user_avoid_strong_text = models.TextField(blank=True)
 
     user_avoid_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                              related_name='user_avoid_weak',
                                              blank=True)
-    user_avoid_weak_text = models.TextField(blank=True)
 
 
 class House(models.Model):
     # People who live in slash can edit the house.
     residents = models.ManyToManyField(settings.AUTH_USER_MODEL)
-    residents_text = models.TextField()
 
     address = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50, blank=True)
@@ -298,37 +289,30 @@ class House(models.Model):
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='house_present',
                                         blank=True)
-    ef_present_text = models.TextField(blank=True)
 
     ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
                                              related_name='house_avoid_strong',
                                              blank=True)
-    ef_avoid_strong_text = models.TextField(blank=True)
 
     ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
                                            related_name='house_avoid_weak',
                                            blank=True)
-    ef_avoid_weak_text = models.TextField(blank=True)
 
     user_prefer_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                 related_name='house_prefer_strong',
                                                 blank=True)
-    user_prefer_strong_text = models.TextField(blank=True)
 
     user_prefer_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                               related_name='house_prefer_weak',
                                               blank=True)
-    user_prefer_weak_text = models.TextField(blank=True)
 
     user_avoid_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                related_name='house_avoid_strong',
                                                blank=True)
-    user_avoid_strong_text = models.TextField(blank=True)
 
     user_avoid_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                              related_name='house_avoid_weak',
                                              blank=True)
-    user_avoid_weak_text = models.TextField(blank=True)
 
 
 class EventUserInfo(models.Model):
