@@ -1,4 +1,4 @@
--e git+git://github.com/django/django.git@master#egg=Django
+https://www.djangoproject.com/download/1.7b1/tarball/
 pytz==2013.9
 unicode-slugify==0.1.1
 django-countries==2.0
