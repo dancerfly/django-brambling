@@ -265,31 +265,28 @@ class UserInfo(models.Model):
 
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='user_cause',
-                                      blank=True)
+                                      blank=True,
+                                      verbose_name="I will cause/have")
 
     ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
                                              related_name='user_avoid_strong',
-                                             blank=True)
+                                             blank=True,
+                                             verbose_name="Never put me somewhere with")
 
     ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
                                            related_name='user_avoid_weak',
-                                           blank=True)
+                                           blank=True,
+                                           verbose_name="I'd rather not be around")
 
     user_prefer_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                 related_name='user_prefer_strong',
-                                                blank=True)
-
-    user_prefer_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                              related_name='user_prefer_weak',
-                                              blank=True)
+                                                blank=True,
+                                                verbose_name="Do your utmost to place me with")
 
     user_avoid_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                related_name='user_avoid_strong',
-                                               blank=True)
-
-    user_avoid_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                             related_name='user_avoid_weak',
-                                             blank=True)
+                                               blank=True,
+                                               verbose_name="Never place me with")
 
 
 class House(models.Model):
@@ -306,31 +303,32 @@ class House(models.Model):
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='house_present',
-                                        blank=True)
+                                        blank=True,
+                                        verbose_name="The house has")
 
     ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
                                              related_name='house_avoid_strong',
-                                             blank=True)
+                                             blank=True,
+                                             verbose_name="Not allowed in the house",
+                                             help_text="In addition to resident preferences")
 
     ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
                                            related_name='house_avoid_weak',
-                                           blank=True)
+                                           blank=True,
+                                           verbose_name="Preferred not in the house",
+                                           help_text="In addition to resident preferences")
 
     user_prefer_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                 related_name='house_prefer_strong',
-                                                blank=True)
-
-    user_prefer_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                              related_name='house_prefer_weak',
-                                              blank=True)
+                                                blank=True,
+                                                verbose_name="Do your utmost to place here",
+                                                help_text="In addition to resident preferences")
 
     user_avoid_strong = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                                related_name='house_avoid_strong',
-                                               blank=True)
-
-    user_avoid_weak = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                             related_name='house_avoid_weak',
-                                             blank=True)
+                                               blank=True,
+                                               verbose_name="Never place here",
+                                               help_text="In addition to resident preferences")
 
 
 class EventUserInfo(models.Model):
