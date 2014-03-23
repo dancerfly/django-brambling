@@ -135,18 +135,6 @@ class HouseView(UpdateView):
         return initial
 
 
-def event_editor_or_404(slug, user):
-    try:
-        event = Event.objects.get(slug=slug)
-    except Event.DoesNotExist:
-        raise Http404
-    if (user.is_authenticated() and user.is_active and
-            (user.is_superuser or user.pk == event.owner_id or
-             event.editors.filter(pk=user.pk).exists())):
-        return event
-    raise Http404
-
-
 def item_form(request, *args, **kwargs):
     event = get_object_or_404(Event, slug=kwargs['event_slug'])
     if not event.can_edit(request.user):
