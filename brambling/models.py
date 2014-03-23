@@ -98,10 +98,7 @@ class Event(models.Model):
     end_date = models.DateField()
 
     dance_style = models.ForeignKey(DanceStyle, blank=True, null=True)
-    dance_style_other = models.CharField(max_length=30, blank=True)
-
     event_type = models.ForeignKey(EventType, blank=True, null=True)
-    event_type_other = models.CharField(max_length=30, blank=True)
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC)
