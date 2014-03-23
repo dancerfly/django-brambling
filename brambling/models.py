@@ -149,10 +149,13 @@ class ItemOption(models.Model):
 
 
 class UserItem(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
     item_option = models.ForeignKey(ItemOption)
     reserved = models.DateTimeField(default=now)
-    paid = models.DateTimeField(blank=True, null=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    paid_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                related_name="items_bought")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL,
+                              related_name="items_owned")
 
 
 class ItemDiscount(models.Model):
