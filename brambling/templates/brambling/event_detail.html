@@ -8,6 +8,7 @@
 	{% if request.user.is_authenticated and request.user.is_active %}
 		{% if request.user.is_superuser or request.user == event.owner or request.user in event.editors.all %}
 			<p><a href="{% url 'brambling_event_update' slug=event.slug %}">Edit event</a></p>
+			<p><a href="{% url 'brambling_item_list' event_slug=event.slug %}">Manage items</a></p>
 		{% endif %}
 	{% endif %}
 {% endblock %}

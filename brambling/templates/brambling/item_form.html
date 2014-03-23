@@ -1,0 +1,20 @@
+{% extends 'brambling/__base.html' %}
+
+{% load floppyforms %}
+
+{% block content %}
+	<h2>{% if item.pk %}Edit item: {{ item.name }}{% else %}Add an item{% endif %}</h2>
+
+	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
+	<form action="{{ request.path }}" method="post" novalidate>
+		{% csrf_token %}
+		{% form item_form %}
+		{{ itemoption_formset.management_form }}
+		{% for form in itemoption_formset.forms %}
+			<h2>Option {{ forloop.counter }}</h2>
+			{% form form %}
+		{% endfor %}
+		<button type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
+		{% if item.pk %}<a href="../">Cancel</a>{% endif %}
+	</form>
+{% endblock %}

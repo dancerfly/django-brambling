@@ -1,0 +1,12 @@
+{% extends 'brambling/__base.html' %}
+
+{% block content %}
+	<p><a href="{% url 'brambling_item_create' event_slug=event.slug %}">Create item</a></p>
+	{% if items %}
+		<ul>
+			{% for item in items %}
+				<li><a href="{% url 'brambling_item_update' event_slug=event.slug pk=item.pk %}">{{ item.name }}</a></li>
+			{% endfor %}
+		</ul>
+	{% endif %}
+{% endblock %}

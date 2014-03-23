@@ -1,13 +1,18 @@
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.forms.models import modelform_factory
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render_to_response
+from django.template import RequestContext
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
-    TemplateView)
+                                  TemplateView)
 
-from brambling.forms import EventForm, UserInfoForm, HouseForm
-from brambling.models import Event, UserInfo, House
+from brambling.forms import (EventForm, UserInfoForm, HouseForm, ItemForm,
+                             ItemOptionFormSet, formfield_callback)
+from brambling.models import (Event, UserInfo, House, Item,
+                              DiscountCode, ItemDiscount)
 
 
 def home(request):
@@ -51,9 +56,7 @@ class EventDetailView(DetailView):
         obj = super(EventDetailView, self).get_object()
         if obj.privacy == Event.PRIVATE:
             user = self.request.user
-            if not (user.is_authenticated() and user.is_active and
-                    (user.is_superuser or user.pk == obj.owner_id or
-                     obj.editors.filter(pk=user.pk).exists())):
+            if not obj.can_edit(user):
                 raise Http404
         return obj
 
@@ -98,11 +101,9 @@ class EventUpdateView(UpdateView):
     def get_object(self):
         obj = super(EventUpdateView, self).get_object()
         user = self.request.user
-        if (user.is_authenticated() and user.is_active and
-                (user.is_superuser or user.pk == obj.owner_id or
-                 obj.editors.filter(pk=user.pk).exists())):
-            return obj
-        raise Http404
+        if not obj.can_edit(user):
+            raise Http404
+        return obj
 
 
 class UserInfoView(UpdateView):
@@ -131,3 +132,63 @@ class HouseView(UpdateView):
         if self.object.pk is None:
             initial['residents'] = [self.request.user]
         return initial
+
+
+def event_editor_or_404(slug, user):
+    try:
+        event = Event.objects.get(slug=slug)
+    except Event.DoesNotExist:
+        raise Http404
+    if (user.is_authenticated() and user.is_active and
+            (user.is_superuser or user.pk == event.owner_id or
+             event.editors.filter(pk=user.pk).exists())):
+        return event
+    raise Http404
+
+
+def item_form(request, *args, **kwargs):
+    event = get_object_or_404(Event, slug=kwargs['event_slug'])
+    if not event.can_edit(request.user):
+        raise Http404
+    if 'pk' in kwargs:
+        item = get_object_or_404(Item, pk=kwargs['pk'])
+    else:
+        item = Item()
+    if request.method == 'POST':
+        form = ItemForm(event, request.POST, instance=item)
+        formset = ItemOptionFormSet(request.POST, instance=item)
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            url = reverse('brambling_item_list',
+                          kwargs={'event_slug': event.slug})
+            return HttpResponseRedirect(url)
+    else:
+        form = ItemForm(event, instance=item)
+        formset = ItemOptionFormSet(instance=item)
+    context = {
+        'event': event,
+        'item': item,
+        'item_form': form,
+        'itemoption_formset': formset,
+    }
+    return render_to_response('brambling/item_form.html',
+                              context,
+                              context_instance=RequestContext(request))
+
+
+class ItemListView(ListView):
+    model = Item
+    context_object_name = 'items'
+
+    def get_queryset(self):
+        self.event = get_object_or_404(Event, slug=self.kwargs['event_slug'])
+        if not self.event.can_edit(self.request.user):
+            raise Http404
+        qs = super(ItemListView, self).get_queryset()
+        return qs.filter(event=self.event)
+
+    def get_context_data(self, **kwargs):
+        context = super(ItemListView, self).get_context_data(**kwargs)
+        context['event'] = self.event
+        return context

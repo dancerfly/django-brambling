@@ -108,6 +108,11 @@ class Event(models.Model):
     def get_absolute_url(self):
         return reverse('brambling_event_detail', kwargs={'slug': self.slug})
 
+    def can_edit(self, user):
+        return (user.is_authenticated() and user.is_active and
+                (user.is_superuser or user.pk == self.owner_id or
+                 self.editors.filter(pk=user.pk).exists()))
+
 
 class Item(models.Model):
     MERCHANDISE = 'merch'
@@ -127,14 +132,20 @@ class Item(models.Model):
     category = models.CharField(max_length=7, choices=CATEGORIES)
     event = models.ForeignKey(Event)
 
+    def __unicode__(self):
+        return smart_text(self.name)
+
 
 class ItemOption(models.Model):
     item = models.ForeignKey(Item)
-    name = models.CharField(max_length=30, blank=True)
+    name = models.CharField(max_length=30)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     total_number = models.PositiveSmallIntegerField()
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
+
+    def __unicode__(self):
+        return smart_text(self.name)
 
 
 class UserItem(models.Model):

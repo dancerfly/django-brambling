@@ -1,7 +1,8 @@
 from django.db import models
+from django.forms.models import inlineformset_factory
 import floppyforms as forms
 
-from brambling.models import Event, UserInfo, House
+from brambling.models import Event, UserInfo, House, Item, ItemOption
 
 
 FORMFIELD_OVERRIDES = {
@@ -63,3 +64,24 @@ class HouseForm(forms.ModelForm):
     class Meta:
         model = House
         exclude = ()
+
+
+class ItemForm(forms.ModelForm):
+    formfield_callback = formfield_callback
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(ItemForm, self).__init__(*args, **kwargs)
+
+    def _post_clean(self):
+        super(ItemForm, self)._post_clean()
+        self.instance.event = self.event
+
+    class Meta:
+        model = Item
+        exclude = ('event',)
+
+
+ItemOptionFormSet = inlineformset_factory(Item, ItemOption, forms.ModelForm,
+                                          exclude=(), extra=3,
+                                          formfield_callback=formfield_callback)
