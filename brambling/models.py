@@ -174,6 +174,7 @@ class ItemDiscount(models.Model):
 
 
 class DiscountCode(models.Model):
+    name = models.CharField(max_length=40)
     code = models.CharField(max_length=20)
     items = models.ManyToManyField(Item, through=ItemDiscount)
     available_start = models.DateTimeField()
