@@ -85,7 +85,8 @@ class EventCreateView(CreateView):
 
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class,
-                                 exclude=('owner', 'editors'))
+                                 exclude=('owner', 'editors'),
+                                 formfield_callback=formfield_callback)
 
 
 class EventUpdateView(UpdateView):

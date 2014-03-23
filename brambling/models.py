@@ -102,8 +102,6 @@ class Event(models.Model):
                                      related_name='editor_events',
                                      blank=True, null=True)
 
-    # TODO: Dance styles field.
-
     def __unicode__(self):
         return smart_text(self.name)
 
