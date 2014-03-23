@@ -10,6 +10,41 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 
 
+DEFAULT_DANCE_STYLES = {
+    "Alt Blues": ["Recess"],
+    "Trad Blues": ["Workshop", "Exchange", "Camp"],
+    "Fusion": ["Exchange"],
+    "Swing": ["Workshop", "Exchange", "Camp"],
+    "Contra": ["Workshop", "Camp"],
+    "West Coast Swing": [],
+    "Argentine Tango": [],
+    "Ballroom": [],
+    "Folk": [],
+}
+
+DEFAULT_ENVIRONMENTAL_FACTORS = (
+    "Dogs",
+    "Cats",
+    "Birds",
+    "Bees",
+    "Peanuts",
+    "Children",
+    "Tobacco smoke",
+    "Other smoke",
+    "Alcohol",
+    "Recreational drugs",
+)
+
+
+DEFAULT_DIETARY_RESTRICTIONS = (
+    "Gluten free",
+    "Vegetarian",
+    "Vegan",
+    "Kosher",
+    "Halal",
+)
+
+
 class EventType(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
@@ -22,7 +57,6 @@ class DanceStyle(models.Model):
     common_event_types = models.ManyToManyField(EventType,
                                                 related_name="common_for",
                                                 blank=True)
-    related = models.ManyToManyField('self', blank=True)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -34,35 +68,11 @@ def create_default_styles_and_types(app_config, **kwargs):
         if kwargs.get('verbosity') >= 2:
             print("Creating default dance styles and event types")
 
-        workshop = EventType.objects.create(name="Workshop")
-        exchange = EventType.objects.create(name="Exchange")
-        recess = EventType.objects.create(name="Recess")
-        camp = EventType.objects.create(name="Camp")
-
-        alt_blues = DanceStyle.objects.create(name="Alt Blues")
-        alt_blues.common_event_types = [recess]
-
-        trad_blues = DanceStyle.objects.create(name="Trad Blues")
-        trad_blues.common_event_types = [workshop, exchange, camp]
-        trad_blues.related = [alt_blues]
-
-        fusion = DanceStyle.objects.create(name="Fusion")
-        fusion.common_event_types = [exchange]
-        fusion.related = [alt_blues]
-
-        swing = DanceStyle.objects.create(name="Swing")
-        swing.common_event_types = [workshop, exchange, camp]
-        swing.related = [trad_blues]
-
-        contra = DanceStyle.objects.create(name="Contra")
-        contra.common_event_types = [workshop, camp]
-
-        DanceStyle.objects.bulk_create((
-            DanceStyle(name="West Coast Swing"),
-            DanceStyle(name="Argentine Tango"),
-            DanceStyle(name="Ballroom"),
-            DanceStyle(name="Folk"),
-        ))
+        for name, event_types in DEFAULT_DANCE_STYLES.items():
+            style = DanceStyle.objects.create(name=name)
+            for event_type in event_types:
+                style.common_event_types.add(
+                    EventType.objects.get_or_create(name=event_type)[0])
 
 
 # TODO: "meta" class for groups of events? For example, annual events?
@@ -213,13 +223,10 @@ def create_default_factors(app_config, **kwargs):
     if not EnvironmentalFactor.objects.exists():
         if kwargs.get('verbosity') >= 2:
             print("Creating default environmental factors")
-        EnvironmentalFactor.objects.bulk_create((
-            EnvironmentalFactor(name="Dogs"),
-            EnvironmentalFactor(name="Cats"),
-            EnvironmentalFactor(name="Birds"),
-            EnvironmentalFactor(name="Tobacco smoke"),
-            EnvironmentalFactor(name="Other smoke"),
-        ))
+        EnvironmentalFactor.objects.bulk_create([
+            EnvironmentalFactor(name=name)
+            for name in DEFAULT_ENVIRONMENTAL_FACTORS
+        ])
 
 
 class DietaryRestriction(models.Model):
@@ -234,13 +241,10 @@ def create_default_restrictions(app_config, **kwargs):
     if not DietaryRestriction.objects.exists():
         if kwargs.get('verbosity') >= 2:
             print("Creating default dietary restrictions")
-        DietaryRestriction.objects.bulk_create((
-            DietaryRestriction(name="Gluten free"),
-            DietaryRestriction(name="Vegetarian"),
-            DietaryRestriction(name="Vegan"),
-            DietaryRestriction(name="Kosher"),
-            DietaryRestriction(name="Halal"),
-        ))
+        DietaryRestriction.objects.bulk_create([
+            DietaryRestriction(name=name)
+            for name in DEFAULT_DIETARY_RESTRICTIONS
+        ])
 
 
 class UserInfo(models.Model):
