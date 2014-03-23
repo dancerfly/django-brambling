@@ -351,6 +351,8 @@ class House(models.Model):
 
     spaces = models.PositiveSmallIntegerField(default=0,
                                               validators=[MaxValueValidator(100)])
+    spaces_max = models.PositiveSmallIntegerField(default=0,
+                                                  validators=[MaxValueValidator(100)])
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='house_present',
@@ -453,6 +455,8 @@ class EventHouseInfo(models.Model):
 
     spaces = models.PositiveSmallIntegerField(default=0,
                                               validators=[MaxValueValidator(100)])
+    spaces_max = models.PositiveSmallIntegerField(default=0,
+                                                  validators=[MaxValueValidator(100)])
     nights = models.CommaSeparatedIntegerField(max_length=50)
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
