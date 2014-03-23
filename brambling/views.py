@@ -9,10 +9,10 @@ from django.template import RequestContext
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
 
-from brambling.forms import (EventForm, UserInfoForm, HouseForm, ItemForm,
+from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
                              ItemOptionFormSet, formfield_callback,
                              ItemDiscountFormSet, DiscountForm)
-from brambling.models import (Event, UserInfo, House, Item,
+from brambling.models import (Event, Person, House, Item,
                               Discount, ItemDiscount)
 
 
@@ -107,15 +107,14 @@ class EventUpdateView(UpdateView):
         return obj
 
 
-class UserInfoView(UpdateView):
-    model = UserInfo
-    form_class = UserInfoForm
+class PersonView(UpdateView):
+    model = Person
+    form_class = PersonForm
 
     def get_object(self):
-        try:
-            return self.request.user.userinfo
-        except UserInfo.DoesNotExist:
-            return UserInfo(user=self.request.user)
+        if self.request.user.is_authenticated():
+            return self.request.user
+        raise Http404
 
 
 class HouseView(UpdateView):
@@ -128,11 +127,13 @@ class HouseView(UpdateView):
         return (House.objects.filter(residents=self.request.user).first() or
                 House())
 
-    def get_initial(self):
-        initial = super(HouseView, self).get_initial()
-        if self.object.pk is None:
-            initial['residents'] = [self.request.user]
-        return initial
+    def get_form_kwargs(self):
+        kwargs = super(HouseView, self).get_form_kwargs()
+        kwargs['person'] = self.request.user
+        return kwargs
+
+    def get_success_url(self):
+        return reverse('brambling_house')
 
 
 def item_form(request, *args, **kwargs):

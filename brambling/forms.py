@@ -3,7 +3,7 @@ from django.forms.models import inlineformset_factory
 from django.utils.crypto import get_random_string
 import floppyforms as forms
 
-from brambling.models import (Event, UserInfo, House, Item, ItemOption,
+from brambling.models import (Event, Person, House, Item, ItemOption,
                               Discount, ItemDiscount)
 
 
@@ -55,12 +55,13 @@ class EventForm(forms.ModelForm):
         exclude = ()
 
 
-class UserInfoForm(forms.ModelForm):
+class PersonForm(forms.ModelForm):
     formfield_callback = formfield_callback
 
     class Meta:
-        model = UserInfo
-        exclude = ('user',)
+        model = Person
+        exclude = ('created_timestamp', 'last_login', 'groups',
+                   'user_permissions', 'password', 'is_superuser')
 
 
 class HouseForm(forms.ModelForm):
@@ -70,9 +71,22 @@ class HouseForm(forms.ModelForm):
         model = House
         exclude = ()
 
+    def __init__(self, person, *args, **kwargs):
+        self.person = person
+        super(HouseForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        instance = super(HouseForm, self).save(commit)
+        instance.residents.add(self.person)
+        return instance
+
 
 class ItemForm(forms.ModelForm):
     formfield_callback = formfield_callback
+
+    class Meta:
+        model = Item
+        exclude = ('event',)
 
     def __init__(self, event, *args, **kwargs):
         self.event = event
@@ -81,10 +95,6 @@ class ItemForm(forms.ModelForm):
     def _post_clean(self):
         super(ItemForm, self)._post_clean()
         self.instance.event = self.event
-
-    class Meta:
-        model = Item
-        exclude = ('event',)
 
 
 ItemOptionFormSet = inlineformset_factory(Item, ItemOption, forms.ModelForm,

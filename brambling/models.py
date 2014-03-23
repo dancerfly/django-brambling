@@ -333,6 +333,9 @@ class Person(AbstractBaseUser, PermissionsMixin):
         verbose_name = _('person')
         verbose_name_plural = _('people')
 
+    def __unicode__(self):
+        return smart_text(self.name or self.email)
+
     def get_full_name(self):
         return self.name
 
@@ -341,13 +344,13 @@ class Person(AbstractBaseUser, PermissionsMixin):
 
 
 class House(models.Model):
-    address = models.CharField(max_length=200, blank=True)
-    city = models.CharField(max_length=50, blank=True)
-    state_or_province = models.CharField(max_length=50, blank=True)
-    country = CountryField(blank=True)
+    address = models.CharField(max_length=200)
+    city = models.CharField(max_length=50)
+    state_or_province = models.CharField(max_length=50)
+    country = CountryField()
 
-    spaces_default = models.PositiveSmallIntegerField(default=0,
-                                                      validators=[MaxValueValidator(100)])
+    spaces = models.PositiveSmallIntegerField(default=0,
+                                              validators=[MaxValueValidator(100)])
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='house_present',
