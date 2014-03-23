@@ -164,7 +164,7 @@ class ItemDiscount(models.Model):
         (FLAT, _('Flat')),
     )
     item = models.ForeignKey(Item)
-    discount = models.ForeignKey('DiscountCode')
+    discount = models.ForeignKey('Discount')
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
                                      default=PERCENT)
@@ -173,17 +173,21 @@ class ItemDiscount(models.Model):
                                  validators=[MinValueValidator(0)])
 
 
-class DiscountCode(models.Model):
+class Discount(models.Model):
     name = models.CharField(max_length=40)
     code = models.CharField(max_length=20)
     items = models.ManyToManyField(Item, through=ItemDiscount)
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
+    event = models.ForeignKey(Event)
+
+    class Meta:
+        unique_together = ('code', 'event')
 
 
 class UserDiscount(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
-    discount = models.ForeignKey(DiscountCode)
+    discount = models.ForeignKey(Discount)
     timestamp = models.DateTimeField(default=now)
 
 

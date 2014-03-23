@@ -2,7 +2,8 @@ from django.conf.urls import patterns, url, include
 
 from brambling.views import (EventDetailView, EventCreateView,
                              EventUpdateView, UserInfoView, HouseView,
-                             ItemListView, item_form)
+                             ItemListView, item_form, DiscountListView,
+                             discount_form)
 
 
 urlpatterns = patterns('',
@@ -28,6 +29,7 @@ urlpatterns = patterns('',
     url(r'^(?P<slug>[\w-]+)/edit/$',
         EventUpdateView.as_view(),
         name="brambling_event_update"),
+
     url(r'^(?P<event_slug>[\w-]+)/items/$',
         ItemListView.as_view(),
         name="brambling_item_list"),
@@ -37,4 +39,14 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/items/(?P<pk>\d+)/$',
         item_form,
         name="brambling_item_update"),
+
+    url(r'^(?P<event_slug>[\w-]+)/discounts/$',
+        DiscountListView.as_view(),
+        name="brambling_discount_list"),
+    url(r'^(?P<event_slug>[\w-]+)/discounts/create/$',
+        discount_form,
+        name="brambling_discount_create"),
+    url(r'^(?P<event_slug>[\w-]+)/discounts/(?P<pk>\d+)/$',
+        discount_form,
+        name="brambling_discount_update"),
 )

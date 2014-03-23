@@ -1,8 +1,10 @@
 from django.db import models
 from django.forms.models import inlineformset_factory
+from django.utils.crypto import get_random_string
 import floppyforms as forms
 
-from brambling.models import Event, UserInfo, House, Item, ItemOption
+from brambling.models import (Event, UserInfo, House, Item, ItemOption,
+                              Discount, ItemDiscount)
 
 
 FORMFIELD_OVERRIDES = {
@@ -47,6 +49,7 @@ def formfield_callback(db_field, **kwargs):
 
 class EventForm(forms.ModelForm):
     formfield_callback = formfield_callback
+
     class Meta:
         model = Event
         exclude = ()
@@ -54,6 +57,7 @@ class EventForm(forms.ModelForm):
 
 class UserInfoForm(forms.ModelForm):
     formfield_callback = formfield_callback
+
     class Meta:
         model = UserInfo
         exclude = ('user',)
@@ -61,6 +65,7 @@ class UserInfoForm(forms.ModelForm):
 
 class HouseForm(forms.ModelForm):
     formfield_callback = formfield_callback
+
     class Meta:
         model = House
         exclude = ()
@@ -85,3 +90,38 @@ class ItemForm(forms.ModelForm):
 ItemOptionFormSet = inlineformset_factory(Item, ItemOption, forms.ModelForm,
                                           exclude=(), extra=3,
                                           formfield_callback=formfield_callback)
+
+
+class DiscountForm(forms.ModelForm):
+    formfield_callback = formfield_callback
+    autogenerate = forms.BooleanField()
+
+    class Meta:
+        model = Discount
+        exclude = ('event', 'items')
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(DiscountForm, self).__init__(*args, **kwargs)
+        if 'autogenerate' not in self.initial:
+            self.initial['autogenerate'] = not self.instance.code
+        self.fields['code'].required = False
+
+    def _post_clean(self):
+        super(DiscountForm, self)._post_clean()
+        self.instance.event = self.event
+
+    def save(self, commit=True):
+        if (self.cleaned_data.get('autogenerate') or
+                not self.cleaned_data.get('code')):
+            code = get_random_string(6)
+            while Discount.objects.filter(code=code).exists():
+                code = get_random_string(6)
+        self.instance.code = code
+        return super(DiscountForm, self).save(commit)
+
+
+ItemDiscountFormSet = inlineformset_factory(Discount, ItemDiscount,
+                                            forms.ModelForm,
+                                            exclude=(), extra=3,
+                                            formfield_callback=formfield_callback)

@@ -10,9 +10,10 @@ from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
 
 from brambling.forms import (EventForm, UserInfoForm, HouseForm, ItemForm,
-                             ItemOptionFormSet, formfield_callback)
+                             ItemOptionFormSet, formfield_callback,
+                             ItemDiscountFormSet, DiscountForm)
 from brambling.models import (Event, UserInfo, House, Item,
-                              DiscountCode, ItemDiscount)
+                              Discount, ItemDiscount)
 
 
 def home(request):
@@ -190,5 +191,54 @@ class ItemListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ItemListView, self).get_context_data(**kwargs)
+        context['event'] = self.event
+        return context
+
+
+def discount_form(request, *args, **kwargs):
+    event = get_object_or_404(Event, slug=kwargs['event_slug'])
+    if not event.can_edit(request.user):
+        raise Http404
+    if 'pk' in kwargs:
+        discount = get_object_or_404(Discount, pk=kwargs['pk'])
+    else:
+        discount = Discount()
+    if request.method == 'POST':
+        form = DiscountForm(event, request.POST, instance=discount)
+        formset = ItemDiscountFormSet(request.POST, instance=discount)
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            url = reverse('brambling_discount_list',
+                          kwargs={'event_slug': event.slug})
+            return HttpResponseRedirect(url)
+    else:
+        form = DiscountForm(event, instance=discount)
+        formset = ItemDiscountFormSet(instance=discount)
+    context = {
+        'event': event,
+        'discount': discount,
+        'discount_form': form,
+        'itemdiscount_formset': formset,
+    }
+    return render_to_response('brambling/discount_form.html',
+                              context,
+                              context_instance=RequestContext(request))
+
+
+class DiscountListView(ListView):
+    model = Discount
+    context_object_name = 'discounts'
+    template_name = 'brambling/discount_list.html'
+
+    def get_queryset(self):
+        self.event = get_object_or_404(Event, slug=self.kwargs['event_slug'])
+        if not self.event.can_edit(self.request.user):
+            raise Http404
+        qs = super(DiscountListView, self).get_queryset()
+        return qs.filter(event=self.event)
+
+    def get_context_data(self, **kwargs):
+        context = super(DiscountListView, self).get_context_data(**kwargs)
         context['event'] = self.event
         return context

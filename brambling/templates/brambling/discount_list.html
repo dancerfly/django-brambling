@@ -1,0 +1,12 @@
+{% extends 'brambling/__base.html' %}
+
+{% block content %}
+	<p><a href="{% url 'brambling_discount_create' event_slug=event.slug %}">Create discount</a></p>
+	{% if discounts %}
+		<ul>
+			{% for discount in discounts %}
+				<li><a href="{% url 'brambling_discount_update' event_slug=event.slug pk=discount.pk %}">{{ discount.name }} – {{ discount.code }}</a></li>
+			{% endfor %}
+		</ul>
+	{% endif %}
+{% endblock %}
