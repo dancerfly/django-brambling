@@ -6,6 +6,7 @@ from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
@@ -29,11 +30,33 @@ class Dashboard(TemplateView):
     template_name = "brambling/dashboard.html"
 
     def get_context_data(self):
-        current_user = self.request.user
-        events = Event.objects.filter(privacy=Event.PUBLIC)
-        query = Q(owner=current_user) | Q(editors=current_user)
-        your_events = Event.objects.filter(query)
-        return {'events': events, 'your_events': your_events}
+        user = self.request.user
+        today = timezone.now().date()
+
+        upcoming_events = Event.objects.filter(
+            privacy=Event.PUBLIC,
+            start_date__gte=today,
+        ).order_by('start_date')
+        if not user.all_dance_styles:
+            upcoming_events = upcoming_events.filter(
+                dance_style__in=user.dance_styles.all())
+        if not user.all_event_types:
+            upcoming_events = upcoming_events.filter(
+                event_type__in=user.event_types.all())
+
+        admin_events = Event.objects.filter(
+            (Q(owner=user) | Q(editors=user)),
+        ).order_by('-last_modified')
+
+        registered_events = Event.objects.filter(
+            eventperson__person=user,
+            start_date__gte=today,
+        ).order_by('start_date')
+        return {
+            'upcoming_events': upcoming_events,
+            'admin_events': admin_events,
+            'registered_events': registered_events,
+        }
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -246,7 +269,7 @@ class PersonView(UpdateView):
         raise Http404
 
     def get_form_kwargs(self):
-        kwargs = super(SignUpView, self).get_form_kwargs()
+        kwargs = super(PersonView, self).get_form_kwargs()
         kwargs['request'] = self.request
         return kwargs
 

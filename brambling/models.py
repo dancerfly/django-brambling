@@ -110,6 +110,8 @@ class Event(models.Model):
                                      related_name='editor_events',
                                      blank=True, null=True)
 
+    last_modified = models.DateTimeField(auto_now=True)
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -330,6 +332,11 @@ class Person(AbstractBaseUser, PermissionsMixin):
                                           verbose_name="Never place me with",
                                           symmetrical=False)
 
+    all_dance_styles = models.BooleanField(default=True)
+    all_event_types = models.BooleanField(default=True)
+    dance_styles = models.ManyToManyField(DanceStyle)
+    event_types = models.ManyToManyField(EventType)
+
     class Meta:
         verbose_name = _('person')
         verbose_name_plural = _('people')
@@ -390,7 +397,7 @@ class House(models.Model):
                                           help_text="In addition to resident preferences")
 
 
-class EventPersonInfo(models.Model):
+class EventPerson(models.Model):
     LATE = 'late'
     EARLY = 'early'
 

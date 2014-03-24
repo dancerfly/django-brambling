@@ -1,23 +1,37 @@
 {% extends "brambling/layouts/75_25.html" %}
 
 {% block main %}
-	<h1>Recently Added</h1>
+	<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
 	<ul>
-		{% for event in events|slice:"5" %}
+		{% for event in upcoming_events|slice:"5" %}
 			<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
 		{% endfor %}
 	</ul>
 {% endblock %}
 
 {% block side %}
-	{% if your_events %}
+	{% if admin_events %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
 				<h4 class="panel-title">Events You Manage</h4>
 			</header>
 			<div class="panel-body">
 				<ul>
-					{% for event in your_events %}
+					{% for event in admin_events|slice:"5" %}
+						<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+	{% endif %}
+	{% if registered_events %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Events You Registered For</h4>
+			</header>
+			<div class="panel-body">
+				<ul>
+					{% for event in registered_events|slice:"5" %}
 						<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
 					{% endfor %}
 				</ul>
