@@ -272,6 +272,7 @@ class PersonManager(BaseUserManager):
 
 class Person(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
+    confirmed_email = models.EmailField(max_length=254)
     name = models.CharField(max_length=100)
     nickname = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)

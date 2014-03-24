@@ -6,6 +6,7 @@ from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils.http import urlsafe_base64_decode
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
 
@@ -14,6 +15,7 @@ from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
                              ItemDiscountFormSet, DiscountForm, SignUpForm)
 from brambling.models import (Event, Person, House, Item,
                               Discount, ItemDiscount)
+from brambling.tokens import token_generators
 
 
 def home(request):
@@ -105,16 +107,6 @@ class EventUpdateView(UpdateView):
         if not obj.can_edit(user):
             raise Http404
         return obj
-
-
-class PersonView(UpdateView):
-    model = Person
-    form_class = PersonForm
-
-    def get_object(self):
-        if self.request.user.is_authenticated():
-            return self.request.user
-        raise Http404
 
 
 class HouseView(UpdateView):
@@ -237,3 +229,47 @@ class SignUpView(CreateView):
     form_class = SignUpForm
     template_name = 'registration/sign_up.html'
     success_url = '/'
+
+    def get_form_kwargs(self):
+        kwargs = super(SignUpView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
+
+class PersonView(UpdateView):
+    model = Person
+    form_class = PersonForm
+
+    def get_object(self):
+        if self.request.user.is_authenticated():
+            return self.request.user
+        raise Http404
+
+    def get_form_kwargs(self):
+        kwargs = super(SignUpView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
+
+class EmailConfirmView(DetailView):
+    model = Person
+    generator = token_generators['email_confirm']
+    template_name = 'brambling/email_confirm.html'
+
+    def get_object(self):
+        if 'pkb64' not in self.kwargs:
+            raise AttributeError("pkb64 required.")
+        try:
+            pk = urlsafe_base64_decode(self.kwargs['pkb64'])
+            return Person._default_manager.get(pk=pk)
+        except (TypeError, ValueError, OverflowError, Person.DoesNotExist):
+            raise Http404
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.generator.check_token(self.object, self.kwargs['token']):
+            raise Http404("Token invalid or expired.")
+        self.object.confirmed_email = self.object.email
+        self.object.save()
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)

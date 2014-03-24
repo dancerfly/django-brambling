@@ -1,0 +1,1 @@
+{{ protocol }}://{{ site.domain }}{% url "brambling_email_confirm" pkb64=pkb64 token=token %}
