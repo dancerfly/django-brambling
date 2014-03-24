@@ -3,7 +3,7 @@ from django.conf.urls import patterns, url, include
 from brambling.views import (EventDetailView, EventCreateView,
                              EventUpdateView, PersonView, HouseView,
                              ItemListView, item_form, DiscountListView,
-                             discount_form)
+                             discount_form, SignUpView)
 
 
 urlpatterns = patterns('',
@@ -15,6 +15,9 @@ urlpatterns = patterns('',
         name="brambling_event_create"),
 
     url(r'^', include('django.contrib.auth.urls')),
+    url(r'^signup/$',
+        SignUpView.as_view(),
+        name="brambling_signup"),
 
     url(r'^profile/$',
         PersonView.as_view(),

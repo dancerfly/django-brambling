@@ -1,0 +1,13 @@
+{% extends 'brambling/__base.html' %}
+
+{% load floppyforms %}
+
+{% block content %}
+	<h2>Sign up</h2>
+
+	<form action="{{ request.path }}" method="post">
+		{% csrf_token %}
+		{% form form %}
+		<button type="submit">Create your account!</button>
+	</form>
+{% endblock %}

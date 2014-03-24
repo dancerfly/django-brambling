@@ -11,7 +11,7 @@ from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
 
 from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
                              ItemOptionFormSet, formfield_callback,
-                             ItemDiscountFormSet, DiscountForm)
+                             ItemDiscountFormSet, DiscountForm, SignUpForm)
 from brambling.models import (Event, Person, House, Item,
                               Discount, ItemDiscount)
 
@@ -231,3 +231,9 @@ class DiscountListView(ListView):
         context = super(DiscountListView, self).get_context_data(**kwargs)
         context['event'] = self.event
         return context
+
+
+class SignUpView(CreateView):
+    form_class = SignUpForm
+    template_name = 'registration/sign_up.html'
+    success_url = '/'
