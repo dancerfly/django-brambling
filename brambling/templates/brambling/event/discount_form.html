@@ -1,8 +1,10 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/event/__base.html' %}
 
 {% load floppyforms %}
 
 {% block content %}
+    {{ block.super }}
+
 	<h2>{% if discount.pk %}Edit discount: {{ discount.name }}{% else %}Add a discount{% endif %}</h2>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}

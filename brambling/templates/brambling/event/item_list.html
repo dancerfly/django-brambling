@@ -1,6 +1,8 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/event/__base.html' %}
 
 {% block content %}
+	{{ block.super }}
+
 	<p><a href="{% url 'brambling_item_create' event_slug=event.slug %}">Create item</a></p>
 	{% if items %}
 		<ul>

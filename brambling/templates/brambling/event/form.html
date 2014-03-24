@@ -1,8 +1,10 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/event/__base.html' %}
 
 {% load floppyforms %}
 
 {% block content %}
+	{{ block.super }}
+
 	<h2>{% if event.pk %}Edit event: {{ event.name }}{% else %}Add a event{% endif %}</h2>
 
 	<form action="{{ request.path }}" method="post">

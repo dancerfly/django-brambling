@@ -65,7 +65,7 @@ class Dashboard(TemplateView):
 
 class EventListView(ListView):
     model = Event
-    template_name = 'brambling/event_list.html'
+    template_name = 'brambling/event/list.html'
     context_object_name = 'events'
 
     def get_queryset(self):
@@ -75,7 +75,7 @@ class EventListView(ListView):
 
 class EventDetailView(DetailView):
     model = Event
-    template_name = 'brambling/event_detail.html'
+    template_name = 'brambling/event/detail.html'
     context_object_name = 'event'
 
     def get_object(self):
@@ -93,7 +93,7 @@ class EventDetailView(DetailView):
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/event_form.html'
+    template_name = 'brambling/event/form.html'
     context_object_name = 'event'
     form_class = EventForm
 
@@ -120,7 +120,7 @@ class EventCreateView(CreateView):
 
 class EventUpdateView(UpdateView):
     model = Event
-    template_name = 'brambling/event_form.html'
+    template_name = 'brambling/event/form.html'
     context_object_name = 'event'
     form_class = EventForm
 
@@ -177,7 +177,7 @@ def item_form(request, *args, **kwargs):
         'item_form': form,
         'itemoption_formset': formset,
     }
-    return render_to_response('brambling/item_form.html',
+    return render_to_response('brambling/event/item_form.html',
                               context,
                               context_instance=RequestContext(request))
 
@@ -185,6 +185,7 @@ def item_form(request, *args, **kwargs):
 class ItemListView(ListView):
     model = Item
     context_object_name = 'items'
+    template_name = 'brambling/event/item_list.html'
 
     def get_queryset(self):
         self.event = get_object_or_404(Event, slug=self.kwargs['event_slug'])
@@ -225,7 +226,7 @@ def discount_form(request, *args, **kwargs):
         'discount_form': form,
         'itemdiscount_formset': formset,
     }
-    return render_to_response('brambling/discount_form.html',
+    return render_to_response('brambling/event/discount_form.html',
                               context,
                               context_instance=RequestContext(request))
 
@@ -233,7 +234,7 @@ def discount_form(request, *args, **kwargs):
 class DiscountListView(ListView):
     model = Discount
     context_object_name = 'discounts'
-    template_name = 'brambling/discount_list.html'
+    template_name = 'brambling/event/discount_list.html'
 
     def get_queryset(self):
         self.event = get_object_or_404(Event, slug=self.kwargs['event_slug'])
