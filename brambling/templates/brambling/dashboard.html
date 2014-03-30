@@ -2,6 +2,9 @@
 
 {% block main %}
 	<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
+	{% if user.all_dance_styles or user.all_event_styles %}
+		<p>Update your <a href="{% url 'brambling_user_profile' %}">profile</a> to customize this list</p>
+	{% endif %}
 	<ul>
 		{% for event in upcoming_events|slice:"5" %}
 			<li><a href="{{ event.get_absolute_url }}">{{ event.name }}</a></li>
