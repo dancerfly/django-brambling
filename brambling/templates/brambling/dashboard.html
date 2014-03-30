@@ -1,6 +1,7 @@
 {% extends "brambling/layouts/75_25.html" %}
 
 {% block main %}
+	{% if not user.confirmed_email %}<div class='alert alert-warning'>You must confirm your email address to register for events.{# click <here> to resend your confirmation email #}</div>{% endif %}
 	<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
 	{% if user.all_dance_styles or user.all_event_styles %}
 		<p>Update your <a href="{% url 'brambling_user_profile' %}">profile</a> to customize this list</p>

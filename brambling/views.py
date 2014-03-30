@@ -36,13 +36,9 @@ class Dashboard(TemplateView):
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             start_date__gte=today,
+            dance_style__person=user,
+            event_type__person=user
         ).order_by('start_date')
-        if not user.all_dance_styles:
-            upcoming_events = upcoming_events.filter(
-                dance_style__in=user.dance_styles.all())
-        if not user.all_event_types:
-            upcoming_events = upcoming_events.filter(
-                event_type__in=user.event_types.all())
 
         admin_events = Event.objects.filter(
             (Q(owner=user) | Q(editors=user)),
@@ -272,6 +268,9 @@ class PersonView(UpdateView):
         kwargs = super(PersonView, self).get_form_kwargs()
         kwargs['request'] = self.request
         return kwargs
+
+    def get_success_url(self):
+        return self.request.path
 
 
 class EmailConfirmView(DetailView):

@@ -275,7 +275,7 @@ class PersonManager(BaseUserManager):
 class Person(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, verbose_name="Full name")
     nickname = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     house = models.ForeignKey('House', blank=True, null=True,
@@ -332,10 +332,8 @@ class Person(AbstractBaseUser, PermissionsMixin):
                                           verbose_name="Never place me with",
                                           symmetrical=False)
 
-    all_dance_styles = models.BooleanField(default=True)
-    all_event_types = models.BooleanField(default=True)
-    dance_styles = models.ManyToManyField(DanceStyle)
-    event_types = models.ManyToManyField(EventType)
+    dance_styles = models.ManyToManyField(DanceStyle, blank=True)
+    event_types = models.ManyToManyField(EventType, blank=True)
 
     class Meta:
         verbose_name = _('person')

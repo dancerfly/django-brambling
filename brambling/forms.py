@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth import login, authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.db import models
@@ -11,7 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 import floppyforms as forms
 
 from brambling.models import (Event, Person, House, Item, ItemOption,
-                              Discount, ItemDiscount)
+                              Discount, ItemDiscount, DanceStyle, EventType)
 from brambling.tokens import token_generators
 
 
@@ -96,21 +97,34 @@ class SignUpForm(BasePersonForm):
             )
         return password2
 
-    def save(self, commit=True):
+    def save(self):
         person = super(SignUpForm, self).save(commit=False)
         person.set_password(self.cleaned_data["password1"])
-        if commit:
-            person.save()
-            self.email_confirmation()
+        person.save()
+        person.dance_styles = DanceStyle.objects.all()
+        person.event_types = EventType.objects.all()
+        self.email_confirmation()
+        user = authenticate(email=self.cleaned_data['email'],
+                            password=self.cleaned_data['password1'])
+        login(self.request, user)
         return person
 
 
 class PersonForm(BasePersonForm):
     class Meta:
         model = Person
-        exclude = ('created_timestamp', 'last_login', 'groups',
-                   'user_permissions', 'password', 'is_superuser',
-                   'confirmed_email')
+        fields = ('email', 'name', 'nickname', 'phone', 'dance_styles',
+                  'event_types', 'dietary_restrictions', 'ef_cause',
+                  'ef_avoid_strong', 'ef_avoid_weak', 'person_prefer',
+                  'person_avoid')
+        widgets = {
+            'dietary_restrictions': forms.CheckboxSelectMultiple,
+            'ef_cause': forms.CheckboxSelectMultiple,
+            'ef_avoid_strong': forms.CheckboxSelectMultiple,
+            'ef_avoid_weak': forms.CheckboxSelectMultiple,
+            'dance_styles': forms.CheckboxSelectMultiple,
+            'event_types': forms.CheckboxSelectMultiple,
+        }
 
     def save(self, commit=True):
         person = super(PersonForm, self).save(commit)
