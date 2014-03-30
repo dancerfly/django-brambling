@@ -2,7 +2,6 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils.decorators import method_decorator
-from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -10,10 +9,11 @@ from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
+from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
-                             ItemOptionFormSet, formfield_callback,
-                             ItemDiscountFormSet, DiscountForm, SignUpForm)
+                             ItemOptionFormSet, ItemDiscountFormSet,
+                             DiscountForm, SignUpForm)
 from brambling.models import (Event, Person, House, Item,
                               Discount, ItemDiscount)
 from brambling.tokens import token_generators
@@ -114,8 +114,7 @@ class EventCreateView(CreateView):
 
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class,
-                                 exclude=('owner', 'editors'),
-                                 formfield_callback=formfield_callback)
+                                 exclude=('owner', 'editors'))
 
 
 class EventUpdateView(UpdateView):
