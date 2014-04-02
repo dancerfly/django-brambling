@@ -76,6 +76,16 @@ def create_default_styles_and_types(app_config, **kwargs):
                     EventType.objects.get_or_create(name=event_type)[0])
 
 
+class Date(models.Model):
+    date = models.DateField()
+
+    class Meta:
+        ordering = ('date',)
+
+    def __unicode__(self):
+        return self.date.strftime(u'%A')
+
+
 # TODO: "meta" class for groups of events? For example, annual events?
 class Event(models.Model):
     PUBLIC = 'public'
@@ -95,8 +105,10 @@ class Event(models.Model):
     country = CountryField()
     timezone = models.CharField(max_length=40, default='UTC')
     currency = models.CharField(max_length=10, default='USD')
-    start_date = models.DateField()
-    end_date = models.DateField()
+
+    dates = models.ManyToManyField(Date, related_name='event_dates')
+    housing_dates = models.ManyToManyField(Date, blank=True, null=True,
+                                           related_name='event_housing_dates')
 
     dance_style = models.ForeignKey(DanceStyle, blank=True, null=True)
     event_type = models.ForeignKey(EventType, blank=True, null=True)
@@ -111,6 +123,10 @@ class Event(models.Model):
                                      blank=True, null=True)
 
     last_modified = models.DateTimeField(auto_now=True)
+
+    collect_housing_data = models.BooleanField(default=True)
+    # Time in minutes.
+    item_reservation_length = models.PositiveSmallIntegerField(default=15)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -127,27 +143,27 @@ class Event(models.Model):
 class Item(models.Model):
     MERCHANDISE = 'merch'
     COMPETITION = 'comp'
-    PRIVATE = 'private'
+    CLASS = 'class'
     PASS = 'pass'
 
     CATEGORIES = (
         (MERCHANDISE, _("Merchandise")),
         (COMPETITION, _("Competition")),
-        (PRIVATE, _("Private lesson")),
+        (CLASS, _("Class/Lesson a la carte")),
         (PASS, _("Pass")),
     )
 
     name = models.CharField(max_length=30)
     description = models.TextField()
     category = models.CharField(max_length=7, choices=CATEGORIES)
-    event = models.ForeignKey(Event)
+    event = models.ForeignKey(Event, related_name='items')
 
     def __unicode__(self):
         return smart_text(self.name)
 
 
 class ItemOption(models.Model):
-    item = models.ForeignKey(Item)
+    item = models.ForeignKey(Item, related_name='options')
     name = models.CharField(max_length=30)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     total_number = models.PositiveSmallIntegerField()
@@ -162,8 +178,8 @@ class PersonItem(models.Model):
     item_option = models.ForeignKey(ItemOption)
     reserved = models.DateTimeField(default=timezone.now)
     paid_at = models.DateTimeField(blank=True, null=True)
-    paid_by = models.ForeignKey('Person',
-                                related_name="items_bought")
+    buyer = models.ForeignKey('Person',
+                              related_name="items_bought")
     owner = models.ForeignKey('Person',
                               related_name="items_owned")
 
@@ -404,7 +420,7 @@ class EventPerson(models.Model):
         (EARLY, _("Going to bed early"))
     )
     MORNING_CHOICES = (
-        (LATE, _("Get up when you get up")),
+        (LATE, _("I'll be up when I'm up")),
         (EARLY, _("There first thing."))
     )
 
@@ -412,7 +428,7 @@ class EventPerson(models.Model):
     person = models.ForeignKey(Person)
 
     # Housing info.
-    nights = models.CommaSeparatedIntegerField(max_length=50)
+    nights = models.ManyToManyField(Date, blank=True, null=True)
     car_spaces = models.SmallIntegerField(default=0,
                                           validators=[MaxValueValidator(50),
                                                       MinValueValidator(-1)])
@@ -455,7 +471,7 @@ class EventPerson(models.Model):
     other = models.TextField(blank=True)
 
 
-class EventHouseInfo(models.Model):
+class EventHouse(models.Model):
     event = models.ForeignKey(Event)
     house = models.ForeignKey(House)
 
@@ -463,7 +479,7 @@ class EventHouseInfo(models.Model):
                                               validators=[MaxValueValidator(100)])
     spaces_max = models.PositiveSmallIntegerField(default=0,
                                                   validators=[MaxValueValidator(100)])
-    nights = models.CommaSeparatedIntegerField(max_length=50)
+    nights = models.ManyToManyField(Date, blank=True, null=True)
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='event_house_present',
@@ -505,4 +521,4 @@ class HousingSlot(models.Model):
     house = models.ForeignKey(House)
     person = models.ManyToManyField(Person,
                                     blank=True)
-    nights = models.CommaSeparatedIntegerField(max_length=50)
+    nights = models.ManyToManyField(Date, blank=True, null=True)

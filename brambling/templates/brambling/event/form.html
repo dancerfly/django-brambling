@@ -3,7 +3,9 @@
 {% load floppyforms %}
 
 {% block content %}
-	{{ block.super }}
+	{% if event.pk %}
+		{{ block.super }}
+	{% endif %}
 
 	<h2>{% if event.pk %}Edit event: {{ event.name }}{% else %}Add a event{% endif %}</h2>
 

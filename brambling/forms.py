@@ -1,25 +1,60 @@
+import datetime
 from django.conf import settings
 from django.contrib.auth import login, authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.db import models
-from django.forms.models import inlineformset_factory
 from django.template import loader
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import ugettext_lazy as _
 import floppyforms as forms
+from floppyforms import inlineformset_factory
 
 from brambling.models import (Event, Person, House, Item, ItemOption,
-                              Discount, ItemDiscount, DanceStyle, EventType)
+                              Discount, ItemDiscount, DanceStyle, EventType,
+                              EventPerson, Date, EventHouse)
 from brambling.tokens import token_generators
 
 
 class EventForm(forms.ModelForm):
+    start_date = forms.DateField()
+    end_date = forms.DateField()
+
     class Meta:
         model = Event
-        exclude = ()
+        exclude = ('dates', 'housing_dates')
+
+    def __init__(self, *args, **kwargs):
+        super(EventForm, self).__init__(*args, **kwargs)
+        self.fields['start_date'].initial = self.instance.start_date
+        self.fields['end_date'].initial = self.instance.end_date
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['start_date'] > cd['end_date']:
+            raise forms.ValidationError("End date must be before or equal to "
+                                        "the start date.")
+        return cd
+
+    def save(self):
+        instance = super(EventForm, self).save()
+        if {'start_date', 'end_date'} & set(self.changed_data):
+            cd = self.cleaned_data
+            date_set = {cd['start_date'] + datetime.timedelta(n - 1) for n in
+                        xrange((cd['end_date'] - cd['start_date']).days + 2)}
+            seen = set(Date.objects.filter(date__in=date_set
+                                           ).values_list('date', flat=True))
+            Date.objects.bulk_create([
+                Date(date=date) for date in date_set
+                if date not in seen
+            ])
+            instance.housing_dates = Date.objects.filter(date__in=date_set)
+            date_set.remove(cd['start_date'] - datetime.timedelta(1))
+            instance.dates = Date.objects.filter(date__in=date_set)
+        return instance
 
 
 class BasePersonForm(forms.ModelForm):
@@ -194,3 +229,41 @@ class DiscountForm(forms.ModelForm):
 
 
 ItemDiscountFormSet = inlineformset_factory(Discount, ItemDiscount)
+
+
+class ItemChoiceForm(forms.Form):
+    """Lets a person choose item options to buy."""
+
+    def __init__(self, event, person, items=None, *args, **kwargs):
+        self.event = event
+        self.person = person
+        super(ItemChoiceForm, self).__init__(*args, **kwargs)
+        now = timezone.now()
+        items = items or event.items.select_related('options').filter(
+            options__available_start__lte=now,
+            options__available_end__gte=now
+        )
+        for item in items:
+            self.fields['option-{}'.format(item.pk)
+                        ] = forms.ModelChoiceField(item.options.all(),
+                                                   label=item.name,
+                                                   required=False)
+            self.fields['number-{}'.format(item.pk)
+                        ] = forms.IntegerField(label="Number",
+                                               required=False)
+
+
+class EventPersonForm(forms.ModelForm):
+    class Meta:
+        model = EventPerson
+        exclude = ('event', 'person')
+        widgets = {
+            'bedtime': forms.RadioSelect,
+            'wakeup': forms.RadioSelect,
+        }
+
+
+class EventHouseForm(forms.ModelForm):
+    class Meta:
+        model = EventHouse
+        exclude = ('event', 'house')

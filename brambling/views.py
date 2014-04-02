@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.formtools.wizard.views import NamedUrlSessionWizardView
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import Q, Max, Min
 from django.utils.decorators import method_decorator
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
@@ -13,9 +14,11 @@ from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
                              ItemOptionFormSet, ItemDiscountFormSet,
-                             DiscountForm, SignUpForm)
+                             DiscountForm, SignUpForm, ItemChoiceForm,
+                             EventPersonForm, EventHouseForm)
 from brambling.models import (Event, Person, House, Item,
-                              Discount, ItemDiscount)
+                              Discount, ItemDiscount, EventPerson,
+                              EventHouse)
 from brambling.tokens import token_generators
 
 
@@ -35,10 +38,10 @@ class Dashboard(TemplateView):
 
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
-            start_date__gte=today,
             dance_style__person=user,
             event_type__person=user
-        ).order_by('start_date')
+        ).annotate(start_date=Min('dates__date')
+                   ).filter(start_date__gte=today).order_by('start_date')
 
         admin_events = Event.objects.filter(
             (Q(owner=user) | Q(editors=user)),
@@ -46,8 +49,8 @@ class Dashboard(TemplateView):
 
         registered_events = Event.objects.filter(
             eventperson__person=user,
-            start_date__gte=today,
-        ).order_by('start_date')
+        ).annotate(start_date=Min('dates__date')
+                   ).filter(start_date__gte=today).order_by('-start_date')
         return {
             'upcoming_events': upcoming_events,
             'admin_events': admin_events,
@@ -67,24 +70,6 @@ class EventListView(ListView):
     def get_queryset(self):
         qs = super(EventListView, self).get_queryset()
         return qs.filter(privacy=Event.PUBLIC)
-
-
-class EventDetailView(DetailView):
-    model = Event
-    template_name = 'brambling/event/detail.html'
-    context_object_name = 'event'
-
-    def get_object(self):
-        obj = super(EventDetailView, self).get_object()
-        if obj.privacy == Event.PRIVATE:
-            user = self.request.user
-            if not obj.can_edit(user):
-                raise Http404
-        return obj
-
-    def get_queryset(self):
-        queryset = super(EventDetailView, self).get_queryset()
-        return queryset.prefetch_related('editors')
 
 
 class EventCreateView(CreateView):
@@ -110,7 +95,14 @@ class EventCreateView(CreateView):
 
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class,
-                                 exclude=('owner', 'editors'))
+                                 exclude=('owner', 'editors', 'dates',
+                                          'housing_dates'))
+
+
+def _get_event_or_404(slug):
+    qs = Event.objects.annotate(start_date=Min('dates__date'),
+                                end_date=Max('dates__date'))
+    return get_object_or_404(qs, slug=slug)
 
 
 class EventUpdateView(UpdateView):
@@ -120,7 +112,7 @@ class EventUpdateView(UpdateView):
     form_class = EventForm
 
     def get_object(self):
-        obj = super(EventUpdateView, self).get_object()
+        obj = _get_event_or_404(self.kwargs['slug'])
         user = self.request.user
         if not obj.can_edit(user):
             raise Http404
@@ -147,7 +139,7 @@ class HouseView(UpdateView):
 
 
 def item_form(request, *args, **kwargs):
-    event = get_object_or_404(Event, slug=kwargs['event_slug'])
+    event = _get_event_or_404(kwargs['event_slug'])
     if not event.can_edit(request.user):
         raise Http404
     if 'pk' in kwargs:
@@ -183,7 +175,7 @@ class ItemListView(ListView):
     template_name = 'brambling/event/item_list.html'
 
     def get_queryset(self):
-        self.event = get_object_or_404(Event, slug=self.kwargs['event_slug'])
+        self.event = _get_event_or_404(self.kwargs['event_slug'])
         if not self.event.can_edit(self.request.user):
             raise Http404
         qs = super(ItemListView, self).get_queryset()
@@ -196,7 +188,7 @@ class ItemListView(ListView):
 
 
 def discount_form(request, *args, **kwargs):
-    event = get_object_or_404(Event, slug=kwargs['event_slug'])
+    event = _get_event_or_404(kwargs['event_slug'])
     if not event.can_edit(request.user):
         raise Http404
     if 'pk' in kwargs:
@@ -232,7 +224,7 @@ class DiscountListView(ListView):
     template_name = 'brambling/event/discount_list.html'
 
     def get_queryset(self):
-        self.event = get_object_or_404(Event, slug=self.kwargs['event_slug'])
+        self.event = _get_event_or_404(self.kwargs['event_slug'])
         if not self.event.can_edit(self.request.user):
             raise Http404
         qs = super(DiscountListView, self).get_queryset()
@@ -295,3 +287,111 @@ class EmailConfirmView(DetailView):
         self.object.save()
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
+
+
+class EventDetailView(DetailView):
+    model = Event
+    template_name = 'brambling/event/detail.html'
+    context_object_name = 'event'
+
+    def get_object(self):
+        obj = _get_event_or_404(self.kwargs['slug'])
+        if obj.privacy == Event.PRIVATE:
+            user = self.request.user
+            if not obj.can_edit(user):
+                raise Http404
+        return obj
+
+    def get_queryset(self):
+        queryset = super(EventDetailView, self).get_queryset()
+        return queryset.prefetch_related('editors')
+
+
+# Let people edit their registrations.
+# Separate form view for payments?
+# Or just have a few different form views that redirect to each other?
+# Hmm... no... initial form input needs to happen all at once.
+def show_housing(wizard):
+    return wizard.event.collect_housing_data
+
+
+def show_comps(wizard):
+    return wizard.get_item_queryset().filter(category=Item.COMPETITION)
+
+
+def show_merch(wizard):
+    return wizard.get_item_queryset().filter(category=Item.MERCHANDISE)
+
+
+class RegistrationWizard(NamedUrlSessionWizardView):
+    template_name = 'brambling/event/registration.html'
+    done_step_name = 'done'
+    form_list = (
+        ('passes', ItemChoiceForm),
+        ('person', EventPersonForm),
+        ('housing', EventHouseForm),
+        ('comps', ItemChoiceForm),
+        ('merch', ItemChoiceForm),
+        # Payment step.
+    )
+    condition_dict = {
+        'housing': show_housing,
+        'comps': show_comps,
+        'merch': show_merch,
+    }
+
+    @property
+    def event(self):
+        if not hasattr(self, '_event'):
+            self._event = _get_event_or_404(self.kwargs['slug'])
+        return self._event
+
+    def get_step_url(self, step):
+        return reverse(self.url_name,
+                       kwargs={'step': step,
+                               'slug': self.event.slug})
+
+    def get_item_queryset(self):
+        now = timezone.now()
+        return self.event.items.select_related('options').filter(
+            options__available_start__lte=now,
+            options__available_end__gte=now
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(RegistrationWizard, self).get_context_data(**kwargs)
+        context['event'] = self.event
+        return context
+
+    def get_form_kwargs(self, step):
+        if self.event.privacy == Event.PRIVATE:
+            user = self.request.user
+            if not self.event.can_edit(user):
+                raise Http404
+        kwargs = super(RegistrationWizard, self).get_form_kwargs(step)
+        if step in ('passes', 'comps', 'merch'):
+            kwargs.update({
+                'event': self.event,
+                'person': self.request.user,
+            })
+            items = self.get_item_queryset()
+            if step == 'passes':
+                items = items.filter(category__in=(Item.PASS, Item.CLASS))
+            elif step == 'comps':
+                items = items.filter(category=Item.COMPETITION)
+            else:
+                items = items.filter(category=Item.MERCHANDISE)
+            kwargs['items'] = items
+        return kwargs
+
+    def get_form_instance(self, step):
+        try:
+            return EventPerson.objects.get(event=self.event,
+                                           person=self.request.user)
+        except EventPerson.DoesNotExist:
+            return None
+
+    def done(self, form_list, **kwargs):
+        #do_something_with_form_list()
+        return HttpResponseRedirect(reverse('brambling_event_detail',
+                                    kwargs={'slug': self.event.slug}))
