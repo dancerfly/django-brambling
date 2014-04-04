@@ -1,7 +1,9 @@
-https://www.djangoproject.com/download/1.7b1/tarball/
+# Latest Django 1.7 Stable, until 1.7 is released.
+https://github.com/django/django/tarball/stable/1.7.x
 pytz==2013.9
 unicode-slugify==0.1.1
 django-countries==2.0
 # Not strictly required, but we will definitely be using it eventually.
 Pillow==2.3.1
-django-floppyforms==1.1.1
+# Melinath's fork of Floppyforms, until the patch is accepted.
+https://github.com/melinath/django-floppyforms/tarball/7ac637c5795f2776fb384ada0ed03c078d787625
