@@ -152,14 +152,6 @@ class PersonForm(BasePersonForm):
                   'event_types', 'dietary_restrictions', 'ef_cause',
                   'ef_avoid_strong', 'ef_avoid_weak', 'person_prefer',
                   'person_avoid')
-        widgets = {
-            'dietary_restrictions': forms.CheckboxSelectMultiple,
-            'ef_cause': forms.CheckboxSelectMultiple,
-            'ef_avoid_strong': forms.CheckboxSelectMultiple,
-            'ef_avoid_weak': forms.CheckboxSelectMultiple,
-            'dance_styles': forms.CheckboxSelectMultiple,
-            'event_types': forms.CheckboxSelectMultiple,
-        }
 
     def save(self, commit=True):
         person = super(PersonForm, self).save(commit)

@@ -1,6 +1,14 @@
 {% extends 'brambling/__base.html' %}
 
-{% load floppyforms %}
+{% load floppyforms static %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static "brambling/lib/chosen/chosen.jquery.min.js" %}"></script>
+	<script type="text/javascript">
+		$('.chosen-select').chosen({width: "100%"})
+	</script>
+{% endblock %}
 
 {% block content %}
 	<h2>Edit settings</h2>
