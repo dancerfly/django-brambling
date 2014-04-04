@@ -29,8 +29,8 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
-        self.fields['start_date'].initial = self.instance.start_date
-        self.fields['end_date'].initial = self.instance.end_date
+        self.fields['start_date'].initial = getattr(self.instance, 'start_date', None)
+        self.fields['end_date'].initial = getattr(self.instance, 'end_date', None)
 
     def clean(self):
         cd = self.cleaned_data
@@ -152,14 +152,6 @@ class PersonForm(BasePersonForm):
                   'event_types', 'dietary_restrictions', 'ef_cause',
                   'ef_avoid_strong', 'ef_avoid_weak', 'person_prefer',
                   'person_avoid')
-        widgets = {
-            'dietary_restrictions': forms.CheckboxSelectMultiple,
-            'ef_cause': forms.CheckboxSelectMultiple,
-            'ef_avoid_strong': forms.CheckboxSelectMultiple,
-            'ef_avoid_weak': forms.CheckboxSelectMultiple,
-            'dance_styles': forms.CheckboxSelectMultiple,
-            'event_types': forms.CheckboxSelectMultiple,
-        }
 
     def save(self, commit=True):
         person = super(PersonForm, self).save(commit)
