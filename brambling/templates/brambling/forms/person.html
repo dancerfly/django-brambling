@@ -1,0 +1,32 @@
+{% load floppyforms %}
+
+<div class="row">
+	<div class="col-md-8">
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Profile Information</h4>
+			</header>
+			<div class="panel-body">
+				{% formrow form.name %}
+				{% formrow form.nickname %}
+				{% formrow form.email %}
+				{% formrow form.phone %}
+			</div>
+		</div>{# /.panel #}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Preferences</h4>
+			</header>
+			<div class="panel-body">
+				{% formrow form.dance_styles %}
+				{% formrow form.event_types %}
+				{% formrow form.dietary_restrictions %}
+				{% formrow form.ef_cause %}
+				{% formrow form.ef_avoid_strong %}
+				{% formrow form.ef_avoid_weak %}
+				{% formrow form.person_prefer %}
+				{% formrow form.person_avoid %}
+			</div>
+		</div>
+	</div>{# /.col-md-8 #}
+</div>

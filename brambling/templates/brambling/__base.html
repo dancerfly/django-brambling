@@ -18,6 +18,7 @@
 		
 		{% block stylesheets %}
 			<link rel="stylesheet" type="text/css" href="{% static "brambling/css/styles.css" %}" />
+			<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/chosen/chosen.min.css" %}" />
 		{% endblock %}
 
 	</head>
@@ -75,6 +76,10 @@
 			<script src="{% static "brambling/js/jquery-1.11.0.min.js" %}"></script>
 			<script src="{% static "brambling/js/bootstrap/transition.js" %}"></script>
 			<script src="{% static "brambling/js/bootstrap/collapse.js" %}"></script>
+			<script type="text/javascript" src="{% static "brambling/lib/chosen/chosen.jquery.min.js" %}"></script>
+			<script type="text/javascript">
+				$('.chosen-select').chosen({width: "100%"})
+			</script>
 		{% endblock %}
 	</body>
 </html>

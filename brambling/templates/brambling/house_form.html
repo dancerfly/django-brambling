@@ -7,7 +7,7 @@
 
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
-		{% form form %}
+		{% form form using "brambling/forms/house.html" %}
 		<button type="submit">Save changes</button>
 		<a href="{{ event.get_absolute_url }}">Cancel</a>
 	</form>
