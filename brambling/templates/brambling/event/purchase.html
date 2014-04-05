@@ -1,0 +1,34 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms %}
+
+{% block content %}
+	{{ block.super }}
+
+	<h2>Buy things!</h2>
+
+	<form action="{{ request.path }}" method="post">
+	{% csrf_token %}
+
+		{% for item, forms in items %}
+			<h3>{{ item.name }}</h3>
+
+			{% for form in forms %}
+				<h4>{{ form.item_option.name }}</h4>
+				{% with personitems=form.item_option.personitem_set.all %}
+				{% if personitems %}
+					<h5>You already bought:</h5>
+					<ul>
+					{% for personitem in personitems %}
+						<li>{{ personitem.quantity }} at {{ personitem.added }} ({{ personitem.status }}) for {% if personitem.owner_id == personitem.buyer_id %}yourself{% else %}{{ personitem.owner.name }}{% endif %}</li>
+					{% endfor %}
+					</ul>
+				{% endif %}
+				{% endwith %}
+				{% form form %}
+			{% endfor %}
+		{% endfor %}
+
+		<button class='btn btn-default' type="submit">Buy the things!</button>
+	</form>
+{% endblock %}

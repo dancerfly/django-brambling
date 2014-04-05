@@ -4,8 +4,8 @@ from django.contrib.auth import login, authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.db import models
+from django.forms.formsets import BaseFormSet
 from django.template import loader
-from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -15,7 +15,7 @@ from floppyforms import inlineformset_factory
 
 from brambling.models import (Event, Person, House, Item, ItemOption,
                               Discount, ItemDiscount, DanceStyle, EventType,
-                              EventPerson, Date, EventHouse)
+                              EventPerson, Date, EventHouse, PersonItem)
 from brambling.tokens import token_generators
 
 
@@ -223,26 +223,22 @@ class DiscountForm(forms.ModelForm):
 ItemDiscountFormSet = inlineformset_factory(Discount, ItemDiscount)
 
 
-class ItemChoiceForm(forms.Form):
+class PersonItemForm(forms.ModelForm):
     """Lets a person choose item options to buy."""
+    class Meta:
+        model = PersonItem
+        fields = ('quantity', 'owner',)
 
-    def __init__(self, event, person, items=None, *args, **kwargs):
-        self.event = event
-        self.person = person
-        super(ItemChoiceForm, self).__init__(*args, **kwargs)
-        now = timezone.now()
-        items = items or event.items.select_related('options').filter(
-            options__available_start__lte=now,
-            options__available_end__gte=now
-        )
-        for item in items:
-            self.fields['option-{}'.format(item.pk)
-                        ] = forms.ModelChoiceField(item.options.all(),
-                                                   label=item.name,
-                                                   required=False)
-            self.fields['number-{}'.format(item.pk)
-                        ] = forms.IntegerField(label="Number",
-                                               required=False)
+    def __init__(self, buyer, item_option, *args, **kwargs):
+        super(PersonItemForm, self).__init__(*args, **kwargs)
+        self.fields['owner'].initial = buyer
+        self.buyer = buyer
+        self.item_option = item_option
+
+    def _post_clean(self):
+        super(PersonItemForm, self)._post_clean()
+        self.instance.buyer = self.buyer
+        self.instance.item_option = self.item_option
 
 
 class EventPersonForm(forms.ModelForm):

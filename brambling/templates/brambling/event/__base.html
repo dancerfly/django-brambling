@@ -6,7 +6,7 @@
 	<h2>{{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
 
 	{% url 'brambling_event_detail' slug=event.slug as event_detail_url %}
-	{% url 'brambling_registration' slug=event.slug as event_registration_url %}
+	{% url 'brambling_event_passes' slug=event.slug as event_registration_url %}
 	<ul class='nav nav-pills'>
 		<li{% if request.path == event_detail_url %} class='active'{% endif %}><a href="{{ event_detail_url }}">View event</a></li>
 		{% with event_registration_url_length=event_registration_url|length|floatformat %}

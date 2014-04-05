@@ -158,6 +158,8 @@ class Item(models.Model):
     category = models.CharField(max_length=7, choices=CATEGORIES)
     event = models.ForeignKey(Event, related_name='items')
 
+    created_timestamp = models.DateTimeField(auto_now_add=True)
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -169,15 +171,33 @@ class ItemOption(models.Model):
     total_number = models.PositiveSmallIntegerField()
     available_start = models.DateTimeField()
     available_end = models.DateTimeField()
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ('order',)
 
     def __unicode__(self):
         return smart_text(self.name)
 
 
 class PersonItem(models.Model):
+    # "Reserved" can be lost after time expires.
+    RESERVED = 'reserved'
+    UNPAID = 'unpaid'
+    PARTIAL = 'partial'
+    PAID = 'paid'
+    STATUS_CHOICES = (
+        (RESERVED, _('Reserved')),
+        (UNPAID, _('Unpaid')),
+        (PARTIAL, _('Partially paid')),
+        (PAID, _('Paid')),
+    )
     item_option = models.ForeignKey(ItemOption)
-    reserved = models.DateTimeField(default=timezone.now)
-    paid_at = models.DateTimeField(blank=True, null=True)
+    quantity = models.PositiveSmallIntegerField()
+    added = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=8,
+                              choices=STATUS_CHOICES,
+                              default=UNPAID)
     buyer = models.ForeignKey('Person',
                               related_name="items_bought")
     owner = models.ForeignKey('Person',

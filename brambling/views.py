@@ -14,7 +14,7 @@ from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
                              ItemOptionFormSet, ItemDiscountFormSet,
-                             DiscountForm, SignUpForm, ItemChoiceForm,
+                             DiscountForm, SignUpForm, PersonItemForm,
                              EventPersonForm, EventHouseForm)
 from brambling.models import (Event, Person, House, Item,
                               Discount, ItemDiscount, EventPerson,
@@ -307,91 +307,61 @@ class EventDetailView(DetailView):
         return queryset.prefetch_related('editors')
 
 
-# Let people edit their registrations.
-# Separate form view for payments?
-# Or just have a few different form views that redirect to each other?
-# Hmm... no... initial form input needs to happen all at once.
-def show_housing(wizard):
-    return wizard.event.collect_housing_data
-
-
-def show_comps(wizard):
-    return wizard.get_item_queryset().filter(category=Item.COMPETITION)
-
-
-def show_merch(wizard):
-    return wizard.get_item_queryset().filter(category=Item.MERCHANDISE)
-
-
-class RegistrationWizard(NamedUrlSessionWizardView):
-    template_name = 'brambling/event/registration.html'
-    done_step_name = 'done'
-    form_list = (
-        ('passes', ItemChoiceForm),
-        ('person', EventPersonForm),
-        ('housing', EventHouseForm),
-        ('comps', ItemChoiceForm),
-        ('merch', ItemChoiceForm),
-        # Payment step.
+class PurchaseView(TemplateView):
+    categories = (
+        Item.MERCHANDISE,
+        Item.COMPETITION,
+        Item.CLASS,
+        Item.PASS
     )
-    condition_dict = {
-        'housing': show_housing,
-        'comps': show_comps,
-        'merch': show_merch,
-    }
+    template_name = 'brambling/event/purchase.html'
 
-    @property
-    def event(self):
-        if not hasattr(self, '_event'):
-            self._event = _get_event_or_404(self.kwargs['slug'])
-        return self._event
-
-    def get_step_url(self, step):
-        return reverse(self.url_name,
-                       kwargs={'step': step,
-                               'slug': self.event.slug})
-
-    def get_item_queryset(self):
+    def get_items(self):
         now = timezone.now()
-        return self.event.items.select_related('options').filter(
+        return self.event.items.filter(
             options__available_start__lte=now,
-            options__available_end__gte=now
-        )
+            options__available_end__gte=now,
+            category__in=self.categories,
+        ).select_related('options', 'options__personitems')
 
-    def get_context_data(self, **kwargs):
-        context = super(RegistrationWizard, self).get_context_data(**kwargs)
-        context['event'] = self.event
-        return context
-
-    def get_form_kwargs(self, step):
-        if self.event.privacy == Event.PRIVATE:
-            user = self.request.user
-            if not self.event.can_edit(user):
-                raise Http404
-        kwargs = super(RegistrationWizard, self).get_form_kwargs(step)
-        if step in ('passes', 'comps', 'merch'):
-            kwargs.update({
-                'event': self.event,
-                'person': self.request.user,
-            })
-            items = self.get_item_queryset()
-            if step == 'passes':
-                items = items.filter(category__in=(Item.PASS, Item.CLASS))
-            elif step == 'comps':
-                items = items.filter(category=Item.COMPETITION)
-            else:
-                items = items.filter(category=Item.MERCHANDISE)
-            kwargs['items'] = items
+    def get_form_kwargs(self, option):
+        kwargs = {
+            'buyer': self.request.user,
+            'item_option': option,
+            'prefix': str(option.pk),
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
         return kwargs
 
-    def get_form_instance(self, step):
-        try:
-            return EventPerson.objects.get(event=self.event,
-                                           person=self.request.user)
-        except EventPerson.DoesNotExist:
-            return None
+    def get_context_data(self, **kwargs):
+        context = super(PurchaseView, self).get_context_data(**kwargs)
+        items = tuple((item, [PersonItemForm(**self.get_form_kwargs(option))
+                              for option in item.options.all()])
+                      for item in self.items)
 
-    def done(self, form_list, **kwargs):
-        #do_something_with_form_list()
-        return HttpResponseRedirect(reverse('brambling_event_detail',
-                                    kwargs={'slug': self.event.slug}))
+        context.update({
+            'event': self.event,
+            'items': items
+        })
+        return context
+
+    def get(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.items = self.get_items()
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.items = self.get_items()
+        context = self.get_context_data(**kwargs)
+        saved = False
+        for item, form_list in context['items']:
+            for form in form_list:
+                if form.is_valid():
+                    form.save()
+                    saved = True
+        if saved:
+            return HttpResponseRedirect(request.path)
+        return self.render_to_response(context)
