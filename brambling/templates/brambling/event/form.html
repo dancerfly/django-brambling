@@ -7,12 +7,24 @@
 		{{ block.super }}
 	{% endif %}
 
-	<h2>{% if event.pk %}Edit event: {{ event.name }}{% else %}Add a event{% endif %}</h2>
+	<h2>{% if not event.pk %}Create New Event{% endif %}</h2>
 
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
-		{% form form %}
-		<button type="submit">{% if event.pk %}Save changes{% else %}Add event{% endif %}</button>
-		{% if event.pk %}<a href="{{ event.get_absolute_url }}">Cancel</a>{% endif %}
+		
+		{% form form using "brambling/forms/event.html" %}
+
+		<button class="btn btn-primary" type="submit">
+			{% if event.pk %}
+				Save Changes
+			{% else %}
+				Create Event
+			{% endif %}
+		</button>
+
+		{% if event.pk %}
+			<a class="btn btn-link" href="{{ event.get_absolute_url }}">Cancel</a>
+		{% endif %}
+
 	</form>
 {% endblock %}

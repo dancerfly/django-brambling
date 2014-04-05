@@ -392,9 +392,11 @@ class House(models.Model):
     country = CountryField()
 
     spaces = models.PositiveSmallIntegerField(default=0,
-                                              validators=[MaxValueValidator(100)])
+                                              validators=[MaxValueValidator(100)],
+                                              verbose_name="Preferred spaces")
     spaces_max = models.PositiveSmallIntegerField(default=0,
-                                                  validators=[MaxValueValidator(100)])
+                                                  validators=[MaxValueValidator(100)],
+                                                  verbose_name="Max spaces")
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='house_present',
