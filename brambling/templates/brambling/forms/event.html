@@ -58,10 +58,16 @@
 		<h4 class="panel-title">Settings</h4>
 	</header>
 	<div class="panel-body">
-		{% formrow form.privacy %}
-		{% formrow form.editors %}
-		{% formrow form.collect_housing_data %}
-		{% formrow form.item_reservation_length %}
+		<div class="row">
+			<div class="col-sm-6">
+				{% formrow form.editors %}
+				{% formrow form.privacy %}
+			</div>
+			<div class="col-sm-6">
+				{% formrow form.collect_housing_data %}
+				{% formrow form.item_reservation_length %}
+			</div>
+		</div>
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
 
