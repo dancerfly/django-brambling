@@ -1,14 +1,7 @@
 import datetime
-from django.conf import settings
 from django.contrib.auth import login, authenticate
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
 from django.db import models
-from django.forms.formsets import BaseFormSet
-from django.template import loader
 from django.utils.crypto import get_random_string
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import ugettext_lazy as _
 import floppyforms as forms
 from floppyforms import inlineformset_factory
@@ -16,7 +9,7 @@ from floppyforms import inlineformset_factory
 from brambling.models import (Event, Person, House, Item, ItemOption,
                               Discount, ItemDiscount, DanceStyle, EventType,
                               EventPerson, Date, EventHouse, PersonItem)
-from brambling.tokens import token_generators
+from brambling.utils import send_confirmation_email
 
 
 class EventForm(forms.ModelForm):
@@ -61,41 +54,14 @@ class EventForm(forms.ModelForm):
 
 
 class BasePersonForm(forms.ModelForm):
-    subject_template_name = "brambling/mail/email_confirm_subject.txt"
-    body_template_name = "brambling/mail/email_confirm_body.txt"
-    html_email_template_name = None
-    generator = token_generators['email_confirm']
-
     def __init__(self, request, *args, **kwargs):
         self.request = request
         super(BasePersonForm, self).__init__(*args, **kwargs)
 
     def email_confirmation(self):
         if 'email' in self.changed_data:
-            # Send confirmation link.
-            context = {
-                'person': self.instance,
-                'pkb64': urlsafe_base64_encode(force_bytes(self.instance.pk)),
-                'email': self.instance.email,
-                'site': get_current_site(self.request),
-                'token': self.generator.make_token(self.instance),
-                'protocol': 'https' if self.request.is_secure() else 'http',
-            }
-            from_email = settings.DEFAULT_FROM_EMAIL
-
-            subject = loader.render_to_string(self.subject_template_name,
-                                              context)
-            # Email subject *must not* contain newlines
-            subject = ''.join(subject.splitlines())
-            body = loader.render_to_string(self.body_template_name, context)
-
-            if self.html_email_template_name:
-                html_email = loader.render_to_string(self.html_email_template_name,
-                                                     context)
-            else:
-                html_email = None
-            send_mail(subject, body, from_email, [self.instance.email],
-                      html_message=html_email)
+            send_confirmation_email(self.instance, self.request,
+                                    secure=self.request.is_secure())
 
 
 class SignUpForm(BasePersonForm):

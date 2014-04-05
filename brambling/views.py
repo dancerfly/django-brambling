@@ -1,5 +1,5 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.formtools.wizard.views import NamedUrlSessionWizardView
 from django.core.urlresolvers import reverse
 from django.db.models import Q, Max, Min
 from django.utils.decorators import method_decorator
@@ -20,6 +20,7 @@ from brambling.models import (Event, Person, House, Item,
                               Discount, ItemDiscount, EventPerson,
                               EventHouse)
 from brambling.tokens import token_generators
+from brambling.utils import send_confirmation_email
 
 
 def home(request):
@@ -263,6 +264,14 @@ class PersonView(UpdateView):
 
     def get_success_url(self):
         return self.request.path
+
+
+def send_confirmation_email_view(request, *args, **kwargs):
+    if not request.user.is_authenticated():
+        raise Http404
+    send_confirmation_email(request.user, request, secure=request.is_secure())
+    messages.add_message(request, messages.SUCCESS, "Confirmation email sent.")
+    return HttpResponseRedirect('/')
 
 
 class EmailConfirmView(DetailView):
