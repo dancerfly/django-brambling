@@ -1,0 +1,48 @@
+{% load floppyforms %}
+
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Basic Information</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.address %}
+		<div class="row">
+			<div class="col-sm-6">
+				{% formrow form.city %}
+			</div>
+			<div class="col-sm-2">
+				{% formrow form.state_or_province %}
+			</div>
+			<div class="col-sm-4">
+				{% formrow form.country %}
+			</div>
+		</div>{# /.row #}
+		{% formrow form.spaces %}
+		{% formrow form.spaces_max %}
+	</div>
+</div>{# /.panel #}
+<div class="row">
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Environmental factors</h4>
+			</header>
+			<div class="panel-body">
+				{% formrow form.ef_present %}
+				{% formrow form.ef_avoid_strong %}
+				{% formrow form.ef_avoid_weak %}
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">People</h4>
+			</header>
+			<div class="panel-body">
+				{% formrow form.person_prefer %}
+				{% formrow form.person_avoid %}
+			</div>
+		</div>
+	</div>{# /.col-md-8 #}
+</div>

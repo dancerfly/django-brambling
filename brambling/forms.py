@@ -167,6 +167,9 @@ class HouseForm(forms.ModelForm):
     class Meta:
         model = House
         exclude = ()
+        widgets = {
+            'country': forms.widgets.Select
+        }
 
     def __init__(self, person, *args, **kwargs):
         self.person = person
