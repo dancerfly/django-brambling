@@ -26,6 +26,9 @@ class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         exclude = ('dates', 'housing_dates')
+        widgets = {
+            'country': forms.widgets.Select
+        }
 
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
