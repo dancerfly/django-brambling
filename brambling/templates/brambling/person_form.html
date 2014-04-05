@@ -2,19 +2,6 @@
 
 {% load floppyforms static %}
 
-{% block stylesheets %}
-	{{ block.super }}
-	<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/chosen/chosen.min.css" %}" />
-{% endblock %}
-
-{% block javascripts %}
-	{{ block.super }}
-	<script type="text/javascript" src="{% static "brambling/lib/chosen/chosen.jquery.min.js" %}"></script>
-	<script type="text/javascript">
-		$('.chosen-select').chosen({width: "100%"})
-	</script>
-{% endblock %}
-
 {% block content %}
 	<h2>Edit settings</h2>
 
