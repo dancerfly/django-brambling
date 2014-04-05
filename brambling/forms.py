@@ -29,8 +29,8 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
-        self.fields['start_date'].initial = self.instance.start_date
-        self.fields['end_date'].initial = self.instance.end_date
+        self.fields['start_date'].initial = getattr(self.instance, 'start_date', None)
+        self.fields['end_date'].initial = getattr(self.instance, 'end_date', None)
 
     def clean(self):
         cd = self.cleaned_data
