@@ -5,10 +5,10 @@
 {% block content %}
 	<h2>Edit settings</h2>
 
-	<form action="{{ request.path }}" method="post" class="form-horizontal">
+	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using "brambling/forms/person.html" %}
 		<button class="btn btn-primary" type="submit">Save changes</button>
-		<a href="{{ event.get_absolute_url }}" class="btn btn-text">Cancel</a>
+		<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
 	</form>
 {% endblock %}
