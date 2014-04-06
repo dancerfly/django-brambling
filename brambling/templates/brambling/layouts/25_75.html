@@ -3,6 +3,7 @@
 {% block content %}
 	{% block before %}{% endblock %}
 	<div class="row">
+		<div class="col-md-3">{% block side %}{% endblock %}</div>
 		<div class="col-md-9">
 			{% block messages %}
 				{% if messages %}
@@ -16,7 +17,6 @@
 
 			{% block main %}{% endblock %}
 		</div>
-		<div class="col-md-3">{% block side %}{% endblock %}</div>
 	</div>
 	{% block after %}{% endblock %}
 {% endblock %}
