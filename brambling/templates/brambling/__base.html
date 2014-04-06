@@ -38,9 +38,11 @@
 					{% block navbar-collapse %}
 						<ul class="nav navbar-nav navbar-right">
 							{% if request.user.is_authenticated %}
+								{% url 'brambling_dashboard' as brambling_dashboard_url %}
 								{% url 'brambling_event_create' as brambling_event_create_url %}
 								{% url 'brambling_home' as brambling_home_url %}
 								{% url 'brambling_user_profile' as brambling_user_profile_url %}
+								<li{% if request.path == brambling_dashboard_url %} class='active'{% endif %}><a href="{{ brambling_dashboard_url }}"><i class="glyphicon glyphicon-dashboard"></i> Dashboard</a></li>
 								<li{% if request.path == brambling_event_create_url %} class='active'{% endif %}><a href="{{ brambling_event_create_url }}"><i class="glyphicon glyphicon-calendar"></i> Create an event</a></li>
 								<li{% if request.path == brambling_home_url %} class='active'{% endif %}><a href="{{ brambling_home_url }}"><i class="glyphicon glyphicon-home"></i> Home settings</a></li>
 								<li{% if request.path == brambling_user_profile_url %} class='active'{% endif %}><a href="{{ brambling_user_profile_url }}"><i class="glyphicon glyphicon-user"></i> Profile settings</a></li>
