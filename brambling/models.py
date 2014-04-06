@@ -182,7 +182,8 @@ class Event(models.Model):
 
     collect_housing_data = models.BooleanField(default=True)
     # Time in minutes.
-    item_reservation_length = models.PositiveSmallIntegerField(default=15)
+    reservation_timeout = models.PositiveSmallIntegerField(default=15,
+                                                           help_text="Minutes before items bought are removed from cart.")
 
     def __unicode__(self):
         return smart_text(self.name)
