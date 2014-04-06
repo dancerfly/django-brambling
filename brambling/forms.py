@@ -18,7 +18,7 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        exclude = ('dates', 'housing_dates')
+        exclude = ('dates', 'housing_dates', 'owner')
         widgets = {
             'country': forms.widgets.Select
         }
