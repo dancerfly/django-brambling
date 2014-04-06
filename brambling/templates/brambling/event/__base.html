@@ -1,13 +1,14 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/layouts/75_25.html' %}
 
-{% block content %}
+{% block before %}
 	<h1>{{ event.name }}</h1>
-	<h2>{{ event.start_date }} &#8211; {{ event.end_date }}</h2>
-	<h2>{{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
+	<h2>{{ event.start_date }} &#8211; {{ event.end_date }} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
+{% endblock %}
 
+{% block side %}
 	{% url 'brambling_event_detail' slug=event.slug as event_detail_url %}
 	{% url 'brambling_event_passes' slug=event.slug as event_registration_url %}
-	<ul class='nav nav-pills'>
+	<ul class='nav nav-pills nav-stacked'>
 		<li{% if request.path == event_detail_url %} class='active'{% endif %}><a href="{{ event_detail_url }}">View event</a></li>
 		{% with event_registration_url_length=event_registration_url|length|floatformat %}
 			<li{% if request.path|slice:event_registration_url_length == event_registration_url %} class='active'{% endif %}><a href="{{ event_registration_url }}">Register for event</a></li>
@@ -25,4 +26,7 @@
 		{% endif %}
 	{% endif %}
 	</ul>
+{% endblock %}
+
+{% block main %}
 {% endblock %}

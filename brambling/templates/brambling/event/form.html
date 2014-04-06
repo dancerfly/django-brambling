@@ -2,12 +2,8 @@
 
 {% load floppyforms %}
 
-{% block content %}
-	{% if event.pk %}
-		{{ block.super }}
-	{% endif %}
-
-	<h2>{% if not event.pk %}Create New Event{% endif %}</h2>
+{% block main %}
+	{% if not event.pk %}<h2>Create New Event</h2>{% endif %}
 
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
