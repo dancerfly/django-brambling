@@ -6315,6 +6315,10 @@ button.close {
     display: none !important;
   }
 }
+body {
+  padding-bottom: 60px;
+}
+
 .glyphicon {
   font-size: 12px;
 }
