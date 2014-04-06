@@ -6,9 +6,9 @@ from django.utils.translation import ugettext_lazy as _
 import floppyforms as forms
 from floppyforms import inlineformset_factory
 
-from brambling.models import (Event, Person, House, Item, ItemOption,
+from brambling.models import (Event, Person, Home, Item, ItemOption,
                               Discount, ItemDiscount, DanceStyle, EventType,
-                              EventPerson, Date, EventHouse, PersonItem)
+                              EventPerson, Date, EventHousing, PersonItem)
 from brambling.utils import send_confirmation_email
 
 
@@ -119,8 +119,8 @@ class PersonForm(BasePersonForm):
         model = Person
         fields = ('email', 'name', 'nickname', 'phone', 'dance_styles',
                   'event_types', 'dietary_restrictions', 'ef_cause',
-                  'ef_avoid_strong', 'ef_avoid_weak', 'person_prefer',
-                  'person_avoid')
+                  'ef_avoid', 'person_prefer', 'person_avoid',
+                  'housing_prefer')
 
     def save(self, commit=True):
         person = super(PersonForm, self).save(commit)
@@ -129,9 +129,9 @@ class PersonForm(BasePersonForm):
         return person
 
 
-class HouseForm(forms.ModelForm):
+class HomeForm(forms.ModelForm):
     class Meta:
-        model = House
+        model = Home
         exclude = ()
         widgets = {
             'country': forms.widgets.Select
@@ -139,10 +139,10 @@ class HouseForm(forms.ModelForm):
 
     def __init__(self, person, *args, **kwargs):
         self.person = person
-        super(HouseForm, self).__init__(*args, **kwargs)
+        super(HomeForm, self).__init__(*args, **kwargs)
 
     def save(self, commit=True):
-        instance = super(HouseForm, self).save(commit)
+        instance = super(HomeForm, self).save(commit)
         instance.residents.add(self.person)
         return instance
 
@@ -223,7 +223,7 @@ class EventPersonForm(forms.ModelForm):
         }
 
 
-class EventHouseForm(forms.ModelForm):
+class EventHousingForm(forms.ModelForm):
     class Meta:
-        model = EventHouse
-        exclude = ('event', 'house')
+        model = EventHousing
+        exclude = ('event', 'home')

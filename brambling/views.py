@@ -12,13 +12,13 @@ from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
 from floppyforms.models import modelform_factory
 
-from brambling.forms import (EventForm, PersonForm, HouseForm, ItemForm,
+from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, ItemDiscountFormSet,
                              DiscountForm, SignUpForm, PersonItemForm,
-                             EventPersonForm, EventHouseForm)
-from brambling.models import (Event, Person, House, Item,
+                             EventPersonForm, EventHousingForm)
+from brambling.models import (Event, Person, Home, Item,
                               Discount, ItemDiscount, EventPerson,
-                              EventHouse)
+                              EventHousing)
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -120,23 +120,23 @@ class EventUpdateView(UpdateView):
         return obj
 
 
-class HouseView(UpdateView):
-    model = House
-    form_class = HouseForm
+class HomeView(UpdateView):
+    model = Home
+    form_class = HomeForm
 
     def get_object(self):
         if not self.request.user.is_authenticated():
             raise Http404
-        return (House.objects.filter(residents=self.request.user).first() or
-                House())
+        return (Home.objects.filter(residents=self.request.user).first() or
+                Home())
 
     def get_form_kwargs(self):
-        kwargs = super(HouseView, self).get_form_kwargs()
+        kwargs = super(HomeView, self).get_form_kwargs()
         kwargs['person'] = self.request.user
         return kwargs
 
     def get_success_url(self):
-        return reverse('brambling_house')
+        return reverse('brambling_home')
 
 
 def item_form(request, *args, **kwargs):

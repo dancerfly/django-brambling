@@ -39,7 +39,7 @@
 						<ul class="nav navbar-nav navbar-right">
 							{% if request.user.is_authenticated %}
 								<li><a href="{% url 'brambling_event_create' %}"><i class="glyphicon glyphicon-calendar"></i> Create an event</a></li>
-								<li><a href="{% url 'brambling_house' %}"><i class="glyphicon glyphicon-home"></i> House settings</a></li>
+								<li><a href="{% url 'brambling_home' %}"><i class="glyphicon glyphicon-home"></i> Home settings</a></li>
 								<li><a href="{% url 'brambling_user_profile' %}"><i class="glyphicon glyphicon-user"></i> Profile settings</a></li>
 								<li><a href="{% url 'logout' %}"><i class="glyphicon glyphicon-off"></i> Log out</a></li>
 							{% else %}

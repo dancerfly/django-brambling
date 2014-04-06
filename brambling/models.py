@@ -46,6 +46,20 @@ DEFAULT_DIETARY_RESTRICTIONS = (
 )
 
 
+DEFAULT_HOUSING_CATEGORIES = (
+    "Quiet",
+    "Noisy",
+    "All-dancer",
+    "Party",
+    "Substance-free",
+    "Early bird",
+    "Night owl",
+    "Co-op",
+    "Apartment",
+    "House",
+)
+
+
 class EventType(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
@@ -63,8 +77,29 @@ class DanceStyle(models.Model):
         return smart_text(self.name)
 
 
+class EnvironmentalFactor(models.Model):
+    name = models.CharField(max_length=30)
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+
+class DietaryRestriction(models.Model):
+    name = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+
+class HousingCategory(models.Model):
+    name = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+
 @receiver(signals.post_migrate)
-def create_default_styles_and_types(app_config, **kwargs):
+def create_defaults(app_config, **kwargs):
     if not DanceStyle.objects.exists() and not EventType.objects.exists():
         if kwargs.get('verbosity') >= 2:
             print("Creating default dance styles and event types")
@@ -74,6 +109,27 @@ def create_default_styles_and_types(app_config, **kwargs):
             for event_type in event_types:
                 style.common_event_types.add(
                     EventType.objects.get_or_create(name=event_type)[0])
+    if not DietaryRestriction.objects.exists():
+        if kwargs.get('verbosity') >= 2:
+            print("Creating default dietary restrictions")
+        DietaryRestriction.objects.bulk_create([
+            DietaryRestriction(name=name)
+            for name in DEFAULT_DIETARY_RESTRICTIONS
+        ])
+    if not EnvironmentalFactor.objects.exists():
+        if kwargs.get('verbosity') >= 2:
+            print("Creating default environmental factors")
+        EnvironmentalFactor.objects.bulk_create([
+            EnvironmentalFactor(name=name)
+            for name in DEFAULT_ENVIRONMENTAL_FACTORS
+        ])
+    if not HousingCategory.objects.exists():
+        if kwargs.get('verbosity') >= 2:
+            print("Creating default housing categories")
+        HousingCategory.objects.bulk_create([
+            HousingCategory(name=name)
+            for name in DEFAULT_HOUSING_CATEGORIES
+        ])
 
 
 class Date(models.Model):
@@ -247,42 +303,6 @@ class Payment(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
 
 
-class EnvironmentalFactor(models.Model):
-    name = models.CharField(max_length=30)
-
-    def __unicode__(self):
-        return smart_text(self.name)
-
-
-@receiver(signals.post_migrate)
-def create_default_factors(app_config, **kwargs):
-    if not EnvironmentalFactor.objects.exists():
-        if kwargs.get('verbosity') >= 2:
-            print("Creating default environmental factors")
-        EnvironmentalFactor.objects.bulk_create([
-            EnvironmentalFactor(name=name)
-            for name in DEFAULT_ENVIRONMENTAL_FACTORS
-        ])
-
-
-class DietaryRestriction(models.Model):
-    name = models.CharField(max_length=20)
-
-    def __unicode__(self):
-        return smart_text(self.name)
-
-
-@receiver(signals.post_migrate)
-def create_default_restrictions(app_config, **kwargs):
-    if not DietaryRestriction.objects.exists():
-        if kwargs.get('verbosity') >= 2:
-            print("Creating default dietary restrictions")
-        DietaryRestriction.objects.bulk_create([
-            DietaryRestriction(name=name)
-            for name in DEFAULT_DIETARY_RESTRICTIONS
-        ])
-
-
 class PersonManager(BaseUserManager):
     def _create_user(self, email, password, name, is_superuser,
                      **extra_fields):
@@ -314,8 +334,8 @@ class Person(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=100, verbose_name="Full name")
     nickname = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
-    house = models.ForeignKey('House', blank=True, null=True,
-                              related_name='residents')
+    home = models.ForeignKey('Home', blank=True, null=True,
+                             related_name='residents')
 
     created_timestamp = models.DateTimeField(default=timezone.now, editable=False)
 
@@ -340,33 +360,33 @@ class Person(AbstractBaseUser, PermissionsMixin):
                                       related_name='person_cause',
                                       blank=True,
                                       null=True,
-                                      verbose_name="I will cause/have")
+                                      verbose_name="People around me will be exposed to")
 
-    ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
-                                             related_name='person_avoid_strong',
-                                             blank=True,
-                                             null=True,
-                                             verbose_name="Never put me somewhere with")
-
-    ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
-                                           related_name='person_avoid_weak',
-                                           blank=True,
-                                           null=True,
-                                           verbose_name="I'd rather not be around")
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='person_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I can't/don't want to be around")
 
     person_prefer = models.ManyToManyField('self',
                                            related_name='preferred_by',
                                            blank=True,
                                            null=True,
-                                           verbose_name="Do your utmost to place me with",
+                                           verbose_name="I need to be placed with",
                                            symmetrical=False)
 
     person_avoid = models.ManyToManyField('self',
                                           related_name='avoided_by',
                                           blank=True,
                                           null=True,
-                                          verbose_name="Never place me with",
+                                          verbose_name="I do not want to be around",
                                           symmetrical=False)
+
+    housing_prefer = models.ManyToManyField(HousingCategory,
+                                            related_name='preferred_by',
+                                            blank=True,
+                                            null=True,
+                                            verbose_name="I prefer to stay somewhere that is (a/an)")
 
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     event_types = models.ManyToManyField(EventType, blank=True)
@@ -385,7 +405,7 @@ class Person(AbstractBaseUser, PermissionsMixin):
         return self.nickname or self.name
 
 
-class House(models.Model):
+class Home(models.Model):
     address = models.CharField(max_length=200)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
@@ -399,38 +419,37 @@ class House(models.Model):
                                                   verbose_name="Max spaces")
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
-                                        related_name='house_present',
+                                        related_name='home_present',
                                         blank=True,
                                         null=True,
-                                        verbose_name="The house has")
+                                        verbose_name="People in my/our home will be exposed to")
 
-    ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
-                                             related_name='house_avoid_strong',
-                                             blank=True,
-                                             null=True,
-                                             verbose_name="Not allowed in the house",
-                                             help_text="In addition to resident preferences")
-
-    ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
-                                           related_name='house_avoid_weak',
-                                           blank=True,
-                                           null=True,
-                                           verbose_name="Preferred not in the house",
-                                           help_text="In addition to resident preferences")
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='home_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I/We don't want in my/our home",
+                                      help_text="In addition to resident preferences")
 
     person_prefer = models.ManyToManyField(Person,
-                                           related_name='preferred_by_houses',
+                                           related_name='preferred_by_homes',
                                            blank=True,
                                            null=True,
-                                           verbose_name="Do your utmost to place here",
+                                           verbose_name="I/We would love to host",
                                            help_text="In addition to resident preferences")
 
     person_avoid = models.ManyToManyField(Person,
-                                          related_name='avoided_by_houses',
+                                          related_name='avoided_by_homes',
                                           blank=True,
                                           null=True,
-                                          verbose_name="Never place here",
+                                          verbose_name="I/We don't want to host",
                                           help_text="In addition to resident preferences")
+
+    housing_categories = models.ManyToManyField(HousingCategory,
+                                                related_name='homes',
+                                                blank=True,
+                                                null=True,
+                                                verbose_name="Our home is (a/an)")
 
 
 class EventPerson(models.Model):
@@ -462,40 +481,40 @@ class EventPerson(models.Model):
                                       related_name='eventperson_cause',
                                       blank=True,
                                       null=True,
-                                      verbose_name="I will cause/have")
+                                      verbose_name="People around me will be exposed to")
 
-    ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
-                                             related_name='eventperson_avoid_strong',
-                                             blank=True,
-                                             null=True,
-                                             verbose_name="Never put me somewhere with")
-
-    ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
-                                           related_name='eventperson_avoid_weak',
-                                           blank=True,
-                                           null=True,
-                                           verbose_name="I'd rather not be around")
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='eventperson_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I can't/don't want to be around")
 
     person_prefer = models.ManyToManyField('self',
                                            related_name='event_preferred_by',
                                            blank=True,
                                            null=True,
-                                           verbose_name="Do your utmost to place me with",
+                                           verbose_name="I need to be placed with",
                                            symmetrical=False)
 
     person_avoid = models.ManyToManyField('self',
                                           related_name='event_avoided_by',
                                           blank=True,
                                           null=True,
-                                          verbose_name="Never place me with",
+                                          verbose_name="I do not want to be around",
                                           symmetrical=False)
+
+    housing_prefer = models.ManyToManyField(HousingCategory,
+                                            related_name='event_preferred_by',
+                                            blank=True,
+                                            null=True,
+                                            verbose_name="I prefer to stay somewhere that is (a/an)")
 
     other = models.TextField(blank=True)
 
 
-class EventHouse(models.Model):
+class EventHousing(models.Model):
     event = models.ForeignKey(Event)
-    house = models.ForeignKey(House)
+    home = models.ForeignKey(Home)
 
     spaces = models.PositiveSmallIntegerField(default=0,
                                               validators=[MaxValueValidator(100)])
@@ -504,43 +523,42 @@ class EventHouse(models.Model):
     nights = models.ManyToManyField(Date, blank=True, null=True)
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
-                                        related_name='event_house_present',
+                                        related_name='eventhousing_present',
                                         blank=True,
                                         null=True,
-                                        verbose_name="The house has")
+                                        verbose_name="People in the home will be exposed to")
 
-    ef_avoid_strong = models.ManyToManyField(EnvironmentalFactor,
-                                             related_name='event_house_avoid_strong',
-                                             blank=True,
-                                             null=True,
-                                             verbose_name="Not allowed in the house",
-                                             help_text="In addition to resident preferences")
-
-    ef_avoid_weak = models.ManyToManyField(EnvironmentalFactor,
-                                           related_name='event_house_avoid_weak',
-                                           blank=True,
-                                           null=True,
-                                           verbose_name="Preferred not in the house",
-                                           help_text="In addition to resident preferences")
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='eventhousing_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I/We don't want in my/our home",
+                                      help_text="In addition to resident preferences")
 
     person_prefer = models.ManyToManyField(Person,
-                                           related_name='event_preferred_by_houses',
+                                           related_name='preferred_by_eventhousing',
                                            blank=True,
                                            null=True,
-                                           verbose_name="Do your utmost to place here",
+                                           verbose_name="I/We would love to host",
                                            help_text="In addition to resident preferences")
 
     person_avoid = models.ManyToManyField(Person,
-                                          related_name='event_avoided_by_houses',
+                                          related_name='avoided_by_eventhousing',
                                           blank=True,
                                           null=True,
-                                          verbose_name="Never place here",
+                                          verbose_name="I/We don't want to host",
                                           help_text="In addition to resident preferences")
+
+    housing_categories = models.ManyToManyField(HousingCategory,
+                                                related_name='eventhousing',
+                                                blank=True,
+                                                null=True,
+                                                verbose_name="Our home is (a/an)")
 
 
 class HousingSlot(models.Model):
     event = models.ForeignKey(Event)
-    house = models.ForeignKey(House)
+    home = models.ForeignKey(Home)
     person = models.ManyToManyField(Person,
                                     blank=True)
     nights = models.ManyToManyField(Date, blank=True, null=True)

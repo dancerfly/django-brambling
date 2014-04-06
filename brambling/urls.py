@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url, include
 
 from brambling.models import Item
 from brambling.views import (PurchaseView, EventCreateView,
-                             EventUpdateView, PersonView, HouseView,
+                             EventUpdateView, PersonView, HomeView,
                              ItemListView, item_form, DiscountListView,
                              discount_form, SignUpView, EmailConfirmView,
                              EventDetailView, send_confirmation_email_view)
@@ -30,9 +30,9 @@ urlpatterns = patterns('',
     url(r'^profile/$',
         PersonView.as_view(),
         name="brambling_user_profile"),
-    url(r'^house/$',
-        HouseView.as_view(),
-        name="brambling_house"),
+    url(r'^home/$',
+        HomeView.as_view(),
+        name="brambling_home"),
 
     url(r'^(?P<slug>[\w-]+)/$',
         EventDetailView.as_view(),
