@@ -1,0 +1,19 @@
+{% load floppyforms %}
+<form action="{{ request.path }}" method="post">
+	{% csrf_token %}
+	
+	{% form form using "brambling/forms/event.html" %}
+
+	<button class="btn btn-primary" type="submit">
+		{% if event.pk %}
+			Save Changes
+		{% else %}
+			Create Event
+		{% endif %}
+	</button>
+
+	{% if event.pk %}
+		<a class="btn btn-link" href="{{ event.get_absolute_url }}">Cancel</a>
+	{% endif %}
+
+</form>

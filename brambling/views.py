@@ -75,7 +75,7 @@ class EventListView(ListView):
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/event/form.html'
+    template_name = 'brambling/event/create.html'
     context_object_name = 'event'
     form_class = EventForm
 
@@ -108,7 +108,7 @@ def _get_event_or_404(slug):
 
 class EventUpdateView(UpdateView):
     model = Event
-    template_name = 'brambling/event/form.html'
+    template_name = 'brambling/event/update.html'
     context_object_name = 'event'
     form_class = EventForm
 
