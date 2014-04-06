@@ -6315,3 +6315,10 @@ button.close {
     display: none !important;
   }
 }
+.glyphicon {
+  font-size: 12px;
+}
+
+.glyphicon-2x {
+  font-size: 24px;
+}
