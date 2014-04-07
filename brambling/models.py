@@ -261,7 +261,7 @@ class PersonItem(models.Model):
                               related_name="items_owned")
 
 
-class ItemDiscount(models.Model):
+class Discount(models.Model):
     PERCENT = 'percent'
     FLAT = 'flat'
 
@@ -269,22 +269,16 @@ class ItemDiscount(models.Model):
         (PERCENT, _('Percent')),
         (FLAT, _('Flat')),
     )
-    item = models.ForeignKey(Item)
-    discount = models.ForeignKey('Discount')
+    name = models.CharField(max_length=40)
+    code = models.CharField(max_length=20)
+    item_option = models.ForeignKey(ItemOption)
+    available_start = models.DateTimeField(blank=True, null=True)
+    available_end = models.DateTimeField(blank=True, null=True)
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
                                      default=PERCENT)
     amount = models.DecimalField(max_digits=5, decimal_places=2,
-                                 blank=True, null=True,
                                  validators=[MinValueValidator(0)])
-
-
-class Discount(models.Model):
-    name = models.CharField(max_length=40)
-    code = models.CharField(max_length=20)
-    items = models.ManyToManyField(Item, through=ItemDiscount)
-    available_start = models.DateTimeField()
-    available_end = models.DateTimeField()
     event = models.ForeignKey(Event)
 
     class Meta:

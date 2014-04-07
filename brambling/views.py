@@ -13,12 +13,10 @@ from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
 from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
-                             ItemOptionFormSet, ItemDiscountFormSet,
-                             DiscountForm, SignUpForm, PersonItemForm,
-                             EventPersonForm, EventHousingForm)
+                             ItemOptionFormSet, DiscountForm, SignUpForm,
+                             PersonItemForm, EventPersonForm, EventHousingForm)
 from brambling.models import (Event, Person, Home, Item,
-                              Discount, ItemDiscount, EventPerson,
-                              EventHousing)
+                              Discount, EventPerson, EventHousing)
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -195,24 +193,20 @@ def discount_form(request, *args, **kwargs):
     if 'pk' in kwargs:
         discount = get_object_or_404(Discount, pk=kwargs['pk'])
     else:
-        discount = Discount()
+        discount = None
     if request.method == 'POST':
         form = DiscountForm(event, request.POST, instance=discount)
-        formset = ItemDiscountFormSet(request.POST, instance=discount)
-        if form.is_valid() and formset.is_valid():
+        if form.is_valid():
             form.save()
-            formset.save()
             url = reverse('brambling_discount_list',
                           kwargs={'event_slug': event.slug})
             return HttpResponseRedirect(url)
     else:
         form = DiscountForm(event, instance=discount)
-        formset = ItemDiscountFormSet(instance=discount)
     context = {
         'event': event,
-        'discount': discount,
+        'discount': form.instance,
         'discount_form': form,
-        'itemdiscount_formset': formset,
     }
     return render_to_response('brambling/event/discount_form.html',
                               context,

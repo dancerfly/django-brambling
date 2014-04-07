@@ -9,12 +9,7 @@
 	<form action="{{ request.path }}" method="post" novalidate>
 		{% csrf_token %}
 		{% form discount_form %}
-		{{ itemdiscount_formset.management_form }}
-		{% for form in itemdiscount_formset.forms %}
-			<h2>Item {{ forloop.counter }}</h2>
-			{% form form %}
-		{% endfor %}
-		<button type="submit">{% if discount.pk %}Save changes{% else %}Add discount{% endif %}</button>
+		<button class='btn btn-default' type="submit">{% if discount.pk %}Save changes{% else %}Add discount{% endif %}</button>
 		{% if discount.pk %}<a href="../">Cancel</a>{% endif %}
 	</form>
 {% endblock %}

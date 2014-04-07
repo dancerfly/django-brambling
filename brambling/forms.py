@@ -7,7 +7,7 @@ import floppyforms as forms
 from floppyforms import inlineformset_factory
 
 from brambling.models import (Event, Person, Home, Item, ItemOption,
-                              Discount, ItemDiscount, DanceStyle, EventType,
+                              Discount, DanceStyle, EventType,
                               EventPerson, Date, EventHousing, PersonItem)
 from brambling.utils import send_confirmation_email
 
@@ -165,7 +165,7 @@ ItemOptionFormSet = inlineformset_factory(Item, ItemOption)
 
 
 class DiscountForm(forms.ModelForm):
-    autogenerate = forms.BooleanField()
+    code = None
 
     class Meta:
         model = Discount
@@ -174,25 +174,26 @@ class DiscountForm(forms.ModelForm):
     def __init__(self, event, *args, **kwargs):
         self.event = event
         super(DiscountForm, self).__init__(*args, **kwargs)
-        if 'autogenerate' not in self.initial:
-            self.initial['autogenerate'] = not self.instance.code
-        self.fields['code'].required = False
+        self.fields['item_option'].queryset = ItemOption.objects.filter(item__event=event)
+        if 'code' not in self.initial and not self.instance.code:
+            self.code = get_random_string(6)
+            self.initial['code'] = self.code
+            self.initial['name'] = self.code
 
     def _post_clean(self):
         super(DiscountForm, self)._post_clean()
         self.instance.event = self.event
+        try:
+            self.instance.validate_unique()
+        except forms.ValidationError as e:
+            self._update_errors(e)
 
     def save(self, commit=True):
-        if (self.cleaned_data.get('autogenerate') or
-                not self.cleaned_data.get('code')):
-            code = get_random_string(6)
-            while Discount.objects.filter(code=code).exists():
-                code = get_random_string(6)
-        self.instance.code = code
+        if self.code is not None and self.cleaned_data['code'] == self.code:
+            while Discount.objects.filter(code=self.code).exists():
+                self.code = get_random_string(6)
+            self.instance.code = self.code
         return super(DiscountForm, self).save(commit)
-
-
-ItemDiscountFormSet = inlineformset_factory(Discount, ItemDiscount)
 
 
 class PersonItemForm(forms.ModelForm):
