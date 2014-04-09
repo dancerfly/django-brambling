@@ -1,17 +1,70 @@
 # encoding: utf8
 from django.db import models, migrations
+import django_countries.fields
+import django.utils.timezone
 from django.conf import settings
 import django.core.validators
-import django_countries.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0031_auto_20140406_1736'),
+        ('auth', '__first__'),
+        ('brambling', '0001_initial'),
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='ItemOption',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('item', models.ForeignKey(to='brambling.Item', to_field=u'id')),
+                ('name', models.CharField(max_length=30)),
+                ('price', models.DecimalField(max_digits=5, decimal_places=2)),
+                ('total_number', models.PositiveSmallIntegerField()),
+                ('available_start', models.DateTimeField()),
+                ('available_end', models.DateTimeField()),
+                ('order', models.PositiveSmallIntegerField()),
+            ],
+            options={
+                u'ordering': ('order',),
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='EventHousing',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('event', models.ForeignKey(to='brambling.Event', to_field=u'id')),
+                ('spaces', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MaxValueValidator(100)])),
+                ('spaces_max', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MaxValueValidator(100)])),
+                ('nights', models.ManyToManyField(to='brambling.Date', null=True, blank=True)),
+                ('ef_present', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name='People in the home will be exposed to', blank=True)),
+                ('ef_avoid', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name="I/We don't want in my/our home", blank=True)),
+                ('housing_categories', models.ManyToManyField(to='brambling.HousingCategory', null=True, verbose_name='Our home is (a/an)', blank=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='EventPerson',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('event', models.ForeignKey(to='brambling.Event', to_field=u'id')),
+                ('car_spaces', models.SmallIntegerField(default=0, validators=[django.core.validators.MaxValueValidator(50), django.core.validators.MinValueValidator(-1)])),
+                ('bedtime', models.CharField(max_length=5, choices=[('late', u'Staying up late'), ('early', u'Going to bed early')])),
+                ('wakeup', models.CharField(max_length=5, choices=[('late', u"I'll be up when I'm up"), ('early', u'There first thing.')])),
+                ('other', models.TextField(blank=True)),
+                ('nights', models.ManyToManyField(to='brambling.Date', null=True, blank=True)),
+                ('ef_cause', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name='People around me will be exposed to', blank=True)),
+                ('ef_avoid', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name="I can't/don't want to be around", blank=True)),
+                ('housing_prefer', models.ManyToManyField(to='brambling.HousingCategory', null=True, verbose_name='I prefer to stay somewhere that is (a/an)', blank=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
         migrations.CreateModel(
             name='Home',
             fields=[
@@ -24,9 +77,72 @@ class Migration(migrations.Migration):
                 ('spaces_max', models.PositiveSmallIntegerField(default=0, verbose_name='Max spaces', validators=[django.core.validators.MaxValueValidator(100)])),
                 ('ef_present', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name='People in my/our home will be exposed to', blank=True)),
                 ('ef_avoid', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name="I/We don't want in my/our home", blank=True)),
-                ('person_prefer', models.ManyToManyField(to=settings.AUTH_USER_MODEL, null=True, verbose_name='I/We would love to host', blank=True)),
-                ('person_avoid', models.ManyToManyField(to=settings.AUTH_USER_MODEL, null=True, verbose_name="I/We don't want to host", blank=True)),
                 ('housing_categories', models.ManyToManyField(to='brambling.HousingCategory', null=True, verbose_name='Our home is (a/an)', blank=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='HousingSlot',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('event', models.ForeignKey(to='brambling.Event', to_field=u'id')),
+                ('home', models.ForeignKey(to='brambling.Home', to_field=u'id')),
+                ('nights', models.ManyToManyField(to='brambling.Date', null=True, blank=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Payment',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('event', models.ForeignKey(to='brambling.Event', to_field=u'id')),
+                ('amount', models.DecimalField(max_digits=5, decimal_places=2)),
+                ('timestamp', models.DateTimeField(default=django.utils.timezone.now)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Person',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('password', models.CharField(max_length=128, verbose_name=u'password')),
+                ('last_login', models.DateTimeField(default=django.utils.timezone.now, verbose_name=u'last login')),
+                ('is_superuser', models.BooleanField(default=False, help_text=u'Designates that this user has all permissions without explicitly assigning them.', verbose_name=u'superuser status')),
+                ('email', models.EmailField(unique=True, max_length=254)),
+                ('confirmed_email', models.EmailField(max_length=254)),
+                ('name', models.CharField(max_length=100, verbose_name='Full name')),
+                ('nickname', models.CharField(max_length=50, blank=True)),
+                ('phone', models.CharField(max_length=50, blank=True)),
+                ('home', models.ForeignKey(to_field=u'id', blank=True, to='brambling.Home', null=True)),
+                ('created_timestamp', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                ('groups', models.ManyToManyField(to='auth.Group', verbose_name=u'groups', blank=True)),
+                ('user_permissions', models.ManyToManyField(to='auth.Permission', verbose_name=u'user permissions', blank=True)),
+                ('dietary_restrictions', models.ManyToManyField(to='brambling.DietaryRestriction', null=True, blank=True)),
+                ('ef_cause', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name='People around me will be exposed to', blank=True)),
+                ('ef_avoid', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name="I can't/don't want to be around", blank=True)),
+                ('housing_prefer', models.ManyToManyField(to='brambling.HousingCategory', null=True, verbose_name='I prefer to stay somewhere that is (a/an)', blank=True)),
+                ('dance_styles', models.ManyToManyField(to='brambling.DanceStyle', blank=True)),
+                ('event_types', models.ManyToManyField(to='brambling.EventType', blank=True)),
+            ],
+            options={
+                u'verbose_name': u'person',
+                u'verbose_name_plural': u'people',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='PersonDiscount',
+            fields=[
+                (u'id', models.AutoField(verbose_name=u'ID', serialize=False, auto_created=True, primary_key=True)),
+                ('person', models.ForeignKey(to=settings.AUTH_USER_MODEL, to_field=u'id')),
+                ('discount', models.ForeignKey(to='brambling.Discount', to_field=u'id')),
+                ('timestamp', models.DateTimeField(default=django.utils.timezone.now)),
             ],
             options={
             },

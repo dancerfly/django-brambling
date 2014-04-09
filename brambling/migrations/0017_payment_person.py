@@ -6,14 +6,13 @@ from django.conf import settings
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0006_discount_event'),
-        #migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('brambling', '0016_housingslot_person'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='event',
-            name='owner',
+            model_name='payment',
+            name='person',
             field=models.ForeignKey(to=settings.AUTH_USER_MODEL, to_field=u'id'),
             preserve_default=True,
         ),

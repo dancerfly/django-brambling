@@ -5,14 +5,14 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0012_eventperson_person'),
+        ('brambling', '0011_eventperson_person'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='eventperson',
             name='person_prefer',
-            field=models.ManyToManyField(to='brambling.EventPerson', null=True, verbose_name='Do your utmost to place me with', blank=True),
+            field=models.ManyToManyField(to='brambling.EventPerson', null=True, verbose_name='I need to be placed with', blank=True),
             preserve_default=True,
         ),
     ]

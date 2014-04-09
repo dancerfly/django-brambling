@@ -6,8 +6,7 @@ from django.conf import settings
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0016_house_person_prefer'),
-        #migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('brambling', '0015_home_person_prefer'),
     ]
 
     operations = [

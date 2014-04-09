@@ -6,15 +6,14 @@ from django.conf import settings
 class Migration(migrations.Migration):
 
     dependencies = [
-        #migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('brambling', '0015_house_person_avoid'),
+        ('brambling', '0008_eventhousing_home'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='house',
+            model_name='eventhousing',
             name='person_prefer',
-            field=models.ManyToManyField(to=settings.AUTH_USER_MODEL, null=True, verbose_name='Do your utmost to place here', blank=True),
+            field=models.ManyToManyField(to=settings.AUTH_USER_MODEL, null=True, verbose_name='I/We would love to host', blank=True),
             preserve_default=True,
         ),
     ]
