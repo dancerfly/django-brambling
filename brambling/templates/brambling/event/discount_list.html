@@ -3,10 +3,25 @@
 {% block main %}
 	<p><a class="btn btn-primary" href="{% url 'brambling_discount_create' event_slug=event.slug %}">Create discount</a></p>
 	{% if discounts %}
-		<ul>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Code</th>
+					<th>Item</th>
+					<th>Amount</th>
+				</tr>
+			</thead>
+			<tbody>
 			{% for discount in discounts %}
-				<li><a href="{% url 'brambling_discount_update' event_slug=event.slug pk=discount.pk %}">{{ discount.name }} – {{ discount.code }}</a></li>
+				<tr>
+					<td><a href="{% url 'brambling_discount_update' event_slug=event.slug pk=discount.pk %}">{{ discount.name }}</a></td>
+					<td>{{ discount.code }}</td>
+					<td>{{ discount.item_option }}</td>
+					<td>{{ discount.amount }}{% if discount.discount_type == discount.PERCENT %}%{% else %} {{ event.currency }}{% endif %}</td>
+				</tr>
 			{% endfor %}
-		</ul>
+			</tbody>
+		</table>
 	{% endif %}
 {% endblock %}
