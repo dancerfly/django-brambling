@@ -8,11 +8,39 @@
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	<form action="{{ request.path }}" method="post" novalidate>
 		{% csrf_token %}
-		{% form item_form %}
+		{% form item_form using %}
+			<div class="row">
+				<div class="col-md-6">{% formrow form.name %}</div>
+				<div class="col-md-6">{% formrow form.category %}</div>
+			</div>
+
+			{% formrow form.description %}
+		{% endform %}
 		{{ itemoption_formset.management_form }}
+
 		{% for form in itemoption_formset.forms %}
-			<h2>Option {{ forloop.counter }}</h2>
-			{% form form %}
+			<div class='panel panel-default'>
+				<header class='panel-heading'>
+					<div class='panel-title'>Option {{ forloop.counter }}</div>
+				</header>
+				<div class='panel-body'>
+					{% form form using %}
+						<div class='row'>
+							<div class='col-md-9'>{% formrow form.name %}</div>
+							<div class='col-md-3'>{% formrow form.DELETE %}</div>
+						</div>
+						<div class='row'>
+							<div class='col-md-4'>{% formrow form.price %}</div>
+							<div class='col-md-4'>{% formrow form.total_number %}</div>
+							<div class='col-md-4'>{% formrow form.order %}</div>
+						</div>
+						<div class='row'>
+							<div class='col-md-6'>{% formrow form.available_start %}</div>
+							<div class='col-md-6'>{% formrow form.available_end %}</div>
+						</div>
+					{% endform %}
+				</div>
+			</div>
 		{% endfor %}
 		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
 		{% if item.pk %}<a href="../">Cancel</a>{% endif %}

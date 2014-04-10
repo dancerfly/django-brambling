@@ -1,12 +1,27 @@
 {% extends 'brambling/event/__base.html' %}
 
 {% block main %}
-	<p><a href="{% url 'brambling_item_create' event_slug=event.slug %}">Create item</a></p>
+	<p><a class="btn btn-primary" href="{% url 'brambling_item_create' event_slug=event.slug %}">Create item</a></p>
 	{% if items %}
-		<ul>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Category</th>
+					<th>Created</th>
+					<th>Number of options</th>
+				</tr>
+			</thead>
+			<tbody>
 			{% for item in items %}
-				<li><a href="{% url 'brambling_item_update' event_slug=event.slug pk=item.pk %}">{{ item.name }}</a></li>
+				<tr>
+					<td><a href="{% url 'brambling_item_update' event_slug=event.slug pk=item.pk %}">{{ item.name }}</a></td>
+					<td>{{ item.get_category_display }}</td>
+					<td>{{ item.created_timestamp }}</td>
+					<td>{{ item.option_count }}</td>
+				</tr>
 			{% endfor %}
-		</ul>
+			</tbody>
+		</table>
 	{% endif %}
 {% endblock %}

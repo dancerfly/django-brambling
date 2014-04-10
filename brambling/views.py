@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.db.models import Q, Max, Min
+from django.db.models import Q, Max, Min, Count
 from django.utils.decorators import method_decorator
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
@@ -178,7 +178,8 @@ class ItemListView(ListView):
         if not self.event.can_edit(self.request.user):
             raise Http404
         qs = super(ItemListView, self).get_queryset()
-        return qs.filter(event=self.event)
+        return qs.filter(event=self.event
+                         ).annotate(option_count=Count('options'))
 
     def get_context_data(self, **kwargs):
         context = super(ItemListView, self).get_context_data(**kwargs)
