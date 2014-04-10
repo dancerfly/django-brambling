@@ -171,7 +171,7 @@ ItemOptionFormSet = inlineformset_factory(Item, ItemOption)
 
 
 class DiscountForm(forms.ModelForm):
-    code = None
+    generated_code = None
 
     class Meta:
         model = Discount
@@ -181,10 +181,12 @@ class DiscountForm(forms.ModelForm):
         self.event = event
         super(DiscountForm, self).__init__(*args, **kwargs)
         self.fields['item_option'].queryset = ItemOption.objects.filter(item__event=event)
-        if 'code' not in self.initial and not self.instance.code:
-            self.code = get_random_string(6)
-            self.initial['code'] = self.code
-            self.initial['name'] = self.code
+        if not self.instance.code:
+            self.generated_code = get_random_string(6)
+            while Discount.objects.filter(event=self.event,
+                                          code=self.generated_code).exists():
+                self.generated_code = get_random_string(6)
+            self.fields['code'].initial = self.generated_code
 
     def _post_clean(self):
         super(DiscountForm, self)._post_clean()
@@ -193,13 +195,6 @@ class DiscountForm(forms.ModelForm):
             self.instance.validate_unique()
         except forms.ValidationError as e:
             self._update_errors(e)
-
-    def save(self, commit=True):
-        if self.code is not None and self.cleaned_data['code'] == self.code:
-            while Discount.objects.filter(code=self.code).exists():
-                self.code = get_random_string(6)
-            self.instance.code = self.code
-        return super(DiscountForm, self).save(commit)
 
 
 class PersonItemForm(forms.ModelForm):

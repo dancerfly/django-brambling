@@ -8,7 +8,7 @@
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	<form action="{{ request.path }}" method="post" novalidate>
 		{% csrf_token %}
-		{% form discount_form %}
+		{% form discount_form using "brambling/forms/discount.html" %}
 		<button class='btn btn-primary' type="submit">{% if discount.pk %}Save changes{% else %}Add discount{% endif %}</button>
 		{% if discount.pk %}<a href="../">Cancel</a>{% endif %}
 	</form>
