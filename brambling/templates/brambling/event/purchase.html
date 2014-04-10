@@ -5,28 +5,49 @@
 {% block main %}
 	<h2>Buy things!</h2>
 
-	<form action="{{ request.path }}" method="post">
-	{% csrf_token %}
-
-		{% for item, forms in items %}
-			<h3>{{ item.name }}</h3>
-
-			{% for form in forms %}
-				<h4>{{ form.item_option.name }}</h4>
-				{% with personitems=form.item_option.personitem_set.all %}
-				{% if personitems %}
-					<h5>You already bought:</h5>
-					<ul>
-					{% for personitem in personitems %}
-						<li>{{ personitem.quantity }} at {{ personitem.added }} ({{ personitem.status }}) for {% if personitem.owner_id == personitem.buyer_id %}yourself{% else %}{{ personitem.owner.name }}{% endif %}</li>
-					{% endfor %}
-					</ul>
-				{% endif %}
-				{% endwith %}
-				{% form form %}
+	<div class="row">
+		<div class="col-md-8">
+			{% for item, forms in items %}
+				<div class='panel panel-default'>
+					<header class='panel-heading'>
+						<div class='panel-title'>{{ item.name }}</div>
+					</header>
+					<div class='panel-body'>
+						<ul class='list-inline'>
+							{% for form in forms %}
+								<li>
+									<form action="{{ request.path }}" method="post">
+										{% csrf_token %}
+										<button type="submit" class="btn btn-lg btn-primary">{{ form.item_option.name }}</button>
+										{% for field in form %}{{ field.as_hidden }}{% endfor %}
+									</form>
+								</li>
+							{% endfor %}
+						</ul>
+					</div>
+				</div>
 			{% endfor %}
-		{% endfor %}
-
-		<button class='btn btn-primary' type="submit">Buy the things!</button>
-	</form>
+		</div>
+		{% if cart %}
+			<div class="col-md-4">
+				<div class='panel panel-default'>
+					<header class='panel-heading'>
+						<div class='panel-title'>Cart</div>
+					</header>
+					{% regroup cart by item as cart_list %}
+					<ul class='list-group'>
+						{% for options in cart_list %}
+							<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
+							{% for option in options.list %}
+								<li class='list-group-item'>
+									<span class="badge">{{ option.quantity }}</span>
+									{{ option.name }}
+								</li>
+							{% endfor %}
+						{% endfor %}
+					</ul>
+				</div>
+			</div>
+		{% endif %}
+	</div>
 {% endblock %}

@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -15,8 +17,8 @@ from floppyforms.models import modelform_factory
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, DiscountForm, SignUpForm,
                              PersonItemForm, EventPersonForm, EventHousingForm)
-from brambling.models import (Event, Person, Home, Item,
-                              Discount, EventPerson, EventHousing)
+from brambling.models import (Event, Person, Home, Item, ItemOption,
+                              Discount, EventPerson, EventHousing, PersonItem)
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -326,7 +328,7 @@ class PurchaseView(TemplateView):
             options__available_start__lte=now,
             options__available_end__gte=now,
             category__in=self.categories,
-        ).select_related('options', 'options__personitems')
+        ).select_related('options').distinct()
 
     def get_form_kwargs(self, option):
         kwargs = {
@@ -346,7 +348,8 @@ class PurchaseView(TemplateView):
 
         context.update({
             'event': self.event,
-            'items': items
+            'items': items,
+            'cart': self.request.user.get_cart(self.event),
         })
         return context
 

@@ -199,20 +199,30 @@ class DiscountForm(forms.ModelForm):
 
 class PersonItemForm(forms.ModelForm):
     """Lets a person choose item options to buy."""
+    option_id = forms.IntegerField()
+
     class Meta:
         model = PersonItem
-        fields = ('quantity', 'owner',)
+        fields = ()
 
     def __init__(self, buyer, item_option, *args, **kwargs):
         super(PersonItemForm, self).__init__(*args, **kwargs)
-        self.fields['owner'].initial = buyer
         self.buyer = buyer
         self.item_option = item_option
+        self.fields['option_id'].initial = item_option.id
+
+    def clean(self):
+        cleaned_data = super(PersonItemForm, self).clean()
+        if self.item_option.id != cleaned_data.get('option_id'):
+            raise forms.ValidationError("Be sure not to fiddle with the HTML code.")
+        return cleaned_data
 
     def _post_clean(self):
         super(PersonItemForm, self)._post_clean()
         self.instance.buyer = self.buyer
         self.instance.item_option = self.item_option
+        self.instance.owner = self.buyer
+        self.instance.status = PersonItem.RESERVED
 
 
 class EventPersonForm(forms.ModelForm):
