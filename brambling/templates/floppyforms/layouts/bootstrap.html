@@ -1,9 +1,5 @@
 {% load floppyforms %}
 
-{% block formconfig %}
-	{% formconfig row using "floppyforms/rows/bootstrap.html" %}
-{% endblock %}
-
 {% block forms %}
 	{% for form in forms %}
 		{% block errors %}
