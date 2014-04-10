@@ -14,7 +14,7 @@
 			<h2>Option {{ forloop.counter }}</h2>
 			{% form form %}
 		{% endfor %}
-		<button type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
+		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
 		{% if item.pk %}<a href="../">Cancel</a>{% endif %}
 	</form>
 {% endblock %}

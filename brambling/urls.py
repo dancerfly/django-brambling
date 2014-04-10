@@ -1,5 +1,6 @@
 from django.conf.urls import patterns, url, include
 
+from brambling.forms import FloppyAuthenticationForm
 from brambling.models import Item
 from brambling.views import (PurchaseView, EventCreateView,
                              EventUpdateView, PersonView, HomeView,
@@ -16,6 +17,10 @@ urlpatterns = patterns('',
         EventCreateView.as_view(),
         name="brambling_event_create"),
 
+    url(r'^login/$',
+        'django.contrib.auth.views.login',
+        {'authentication_form': FloppyAuthenticationForm},
+        name='login'),
     url(r'^', include('django.contrib.auth.urls')),
     url(r'^signup/$',
         SignUpView.as_view(),

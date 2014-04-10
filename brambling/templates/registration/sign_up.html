@@ -8,6 +8,6 @@
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form %}
-		<button type="submit">Create your account!</button>
+		<button class='btn btn-primary' type="submit">Create your account!</button>
 	</form>
 {% endblock %}

@@ -1,5 +1,6 @@
 import datetime
 from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import AuthenticationForm
 from django.db import models
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
@@ -51,6 +52,11 @@ class EventForm(forms.ModelForm):
             date_set.remove(cd['start_date'] - datetime.timedelta(1))
             instance.dates = Date.objects.filter(date__in=date_set)
         return instance
+
+
+class FloppyAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(max_length=254)
+    password = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
 
 
 class BasePersonForm(forms.ModelForm):

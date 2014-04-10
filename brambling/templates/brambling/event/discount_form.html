@@ -9,7 +9,7 @@
 	<form action="{{ request.path }}" method="post" novalidate>
 		{% csrf_token %}
 		{% form discount_form %}
-		<button class='btn btn-default' type="submit">{% if discount.pk %}Save changes{% else %}Add discount{% endif %}</button>
+		<button class='btn btn-primary' type="submit">{% if discount.pk %}Save changes{% else %}Add discount{% endif %}</button>
 		{% if discount.pk %}<a href="../">Cancel</a>{% endif %}
 	</form>
 {% endblock %}
