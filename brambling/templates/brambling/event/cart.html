@@ -1,0 +1,31 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms %}
+
+{% block main %}
+	<h2>Your cart</h2>
+
+	{% regroup cart by item as cart_list %}
+
+	{% for options in cart_list %}
+		<h3>{{ options.grouper }}</h3>
+
+		{% for option in options.list %}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" href="#itemoption-{{ option.pk }}">
+							{{ option.name }} ({{ option.quantity }})
+						</a>
+					</h4>
+				</div>
+				<div id="itemoption-{{ option.pk }}" class="panel-collapse collapse">
+					<div class="panel-body">
+						Form goes here! Add a check (and mark success) for completed cart items.
+						Have a separate view for listing/editing things that have been paid for?
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	{% endfor %}
+{% endblock %}

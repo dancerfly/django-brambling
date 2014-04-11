@@ -1,5 +1,3 @@
-import datetime
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -16,9 +14,8 @@ from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, DiscountForm, SignUpForm,
-                             PersonItemForm, EventPersonForm, EventHousingForm)
-from brambling.models import (Event, Person, Home, Item, ItemOption,
-                              Discount, EventPerson, EventHousing, PersonItem)
+                             PersonItemForm)
+from brambling.models import Event, Person, Home, Item, Discount
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -119,6 +116,11 @@ class EventUpdateView(UpdateView):
             raise Http404
         return obj
 
+    def get_context_data(self, **kwargs):
+        context = super(EventUpdateView, self).get_context_data(**kwargs)
+        context['cart_total'] = self.request.user.get_cart_total(self.object)
+        return context
+
 
 class HomeView(UpdateView):
     model = Home
@@ -164,6 +166,7 @@ def item_form(request, *args, **kwargs):
         'item': item,
         'item_form': form,
         'itemoption_formset': formset,
+        'cart_total': request.user.get_cart_total(event),
     }
     return render_to_response('brambling/event/item_form.html',
                               context,
@@ -186,6 +189,7 @@ class ItemListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(ItemListView, self).get_context_data(**kwargs)
         context['event'] = self.event
+        context['cart_total'] = self.request.user.get_cart_total(self.event)
         return context
 
 
@@ -210,6 +214,7 @@ def discount_form(request, *args, **kwargs):
         'event': event,
         'discount': form.instance,
         'discount_form': form,
+        'cart_total': request.user.get_cart_total(event),
     }
     return render_to_response('brambling/event/discount_form.html',
                               context,
@@ -231,6 +236,7 @@ class DiscountListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(DiscountListView, self).get_context_data(**kwargs)
         context['event'] = self.event
+        context['cart_total'] = self.request.user.get_cart_total(self.event)
         return context
 
 
@@ -312,6 +318,11 @@ class EventDetailView(DetailView):
         queryset = super(EventDetailView, self).get_queryset()
         return queryset.prefetch_related('editors')
 
+    def get_context_data(self, **kwargs):
+        context = super(EventDetailView, self).get_context_data(**kwargs)
+        context['cart_total'] = self.request.user.get_cart_total(self.object)
+        return context
+
 
 class PurchaseView(TemplateView):
     categories = (
@@ -350,6 +361,7 @@ class PurchaseView(TemplateView):
             'event': self.event,
             'items': items,
             'cart': self.request.user.get_cart(self.event),
+            'cart_total': self.request.user.get_cart_total(self.event),
         })
         return context
 
@@ -372,3 +384,19 @@ class PurchaseView(TemplateView):
         if saved:
             return HttpResponseRedirect(request.path)
         return self.render_to_response(context)
+
+
+class CartView(TemplateView):
+    template_name = 'brambling/event/cart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CartView, self).get_context_data(**kwargs)
+
+        event = _get_event_or_404(kwargs['slug'])
+
+        context.update({
+            'event': event,
+            'cart': self.request.user.get_cart(event),
+            'cart_total': self.request.user.get_cart_total(event),
+        })
+        return context

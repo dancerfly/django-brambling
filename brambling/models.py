@@ -7,7 +7,7 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import signals, Q, Count
+from django.db.models import signals, Q, Count, Sum
 from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
@@ -405,19 +405,28 @@ class Person(AbstractBaseUser, PermissionsMixin):
         return self.nickname or self.name
 
     def get_cart(self, event):
-        reservation_start = (timezone.now() -
-                             timedelta(minutes=event.reservation_timeout))
-        return ItemOption.objects.filter(
-            item__event=event
-        ).filter(
-            (Q(personitem__status=PersonItem.RESERVED) &
-             Q(personitem__added__gte=reservation_start) &
-             Q(personitem__buyer=self)) |
-            (Q(personitem__status__in=(PersonItem.UNPAID,
-                                       PersonItem.PARTIAL)) &
-             Q(personitem__buyer=self))
-        ).distinct().annotate(quantity=Count('personitem')
-        ).select_related('item').order_by('item', 'order')
+        if not hasattr(self, '_cart'):
+            reservation_start = (timezone.now() -
+                                 timedelta(minutes=event.reservation_timeout))
+            self._cart = ItemOption.objects.filter(
+                item__event=event
+            ).filter(
+                (Q(personitem__status=PersonItem.RESERVED) &
+                 Q(personitem__added__gte=reservation_start) &
+                 Q(personitem__buyer=self)) |
+                (Q(personitem__status__in=(PersonItem.UNPAID,
+                                           PersonItem.PARTIAL)) &
+                 Q(personitem__buyer=self))
+            ).distinct().annotate(quantity=Count('personitem')
+            ).select_related('item').order_by('item', 'order')
+        return self._cart
+
+    def get_cart_total(self, event):
+        if not hasattr(self, '_cart_total'):
+            self._cart_total = self.get_cart(event
+                                             ).aggregate(total=Sum('quantity')
+                                                         )['total']
+        return self._cart_total
 
 
 class Home(models.Model):
