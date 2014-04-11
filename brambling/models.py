@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.core.urlresolvers import reverse
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import signals, Q, Count
@@ -156,7 +157,10 @@ class Event(models.Model):
         (PRIVATE, _("Only visible to owner and editors")),
     )
     name = models.CharField(max_length=50)
-    slug = models.SlugField(max_length=50)
+    slug = models.SlugField(max_length=50,
+                            validators=[RegexValidator("[a-z0-9-]+")],
+                            help_text="URL-friendly version of the event name."
+                                      " Dashes, 0-9, and lower-case a-z only.")
     tagline = models.CharField(max_length=75, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
@@ -172,7 +176,7 @@ class Event(models.Model):
     event_type = models.ForeignKey(EventType, blank=True, null=True)
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PUBLIC)
+                               default=PUBLIC, help_text="Who can view this event.")
 
     owner = models.ForeignKey('Person',
                               related_name='owner_events')
