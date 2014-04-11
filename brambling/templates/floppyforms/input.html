@@ -1,5 +1,5 @@
-<input
-	class="form-control"
+{% load brambling %}<input
+	{% if not field|is_checkbox %}class="form-control"{% endif %}
 	type="{{ type }}"
 	name="{{ name }}"
 	{% if value %} value="{{ value }}"{% endif %}
