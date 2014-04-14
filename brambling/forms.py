@@ -126,7 +126,7 @@ class PersonForm(BasePersonForm):
         fields = ('email', 'name', 'nickname', 'phone', 'dance_styles',
                   'event_types', 'dietary_restrictions', 'ef_cause',
                   'ef_avoid', 'person_prefer', 'person_avoid',
-                  'housing_prefer')
+                  'housing_prefer', 'other_needs')
 
     def save(self, commit=True):
         person = super(PersonForm, self).save(commit)
@@ -197,7 +197,7 @@ class DiscountForm(forms.ModelForm):
             self._update_errors(e)
 
 
-class PersonItemForm(forms.ModelForm):
+class ReservationForm(forms.ModelForm):
     """Lets a person choose item options to buy."""
     option_id = forms.IntegerField()
 
@@ -206,36 +206,69 @@ class PersonItemForm(forms.ModelForm):
         fields = ()
 
     def __init__(self, buyer, item_option, *args, **kwargs):
-        super(PersonItemForm, self).__init__(*args, **kwargs)
+        super(ReservationForm, self).__init__(*args, **kwargs)
         self.buyer = buyer
         self.item_option = item_option
         self.fields['option_id'].initial = item_option.id
 
     def clean(self):
-        cleaned_data = super(PersonItemForm, self).clean()
+        cleaned_data = super(ReservationForm, self).clean()
         if self.item_option.id != cleaned_data.get('option_id'):
             raise forms.ValidationError("Be sure not to fiddle with the HTML code.")
         return cleaned_data
 
     def _post_clean(self):
-        super(PersonItemForm, self)._post_clean()
+        super(ReservationForm, self)._post_clean()
         self.instance.buyer = self.buyer
         self.instance.item_option = self.item_option
         self.instance.owner = self.buyer
         self.instance.status = PersonItem.RESERVED
 
 
+class PersonItemForm(forms.ModelForm):
+    class Meta:
+        model = PersonItem
+        exclude = ('buyer',)
+
+
 class EventPersonForm(forms.ModelForm):
     class Meta:
         model = EventPerson
         exclude = ('event', 'person')
-        widgets = {
-            'bedtime': forms.RadioSelect,
-            'wakeup': forms.RadioSelect,
-        }
+
+    def __init__(self, event, person, *args, **kwargs):
+        instance = EventPerson.objects.filter(event=event,
+                                              person=person).first()
+        super(EventPersonForm, self).__init__(instance=instance,
+                                              *args, **kwargs)
+        if instance is None:
+            self.initial.update({
+                'ef_cause': person.ef_cause.all(),
+                'ef_avoid': person.ef_avoid.all(),
+                'person_prefer': person.person_prefer.all(),
+                'person_avoid': person.person_avoid.all(),
+                'housing_prefer': person.housing_prefer.all(),
+            })
 
 
 class EventHousingForm(forms.ModelForm):
     class Meta:
         model = EventHousing
         exclude = ('event', 'home')
+
+    def __init__(self, event, person, *args, **kwargs):
+        if person.home_id is None:
+            instance = None
+        else:
+            instance = EventHousing.objects.filter(event=event,
+                                                   home=person.home).first()
+        super(EventHousingForm, self).__init__(instance=instance,
+                                               *args, **kwargs)
+        if instance is None and person.home_id is not None:
+            self.initial.update({
+                'ef_cause': person.home.ef_cause.all(),
+                'ef_avoid': person.home.ef_avoid.all(),
+                'person_prefer': person.home.person_prefer.all(),
+                'person_avoid': person.home.person_avoid.all(),
+                'housing_prefer': person.home.housing_prefer.all(),
+            })

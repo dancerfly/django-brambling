@@ -8,6 +8,7 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import signals, Q, Count, Sum
+from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
@@ -142,7 +143,7 @@ class Date(models.Model):
         ordering = ('date',)
 
     def __unicode__(self):
-        return self.date.strftime(u'%A')
+        return date(self.date, 'l, F jS')
 
 
 # TODO: "meta" class for groups of events? For example, annual events?
@@ -232,7 +233,8 @@ class ItemOption(models.Model):
     name = models.CharField(max_length=30)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     total_number = models.PositiveSmallIntegerField()
-    available_start = models.DateTimeField()
+    max_per_owner = models.PositiveSmallIntegerField(default=1)
+    available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
     order = models.PositiveSmallIntegerField()
 
@@ -388,6 +390,8 @@ class Person(AbstractBaseUser, PermissionsMixin):
                                             null=True,
                                             verbose_name="I prefer to stay somewhere that is (a/an)")
 
+    other_needs = models.TextField(blank=True)
+
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     event_types = models.ManyToManyField(EventType, blank=True)
 
@@ -434,13 +438,8 @@ class Home(models.Model):
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
     country = CountryField()
-
-    spaces = models.PositiveSmallIntegerField(default=0,
-                                              validators=[MaxValueValidator(100)],
-                                              verbose_name="Preferred spaces")
-    spaces_max = models.PositiveSmallIntegerField(default=0,
-                                                  validators=[MaxValueValidator(100)],
-                                                  verbose_name="Max spaces")
+    public_transit_access = models.BooleanField(default=False,
+                                                verbose_name="My/Our house has easy access to public transit")
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='home_present',
@@ -453,27 +452,27 @@ class Home(models.Model):
                                       blank=True,
                                       null=True,
                                       verbose_name="I/We don't want in my/our home",
-                                      help_text="In addition to resident preferences")
+                                      help_text="Include resident preferences")
 
     person_prefer = models.ManyToManyField(Person,
                                            related_name='preferred_by_homes',
                                            blank=True,
                                            null=True,
                                            verbose_name="I/We would love to host",
-                                           help_text="In addition to resident preferences")
+                                           help_text="Include resident preferences")
 
     person_avoid = models.ManyToManyField(Person,
                                           related_name='avoided_by_homes',
                                           blank=True,
                                           null=True,
                                           verbose_name="I/We don't want to host",
-                                          help_text="In addition to resident preferences")
+                                          help_text="Include resident preferences")
 
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='homes',
                                                 blank=True,
                                                 null=True,
-                                                verbose_name="Our home is (a/an)")
+                                                verbose_name="My/Our home is (a/an)")
 
 
 class EventPerson(models.Model):
@@ -489,18 +488,32 @@ class EventPerson(models.Model):
         (EARLY, _("There first thing."))
     )
 
+    NEED = 'need'
+    HAVE = 'have'
+    HOST = 'host'
+
+    HOUSING_CHOICES = (
+        (NEED, 'Need housing'),
+        (HAVE, 'Made my own arrangements'),
+        (HOST, 'Am hosting people'),
+    )
+
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person)
 
     # Housing info.
-    nights = models.ManyToManyField(Date, blank=True, null=True)
     car_spaces = models.SmallIntegerField(default=0,
                                           validators=[MaxValueValidator(50),
-                                                      MinValueValidator(-1)])
+                                                      MinValueValidator(-1)],
+                                          help_text="Including the driver's seat.")
 
     bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES)
     wakeup = models.CharField(max_length=5, choices=MORNING_CHOICES)
+    housing = models.CharField(max_length=4, choices=HOUSING_CHOICES,
+                               default=NEED)
 
+    # Guest info
+    nights = models.ManyToManyField(Date, blank=True, null=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='eventperson_cause',
                                       blank=True,
@@ -513,14 +526,14 @@ class EventPerson(models.Model):
                                       null=True,
                                       verbose_name="I can't/don't want to be around")
 
-    person_prefer = models.ManyToManyField('self',
+    person_prefer = models.ManyToManyField(Person,
                                            related_name='event_preferred_by',
                                            blank=True,
                                            null=True,
                                            verbose_name="I need to be placed with",
                                            symmetrical=False)
 
-    person_avoid = models.ManyToManyField('self',
+    person_avoid = models.ManyToManyField(Person,
                                           related_name='event_avoided_by',
                                           blank=True,
                                           null=True,
@@ -533,7 +546,7 @@ class EventPerson(models.Model):
                                             null=True,
                                             verbose_name="I prefer to stay somewhere that is (a/an)")
 
-    other = models.TextField(blank=True)
+    other_needs = models.TextField(blank=True)
 
 
 class EventHousing(models.Model):
@@ -557,21 +570,21 @@ class EventHousing(models.Model):
                                       blank=True,
                                       null=True,
                                       verbose_name="I/We don't want in my/our home",
-                                      help_text="In addition to resident preferences")
+                                      help_text="Include resident preferences")
 
     person_prefer = models.ManyToManyField(Person,
                                            related_name='preferred_by_eventhousing',
                                            blank=True,
                                            null=True,
                                            verbose_name="I/We would love to host",
-                                           help_text="In addition to resident preferences")
+                                           help_text="Include resident preferences")
 
     person_avoid = models.ManyToManyField(Person,
                                           related_name='avoided_by_eventhousing',
                                           blank=True,
                                           null=True,
                                           verbose_name="I/We don't want to host",
-                                          help_text="In addition to resident preferences")
+                                          help_text="Include resident preferences")
 
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='eventhousing',
@@ -586,3 +599,7 @@ class HousingSlot(models.Model):
     person = models.ManyToManyField(Person,
                                     blank=True)
     nights = models.ManyToManyField(Date, blank=True, null=True)
+    # Whether the slot was filled "manually" - i.e. whether
+    # this arrangment was made between the house and the person
+    # instead of by a housing coordinator.
+    manual = models.BooleanField(default=False)

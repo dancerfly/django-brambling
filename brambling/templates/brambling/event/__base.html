@@ -7,18 +7,20 @@
 
 {% block side %}
 	{% url 'brambling_event_detail' slug=event.slug as event_detail_url %}
-	{% url 'brambling_event_reserve' slug=event.slug as event_registration_url %}
+	{% url 'brambling_event_reserve' slug=event.slug as event_reservation_url %}
+	{% url 'brambling_event_housing' slug=event.slug as event_housing_url %}
 	{% url 'brambling_event_cart' slug=event.slug as event_cart_url %}
 	<ul class='nav nav-pills nav-stacked'>
 		<li{% if request.path == event_detail_url %} class='active'{% endif %}><a href="{{ event_detail_url }}">View event</a></li>
-		{% with event_registration_url_length=event_registration_url|length|floatformat %}
-			<li{% if request.path|slice:event_registration_url_length == event_registration_url %} class='active'{% endif %}><a href="{{ event_registration_url }}">Register for event</a></li>
+		{% with event_reservation_url_length=event_reservation_url|length|floatformat %}
+			<li{% if request.path|slice:event_reservation_url_length == event_reservation_url %} class='active'{% endif %}><a href="{{ event_reservation_url }}">Reserve passes and merchandise</a></li>
 		{% endwith %}
-		{% if cart_total %}
-			{% with event_cart_url_length=event_cart_url|length|floatformat %}
-				<li{% if request.path|slice:event_cart_url_length == event_cart_url %} class='active'{% endif %}><a href="{{ event_cart_url }}">Event cart <span class='badge'>{{ cart_total }}</span></a></li>
-			{% endwith %}
-		{% endif %}
+		{% with event_housing_url_length=event_housing_url|length|floatformat %}
+			<li{% if request.path|slice:event_housing_url_length == event_housing_url %} class='active'{% endif %}><a href="{{ event_housing_url }}">Housing</a></li>
+		{% endwith %}
+		{% with event_cart_url_length=event_cart_url|length|floatformat %}
+			<li{% if request.path|slice:event_cart_url_length == event_cart_url %} class='active'{% endif %}><a href="{{ event_cart_url }}">Event cart <span class='badge'>{{ cart_total|default:0 }}</span></a></li>
+		{% endwith %}
 	{% if request.user.is_authenticated and request.user.is_active %}
 		{% if request.user.is_superuser or request.user == event.owner or request.user in event.editors.all %}
 			{% url 'brambling_event_update' slug=event.slug as event_update_url %}

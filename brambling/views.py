@@ -14,8 +14,10 @@ from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, DiscountForm, SignUpForm,
-                             PersonItemForm)
-from brambling.models import Event, Person, Home, Item, Discount
+                             PersonItemForm, ReservationForm, EventPersonForm,
+                             EventHousingForm)
+from brambling.models import (Event, Person, Home, Item, Discount, EventPerson,
+                              EventHousing)
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -324,14 +326,14 @@ class EventDetailView(DetailView):
         return context
 
 
-class PurchaseView(TemplateView):
+class ReservationView(TemplateView):
     categories = (
         Item.MERCHANDISE,
         Item.COMPETITION,
         Item.CLASS,
         Item.PASS
     )
-    template_name = 'brambling/event/purchase.html'
+    template_name = 'brambling/event/reserve.html'
 
     def get_items(self):
         now = timezone.now()
@@ -352,8 +354,8 @@ class PurchaseView(TemplateView):
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(PurchaseView, self).get_context_data(**kwargs)
-        items = tuple((item, [PersonItemForm(**self.get_form_kwargs(option))
+        context = super(ReservationView, self).get_context_data(**kwargs)
+        items = tuple((item, [ReservationForm(**self.get_form_kwargs(option))
                               for option in item.options.all()])
                       for item in self.items)
 
@@ -384,6 +386,54 @@ class PurchaseView(TemplateView):
         if saved:
             return HttpResponseRedirect(request.path)
         return self.render_to_response(context)
+
+
+class HousingView(TemplateView):
+    template_name = 'brambling/event/housing.html'
+
+    def get_forms(self):
+        kwargs = {
+            'event': self.event,
+            'person': self.request.user,
+        }
+
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        forms = {
+            'person': EventPersonForm(prefix='person',
+                                      **kwargs),
+            'housing': EventHousingForm(prefix='housing',
+                                        **kwargs),
+        }
+        return forms
+
+    def get(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.forms = self.get_forms()
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.forms = self.get_forms()
+        if all((form.is_valid() for form in self.forms)):
+            for form in self.forms:
+                form.save()
+                cart_url = reverse('brambling_event_cart',
+                                   kwargs={'slug': self.event.slug})
+                return HttpResponseRedirect(cart_url)
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super(HousingView, self).get_context_data(**kwargs)
+        context.update({
+            'forms': self.forms,
+            'event': self.event,
+            'cart': self.request.user.get_cart(self.event),
+            'cart_total': self.request.user.get_cart_total(self.event),
+        })
+        return context
 
 
 class CartView(TemplateView):

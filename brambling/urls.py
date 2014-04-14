@@ -1,13 +1,12 @@
 from django.conf.urls import patterns, url, include
 
 from brambling.forms import FloppyAuthenticationForm
-from brambling.models import Item
-from brambling.views import (PurchaseView, EventCreateView,
+from brambling.views import (ReservationView, EventCreateView,
                              EventUpdateView, PersonView, HomeView,
                              ItemListView, item_form, DiscountListView,
                              discount_form, SignUpView, EmailConfirmView,
                              EventDetailView, send_confirmation_email_view,
-                             CartView)
+                             CartView, HousingView)
 
 
 urlpatterns = patterns('',
@@ -44,8 +43,11 @@ urlpatterns = patterns('',
         EventDetailView.as_view(),
         name="brambling_event_detail"),
     url(r'^(?P<slug>[\w-]+)/reserve/$',
-        PurchaseView.as_view(),
+        ReservationView.as_view(),
         name="brambling_event_reserve"),
+    url(r'^(?P<slug>[\w-]+)/housing/$',
+        HousingView.as_view(),
+        name="brambling_event_housing"),
     url(r'^(?P<slug>[\w-]+)/cart/$',
         CartView.as_view(),
         name="brambling_event_cart"),
