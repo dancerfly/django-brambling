@@ -249,6 +249,7 @@ class EventPersonForm(forms.ModelForm):
                 'person_avoid': person.person_avoid.all(),
                 'housing_prefer': person.housing_prefer.all(),
             })
+        self.fields['nights'].queryset = event.housing_dates.all()
 
 
 class EventHousingForm(forms.ModelForm):
@@ -272,3 +273,4 @@ class EventHousingForm(forms.ModelForm):
                 'person_avoid': person.home.person_avoid.all(),
                 'housing_prefer': person.home.housing_prefer.all(),
             })
+        self.fields['nights'].queryset = event.housing_dates.all()
