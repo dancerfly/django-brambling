@@ -7,6 +7,7 @@
 
 
 	<form action="{{ request.path }}" method="post">
+		{% csrf_token %}
 		{% form forms.person using %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
@@ -21,6 +22,8 @@
 					{% formrow form.housing %}
 				</div>
 			</div>{# /.panel #}
+		{% endform %}
+		{% form forms.guest using %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
 					<h4 class="panel-title"><a href="#guestInfo" data-toggle="collapse">Guest information</a></h4>
@@ -42,11 +45,12 @@
 							<div class='col-md-5'>{% formrow form.person_avoid %}</div>
 						</div>
 						{% formrow form.other_needs %}
+						{% formrow form.save_as_defaults %}
 					</div>
 				</div>
 			</div>{# /.panel #}
 		{% endform %}
-		{% form forms.housing using %}
+		{% form forms.hosting using %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
 					<h4 class="panel-title"><a href="#hostInfo" data-toggle="collapse">Host information</a></h4>
@@ -72,6 +76,7 @@
 							<div class='col-md-5'>{% formrow form.person_avoid %}</div>
 						</div>
 						{% formrow form.other_needs %}
+						{% formrow form.save_as_defaults %}
 					</div>
 				</div>
 			</div>{# /.panel #}

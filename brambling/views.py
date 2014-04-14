@@ -14,8 +14,8 @@ from floppyforms.models import modelform_factory
 
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, DiscountForm, SignUpForm,
-                             PersonItemForm, ReservationForm, EventPersonForm,
-                             EventHousingForm)
+                             ReservationForm, GuestForm, HostingForm,
+                             EventPersonForm)
 from brambling.models import (Event, Person, Home, Item, Discount, EventPerson,
                               EventHousing)
 from brambling.tokens import token_generators
@@ -392,18 +392,39 @@ class HousingView(TemplateView):
     template_name = 'brambling/event/housing.html'
 
     def get_forms(self):
-        kwargs = {
-            'event': self.event,
-            'person': self.request.user,
-        }
+        eventperson = EventPerson.objects.filter(
+            event=self.event,
+            person=self.request.user
+        ).first()
+
+        if self.request.user.home_id is None:
+            eventhousing = None
+        else:
+            eventhousing = EventHousing.objects.filter(
+                event=self.event,
+                home=self.request.user.home
+            ).first()
+
+        kwargs = {}
 
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
         forms = {
-            'person': EventPersonForm(prefix='person',
+            'person': EventPersonForm(self.request.user,
+                                      self.event,
+                                      prefix='person',
+                                      instance=eventperson,
                                       **kwargs),
-            'housing': EventHousingForm(prefix='housing',
-                                        **kwargs),
+            'guest': GuestForm(self.request.user,
+                               self.event,
+                               prefix='person',
+                               instance=eventperson,
+                               **kwargs),
+            'hosting': HostingForm(self.request.user.home,
+                                   self.event,
+                                   prefix='hosting',
+                                   instance=eventhousing,
+                                   **kwargs),
         }
         return forms
 
@@ -416,11 +437,26 @@ class HousingView(TemplateView):
     def post(self, request, *args, **kwargs):
         self.event = _get_event_or_404(kwargs['slug'])
         self.forms = self.get_forms()
-        if all((form.is_valid() for form in self.forms)):
-            for form in self.forms:
-                form.save()
-                cart_url = reverse('brambling_event_cart',
-                                   kwargs={'slug': self.event.slug})
+        person_form = self.forms['person']
+        guest_form = self.forms['guest']
+        host_form = self.forms['hosting']
+        cart_url = reverse('brambling_event_cart',
+                           kwargs={'slug': self.event.slug})
+        if (person_form.is_valid()):
+            if person_form.cleaned_data['housing'] == EventPerson.NEED:
+                # Important in case instance was None.
+                guest_form.instance = person_form.instance
+                if guest_form.is_valid():
+                    person_form.save()
+                    guest_form.save()
+                    return HttpResponseRedirect(cart_url)
+            elif person_form.cleaned_data['housing'] == EventPerson.HOST:
+                if host_form.is_valid():
+                    person_form.save()
+                    host_form.save()
+                    return HttpResponseRedirect(cart_url)
+            elif person_form.cleaned_data['housing'] == EventPerson.HAVE:
+                person_form.save()
                 return HttpResponseRedirect(cart_url)
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)

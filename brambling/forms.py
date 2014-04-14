@@ -234,43 +234,82 @@ class PersonItemForm(forms.ModelForm):
 class EventPersonForm(forms.ModelForm):
     class Meta:
         model = EventPerson
-        exclude = ('event', 'person')
+        fields = ('car_spaces', 'bedtime', 'wakeup', 'housing')
 
-    def __init__(self, event, person, *args, **kwargs):
-        instance = EventPerson.objects.filter(event=event,
-                                              person=person).first()
-        super(EventPersonForm, self).__init__(instance=instance,
-                                              *args, **kwargs)
-        if instance is None:
+    def __init__(self, person, event, *args, **kwargs):
+        self.person = person
+        super(EventPersonForm, self).__init__(*args, **kwargs)
+        if self.instance.pk is None:
+            self.instance.event = event
+            self.instance.person = person
+
+
+class GuestForm(forms.ModelForm):
+    save_as_defaults = forms.BooleanField(initial=True)
+
+    class Meta:
+        model = EventPerson
+        exclude = ('event', 'person', 'car_spaces',
+                   'bedtime', 'wakeup', 'housing')
+
+    def __init__(self, person, event, *args, **kwargs):
+        self.person = person
+        super(GuestForm, self).__init__(*args, **kwargs)
+        if self.instance.pk is None:
             self.initial.update({
                 'ef_cause': person.ef_cause.all(),
                 'ef_avoid': person.ef_avoid.all(),
                 'person_prefer': person.person_prefer.all(),
                 'person_avoid': person.person_avoid.all(),
                 'housing_prefer': person.housing_prefer.all(),
+                'other_needs': person.other_needs,
             })
+            self.instance.event = event
+            self.instance.person = person
         self.fields['nights'].queryset = event.housing_dates.all()
 
+    def save(self):
+        instance = super(GuestForm, self).save()
+        if self.cleaned_data['save_as_defaults']:
+            self.person.ef_cause = instance.ef_cause.all()
+            self.person.ef_avoid = instance.ef_avoid.all()
+            self.person.person_prefer = instance.person_prefer.all()
+            self.person.person_avoid = instance.person_avoid.all()
+            self.person.housing_prefer = instance.housing_prefer.all()
+            self.person.other_needs = instance.other_needs
+            self.person.save()
+        return instance
 
-class EventHousingForm(forms.ModelForm):
+
+class HostingForm(forms.ModelForm):
+    save_as_defaults = forms.BooleanField(initial=True)
+
     class Meta:
         model = EventHousing
         exclude = ('event', 'home')
 
-    def __init__(self, event, person, *args, **kwargs):
-        if person.home_id is None:
-            instance = None
-        else:
-            instance = EventHousing.objects.filter(event=event,
-                                                   home=person.home).first()
-        super(EventHousingForm, self).__init__(instance=instance,
-                                               *args, **kwargs)
-        if instance is None and person.home_id is not None:
+    def __init__(self, home, event, *args, **kwargs):
+        self.home = home
+        super(HostingForm, self).__init__(*args, **kwargs)
+        if self.instance.pk is None and home is not None:
             self.initial.update({
-                'ef_cause': person.home.ef_cause.all(),
-                'ef_avoid': person.home.ef_avoid.all(),
-                'person_prefer': person.home.person_prefer.all(),
-                'person_avoid': person.home.person_avoid.all(),
-                'housing_prefer': person.home.housing_prefer.all(),
+                'ef_present': home.ef_present.all(),
+                'ef_avoid': home.ef_avoid.all(),
+                'person_prefer': home.person_prefer.all(),
+                'person_avoid': home.person_avoid.all(),
+                'housing_categories': home.housing_categories.all(),
             })
+            self.instance.event = event
+            self.instance.home = home
         self.fields['nights'].queryset = event.housing_dates.all()
+
+    def save(self):
+        instance = super(HostingForm, self).save()
+        if self.cleaned_data['save_as_defaults']:
+            self.home.ef_present = instance.ef_present.all()
+            self.home.ef_avoid = instance.ef_avoid.all()
+            self.home.person_prefer = instance.person_prefer.all()
+            self.home.person_avoid = instance.person_avoid.all()
+            self.home.housing_categories = instance.housing_categories.all()
+            self.home.save()
+        return instance
