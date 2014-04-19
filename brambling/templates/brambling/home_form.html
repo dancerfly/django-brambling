@@ -8,7 +8,7 @@
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using "brambling/forms/home.html" %}
-		<button type="submit">Save changes</button>
-		<a href="{{ event.get_absolute_url }}">Cancel</a>
+		<button class="btn btn-primary" type="submit">Save changes</button>
+		<a class="btn btn-link" href="{{ event.get_absolute_url }}">Cancel</a>
 	</form>
 {% endblock %}
