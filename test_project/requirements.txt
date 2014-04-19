@@ -8,4 +8,4 @@ Pillow==2.3.1
 # Melinath's fork of Floppyforms, until the patch is accepted.
 https://github.com/melinath/django-floppyforms/tarball/7ac637c5795f2776fb384ada0ed03c078d787625
 # littleweaver-forms - @master until we reach a peggable point.
-https://github.com/littleweaver/django-littleweaver-forms/tarball/master
+https://github.com/littleweaver/django-zenaida/tarball/master
