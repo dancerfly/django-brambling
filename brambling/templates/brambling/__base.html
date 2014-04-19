@@ -1,9 +1,11 @@
+{% extends 'zenaida/__base.html' %}
+
 {% block title %}Brambling{% endblock %}</title>
 
 {% block body-classes %}brambling {{ block.super }}{% endblock %}
 
 {% block navbar-brand %}Brambling{% endblock %}
-{% block navbar-collapse %}
+{% block navbar-collapse-inner %}
 	{% if request.user.is_authenticated %}
 		{% url 'brambling_dashboard' as brambling_dashboard_url %}
 		{% url 'brambling_event_create' as brambling_event_create_url %}
@@ -20,4 +22,4 @@
 		<li{% if request.path == login_url %} class='active'{% endif %}><a href="{{ login_url }}">Log in</a></li>
 		<li{% if request.path == brambling_signup_url %} class='active'{% endif %}><a href="{{ brambling_signup_url }}">Sign up</a></li>
 	{% endif %}
-{% endblock navbar-collapse %}
+{% endblock %}
