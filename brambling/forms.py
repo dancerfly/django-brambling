@@ -4,8 +4,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.db import models
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
-import floppyforms as forms
-from floppyforms import inlineformset_factory
+from zenaida.forms import inlineformset_factory
+from zenaida import forms
 
 from brambling.models import (Event, Person, Home, Item, ItemOption,
                               Discount, DanceStyle, EventType,
@@ -21,7 +21,7 @@ class EventForm(forms.ModelForm):
         model = Event
         exclude = ('dates', 'housing_dates', 'owner')
         widgets = {
-            'country': forms.widgets.Select
+            'country': forms.Select
         }
 
     def __init__(self, *args, **kwargs):
@@ -140,7 +140,7 @@ class HomeForm(forms.ModelForm):
         model = Home
         exclude = ()
         widgets = {
-            'country': forms.widgets.Select
+            'country': forms.Select
         }
 
     def __init__(self, person, *args, **kwargs):
@@ -228,7 +228,7 @@ class ReservationForm(forms.ModelForm):
 class PersonItemForm(forms.ModelForm):
     class Meta:
         model = PersonItem
-        exclude = ('buyer',)
+        fields = ('owner',)
 
 
 class EventPersonForm(forms.ModelForm):

@@ -5,27 +5,30 @@
 {% block main %}
 	<h2>Your cart</h2>
 
-	{% regroup cart by item as cart_list %}
+	<form action="" method="post">
+		{% csrf_token %}
 
-	{% for options in cart_list %}
-		<h3>{{ options.grouper }}</h3>
+		{{ formset.management_form }}
 
-		{% for option in options.list %}
+		{% for form in formset.forms %}
+			<h3>{{ form.instance.item.name }}</h3>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<h4 class="panel-title">
-						<a data-toggle="collapse" href="#itemoption-{{ option.pk }}">
-							{{ option.name }} ({{ option.quantity }})
-						</a>
-					</h4>
+					<h4 class="panel-title">{{ form.instance.item_option.name }}</h4>
 				</div>
-				<div id="itemoption-{{ option.pk }}" class="panel-collapse collapse">
-					<div class="panel-body">
-						Form goes here! Add a check (and mark success) for completed cart items.
-						Have a separate view for listing/editing things that have been paid for?
-					</div>
+				<div class="panel-body">
+					<ul class='list-inline'>
+						<li>{{ form.instance.added|date:"G:i:s l, F jS, Y" }}</li>
+						<li>&middot;</li>
+						<li>{{ form.instance.buyer.name }}{% if form.instance.buyer == request.user %} (you){% endif %}</li>
+						<li>&middot;</li>
+						<li>{{ form.instance.get_status_display }}</li>
+					</ul>
+					{% form form %}
 				</div>
 			</div>
 		{% endfor %}
-	{% endfor %}
+
+		<button type="submit" class="btn btn-primary">Save</button>
+	</form>
 {% endblock %}

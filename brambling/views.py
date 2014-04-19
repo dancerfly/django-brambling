@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -10,14 +12,14 @@ from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   TemplateView)
-from floppyforms.models import modelform_factory
+from zenaida.forms import modelform_factory, modelformset_factory
 
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, DiscountForm, SignUpForm,
                              ReservationForm, GuestForm, HostingForm,
-                             EventPersonForm)
+                             EventPersonForm, PersonItemForm)
 from brambling.models import (Event, Person, Home, Item, Discount, EventPerson,
-                              EventHousing)
+                              EventHousing, PersonItem)
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -475,14 +477,47 @@ class HousingView(TemplateView):
 class CartView(TemplateView):
     template_name = 'brambling/event/cart.html'
 
+    def get(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.formset = self.get_formset()
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.formset = self.get_formset()
+        if self.formset.is_valid():
+            self.formset.save()
+            return HttpResponseRedirect('')
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def get_formset(self):
+        reservation_start = (timezone.now() -
+                             timedelta(minutes=self.event.reservation_timeout))
+        items = PersonItem.objects.filter(
+            ((Q(status=PersonItem.RESERVED) &
+              Q(added__gte=reservation_start)) |
+             ~Q(status=PersonItem.RESERVED)) &
+            (Q(buyer=self.request.user) | Q(owner=self.request.user)) &
+            Q(item_option__item__event=self.event)
+            ).select_related('itemoption').order_by('-added')
+        formset_class = modelformset_factory(PersonItem, PersonItemForm,
+                                             extra=0)
+
+        kwargs = {
+            'queryset': items,
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return formset_class(**kwargs)
+
     def get_context_data(self, **kwargs):
         context = super(CartView, self).get_context_data(**kwargs)
 
-        event = _get_event_or_404(kwargs['slug'])
-
         context.update({
-            'event': event,
-            'cart': self.request.user.get_cart(event),
-            'cart_total': self.request.user.get_cart_total(event),
+            'event': self.event,
+            'cart_total': self.request.user.get_cart_total(self.event),
+            'formset': self.formset
         })
         return context
