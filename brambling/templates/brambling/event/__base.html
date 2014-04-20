@@ -8,15 +8,11 @@
 {% block side %}
 	{% url 'brambling_event_detail' slug=event.slug as event_detail_url %}
 	{% url 'brambling_event_reserve' slug=event.slug as event_reservation_url %}
-	{% url 'brambling_event_housing' slug=event.slug as event_housing_url %}
 	{% url 'brambling_event_cart' slug=event.slug as event_cart_url %}
 	<ul class='nav nav-pills nav-stacked'>
 		<li{% if request.path == event_detail_url %} class='active'{% endif %}><a href="{{ event_detail_url }}">View event</a></li>
 		{% with event_reservation_url_length=event_reservation_url|length|floatformat %}
 			<li{% if request.path|slice:event_reservation_url_length == event_reservation_url %} class='active'{% endif %}><a href="{{ event_reservation_url }}">Reserve passes and merchandise</a></li>
-		{% endwith %}
-		{% with event_housing_url_length=event_housing_url|length|floatformat %}
-			<li{% if request.path|slice:event_housing_url_length == event_housing_url %} class='active'{% endif %}><a href="{{ event_housing_url }}">Housing</a></li>
 		{% endwith %}
 		{% with event_cart_url_length=event_cart_url|length|floatformat %}
 			<li{% if request.path|slice:event_cart_url_length == event_cart_url %} class='active'{% endif %}><a href="{{ event_cart_url }}">Event cart <span class='badge'>{{ cart_total|default:0 }}</span></a></li>

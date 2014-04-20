@@ -6,7 +6,7 @@ from brambling.views import (ReservationView, EventCreateView,
                              ItemListView, item_form, DiscountListView,
                              discount_form, SignUpView, EmailConfirmView,
                              EventDetailView, send_confirmation_email_view,
-                             CartView, HousingView)
+                             CartView)
 
 
 urlpatterns = patterns('',
@@ -45,9 +45,6 @@ urlpatterns = patterns('',
     url(r'^(?P<slug>[\w-]+)/reserve/$',
         ReservationView.as_view(),
         name="brambling_event_reserve"),
-    url(r'^(?P<slug>[\w-]+)/housing/$',
-        HousingView.as_view(),
-        name="brambling_event_housing"),
     url(r'^(?P<slug>[\w-]+)/cart/$',
         CartView.as_view(),
         name="brambling_event_cart"),

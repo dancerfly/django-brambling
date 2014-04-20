@@ -221,7 +221,7 @@ class ReservationForm(forms.ModelForm):
         super(ReservationForm, self)._post_clean()
         self.instance.buyer = self.buyer
         self.instance.item_option = self.item_option
-        self.instance.owner = self.buyer
+        self.instance.owner = None
         self.instance.status = PersonItem.RESERVED
 
 
@@ -229,6 +229,101 @@ class PersonItemForm(forms.ModelForm):
     class Meta:
         model = PersonItem
         fields = ('owner',)
+
+    def __init__(self, event, housing_dates, user, data=None, files=None,
+                 *args, **kwargs):
+        self.event = event
+        self.housing_dates = housing_dates
+        self.user = user
+        super(PersonItemForm, self).__init__(data, files, *args, **kwargs)
+        self.item = self.instance.item_option.item
+        self.buyer = self.instance.buyer
+        self.owner = self.instance.owner
+        self.initial['owner'] = self.owner or self.buyer
+
+        if self.item.category == Item.PASS:
+            self.owner_forms = {
+                'eventperson': EventPersonForm(
+                    person=self.owner,
+                    event=self.event,
+                    data=data,
+                    files=files,
+                    prefix=self.prefix + 'owner-eventperson'
+                ),
+                'guest': GuestForm(
+                    person=self.owner,
+                    with_defaults=False,
+                    event=self.event,
+                    housing_dates=housing_dates,
+                    data=data,
+                    files=files,
+                    prefix=self.prefix + 'owner-guest'
+                )
+            }
+            if self.user == self.owner:
+                self.owner_forms['host'] = HostingForm(
+                    home=self.owner.home,
+                    event=self.event,
+                    housing_dates=housing_dates,
+                    data=data,
+                    files=files,
+                    prefix=self.prefix + 'owner-host'
+                )
+            else:
+                self.buyer_forms = {
+                    'eventperson': EventPersonForm(
+                        person=self.buyer,
+                        event=self.event,
+                        data=data,
+                        files=files,
+                        prefix=self.prefix + 'buyer-eventperson'
+                    ),
+                    'guest': GuestForm(
+                        person=self.buyer,
+                        with_defaults=True,
+                        event=self.event,
+                        housing_dates=housing_dates,
+                        data=data,
+                        files=files,
+                        prefix=self.prefix + 'buyer-guest'
+                    ),
+                    'host': HostingForm(
+                        home=self.buyer.home,
+                        event=self.event,
+                        housing_dates=housing_dates,
+                        data=data,
+                        files=files,
+                        prefix=self.prefix + 'buyer-host'
+                    )
+                }
+
+    def is_valid(self):
+        valid = super(PersonItemForm, self).is_valid()
+        if valid and self.item.category == Item.Pass:
+            valid = self.eventpersonform.is_valid()
+            if valid:
+                housing = self.eventpersonform.cleaned_data['housing']
+                if housing == EventPerson.NEED:
+                    valid = self.guestform.is_valid()
+                elif housing == EventPerson.HOST:
+                    valid = self.hostform.is_valid()
+        return valid
+
+
+class PersonItemFormSet(forms.models.BaseModelFormSet):
+    def __init__(self, event, user, *args, **kwargs):
+        self.event = event
+        self.user = user
+        self.housing_dates = event.housing_dates.all()
+        super(PersonItemFormSet, self).__init__(*args, **kwargs)
+
+    def _construct_form(self, i, **kwargs):
+        kwargs.update({
+            'event': self.event,
+            'housing_dates': self.housing_dates,
+            'user': self.user,
+        })
+        return super(PersonItemFormSet, self)._construct_form(i, **kwargs)
 
 
 class EventPersonForm(forms.ModelForm):
@@ -238,46 +333,64 @@ class EventPersonForm(forms.ModelForm):
 
     def __init__(self, person, event, *args, **kwargs):
         self.person = person
+        self.event = event
+        if person is None:
+            instance = EventPerson(event=event)
+        else:
+            instance = EventPerson(person=person, event=event)
+            try:
+                instance = EventPerson.objects.get(person=person, event=event)
+            except EventPerson.DoesNotExist:
+                pass
+        kwargs['instance'] = instance
         super(EventPersonForm, self).__init__(*args, **kwargs)
-        if self.instance.pk is None:
-            self.instance.event = event
-            self.instance.person = person
 
 
 class GuestForm(forms.ModelForm):
-    save_as_defaults = forms.BooleanField(initial=True)
-
     class Meta:
         model = EventPerson
         exclude = ('event', 'person', 'car_spaces',
                    'bedtime', 'wakeup', 'housing')
 
-    def __init__(self, person, event, *args, **kwargs):
+    def __init__(self, person, event, housing_dates, with_defaults=True, *args, **kwargs):
         self.person = person
+        self.event = event
+        self.with_defaults = with_defaults
+        if person is None:
+            instance = EventPerson(event=event)
+        else:
+            instance = EventPerson(person=person, event=event)
+            try:
+                instance = EventPerson.objects.get(person=person, event=event)
+            except EventPerson.DoesNotExist:
+                pass
+        kwargs['instance'] = instance
         super(GuestForm, self).__init__(*args, **kwargs)
-        if self.instance.pk is None:
-            self.initial.update({
-                'ef_cause': person.ef_cause.all(),
-                'ef_avoid': person.ef_avoid.all(),
-                'person_prefer': person.person_prefer.all(),
-                'person_avoid': person.person_avoid.all(),
-                'housing_prefer': person.housing_prefer.all(),
-                'other_needs': person.other_needs,
-            })
-            self.instance.event = event
-            self.instance.person = person
-        self.fields['nights'].queryset = event.housing_dates.all()
+        if with_defaults and person is not None:
+            self.fields['save_as_defaults'] = forms.BooleanField(initial=True)
+            if self.instance.pk is None:
+                self.initial.update({
+                    'ef_cause': person.ef_cause.all(),
+                    'ef_avoid': person.ef_avoid.all(),
+                    'person_prefer': person.person_prefer.all(),
+                    'person_avoid': person.person_avoid.all(),
+                    'housing_prefer': person.housing_prefer.all(),
+                    'other_needs': person.other_needs,
+                })
+                self.instance.event = event
+                self.instance.person = person
+        self.fields['nights'].queryset = housing_dates
 
     def save(self):
         instance = super(GuestForm, self).save()
-        if self.cleaned_data['save_as_defaults']:
-            self.person.ef_cause = instance.ef_cause.all()
-            self.person.ef_avoid = instance.ef_avoid.all()
-            self.person.person_prefer = instance.person_prefer.all()
-            self.person.person_avoid = instance.person_avoid.all()
-            self.person.housing_prefer = instance.housing_prefer.all()
-            self.person.other_needs = instance.other_needs
-            self.person.save()
+        if self.with_defaults and self.cleaned_data['save_as_defaults']:
+            self.owner.ef_cause = instance.ef_cause.all()
+            self.owner.ef_avoid = instance.ef_avoid.all()
+            self.owner.person_prefer = instance.person_prefer.all()
+            self.owner.person_avoid = instance.person_avoid.all()
+            self.owner.housing_prefer = instance.housing_prefer.all()
+            self.owner.other_needs = instance.other_needs
+            self.owner.save()
         return instance
 
 
@@ -288,8 +401,12 @@ class HostingForm(forms.ModelForm):
         model = EventHousing
         exclude = ('event', 'home')
 
-    def __init__(self, home, event, *args, **kwargs):
+    def __init__(self, home, event, housing_dates, *args, **kwargs):
         self.home = home
+        kwargs['instance'] = EventHousing.objects.filter(
+            event=event,
+            home=home
+        ).first()
         super(HostingForm, self).__init__(*args, **kwargs)
         if self.instance.pk is None and home is not None:
             self.initial.update({
@@ -301,7 +418,7 @@ class HostingForm(forms.ModelForm):
             })
             self.instance.event = event
             self.instance.home = home
-        self.fields['nights'].queryset = event.housing_dates.all()
+        self.fields['nights'].queryset = housing_dates
 
     def save(self):
         instance = super(HostingForm, self).save()

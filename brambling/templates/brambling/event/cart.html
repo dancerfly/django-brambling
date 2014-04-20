@@ -2,6 +2,28 @@
 
 {% load floppyforms %}
 
+{% block javascripts %}
+	{{ block.super }}
+	<script>
+		var selects = $('select[name$=-owner]');
+		selects.on('change', function(){
+			var $this = $(this),
+				name = $this.attr('name'),
+				prefix = name.substr(0, name.length - 6),
+				buyer_id = $('#' + prefix + '-subforms').data('buyer'),
+				value = $this.val();
+			if (value == buyer_id) {
+				$('#' + prefix + '-buyer-forms').show();
+				$('#' + prefix + '-owner-forms').hide();
+			} else {
+				$('#' + prefix + '-owner-forms').show();
+				$('#' + prefix + '-buyer-forms').hide();
+			}
+		});
+		selects.change();
+	</script>
+{% endblock %}
+
 {% block main %}
 	<h2>Your cart</h2>
 
@@ -25,6 +47,22 @@
 						<li>{{ form.instance.get_status_display }}</li>
 					</ul>
 					{% form form %}
+					{% if form.item.category == form.item.PASS %}
+						<div id='{{ form.prefix }}-subforms' data-buyer="{{ form.instance.buyer.pk }}">
+							<div id='{{ form.prefix }}-owner-forms'>
+								<p>Owner forms</p>
+								{% form form.owner_forms.eventperson %}
+								{% form form.owner_forms.guest %}
+								{% form form.buyer_forms.host %}
+							</div>
+							<div id='{{ form.prefix }}-buyer-forms'>
+								<p>Buyer forms</p>
+								{% form form.buyer_forms.eventperson %}
+								{% form form.buyer_forms.guest %}
+								{% form form.buyer_forms.host %}
+							</div>
+						</div>
+					{% endif %}
 				</div>
 			</div>
 		{% endfor %}

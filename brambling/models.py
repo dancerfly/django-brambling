@@ -265,7 +265,8 @@ class PersonItem(models.Model):
     buyer = models.ForeignKey('Person',
                               related_name="items_bought")
     owner = models.ForeignKey('Person',
-                              related_name="items_owned")
+                              related_name="items_owned",
+                              blank=True, null=True)
 
 
 class Discount(models.Model):
@@ -500,6 +501,7 @@ class EventPerson(models.Model):
 
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person)
+    event_pass = models.ForeignKey(ItemOption)
 
     # Housing info.
     car_spaces = models.SmallIntegerField(default=0,
