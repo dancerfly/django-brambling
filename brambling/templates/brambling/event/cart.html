@@ -5,8 +5,8 @@
 {% block javascripts %}
 	{{ block.super }}
 	<script>
-		var selects = $('select[name$=-owner]');
-		selects.on('change', function(){
+		var ownerselects = $('select[name$=-owner]');
+		ownerselects.on('change', function(){
 			var $this = $(this),
 				name = $this.attr('name'),
 				prefix = name.substr(0, name.length - 6),
@@ -20,7 +20,30 @@
 				$('#' + prefix + '-buyer-forms').hide();
 			}
 		});
-		selects.change();
+		ownerselects.change();
+
+		var housingselects = $('select[name$=-buyer-eventperson-housing]');
+		housingselects.on('change', function(){
+			var $this = $(this),
+				name = $this.attr('name'),
+				prefix = name.substr(0, name.length - 20),
+				show_guest_class = '.' + prefix + '-show-guest',
+				show_host_class = '.' + prefix + '-show-host',
+				value = $this.val();
+			console.log(prefix);
+			if (value !== 'need') {
+				$(show_guest_class).hide();
+			}
+			if (value !== 'host') {
+				$(show_host_class).hide();
+			}
+			if (value === 'need') {
+				$(show_guest_class).show();
+			} else if (value === 'host') {
+				$(show_host_class).show();
+			}
+		})
+		housingselects.change();
 	</script>
 {% endblock %}
 
@@ -50,16 +73,22 @@
 					{% if form.item.category == form.item.PASS %}
 						<div id='{{ form.prefix }}-subforms' data-buyer="{{ form.instance.buyer.pk }}">
 							<div id='{{ form.prefix }}-owner-forms'>
-								<p>Owner forms</p>
-								{% form form.owner_forms.eventperson %}
-								{% form form.owner_forms.guest %}
-								{% form form.buyer_forms.host %}
+								<h3>Owner forms</h3>
+								{% with prefix=form.owner_forms.eventperson.prefix|slice:":-12" %}
+									{% form form.owner_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+									{% form form.owner_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+									{% if form.owner_forms.host %}
+										{% form form.owner_forms.host using "brambling/forms/host.html" with prefix=prefix %}
+									{% endif %}
+								{% endwith %}
 							</div>
 							<div id='{{ form.prefix }}-buyer-forms'>
-								<p>Buyer forms</p>
-								{% form form.buyer_forms.eventperson %}
-								{% form form.buyer_forms.guest %}
-								{% form form.buyer_forms.host %}
+								<h3>Buyer forms</h3>
+								{% with prefix=form.buyer_forms.eventperson.prefix|slice:":-12" %}
+									{% form form.buyer_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+									{% form form.buyer_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+									{% form form.buyer_forms.host using "brambling/forms/host.html" with prefix=prefix %}
+								{% endwith %}
 							</div>
 						</div>
 					{% endif %}

@@ -1,0 +1,26 @@
+{% load floppyforms %}
+
+<fieldset class="{{ prefix }}-show-guest">
+
+<h4>Housing preferences</h4>
+
+<div class='row'>
+	<div class='col-md-6'>{% formrow form.nights %}</div>
+	<div class='col-md-6'>{% formrow form.housing_prefer %}</div>
+</div>
+
+<div class='row'>
+	<div class='col-md-6'>{% formrow form.ef_cause %}</div>
+	<div class='col-md-6'>{% formrow form.ef_avoid %}</div>
+</div>
+
+<div class='row'>
+	<div class='col-md-6'>{% formrow form.person_prefer %}</div>
+	<div class='col-md-6'>{% formrow form.person_avoid %}</div>
+</div>
+
+{% formrow form.other_needs %}
+
+{% formrow form.save_as_defaults %}
+
+</fieldset>

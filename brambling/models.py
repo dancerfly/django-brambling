@@ -509,8 +509,8 @@ class EventPerson(models.Model):
                                                       MinValueValidator(-1)],
                                           help_text="Including the driver's seat.")
 
-    bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES)
-    wakeup = models.CharField(max_length=5, choices=MORNING_CHOICES)
+    bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES, blank=True)
+    wakeup = models.CharField(max_length=5, choices=MORNING_CHOICES, blank=True)
     housing = models.CharField(max_length=4, choices=HOUSING_CHOICES,
                                default=NEED)
 

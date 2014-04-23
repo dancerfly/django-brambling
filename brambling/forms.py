@@ -248,7 +248,7 @@ class PersonItemForm(forms.ModelForm):
                     event=self.event,
                     data=data,
                     files=files,
-                    prefix=self.prefix + 'owner-eventperson'
+                    prefix=self.prefix + '-owner-eventperson'
                 ),
                 'guest': GuestForm(
                     person=self.owner,
@@ -257,7 +257,7 @@ class PersonItemForm(forms.ModelForm):
                     housing_dates=housing_dates,
                     data=data,
                     files=files,
-                    prefix=self.prefix + 'owner-guest'
+                    prefix=self.prefix + '-owner-guest'
                 )
             }
             if self.user == self.owner:
@@ -267,7 +267,7 @@ class PersonItemForm(forms.ModelForm):
                     housing_dates=housing_dates,
                     data=data,
                     files=files,
-                    prefix=self.prefix + 'owner-host'
+                    prefix=self.prefix + '-owner-host'
                 )
             else:
                 self.buyer_forms = {
@@ -276,7 +276,7 @@ class PersonItemForm(forms.ModelForm):
                         event=self.event,
                         data=data,
                         files=files,
-                        prefix=self.prefix + 'buyer-eventperson'
+                        prefix=self.prefix + '-buyer-eventperson'
                     ),
                     'guest': GuestForm(
                         person=self.buyer,
@@ -285,7 +285,7 @@ class PersonItemForm(forms.ModelForm):
                         housing_dates=housing_dates,
                         data=data,
                         files=files,
-                        prefix=self.prefix + 'buyer-guest'
+                        prefix=self.prefix + '-buyer-guest'
                     ),
                     'host': HostingForm(
                         home=self.buyer.home,
@@ -293,7 +293,7 @@ class PersonItemForm(forms.ModelForm):
                         housing_dates=housing_dates,
                         data=data,
                         files=files,
-                        prefix=self.prefix + 'buyer-host'
+                        prefix=self.prefix + '-buyer-host'
                     )
                 }
 
@@ -350,7 +350,7 @@ class GuestForm(forms.ModelForm):
     class Meta:
         model = EventPerson
         exclude = ('event', 'person', 'car_spaces',
-                   'bedtime', 'wakeup', 'housing')
+                   'bedtime', 'wakeup', 'housing', 'event_pass')
 
     def __init__(self, person, event, housing_dates, with_defaults=True, *args, **kwargs):
         self.person = person

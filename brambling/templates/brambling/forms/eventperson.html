@@ -1,0 +1,9 @@
+{% load floppyforms %}
+
+{% formrow form.housing %}
+
+<div class='row {{ prefix }}-show-host {{ prefix }}-show-guest'>
+	<div class='col-md-4'>{% formrow form.bedtime %}</div>
+	<div class='col-md-4'>{% formrow form.wakeup %}</div>
+	<div class='col-md-4'>{% formrow form.car_spaces %}</div>
+</div>
