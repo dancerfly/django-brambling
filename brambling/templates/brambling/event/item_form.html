@@ -24,22 +24,7 @@
 					<div class='panel-title'>Option {{ forloop.counter }}</div>
 				</header>
 				<div class='panel-body'>
-					{% form form using %}
-						<div class='row'>
-							<div class='col-md-6'>{% formrow form.name %}</div>
-							<div class='col-md-3'>{% formrow form.order %}</div>
-							<div class='col-md-3'>{% formrow form.DELETE %}</div>
-						</div>
-						<div class='row'>
-							<div class='col-md-4'>{% formrow form.price %}</div>
-							<div class='col-md-4'>{% formrow form.total_number %}</div>
-							<div class='col-md-4'>{% formrow form.max_per_owner %}</div>
-						</div>
-						<div class='row'>
-							<div class='col-md-6'>{% formrow form.available_start %}</div>
-							<div class='col-md-6'>{% formrow form.available_end %}</div>
-						</div>
-					{% endform %}
+					{% form form using "brambling/forms/itemoption.html" %}
 				</div>
 			</div>
 		{% endfor %}

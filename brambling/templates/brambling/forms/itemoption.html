@@ -1,0 +1,24 @@
+{% extends "floppyforms/layouts/bootstrap.html" %}
+
+{% load floppyforms %}
+
+{% block rows %}
+	<div class='row'>
+		<div class='col-md-6'>{% formrow form.name %}</div>
+		<div class='col-md-3'>{% formrow form.order %}</div>
+		<div class='col-md-3'>{% formrow form.DELETE %}</div>
+	</div>
+	<div class='row'>
+		<div class='col-md-4'>{% formrow form.price %}</div>
+		<div class='col-md-4'>{% formrow form.total_number %}</div>
+		<div class='col-md-4'>{% formrow form.max_per_owner %}</div>
+	</div>
+	<div class='row'>
+		<div class='col-md-6'>{% formrow form.available_start %}</div>
+		<div class='col-md-6'>{% formrow form.available_end %}</div>
+	</div>
+
+	{% for field in form.hidden_fields %}
+		{% formfield field %}
+	{% endfor %}
+{% endblock %}
