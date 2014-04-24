@@ -245,6 +245,7 @@ class PersonItemForm(forms.ModelForm):
             self.owner_forms = {
                 'eventperson': EventPersonForm(
                     person=self.owner,
+                    user=self.user,
                     event=self.event,
                     data=data,
                     files=files,
@@ -273,6 +274,7 @@ class PersonItemForm(forms.ModelForm):
                 self.buyer_forms = {
                     'eventperson': EventPersonForm(
                         person=self.buyer,
+                        user=self.user,
                         event=self.event,
                         data=data,
                         files=files,
@@ -331,7 +333,7 @@ class EventPersonForm(forms.ModelForm):
         model = EventPerson
         fields = ('car_spaces', 'bedtime', 'wakeup', 'housing')
 
-    def __init__(self, person, event, *args, **kwargs):
+    def __init__(self, person, user, event, *args, **kwargs):
         self.person = person
         self.event = event
         if person is None:
@@ -344,6 +346,8 @@ class EventPersonForm(forms.ModelForm):
                 pass
         kwargs['instance'] = instance
         super(EventPersonForm, self).__init__(*args, **kwargs)
+        if person != user:
+            self.fields['housing'].choices = self.fields['housing'].choices[:-1]
 
 
 class GuestForm(forms.ModelForm):

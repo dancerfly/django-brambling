@@ -495,8 +495,8 @@ class EventPerson(models.Model):
 
     HOUSING_CHOICES = (
         (NEED, 'Need housing'),
-        (HAVE, 'Made my own arrangements'),
-        (HOST, 'Am hosting people'),
+        (HAVE, 'Already arranged'),
+        (HOST, 'Hosting others'),
     )
 
     event = models.ForeignKey(Event)
@@ -512,7 +512,7 @@ class EventPerson(models.Model):
     bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES, blank=True)
     wakeup = models.CharField(max_length=5, choices=MORNING_CHOICES, blank=True)
     housing = models.CharField(max_length=4, choices=HOUSING_CHOICES,
-                               default=NEED)
+                               default=HAVE)
 
     # Guest info
     nights = models.ManyToManyField(Date, blank=True, null=True)
