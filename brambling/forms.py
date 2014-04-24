@@ -2,6 +2,7 @@ import datetime
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.db import models
+from django.forms.models import construct_instance
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
 from zenaida.forms import inlineformset_factory
@@ -226,90 +227,197 @@ class ReservationForm(forms.ModelForm):
 
 
 class PersonItemForm(forms.ModelForm):
+    """
+    If you bought it, you can change the owner.
+
+    If you own it, you can set up hosting.
+
+    So there are three sets of forms needed:
+
+    1. set of forms for the person who owns the item. If this is the current
+       user, include host form.
+
+    2. if that isn't the buyer, and the buyer is the current user, a set of
+       blank forms for the person who bought the item.
+
+    3. If the current user is the buyer, a set of blank forms for non-owner
+       people who it might be transferred to.
+
+    ... all of which is only available if housing data is even being collected.
+
+    """
     class Meta:
         model = PersonItem
         fields = ('owner',)
 
     def __init__(self, event, housing_dates, user, data=None, files=None,
                  *args, **kwargs):
+
         self.event = event
         self.housing_dates = housing_dates
         self.user = user
         super(PersonItemForm, self).__init__(data, files, *args, **kwargs)
-        self.item = self.instance.item_option.item
         self.buyer = self.instance.buyer
         self.owner = self.instance.owner
-        self.initial['owner'] = self.owner or self.buyer
+        if self.buyer != user:
+            del self.fields['owner']
+        else:
+            self.initial['owner'] = self.owner or self.buyer
 
-        if self.item.category == Item.PASS:
+        self.item = self.instance.item_option.item
+        if event.collect_housing_data and self.item.category == Item.PASS:
+            eventperson_kwargs = {
+                'user': self.user,
+                'event': self.event,
+                'data': data,
+                'files': files
+            }
+            housing_kwargs = {
+                'event': self.event,
+                'housing_dates': housing_dates,
+                'data': data,
+                'files': files
+            }
             self.owner_forms = {
                 'eventperson': EventPersonForm(
                     person=self.owner,
-                    user=self.user,
-                    event=self.event,
-                    data=data,
-                    files=files,
-                    prefix=self.prefix + '-owner-eventperson'
+                    prefix=self.prefix + '-owner-eventperson',
+                    **eventperson_kwargs
                 ),
                 'guest': GuestForm(
                     person=self.owner,
                     with_defaults=False,
-                    event=self.event,
-                    housing_dates=housing_dates,
-                    data=data,
-                    files=files,
-                    prefix=self.prefix + '-owner-guest'
+                    prefix=self.prefix + '-owner-guest',
+                    **housing_kwargs
                 )
             }
             if self.user == self.owner:
                 self.owner_forms['host'] = HostingForm(
                     home=self.owner.home,
-                    event=self.event,
-                    housing_dates=housing_dates,
-                    data=data,
-                    files=files,
-                    prefix=self.prefix + '-owner-host'
+                    prefix=self.prefix + '-owner-host',
+                    **housing_kwargs
                 )
-            else:
-                self.buyer_forms = {
+
+            if self.user == self.buyer:
+                if self.buyer != self.owner:
+                    self.buyer_forms = {
+                        'eventperson': EventPersonForm(
+                            person=self.buyer,
+                            prefix=self.prefix + '-buyer-eventperson',
+                            **eventperson_kwargs
+                        ),
+                        'guest': GuestForm(
+                            person=self.buyer,
+                            with_defaults=True,
+                            prefix=self.prefix + '-buyer-guest',
+                            **housing_kwargs
+                        ),
+                        'host': HostingForm(
+                            home=self.buyer.home,
+                            prefix=self.prefix + '-buyer-host',
+                            **housing_kwargs
+                        )
+                    }
+                self.empty_forms = {
                     'eventperson': EventPersonForm(
-                        person=self.buyer,
-                        user=self.user,
-                        event=self.event,
-                        data=data,
-                        files=files,
-                        prefix=self.prefix + '-buyer-eventperson'
+                        person=None,
+                        prefix=self.prefix + '-empty-eventperson',
+                        **eventperson_kwargs
                     ),
                     'guest': GuestForm(
-                        person=self.buyer,
-                        with_defaults=True,
-                        event=self.event,
-                        housing_dates=housing_dates,
-                        data=data,
-                        files=files,
-                        prefix=self.prefix + '-buyer-guest'
+                        person=None,
+                        prefix=self.prefix + '-empty-guest',
+                        **housing_kwargs
                     ),
-                    'host': HostingForm(
-                        home=self.buyer.home,
-                        event=self.event,
-                        housing_dates=housing_dates,
-                        data=data,
-                        files=files,
-                        prefix=self.prefix + '-buyer-host'
-                    )
                 }
+
+    def has_changed(self):
+        changed = super(PersonItemForm, self).has_changed()
+        if (not changed and self.event.collect_housing_data and
+                self.item.category == Item.PASS):
+            # Use owner forms if the owner hasn't changed.
+            # If it has changed, check if the new owner is the buyer
+            # or a new person and use the buyer forms or empty forms
+            # respectively.
+            if not 'owner' in self.changed_data:
+                # Owner forms.
+                changed = any((form.has_changed()
+                               for form in self.owner_forms.values()))
+            elif self.cleaned_data['owner'] == self.buyer:
+                # Buyer forms
+                changed = any((form.has_changed()
+                               for form in self.buyer_forms.values()))
+            else:
+                # Empty forms.
+                changed = any((form.has_changed()
+                               for form in self.empty_forms.values()))
+        return changed
 
     def is_valid(self):
         valid = super(PersonItemForm, self).is_valid()
-        if valid and self.item.category == Item.Pass:
-            valid = self.eventpersonform.is_valid()
-            if valid:
-                housing = self.eventpersonform.cleaned_data['housing']
-                if housing == EventPerson.NEED:
-                    valid = self.guestform.is_valid()
-                elif housing == EventPerson.HOST:
-                    valid = self.hostform.is_valid()
+        if (valid and self.event.collect_housing_data and
+                self.item.category == Item.PASS):
+            # Use owner forms if the owner hasn't changed.
+            # If it has changed, check if the new owner is the buyer
+            # or a new person and use the buyer forms or empty forms
+            # respectively.
+            if not 'owner' in self.changed_data:
+                # Owner forms.
+                valid = self.is_valid_group(self.owner_forms)
+            elif self.cleaned_data['owner'] == self.buyer:
+                # Buyer forms
+                valid = self.is_valid_group(self.buyer_forms)
+            else:
+                # Empty forms.
+                valid = self.is_valid_group(self.empty_forms)
         return valid
+
+    def is_valid_group(self, form_group):
+        epf = form_group['eventperson']
+        valid = epf.is_valid()
+        if valid:
+            housing = epf.cleaned_data['housing']
+            if housing == EventPerson.NEED:
+                valid = form_group['guest'].is_valid()
+            elif housing == EventPerson.HOST:
+                valid = form_group['host'].is_valid()
+        return valid
+
+    def save(self, commit=True):
+        instance = super(PersonItemForm, self).save()
+        if (self.event.collect_housing_data and
+                self.item.category == Item.PASS):
+            # Use owner forms if the owner hasn't changed.
+            # If it has changed, check if the new owner is the buyer
+            # or a new person and use the buyer forms or empty forms
+            # respectively.
+            if not 'owner' in self.changed_data:
+                # Owner forms.
+                self.save_group(self.owner_forms)
+            else:
+                eventperson = self.owner_forms['eventperson'].instance
+                if eventperson.pk:
+                    eventperson.delete()
+                if self.cleaned_data['owner'] == self.buyer:
+                    # Buyer forms
+                    self.save_group(self.buyer_forms)
+                else:
+                    # Empty forms.
+                    self.save_group(self.empty_forms)
+        return instance
+
+    def save_group(self, form_group):
+        eventperson = form_group['eventperson'].instance
+        eventperson.person = self.instance.owner
+        eventperson.event_pass = self.instance
+        housing = form_group['eventperson'].cleaned_data['housing']
+        if housing == EventPerson.NEED:
+            opts = form_group['guest']._meta
+            eventperson = construct_instance(form_group['guest'], eventperson,
+                                             opts.fields, opts.exclude)
+        elif housing == EventPerson.HOST:
+            form_group['host'].save()
+        eventperson.save()
 
 
 class PersonItemFormSet(forms.models.BaseModelFormSet):
@@ -356,7 +464,8 @@ class GuestForm(forms.ModelForm):
         exclude = ('event', 'person', 'car_spaces',
                    'bedtime', 'wakeup', 'housing', 'event_pass')
 
-    def __init__(self, person, event, housing_dates, with_defaults=True, *args, **kwargs):
+    def __init__(self, person, event, housing_dates, with_defaults=True,
+                 *args, **kwargs):
         self.person = person
         self.event = event
         self.with_defaults = with_defaults

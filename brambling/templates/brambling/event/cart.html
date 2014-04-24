@@ -10,14 +10,22 @@
 			var $this = $(this),
 				name = $this.attr('name'),
 				prefix = name.substr(0, name.length - 6),
-				buyer_id = $('#' + prefix + '-subforms').data('buyer'),
+				subforms = $('#' + prefix + '-subforms'),
+				buyer_id = subforms.data('buyer'),
+				owner_id = subforms.data('owner'),
 				value = $this.val();
-			if (value == buyer_id) {
-				$('#' + prefix + '-buyer-forms').show();
-				$('#' + prefix + '-owner-forms').hide();
-			} else {
+			if (value == owner_id) {
 				$('#' + prefix + '-owner-forms').show();
 				$('#' + prefix + '-buyer-forms').hide();
+				$('#' + prefix + '-empty-forms').hide();
+			} else if (value == buyer_id) {
+				$('#' + prefix + '-owner-forms').hide();
+				$('#' + prefix + '-buyer-forms').show();
+				$('#' + prefix + '-empty-forms').hide();
+			} else {
+				$('#' + prefix + '-owner-forms').hide();
+				$('#' + prefix + '-buyer-forms').hide();
+				$('#' + prefix + '-empty-forms').show();
 			}
 		});
 		ownerselects.change();
@@ -30,7 +38,6 @@
 				show_guest_class = '.' + prefix + '-show-guest',
 				show_host_class = '.' + prefix + '-show-host',
 				value = $this.val();
-			console.log(prefix);
 			if (value !== 'need') {
 				$(show_guest_class).hide();
 			}
@@ -71,7 +78,7 @@
 					</ul>
 					{% form form %}
 					{% if form.item.category == form.item.PASS %}
-						<div id='{{ form.prefix }}-subforms' data-buyer="{{ form.instance.buyer.pk }}">
+						<div id='{{ form.prefix }}-subforms' data-owner="{{ form.instance.owner.pk }}" data-buyer="{{ form.instance.buyer.pk }}">
 							<div id='{{ form.prefix }}-owner-forms'>
 								<h3>Owner forms</h3>
 								{% with prefix=form.owner_forms.eventperson.prefix|slice:":-12" %}
@@ -82,14 +89,25 @@
 									{% endif %}
 								{% endwith %}
 							</div>
-							<div id='{{ form.prefix }}-buyer-forms'>
-								<h3>Buyer forms</h3>
-								{% with prefix=form.buyer_forms.eventperson.prefix|slice:":-12" %}
-									{% form form.buyer_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
-									{% form form.buyer_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
-									{% form form.buyer_forms.host using "brambling/forms/host.html" with prefix=prefix %}
-								{% endwith %}
-							</div>
+							{% if form.buyer_forms %}
+								<div id='{{ form.prefix }}-buyer-forms'>
+									<h3>Buyer forms</h3>
+									{% with prefix=form.buyer_forms.eventperson.prefix|slice:":-12" %}
+										{% form form.buyer_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+										{% form form.buyer_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+										{% form form.buyer_forms.host using "brambling/forms/host.html" with prefix=prefix %}
+									{% endwith %}
+								</div>
+							{% endif %}
+							{% if form.empty_forms %}
+								<div id='{{ form.prefix }}-empty-forms'>
+									<h3>Empty forms</h3>
+									{% with prefix=form.empty_forms.eventperson.prefix|slice:":-12" %}
+										{% form form.empty_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+										{% form form.empty_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+									{% endwith %}
+								</div>
+							{% endif %}
 						</div>
 					{% endif %}
 				</div>

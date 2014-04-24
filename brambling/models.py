@@ -1,3 +1,4 @@
+# encoding: utf8
 from datetime import timedelta
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
@@ -501,7 +502,7 @@ class EventPerson(models.Model):
 
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person)
-    event_pass = models.ForeignKey(ItemOption)
+    event_pass = models.OneToOneField(PersonItem)
 
     # Housing info.
     car_spaces = models.SmallIntegerField(default=0,
@@ -549,6 +550,9 @@ class EventPerson(models.Model):
                                             verbose_name="I prefer to stay somewhere that is (a/an)")
 
     other_needs = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return u"{} – {}".format(self.event, self.person)
 
 
 class EventHousing(models.Model):
