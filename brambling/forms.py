@@ -1,8 +1,10 @@
 import datetime
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import construct_instance
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.translation import ugettext_lazy as _
 from zenaida.forms import inlineformset_factory
@@ -33,8 +35,8 @@ class EventForm(forms.ModelForm):
     def clean(self):
         cd = self.cleaned_data
         if cd['start_date'] > cd['end_date']:
-            raise forms.ValidationError("End date must be before or equal to "
-                                        "the start date.")
+            raise ValidationError("End date must be before or equal to "
+                                  "the start date.")
         return cd
 
     def save(self):
@@ -92,7 +94,7 @@ class SignUpForm(BasePersonForm):
         email = self.cleaned_data["email"]
         q = models.Q(email=email) | models.Q(confirmed_email=email)
         if Person._default_manager.filter(q).exists():
-            raise forms.ValidationError(
+            raise ValidationError(
                 self.error_messages['duplicate_email'],
                 code='duplicate_email',
             )
@@ -102,7 +104,7 @@ class SignUpForm(BasePersonForm):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
-            raise forms.ValidationError(
+            raise ValidationError(
                 self.error_messages['password_mismatch'],
                 code='password_mismatch',
             )
@@ -194,7 +196,7 @@ class DiscountForm(forms.ModelForm):
         self.instance.event = self.event
         try:
             self.instance.validate_unique()
-        except forms.ValidationError as e:
+        except ValidationError as e:
             self._update_errors(e)
 
 
@@ -215,7 +217,7 @@ class ReservationForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super(ReservationForm, self).clean()
         if self.item_option.id != cleaned_data.get('option_id'):
-            raise forms.ValidationError("Be sure not to fiddle with the HTML code.")
+            raise ValidationError("Be sure not to fiddle with the HTML code.")
         return cleaned_data
 
     def _post_clean(self):
@@ -269,6 +271,7 @@ class PersonItemForm(forms.ModelForm):
             eventperson_kwargs = {
                 'user': self.user,
                 'event': self.event,
+                'personitem': self.instance,
                 'data': data,
                 'files': files
             }
@@ -287,6 +290,7 @@ class PersonItemForm(forms.ModelForm):
                 'guest': GuestForm(
                     person=self.owner,
                     with_defaults=False,
+                    personitem=self.instance,
                     prefix=self.prefix + '-owner-guest',
                     **housing_kwargs
                 )
@@ -309,6 +313,7 @@ class PersonItemForm(forms.ModelForm):
                         'guest': GuestForm(
                             person=self.buyer,
                             with_defaults=True,
+                            personitem=self.instance,
                             prefix=self.prefix + '-buyer-guest',
                             **housing_kwargs
                         ),
@@ -326,6 +331,7 @@ class PersonItemForm(forms.ModelForm):
                     ),
                     'guest': GuestForm(
                         person=None,
+                        personitem=self.instance,
                         prefix=self.prefix + '-empty-guest',
                         **housing_kwargs
                     ),
@@ -419,6 +425,27 @@ class PersonItemForm(forms.ModelForm):
             form_group['host'].save()
         eventperson.save()
 
+    def clean_owner(self):
+        # Enforce max_per_owner
+        owner = self.cleaned_data['owner']
+        max_per_owner = self.instance.item_option.max_per_owner
+        if 'owner' in self.changed_data and max_per_owner is not None:
+            reservation_start = (
+                timezone.now() -
+                datetime.timedelta(minutes=self.event.reservation_timeout)
+            )
+            # Clear any old PersonItems. And any old registrations with them.
+            PersonItem.objects.filter(status=PersonItem.RESERVED,
+                                      item_option__item__event=self.event,
+                                      owner=owner,
+                                      added__lt=reservation_start).delete()
+            count = PersonItem.objects.filter(item_option__item__event=self.event,
+                                              owner=owner).count()
+            if count >= max_per_owner:
+                raise ValidationError("{} cannot own any more of these."
+                                      "".format(unicode(owner)))
+        return owner
+
 
 class PersonItemFormSet(forms.models.BaseModelFormSet):
     def __init__(self, event, user, *args, **kwargs):
@@ -441,15 +468,17 @@ class EventPersonForm(forms.ModelForm):
         model = EventPerson
         fields = ('car_spaces', 'bedtime', 'wakeup', 'housing')
 
-    def __init__(self, person, user, event, *args, **kwargs):
+    def __init__(self, person, user, personitem, event, *args, **kwargs):
         self.person = person
         self.event = event
+        self.personitem = personitem
         if person is None:
             instance = EventPerson(event=event)
         else:
             instance = EventPerson(person=person, event=event)
             try:
-                instance = EventPerson.objects.get(person=person, event=event)
+                instance = EventPerson.objects.get(person=person, event=event,
+                                                   event_pass=personitem)
             except EventPerson.DoesNotExist:
                 pass
         kwargs['instance'] = instance
@@ -464,9 +493,10 @@ class GuestForm(forms.ModelForm):
         exclude = ('event', 'person', 'car_spaces',
                    'bedtime', 'wakeup', 'housing', 'event_pass')
 
-    def __init__(self, person, event, housing_dates, with_defaults=True,
-                 *args, **kwargs):
+    def __init__(self, person, personitem, event, housing_dates,
+                 with_defaults=True, *args, **kwargs):
         self.person = person
+        self.personitem = personitem
         self.event = event
         self.with_defaults = with_defaults
         if person is None:
@@ -474,7 +504,8 @@ class GuestForm(forms.ModelForm):
         else:
             instance = EventPerson(person=person, event=event)
             try:
-                instance = EventPerson.objects.get(person=person, event=event)
+                instance = EventPerson.objects.get(person=person, event=event,
+                                                   event_pass=personitem)
             except EventPerson.DoesNotExist:
                 pass
         kwargs['instance'] = instance
