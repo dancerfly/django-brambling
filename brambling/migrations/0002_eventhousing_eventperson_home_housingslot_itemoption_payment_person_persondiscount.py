@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '__first__'),
+        ('contenttypes', '__first__'),
         ('brambling', '0001_initial'),
     ]
 
