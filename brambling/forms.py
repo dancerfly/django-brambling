@@ -16,6 +16,10 @@ from brambling.models import (Event, Person, Home, Item, ItemOption,
 from brambling.utils import send_confirmation_email
 
 
+CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
+
+
+
 class EventForm(forms.ModelForm):
     start_date = forms.DateField()
     end_date = forms.DateField()
@@ -488,10 +492,19 @@ class EventPersonForm(forms.ModelForm):
 
 
 class GuestForm(forms.ModelForm):
+    ef_cause_confirm = forms.BooleanField(initial=False,
+                                          error_messages=CONFIRM_ERRORS)
+    ef_avoid_confirm = forms.BooleanField(initial=False,
+                                          error_messages=CONFIRM_ERRORS)
+
     class Meta:
         model = EventPerson
         exclude = ('event', 'person', 'car_spaces',
                    'bedtime', 'wakeup', 'housing', 'event_pass')
+        error_messages = {
+            'ef_cause_confirm': {'required': 'Must be marked correct.'},
+            'ef_avoid_confirm': {'required': 'Must be marked correct.'},
+        }
 
     def __init__(self, person, personitem, event, housing_dates,
                  with_defaults=True, *args, **kwargs):
@@ -540,6 +553,12 @@ class GuestForm(forms.ModelForm):
 
 
 class HostingForm(forms.ModelForm):
+    housing_categories_confirm = forms.BooleanField(initial=False,
+                                                    error_messages=CONFIRM_ERRORS)
+    ef_present_confirm = forms.BooleanField(initial=False,
+                                            error_messages=CONFIRM_ERRORS)
+    ef_avoid_confirm = forms.BooleanField(initial=False,
+                                          error_messages=CONFIRM_ERRORS)
     save_as_defaults = forms.BooleanField(initial=True)
 
     class Meta:

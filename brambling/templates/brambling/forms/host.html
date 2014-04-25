@@ -11,12 +11,12 @@
 
 <div class='row'>
 	<div class='col-md-6'>{% formrow form.nights %}</div>
-	<div class='col-md-6'>{% formrow form.housing_categories %}</div>
+	<div class='col-md-6'>{% formrow form.housing_categories using "floppyforms/rows/confirm.html" with confirm=form.housing_categories_confirm %}</div>
 </div>
 
 <div class='row'>
-	<div class='col-md-6'>{% formrow form.ef_present %}</div>
-	<div class='col-md-6'>{% formrow form.ef_avoid %}</div>
+	<div class='col-md-6'>{% formrow form.ef_present using "floppyforms/rows/confirm.html" with confirm=form.ef_present_confirm %}</div>
+	<div class='col-md-6'>{% formrow form.ef_avoid using "floppyforms/rows/confirm.html" with confirm=form.ef_avoid_confirm %}</div>
 </div>
 
 <div class='row'>

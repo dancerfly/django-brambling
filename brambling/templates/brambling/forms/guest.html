@@ -10,8 +10,8 @@
 </div>
 
 <div class='row'>
-	<div class='col-md-6'>{% formrow form.ef_cause %}</div>
-	<div class='col-md-6'>{% formrow form.ef_avoid %}</div>
+	<div class='col-md-6'>{% formrow form.ef_cause using "floppyforms/rows/confirm.html" with confirm=form.ef_cause_confirm %}</div>
+	<div class='col-md-6'>{% formrow form.ef_avoid using "floppyforms/rows/confirm.html" with confirm=form.ef_avoid_confirm %}</div>
 </div>
 
 <div class='row'>

@@ -57,7 +57,7 @@
 {% block main %}
 	<h2>Your cart</h2>
 
-	<form action="" method="post">
+	<form novalidate action="" method="post">
 		{% csrf_token %}
 
 		{{ formset.management_form }}
