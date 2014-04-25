@@ -524,6 +524,7 @@ class GuestForm(forms.ModelForm):
                 self.instance.event = event
                 self.instance.person = person
         self.fields['nights'].queryset = housing_dates
+        self.fields['nights'].required = True
 
     def save(self):
         instance = super(GuestForm, self).save()
@@ -563,6 +564,7 @@ class HostingForm(forms.ModelForm):
             self.instance.event = event
             self.instance.home = home
         self.fields['nights'].queryset = housing_dates
+        self.fields['nights'].required = True
 
     def save(self):
         instance = super(HostingForm, self).save()
