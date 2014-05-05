@@ -17,7 +17,8 @@ from zenaida.forms import modelform_factory, modelformset_factory
 from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              ItemOptionFormSet, DiscountForm, SignUpForm,
                              ReservationForm, GuestForm, HostingForm,
-                             EventPersonForm, PersonItemForm, PersonItemFormSet)
+                             EventPersonForm, PersonItemForm,
+                             PersonItemFormSet, PersonDiscountForm)
 from brambling.models import (Event, Person, Home, Item, Discount, EventPerson,
                               EventHousing, PersonItem)
 from brambling.tokens import token_generators
@@ -361,9 +362,18 @@ class ReservationView(TemplateView):
                               for option in item.options.all()])
                       for item in self.items)
 
+        discount_form_kwargs = {
+            'event': self.event,
+            'person': self.request.user,
+            'prefix': 'discount-form'
+        }
+        if self.request.method == 'POST':
+            discount_form_kwargs['data'] = self.request.POST
+
         context.update({
             'event': self.event,
             'items': items,
+            'discount_form': PersonDiscountForm(**discount_form_kwargs),
             'cart': self.request.user.get_cart(self.event),
             'cart_total': self.request.user.get_cart_total(self.event),
         })
@@ -385,6 +395,9 @@ class ReservationView(TemplateView):
                 if form.is_valid():
                     form.save()
                     saved = True
+        if context['discount_form'].is_valid():
+            context['discount_form'].save()
+            saved = True
         if saved:
             return HttpResponseRedirect(request.path)
         return self.render_to_response(context)

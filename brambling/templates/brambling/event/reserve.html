@@ -28,8 +28,21 @@
 				</div>
 			{% endfor %}
 		</div>
-		{% if cart %}
-			<div class="col-md-4">
+		<div class="col-md-4">
+			<form action="" method='post'{% if discount_form.errors %} class="has-error"{% endif %}>
+				{% csrf_token %}
+				<div class='input-group'>
+					{% form discount_form using %}
+						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
+					{% endform %}
+					<span class='input-group-btn'>
+						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+					</span>
+				</div>
+				{% include "floppyforms/errors.html" with errors=discount_form.discount.errors %}
+
+			</form>
+			{% if cart %}
 				<div class='panel panel-default'>
 					<header class='panel-heading'>
 						<div class='panel-title'>Cart ({{ cart_total }})</div>
@@ -53,7 +66,7 @@
 						</a>
 					</div>
 				</div>
-			</div>
-		{% endif %}
+			{% endif %}
+		</div>
 	</div>
 {% endblock %}

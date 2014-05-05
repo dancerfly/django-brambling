@@ -12,12 +12,12 @@ from zenaida import forms
 
 from brambling.models import (Event, Person, Home, Item, ItemOption,
                               Discount, DanceStyle, EventType,
-                              EventPerson, Date, EventHousing, PersonItem)
+                              EventPerson, Date, EventHousing, PersonItem,
+                              PersonDiscount)
 from brambling.utils import send_confirmation_email
 
 
 CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
-
 
 
 class EventForm(forms.ModelForm):
@@ -202,6 +202,39 @@ class DiscountForm(forms.ModelForm):
             self.instance.validate_unique()
         except ValidationError as e:
             self._update_errors(e)
+
+
+class PersonDiscountForm(forms.ModelForm):
+    discount = forms.CharField(max_length=20, label="discount code")
+
+    class Meta:
+        fields = ()
+        model = PersonDiscount
+
+    def __init__(self, event, person, *args, **kwargs):
+        self.event = event
+        self.person = person
+        super(PersonDiscountForm, self).__init__(*args, **kwargs)
+
+    def clean_discount(self):
+        discount = self.cleaned_data['discount']
+        now = timezone.now()
+        try:
+            discount = Discount.objects.filter(
+                code=discount,
+                event=self.event,
+            ).filter(models.Q(available_start__lte=now) | models.Q(available_start__isnull=True),
+                     models.Q(available_end__gte=now) | models.Q(available_end__isnull=True)
+            ).get()
+        except Discount.DoesNotExist:
+            raise ValidationError("No discount with that code is currently "
+                                  "active for this event.")
+        return discount
+
+    def _post_clean(self):
+        self.instance.person = self.person
+        self.instance.discount = self.cleaned_data['discount']
+        super(PersonDiscountForm, self)._post_clean()
 
 
 class ReservationForm(forms.ModelForm):

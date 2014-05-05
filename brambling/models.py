@@ -299,6 +299,9 @@ class PersonDiscount(models.Model):
     discount = models.ForeignKey(Discount)
     timestamp = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        unique_together = ('person', 'discount')
+
 
 class Payment(models.Model):
     event = models.ForeignKey(Event)
