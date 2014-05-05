@@ -12,14 +12,16 @@
 	<div class="col-md-6">{% formrow form.amount %}</div>
 </div>
 
-<div class="panel panel-default">
-	<header class="panel-heading">
-		<h4 class="panel-title">Advanced options <a href="#collapseAdvanced" data-toggle="collapse"><span class="glyphicon glyphicon-collapse-down pull-right"></span></a></h4>
-	</header>
-	<div class="panel-collapse collapse" id="collapseAdvanced">
-		<div class="panel-body">
-			{% formrow form.available_start %}
-			{% formrow form.available_end %}
+<div class="panel-group">
+	<div class="panel panel-default">
+		<header class="panel-heading">
+			<h4 class="panel-title">Advanced options <a href="#collapseAdvanced" data-toggle="collapse"><span class="glyphicon glyphicon-collapse-down pull-right"></span></a></h4>
+		</header>
+		<div class="panel-collapse collapse" id="collapseAdvanced">
+			<div class="panel-body">
+				{% formrow form.available_start %}
+				{% formrow form.available_end %}
+			</div>
 		</div>
 	</div>
 </div>
