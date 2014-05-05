@@ -22,7 +22,10 @@
 		<div class="hidden">
 			<div class='panel panel-default item-option item-option-template'>
 				<header class='panel-heading'>
-					<div class='panel-title'>Option ###</div>
+					<div class='panel-title'>
+						Option <span class="count"></span>
+						<div class="actions pull-right"></div>
+					</div>
 				</header>
 				<div class='panel-body'>
 					{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
@@ -30,19 +33,21 @@
 			</div>
 		</div>
 
-		{% for form in itemoption_formset.forms %}
-			<div class='panel panel-default item-option'>
-				<header class='panel-heading'>
-					<div class='panel-title'>
-						Option {{ forloop.counter }}
-						<div class="actions pull-right"></div>
-					</div>{# /.panel-title #}
-				</header>
-				<div class='panel-body'>
-					{% form form using "brambling/forms/itemoption.html" %}
+		<div class="item-options-list">
+			{% for form in itemoption_formset.forms %}
+				<div class='panel panel-default item-option'>
+					<header class='panel-heading'>
+						<div class='panel-title'>
+							Option <span class="count">{{ forloop.counter }}</span>
+							<div class="actions pull-right"></div>
+						</div>{# /.panel-title #}
+					</header>
+					<div class='panel-body'>
+						{% form form using "brambling/forms/itemoption.html" %}
+					</div>
 				</div>
-			</div>
-		{% endfor %}
+			{% endfor %}
+		</div>
 
 		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
 		{% if item.pk %}<a href="../">Cancel</a>{% endif %}
@@ -52,11 +57,22 @@
 {% block javascripts %}
 	{{ block.super }}
 	<script type="text/javascript">
-		$('#itemForm .item-option').formset({
-			prefix: '{{ itemoption_formset.prefix }}',
-			deleteText: '<i class="glyphicon glyphicon-remove"></i>',
-			deleteWrapper: '.actions',
-			formTemplate: '.item-option-template'
-		})
+		(function () {
+			"use strict";
+			var item_options_renumber = function () {
+				$('.item-options-list .item-option:visible').each(function(i){
+					$(this).find('.count').html(i+1);
+				});
+			};
+
+			$('#itemForm .item-option').formset({
+				prefix: '{{ itemoption_formset.prefix }}',
+				deleteText: '<i class="glyphicon glyphicon-remove"></i>',
+				deleteWrapper: '.actions',
+				formTemplate: '.item-option-template',
+				added: item_options_renumber,
+				removed: item_options_renumber
+			})
+		}());
 	</script>
 {% endblock %}
