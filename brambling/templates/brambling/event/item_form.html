@@ -6,7 +6,7 @@
 	<h2>{% if item.pk %}Edit item: {{ item.name }}{% else %}Add an item{% endif %}</h2>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
-	<form action="{{ request.path }}" method="post" novalidate>
+	<form action="{{ request.path }}" id="itemForm" method="post" novalidate>
 		{% csrf_token %}
 		{% form item_form using %}
 			<div class="row">
@@ -18,17 +18,45 @@
 		{% endform %}
 		{{ itemoption_formset.management_form }}
 
-		{% for form in itemoption_formset.forms %}
-			<div class='panel panel-default'>
+		{# template for additional item option forms #}
+		<div class="hidden">
+			<div class='panel panel-default item-option item-option-template'>
 				<header class='panel-heading'>
-					<div class='panel-title'>Option {{ forloop.counter }}</div>
+					<div class='panel-title'>Option ###</div>
+				</header>
+				<div class='panel-body'>
+					{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
+				</div>
+			</div>
+		</div>
+
+		{% for form in itemoption_formset.forms %}
+			<div class='panel panel-default item-option'>
+				<header class='panel-heading'>
+					<div class='panel-title'>
+						Option {{ forloop.counter }}
+						<div class="actions pull-right"></div>
+					</div>{# /.panel-title #}
 				</header>
 				<div class='panel-body'>
 					{% form form using "brambling/forms/itemoption.html" %}
 				</div>
 			</div>
 		{% endfor %}
+
 		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
 		{% if item.pk %}<a href="../">Cancel</a>{% endif %}
 	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript">
+		$('#itemForm .item-option').formset({
+			prefix: '{{ itemoption_formset.prefix }}',
+			deleteText: '<i class="glyphicon glyphicon-remove"></i>',
+			deleteWrapper: '.actions',
+			formTemplate: '.item-option-template'
+		})
+	</script>
 {% endblock %}
