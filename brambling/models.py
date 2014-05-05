@@ -414,28 +414,30 @@ class Person(AbstractBaseUser, PermissionsMixin):
         return self.nickname or self.name
 
     def get_cart(self, event):
-        if not hasattr(self, '_cart'):
-            reservation_start = (timezone.now() -
-                                 timedelta(minutes=event.reservation_timeout))
-            self._cart = ItemOption.objects.filter(
-                item__event=event
-            ).filter(
-                (Q(personitem__status=PersonItem.RESERVED) &
-                 Q(personitem__added__gte=reservation_start) &
-                 Q(personitem__buyer=self)) |
-                (Q(personitem__status__in=(PersonItem.UNPAID,
-                                           PersonItem.PARTIAL)) &
-                 Q(personitem__buyer=self))
-            ).distinct().annotate(quantity=Count('personitem')
-            ).select_related('item').order_by('item', 'order')
-        return self._cart
+        reservation_start = (timezone.now() -
+                             timedelta(minutes=event.reservation_timeout))
+        return ItemOption.objects.filter(
+            item__event=event
+        ).filter(
+            (Q(personitem__status=PersonItem.RESERVED) &
+             Q(personitem__added__gte=reservation_start) &
+             Q(personitem__buyer=self)) |
+            (Q(personitem__status__in=(PersonItem.UNPAID,
+                                       PersonItem.PARTIAL)) &
+             Q(personitem__buyer=self))
+        ).distinct().annotate(
+            quantity=Count('personitem')
+        ).select_related('item').order_by('item', 'order')
 
     def get_cart_total(self, event):
-        if not hasattr(self, '_cart_total'):
-            self._cart_total = self.get_cart(event
-                                             ).aggregate(total=Sum('quantity')
-                                                         )['total']
-        return self._cart_total
+        return self.get_cart(event).aggregate(total=Sum('quantity')
+                                              )['total']
+
+    def get_discounts(self, event):
+        return PersonDiscount.objects.filter(
+            discount__event=event,
+            person=self
+        ).order_by('-timestamp').select_related('discount')
 
 
 class Home(models.Model):

@@ -217,23 +217,30 @@ class PersonDiscountForm(forms.ModelForm):
         super(PersonDiscountForm, self).__init__(*args, **kwargs)
 
     def clean_discount(self):
-        discount = self.cleaned_data['discount']
-        now = timezone.now()
-        try:
-            discount = Discount.objects.filter(
-                code=discount,
-                event=self.event,
-            ).filter(models.Q(available_start__lte=now) | models.Q(available_start__isnull=True),
-                     models.Q(available_end__gte=now) | models.Q(available_end__isnull=True)
-            ).get()
-        except Discount.DoesNotExist:
+        discount = self.cleaned_data.get('discount')
+        if discount is not None:
+            now = timezone.now()
+            try:
+                discount = Discount.objects.filter(
+                    code=discount,
+                    event=self.event,
+                ).filter(
+                    (models.Q(available_start__lte=now) |
+                     models.Q(available_start__isnull=True)),
+                    (models.Q(available_end__gte=now) |
+                     models.Q(available_end__isnull=True))
+                ).get()
+            except Discount.DoesNotExist:
+                discount = None
+        if discount is None:
             raise ValidationError("No discount with that code is currently "
                                   "active for this event.")
         return discount
 
     def _post_clean(self):
         self.instance.person = self.person
-        self.instance.discount = self.cleaned_data['discount']
+        if 'discount' in self.cleaned_data:
+            self.instance.discount = self.cleaned_data['discount']
         super(PersonDiscountForm, self)._post_clean()
 
 

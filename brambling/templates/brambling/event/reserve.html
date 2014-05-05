@@ -59,14 +59,28 @@
 							{% endfor %}
 						{% endfor %}
 					</ul>
-					<div class='list-group'>
-						<a class='list-group-item' href="{% url 'brambling_event_cart' slug=event.slug %}">
-							<span class='glyphicon glyphicon-shopping-cart'></span>
-							Continue checkout
-						</a>
-					</div>
 				</div>
 			{% endif %}
+
+			{% if discounts %}
+				<div class='panel panel-default'>
+					<header class='panel-heading'>
+						<div class='panel-title'>Discounts</div>
+					</header>
+					<ul class='list-group'>
+						{% for discount in discounts %}
+							<li class='list-group-item'>
+								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+			{% endif %}
+
+			<a class='btn btn-block btn-primary' href="{% url 'brambling_event_cart' slug=event.slug %}">
+				<span class='glyphicon glyphicon-shopping-cart'></span>
+				Continue checkout
+			</a>
 		</div>
 	</div>
 {% endblock %}

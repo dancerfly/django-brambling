@@ -376,6 +376,7 @@ class ReservationView(TemplateView):
             'discount_form': PersonDiscountForm(**discount_form_kwargs),
             'cart': self.request.user.get_cart(self.event),
             'cart_total': self.request.user.get_cart_total(self.event),
+            'discounts': self.request.user.get_discounts(self.event),
         })
         return context
 
@@ -449,6 +450,7 @@ class CartView(TemplateView):
         context.update({
             'event': self.event,
             'cart_total': self.request.user.get_cart_total(self.event),
-            'formset': self.formset
+            'formset': self.formset,
+            'discounts': self.request.user.get_discounts(self.event),
         })
         return context
