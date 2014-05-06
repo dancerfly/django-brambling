@@ -269,6 +269,11 @@ class PersonItem(models.Model):
                               related_name="items_owned",
                               blank=True, null=True)
 
+    def __unicode__(self):
+        return u"{} – {} ({})".format(self.item_option.name,
+                                      self.buyer.name,
+                                      self.pk)
+
 
 class Discount(models.Model):
     PERCENT = 'percent'

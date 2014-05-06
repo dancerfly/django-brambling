@@ -13,7 +13,8 @@ from zenaida import forms
 from brambling.models import (Event, Person, Home, Item, ItemOption,
                               Discount, DanceStyle, EventType,
                               EventPerson, Date, EventHousing, PersonItem,
-                              PersonDiscount)
+                              PersonDiscount, EnvironmentalFactor,
+                              HousingCategory)
 from brambling.utils import send_confirmation_email
 
 
@@ -272,7 +273,7 @@ class ReservationForm(forms.ModelForm):
         self.instance.status = PersonItem.RESERVED
 
 
-class PersonItemForm(forms.ModelForm):
+class PersonItemForm(forms.MemoModelForm):
     """
     If you bought it, you can change the owner.
 
@@ -296,32 +297,39 @@ class PersonItemForm(forms.ModelForm):
         model = PersonItem
         fields = ('owner',)
 
-    def __init__(self, event, housing_dates, user, data=None, files=None,
+    def __init__(self, event, memo_dict, user, data=None, files=None,
                  *args, **kwargs):
-
         self.event = event
-        self.housing_dates = housing_dates
         self.user = user
-        super(PersonItemForm, self).__init__(data, files, *args, **kwargs)
-        self.buyer = self.instance.buyer
-        self.owner = self.instance.owner
-        if self.buyer != user:
+        super(PersonItemForm, self).__init__(memo_dict, data, files, *args, **kwargs)
+        self.buyer_id = self.instance.buyer_id
+        self.owner_id = self.instance.owner_id
+
+        if self.buyer_id != user.id:
             del self.fields['owner']
         else:
-            self.initial['owner'] = self.owner or self.buyer
+            self.initial['owner'] = self.owner_id or self.buyer_id
 
-        self.item = self.instance.item_option.item
+        self.set_choices('owner', Person)
+
+        self.item = self.get(Item, options__personitem=self.instance)
         if event.collect_housing_data and self.item.category == Item.PASS:
+            base_person_qs = Person.objects.prefetch_related(
+                'ef_cause', 'ef_avoid', 'person_prefer', 'person_avoid',
+                'housing_prefer',
+            )
+            self.owner = self.get(base_person_qs, id=self.buyer_id)
             eventperson_kwargs = {
                 'user': self.user,
                 'event': self.event,
+                'memo_dict': memo_dict,
                 'personitem': self.instance,
                 'data': data,
                 'files': files
             }
             housing_kwargs = {
                 'event': self.event,
-                'housing_dates': housing_dates,
+                'memo_dict': memo_dict,
                 'data': data,
                 'files': files
             }
@@ -341,13 +349,17 @@ class PersonItemForm(forms.ModelForm):
             }
             if self.user == self.owner:
                 self.owner_forms['host'] = HostingForm(
-                    home=self.owner.home,
+                    home=self.get(Home.objects.prefetch_related(
+                        'ef_present', 'ef_avoid', 'person_prefer',
+                        'person_avoid', 'housing_categories'
+                    ), id=self.owner.home_id),
                     prefix=self.prefix + '-owner-host',
                     **housing_kwargs
                 )
 
-            if self.user == self.buyer:
-                if self.buyer != self.owner:
+            if self.user.id == self.buyer_id:
+                if self.buyer_id != self.owner_id:
+                    self.buyer = self.get(base_person_qs, id=self.buyer_id)
                     self.buyer_forms = {
                         'eventperson': EventPersonForm(
                             person=self.buyer,
@@ -362,7 +374,7 @@ class PersonItemForm(forms.ModelForm):
                             **housing_kwargs
                         ),
                         'host': HostingForm(
-                            home=self.buyer.home,
+                            home=self.get(Home, id=self.buyer.home_id),
                             prefix=self.prefix + '-buyer-host',
                             **housing_kwargs
                         )
@@ -495,43 +507,45 @@ class PersonItemFormSet(forms.models.BaseModelFormSet):
     def __init__(self, event, user, *args, **kwargs):
         self.event = event
         self.user = user
-        self.housing_dates = event.housing_dates.all()
+        self.memo_dict = {}
         super(PersonItemFormSet, self).__init__(*args, **kwargs)
 
     def _construct_form(self, i, **kwargs):
         kwargs.update({
             'event': self.event,
-            'housing_dates': self.housing_dates,
+            'memo_dict': self.memo_dict,
             'user': self.user,
         })
         return super(PersonItemFormSet, self)._construct_form(i, **kwargs)
 
 
-class EventPersonForm(forms.ModelForm):
+class EventPersonForm(forms.MemoModelForm):
     class Meta:
         model = EventPerson
         fields = ('car_spaces', 'bedtime', 'wakeup', 'housing')
 
-    def __init__(self, person, user, personitem, event, *args, **kwargs):
+    def __init__(self, person, user, personitem, event, memo_dict,
+                 *args, **kwargs):
         self.person = person
         self.event = event
         self.personitem = personitem
+        self.memo_dict = memo_dict
         if person is None:
             instance = EventPerson(event=event)
         else:
             instance = EventPerson(person=person, event=event)
             try:
-                instance = EventPerson.objects.get(person=person, event=event,
-                                                   event_pass=personitem)
+                self.get(EventPerson, person=person, event=event,
+                         event_pass=personitem)
             except EventPerson.DoesNotExist:
                 pass
         kwargs['instance'] = instance
-        super(EventPersonForm, self).__init__(*args, **kwargs)
+        super(EventPersonForm, self).__init__(memo_dict, *args, **kwargs)
         if person != user:
             self.fields['housing'].choices = self.fields['housing'].choices[:-1]
 
 
-class GuestForm(forms.ModelForm):
+class GuestForm(forms.MemoModelForm):
     ef_cause_confirm = forms.BooleanField(initial=False,
                                           error_messages=CONFIRM_ERRORS)
     ef_avoid_confirm = forms.BooleanField(initial=False,
@@ -546,23 +560,26 @@ class GuestForm(forms.ModelForm):
             'ef_avoid_confirm': {'required': 'Must be marked correct.'},
         }
 
-    def __init__(self, person, personitem, event, housing_dates,
+    def __init__(self, person, personitem, event, memo_dict,
                  with_defaults=True, *args, **kwargs):
         self.person = person
         self.personitem = personitem
         self.event = event
+        self.memo_dict = memo_dict
         self.with_defaults = with_defaults
         if person is None:
             instance = EventPerson(event=event)
         else:
             instance = EventPerson(person=person, event=event)
             try:
-                instance = EventPerson.objects.get(person=person, event=event,
-                                                   event_pass=personitem)
+                instance = self.get(EventPerson,
+                                    person=person,
+                                    event=event,
+                                    event_pass=personitem)
             except EventPerson.DoesNotExist:
                 pass
         kwargs['instance'] = instance
-        super(GuestForm, self).__init__(*args, **kwargs)
+        super(GuestForm, self).__init__(memo_dict, *args, **kwargs)
         if with_defaults and person is not None:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True)
             if self.instance.pk is None:
@@ -576,8 +593,13 @@ class GuestForm(forms.ModelForm):
                 })
                 self.instance.event = event
                 self.instance.person = person
-        self.fields['nights'].queryset = housing_dates
         self.fields['nights'].required = True
+        self.set_choices('nights', Date, event_housing_dates=event)
+        self.set_choices('person_prefer', Person)
+        self.set_choices('person_avoid', Person)
+        self.set_choices('ef_cause', EnvironmentalFactor)
+        self.set_choices('ef_avoid', EnvironmentalFactor)
+        self.set_choices('housing_prefer', HousingCategory)
 
     def save(self):
         instance = super(GuestForm, self).save()
@@ -592,7 +614,7 @@ class GuestForm(forms.ModelForm):
         return instance
 
 
-class HostingForm(forms.ModelForm):
+class HostingForm(forms.MemoModelForm):
     housing_categories_confirm = forms.BooleanField(initial=False,
                                                     error_messages=CONFIRM_ERRORS)
     ef_present_confirm = forms.BooleanField(initial=False,
@@ -605,13 +627,16 @@ class HostingForm(forms.ModelForm):
         model = EventHousing
         exclude = ('event', 'home')
 
-    def __init__(self, home, event, housing_dates, *args, **kwargs):
+    def __init__(self, home, event, memo_dict, *args, **kwargs):
         self.home = home
-        kwargs['instance'] = EventHousing.objects.filter(
-            event=event,
-            home=home
-        ).first()
-        super(HostingForm, self).__init__(*args, **kwargs)
+        self.memo_dict = memo_dict
+        try:
+            kwargs['instance'] = self.get(EventHousing,
+                                          event=event,
+                                          home=home)
+        except EventHousing.DoesNotExist:
+            kwargs['instance'] = None
+        super(HostingForm, self).__init__(memo_dict, *args, **kwargs)
         if self.instance.pk is None and home is not None:
             self.initial.update({
                 'ef_present': home.ef_present.all(),
@@ -622,8 +647,13 @@ class HostingForm(forms.ModelForm):
             })
             self.instance.event = event
             self.instance.home = home
-        self.fields['nights'].queryset = housing_dates
         self.fields['nights'].required = True
+        self.set_choices('nights', Date, event_housing_dates=event)
+        self.set_choices('person_prefer', Person)
+        self.set_choices('person_avoid', Person)
+        self.set_choices('ef_present', EnvironmentalFactor)
+        self.set_choices('ef_avoid', EnvironmentalFactor)
+        self.set_choices('housing_categories', HousingCategory)
 
     def save(self):
         instance = super(HostingForm, self).save()

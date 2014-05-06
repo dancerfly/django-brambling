@@ -21,6 +21,7 @@ SECRET_KEY = 'NOT_SECRET'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+USE_DEBUG_TOOLBAR = DEBUG
 
 TEMPLATE_DEBUG = True
 
@@ -109,3 +110,8 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert alert-warning',
     messages.ERROR: 'alert alert-danger'
 }
+
+if USE_DEBUG_TOOLBAR:
+    INSTALLED_APPS += (
+        'debug_toolbar.apps.DebugToolbarConfig',
+    )
