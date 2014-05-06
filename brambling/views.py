@@ -431,7 +431,7 @@ class CartView(TemplateView):
              ~Q(status=PersonItem.RESERVED)) &
             (Q(buyer=self.request.user) | Q(owner=self.request.user)) &
             Q(item_option__item__event=self.event)
-            ).order_by('-added')
+            ).select_related('item_option__item').order_by('-added')
         formset_class = modelformset_factory(PersonItem, PersonItemForm,
                                              formset=PersonItemFormSet, extra=0)
 

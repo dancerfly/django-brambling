@@ -310,15 +310,20 @@ class PersonItemForm(forms.MemoModelForm):
         else:
             self.initial['owner'] = self.owner_id or self.buyer_id
 
-        self.set_choices('owner', Person)
+        self.set_choices('owner', Person.objects.only('id', 'name'))
 
-        self.item = self.get(Item, options__personitem=self.instance)
+        self.item = self.instance.item_option.item
+        #self.get(Item, options__personitem=self.instance)
         if event.collect_housing_data and self.item.category == Item.PASS:
             base_person_qs = Person.objects.prefetch_related(
                 'ef_cause', 'ef_avoid', 'person_prefer', 'person_avoid',
                 'housing_prefer',
             )
-            self.owner = self.get(base_person_qs, id=self.buyer_id)
+            try:
+                self.owner = self.get(base_person_qs, id=self.owner_id)
+            except Person.DoesNotExist:
+                self.owner = None
+            self.instance.owner = self.owner
             eventperson_kwargs = {
                 'user': self.user,
                 'event': self.event,
@@ -360,6 +365,7 @@ class PersonItemForm(forms.MemoModelForm):
             if self.user.id == self.buyer_id:
                 if self.buyer_id != self.owner_id:
                     self.buyer = self.get(base_person_qs, id=self.buyer_id)
+                    self.instance.buyer = self.buyer
                     self.buyer_forms = {
                         'eventperson': EventPersonForm(
                             person=self.buyer,
@@ -595,11 +601,16 @@ class GuestForm(forms.MemoModelForm):
                 self.instance.person = person
         self.fields['nights'].required = True
         self.set_choices('nights', Date, event_housing_dates=event)
-        self.set_choices('person_prefer', Person)
-        self.set_choices('person_avoid', Person)
-        self.set_choices('ef_cause', EnvironmentalFactor)
-        self.set_choices('ef_avoid', EnvironmentalFactor)
-        self.set_choices('housing_prefer', HousingCategory)
+        self.set_choices('person_prefer',
+                         Person.objects.only('id', 'name'))
+        self.set_choices('person_avoid',
+                         Person.objects.only('id', 'name'))
+        self.set_choices('ef_cause',
+                         EnvironmentalFactor.objects.only('id', 'name'))
+        self.set_choices('ef_avoid',
+                         EnvironmentalFactor.objects.only('id', 'name'))
+        self.set_choices('housing_prefer',
+                         HousingCategory.objects.only('id', 'name'))
 
     def save(self):
         instance = super(GuestForm, self).save()
@@ -631,7 +642,10 @@ class HostingForm(forms.MemoModelForm):
         self.home = home
         self.memo_dict = memo_dict
         try:
-            kwargs['instance'] = self.get(EventHousing,
+            qs = EventHousing.objects.prefetch_related(
+                'ef_present', 'ef_avoid', 'person_prefer',
+                'person_avoid', 'housing_categories', 'nights')
+            kwargs['instance'] = self.get(qs,
                                           event=event,
                                           home=home)
         except EventHousing.DoesNotExist:
@@ -649,11 +663,16 @@ class HostingForm(forms.MemoModelForm):
             self.instance.home = home
         self.fields['nights'].required = True
         self.set_choices('nights', Date, event_housing_dates=event)
-        self.set_choices('person_prefer', Person)
-        self.set_choices('person_avoid', Person)
-        self.set_choices('ef_present', EnvironmentalFactor)
-        self.set_choices('ef_avoid', EnvironmentalFactor)
-        self.set_choices('housing_categories', HousingCategory)
+        self.set_choices('person_prefer',
+                         Person.objects.only('id', 'name'))
+        self.set_choices('person_avoid',
+                         Person.objects.only('id', 'name'))
+        self.set_choices('ef_present',
+                         EnvironmentalFactor.objects.only('id', 'name'))
+        self.set_choices('ef_avoid',
+                         EnvironmentalFactor.objects.only('id', 'name'))
+        self.set_choices('housing_categories',
+                         HousingCategory.objects.only('id', 'name'))
 
     def save(self):
         instance = super(HostingForm, self).save()
