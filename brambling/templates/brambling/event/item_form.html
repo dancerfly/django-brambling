@@ -48,6 +48,8 @@
 				</div>
 			{% endfor %}
 		</div>
+		
+		<div class="well"></div>
 
 		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
 		{% if item.pk %}<a href="../">Cancel</a>{% endif %}
@@ -65,14 +67,14 @@
 				});
 			};
 
-			$('#itemForm .item-option').formset({
+			$('.item-options-list').formset({
 				prefix: '{{ itemoption_formset.prefix }}',
-				deleteText: '<i class="glyphicon glyphicon-remove"></i>',
+				deleteTrigger: '<a href="#"><i class="glyphicon glyphicon-remove"></i></a>',
 				deleteWrapper: '.actions',
-				formTemplate: '.item-option-template',
-				added: item_options_renumber,
-				removed: item_options_renumber
+				addWrapper: '#itemForm .well',
+				formTemplate: '.item-option-template'
 			})
+			$('.item-options-list').on('row_added.formset row_removes.formset', item_options_renumber);
 		}());
 	</script>
 {% endblock %}
