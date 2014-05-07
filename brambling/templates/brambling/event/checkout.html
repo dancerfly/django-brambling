@@ -1,0 +1,76 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms %}
+
+{% block main %}
+	<div class="row">
+		<div class="col-md-8">
+			<div class='panel panel-default'>
+				<header class='panel-heading'>
+					<div class='panel-title'>Checkout</div>
+				</header>
+				<table class='table'>
+					<thead>
+						<tr>
+							<th>Timestamp</th>
+							<th>Type</th>
+							<th>Status</th>
+							<th>Amount</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for timestamp, item in checkout_list %}
+							{% with is_payment=item.timestamp %}
+								<tr>
+									<td>{{ timestamp|date:"n/j/Y H:i:s" }}</td>
+									<td>{% if is_payment %}Payment{% else %}{{ item.item_option.item.get_category_display }}{% endif %}</td>
+									<td>{% if not is_payment %}{{ item.get_status_display }}{% endif %}</td>
+									<td>{% if is_payment %}-{{ item.amount }}{% else %}{{ item.item_option.price }}{% endif %}</td>
+								</tr>
+							{% endwith %}
+						{% endfor %}
+							<tr>
+								<th>Balance</th>
+								<td></td><td></td>
+								<th>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}{{ balance }} {{ event.currency }}</th>
+							</tr>
+					</tbody>
+				</table>
+			</div>
+			<form novalidate action="" method="post">
+				{% csrf_token %}
+
+				<button type="submit" class="btn btn-primary">Pay now</button>
+			</form>
+		</div>
+		<div class='col-md-4'>
+			<form action="" method='post'{% if discount_form.errors %} class="has-error"{% endif %}>
+				{% csrf_token %}
+				<div class='input-group'>
+					{% form discount_form using %}
+						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
+					{% endform %}
+					<span class='input-group-btn'>
+						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+					</span>
+				</div>
+				{% include "floppyforms/errors.html" with errors=discount_form.discount.errors %}
+			</form>
+
+			{% if discounts %}
+				<div class='panel panel-default'>
+					<header class='panel-heading'>
+						<div class='panel-title'>Discounts</div>
+					</header>
+					<ul class='list-group'>
+						{% for discount in discounts %}
+							<li class='list-group-item'>
+								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}

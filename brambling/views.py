@@ -20,7 +20,7 @@ from brambling.forms import (EventForm, PersonForm, HomeForm, ItemForm,
                              EventPersonForm, PersonItemForm,
                              PersonItemFormSet, PersonDiscountForm)
 from brambling.models import (Event, Person, Home, Item, Discount, EventPerson,
-                              EventHousing, PersonItem)
+                              EventHousing, PersonItem, Payment)
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
 
@@ -409,12 +409,17 @@ class CartView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.event = _get_event_or_404(kwargs['slug'])
+        self.discount_form = self.get_discount_form()
         self.formset = self.get_formset()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         self.event = _get_event_or_404(kwargs['slug'])
+        self.discount_form = self.get_discount_form()
+        if self.discount_form.is_valid():
+            self.discount_form.save()
+            return HttpResponseRedirect('')
         self.formset = self.get_formset()
         if self.formset.is_valid():
             self.formset.save()
@@ -444,6 +449,16 @@ class CartView(TemplateView):
             kwargs['data'] = self.request.POST
         return formset_class(**kwargs)
 
+    def get_discount_form(self):
+        kwargs = {
+            'event': self.event,
+            'person': self.request.user,
+            'prefix': 'discount-form'
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return PersonDiscountForm(**kwargs)
+
     def get_context_data(self, **kwargs):
         context = super(CartView, self).get_context_data(**kwargs)
 
@@ -451,7 +466,76 @@ class CartView(TemplateView):
             'event': self.event,
             'cart_total': self.request.user.get_cart_total(self.event),
             'formset': self.formset,
+            'discount_form': self.discount_form,
             'discounts': self.request.user.get_discounts(self.event),
         })
         context['formset'].forms
+        return context
+
+
+class CheckoutView(TemplateView):
+    template_name = 'brambling/event/checkout.html'
+
+    def get(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.discount_form = self.get_discount_form()
+        self.payment_form = self.get_payment_form()
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def get_discount_form(self):
+        kwargs = {
+            'event': self.event,
+            'person': self.request.user,
+            'prefix': 'discount-form'
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return PersonDiscountForm(**kwargs)
+
+    def get_payment_form(self):
+        return None
+
+    def post(self, request, *args, **kwargs):
+        self.event = _get_event_or_404(kwargs['slug'])
+        self.discount_form = self.get_discount_form()
+        if self.discount_form.is_valid():
+            self.discount_form.save()
+            return HttpResponseRedirect('')
+        self.payment_form = self.get_payment_form()
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super(CheckoutView, self).get_context_data(**kwargs)
+
+        payments = Payment.objects.filter(event=self.event,
+                                          person=self.request.user)
+        reservation_start = (timezone.now() -
+                             timedelta(minutes=self.event.reservation_timeout))
+        personitems = PersonItem.objects.filter(
+            (Q(status=PersonItem.RESERVED) &
+             Q(added__gte=reservation_start) &
+             Q(buyer=self.request.user)) |
+            (~Q(status=PersonItem.RESERVED) &
+             Q(buyer=self.request.user)),
+            item_option__item__event=self.event,
+        ).distinct().select_related('item_option__item')
+
+        checkout_list = [(payment.timestamp, payment) for payment in payments]
+        checkout_list += [(item.added, item) for item in personitems]
+        checkout_list.sort()
+
+        balance = (sum((item.item_option.price for item in personitems)) -
+                   sum((payment.amount for payment in payments)))
+
+        context.update({
+            'event': self.event,
+            'cart_total': self.request.user.get_cart_total(self.event),
+            'discounts': self.request.user.get_discounts(self.event),
+            'discount_form': self.discount_form,
+            'payment_form': self.payment_form,
+            'checkout_list': checkout_list,
+            'balance': balance,
+        })
         return context

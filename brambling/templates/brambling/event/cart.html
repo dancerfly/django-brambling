@@ -57,63 +57,96 @@
 {% block main %}
 	<h2>Your cart</h2>
 
-	<form novalidate action="" method="post">
-		{% csrf_token %}
+	<div class="row">
+		<div class="col-md-8">
+			<form novalidate action="" method="post">
+				{% csrf_token %}
 
-		{{ formset.management_form }}
+				{{ formset.management_form }}
 
-		{% for form in formset.forms %}
-			<h3>{{ form.instance.item.name }}</h3>
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">{{ form.instance.item_option.name }}</h4>
-				</div>
-				<div class="panel-body">
-					<ul class='list-inline'>
-						<li>{{ form.instance.added|date:"G:i:s l, F jS, Y" }}</li>
-						<li>&middot;</li>
-						<li>{{ form.instance.buyer.name }}{% if form.instance.buyer == request.user %} (you){% endif %}</li>
-						<li>&middot;</li>
-						<li>{{ form.instance.get_status_display }}</li>
-					</ul>
-					{% form form %}
-					{% if form.item.category == form.item.PASS %}
-						<div id='{{ form.prefix }}-subforms' data-owner="{{ form.instance.owner.pk }}" data-buyer="{{ form.instance.buyer.pk }}">
-							<div id='{{ form.prefix }}-owner-forms'>
-								<h3>Owner forms</h3>
-								{% with prefix=form.owner_forms.eventperson.prefix|slice:":-12" %}
-									{% form form.owner_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
-									{% form form.owner_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
-									{% if form.owner_forms.host %}
-										{% form form.owner_forms.host using "brambling/forms/host.html" with prefix=prefix %}
+				{% for form in formset.forms %}
+					<h3>{{ form.instance.item.name }}</h3>
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">{{ form.instance.item_option.name }}</h4>
+						</div>
+						<div class="panel-body">
+							<ul class='list-inline'>
+								<li>{{ form.instance.added|date:"G:i:s l, F jS, Y" }}</li>
+								<li>&middot;</li>
+								<li>{{ form.instance.buyer.name }}{% if form.instance.buyer == request.user %} (you){% endif %}</li>
+								<li>&middot;</li>
+								<li>{{ form.instance.get_status_display }}</li>
+							</ul>
+							{% form form %}
+							{% if form.item.category == form.item.PASS %}
+								<div id='{{ form.prefix }}-subforms' data-owner="{{ form.instance.owner.pk }}" data-buyer="{{ form.instance.buyer.pk }}">
+									<div id='{{ form.prefix }}-owner-forms'>
+										<h3>Owner forms</h3>
+										{% with prefix=form.owner_forms.eventperson.prefix|slice:":-12" %}
+											{% form form.owner_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+											{% form form.owner_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+											{% if form.owner_forms.host %}
+												{% form form.owner_forms.host using "brambling/forms/host.html" with prefix=prefix %}
+											{% endif %}
+										{% endwith %}
+									</div>
+									{% if form.buyer_forms %}
+										<div id='{{ form.prefix }}-buyer-forms'>
+											<h3>Buyer forms</h3>
+											{% with prefix=form.buyer_forms.eventperson.prefix|slice:":-12" %}
+												{% form form.buyer_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+												{% form form.buyer_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+												{% form form.buyer_forms.host using "brambling/forms/host.html" with prefix=prefix %}
+											{% endwith %}
+										</div>
 									{% endif %}
-								{% endwith %}
-							</div>
-							{% if form.buyer_forms %}
-								<div id='{{ form.prefix }}-buyer-forms'>
-									<h3>Buyer forms</h3>
-									{% with prefix=form.buyer_forms.eventperson.prefix|slice:":-12" %}
-										{% form form.buyer_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
-										{% form form.buyer_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
-										{% form form.buyer_forms.host using "brambling/forms/host.html" with prefix=prefix %}
-									{% endwith %}
-								</div>
-							{% endif %}
-							{% if form.empty_forms %}
-								<div id='{{ form.prefix }}-empty-forms'>
-									<h3>Empty forms</h3>
-									{% with prefix=form.empty_forms.eventperson.prefix|slice:":-12" %}
-										{% form form.empty_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
-										{% form form.empty_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
-									{% endwith %}
+									{% if form.empty_forms %}
+										<div id='{{ form.prefix }}-empty-forms'>
+											<h3>Empty forms</h3>
+											{% with prefix=form.empty_forms.eventperson.prefix|slice:":-12" %}
+												{% form form.empty_forms.eventperson using "brambling/forms/eventperson.html" with prefix=prefix %}
+												{% form form.empty_forms.guest using "brambling/forms/guest.html" with prefix=prefix %}
+											{% endwith %}
+										</div>
+									{% endif %}
 								</div>
 							{% endif %}
 						</div>
-					{% endif %}
-				</div>
-			</div>
-		{% endfor %}
+					</div>
+				{% endfor %}
 
-		<button type="submit" class="btn btn-primary">Save</button>
-	</form>
+				<button type="submit" class="btn btn-primary">Save</button>
+			</form>
+		</div>
+		<div class='col-md-4'>
+			<form action="" method='post'{% if discount_form.errors %} class="has-error"{% endif %}>
+				{% csrf_token %}
+				<div class='input-group'>
+					{% form discount_form using %}
+						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
+					{% endform %}
+					<span class='input-group-btn'>
+						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+					</span>
+				</div>
+				{% include "floppyforms/errors.html" with errors=discount_form.discount.errors %}
+			</form>
+
+			{% if discounts %}
+				<div class='panel panel-default'>
+					<header class='panel-heading'>
+						<div class='panel-title'>Discounts</div>
+					</header>
+					<ul class='list-group'>
+						{% for discount in discounts %}
+							<li class='list-group-item'>
+								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+			{% endif %}
+		</div>
+	</div>
 {% endblock %}
