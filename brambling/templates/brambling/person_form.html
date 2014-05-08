@@ -38,7 +38,7 @@
 					<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
 					<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='glyphicon glyphicon-remove'></span></a>
 				</p>
-			</a>
+			</div>
 		{% endfor %}
 	{% else %}
 		<p>No credit cards on record.</p>
