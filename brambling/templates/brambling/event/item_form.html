@@ -16,6 +16,9 @@
 
 			{% formrow form.description %}
 		{% endform %}
+
+		<p class="text-muted">Click on an option to expand it. Drag and drop to reorder.</p>
+
 		{{ itemoption_formset.management_form }}
 
 		{# template for additional item option forms #}
@@ -23,28 +26,36 @@
 			<div class='panel panel-default item-option item-option-template'>
 				<header class='panel-heading'>
 					<div class='panel-title'>
-						Option <span class="count"></span>
+						<a href="#{{ itemoption_formset.empty_form.prefix }}-collapse" data-toggle="collapse">
+							<i class="glyphicon glyphicon-chevron-down"></i> Option <span class="count"></span>
+						</a>
 						<div class="actions pull-right"></div>
 					</div>
 				</header>
-				<div class='panel-body'>
-					{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
+				<div class="panel-collapse collapse in" id="{{ itemoption_formset.empty_form.prefix }}-collapse">
+					<div class='panel-body'>
+						{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
+					</div>
 				</div>
 			</div>
 		</div>
 
-		<div class="item-options-list">
+		<div class="item-options-list panel-group">
 			{% for form in itemoption_formset.forms %}
-				<div class='panel panel-default item-option'>
+				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} item-option'>
 					<header class='panel-heading'>
 						<div class='panel-title'>
-							Option <span class="count">{{ forloop.counter }}</span>
+							<a href="#{{ form.prefix }}-collapse" title="click to expand" data-toggle="collapse">
+								<i class="glyphicon glyphicon-chevron-down"></i> Option <span class="count">{{ forloop.counter }}</span>
+							</a>
 							<div class="actions pull-right"></div>
 						</div>{# /.panel-title #}
 					</header>
-					<div class='panel-body'>
-						{% form form using "brambling/forms/itemoption.html" %}
-					</div>
+						<div class="panel-collapse collapse{% if form.errors %} in{% endif %}" id="{{ form.prefix }}-collapse">
+							<div class='panel-body'>
+								{% form form using "brambling/forms/itemoption.html" %}
+							</div>
+						</div>
 				</div>
 			{% endfor %}
 		</div>
