@@ -1,38 +1,15 @@
 from datetime import timedelta
 
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.utils import timezone
-from django.views.generic import (DetailView, TemplateView)
+from django.views.generic import TemplateView
 from zenaida.forms import modelformset_factory
 
 from brambling.forms.attendee import (ReservationForm, PersonItemForm,
                                       PersonItemFormSet, PersonDiscountForm)
-from brambling.models import Event, Item, PersonItem, Payment
+from brambling.models import Item, PersonItem, Payment
 from brambling.views.utils import get_event_or_404
-
-
-class EventDetailView(DetailView):
-    model = Event
-    template_name = 'brambling/event/detail.html'
-    context_object_name = 'event'
-
-    def get_object(self):
-        obj = get_event_or_404(self.kwargs['slug'])
-        if obj.privacy == Event.PRIVATE:
-            user = self.request.user
-            if not obj.can_edit(user):
-                raise Http404
-        return obj
-
-    def get_queryset(self):
-        queryset = super(EventDetailView, self).get_queryset()
-        return queryset.prefetch_related('editors')
-
-    def get_context_data(self, **kwargs):
-        context = super(EventDetailView, self).get_context_data(**kwargs)
-        context['cart_total'] = self.request.user.get_cart_total(self.object)
-        return context
 
 
 class ReservationView(TemplateView):

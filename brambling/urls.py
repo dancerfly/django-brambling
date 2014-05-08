@@ -1,13 +1,16 @@
 from django.conf.urls import patterns, url, include
+from django.core.urlresolvers import reverse_lazy
 
 from brambling.forms.user import FloppyAuthenticationForm
 from brambling.views.attendee import (
-    EventDetailView,
     ReservationView,
     CartView,
     CheckoutView,
 )
-from brambling.views.core import root_view
+from brambling.views.core import (
+    UserDashboardView,
+    EventListView,
+)
 from brambling.views.organizer import (
     EventCreateView,
     EventUpdateView,
@@ -25,11 +28,14 @@ from brambling.views.user import (
     CreditCardAddView,
     CreditCardDeleteView,
 )
+from brambling.views.utils import split_view, route_view, get_event_or_404
 
 
 urlpatterns = patterns('',
     url(r'^$',
-        root_view,
+        split_view(lambda r, *a, **k: r.user.is_authenticated(),
+                   UserDashboardView.as_view(),
+                   EventListView.as_view()),
         name="brambling_dashboard"),
     url(r'^create/$',
         EventCreateView.as_view(),
@@ -64,7 +70,10 @@ urlpatterns = patterns('',
         name="brambling_home"),
 
     url(r'^(?P<slug>[\w-]+)/$',
-        EventDetailView.as_view(),
+        route_view(lambda r, *a, **k: get_event_or_404(k['slug']
+                                                       ).editable_by(r.user),
+                   'edit/',
+                   'reserve/'),
         name="brambling_event_detail"),
     url(r'^(?P<slug>[\w-]+)/reserve/$',
         ReservationView.as_view(),

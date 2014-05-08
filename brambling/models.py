@@ -199,7 +199,7 @@ class Event(models.Model):
     def get_absolute_url(self):
         return reverse('brambling_event_detail', kwargs={'slug': self.slug})
 
-    def can_edit(self, user):
+    def editable_by(self, user):
         return (user.is_authenticated() and user.is_active and
                 (user.is_superuser or user.pk == self.owner_id or
                  self.editors.filter(pk=user.pk).exists()))

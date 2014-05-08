@@ -5,10 +5,9 @@ from django.utils import timezone
 from django.views.generic import ListView, TemplateView
 
 from brambling.models import Event
-from brambling.views.utils import split_view
 
 
-class Dashboard(TemplateView):
+class UserDashboardView(TemplateView):
     template_name = "brambling/dashboard.html"
 
     def get_context_data(self):
@@ -49,8 +48,3 @@ class EventListView(ListView):
     def get_queryset(self):
         qs = super(EventListView, self).get_queryset()
         return qs.filter(privacy=Event.PUBLIC)
-
-
-root_view = split_view(lambda r: r.user.is_authenticated(),
-                       Dashboard.as_view(),
-                       EventListView.as_view())

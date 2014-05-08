@@ -48,7 +48,7 @@ class EventUpdateView(UpdateView):
     def get_object(self):
         obj = get_event_or_404(self.kwargs['slug'])
         user = self.request.user
-        if not obj.can_edit(user):
+        if not obj.editable_by(user):
             raise Http404
         return obj
 
@@ -60,7 +60,7 @@ class EventUpdateView(UpdateView):
 
 def item_form(request, *args, **kwargs):
     event = get_event_or_404(kwargs['event_slug'])
-    if not event.can_edit(request.user):
+    if not event.editable_by(request.user):
         raise Http404
     if 'pk' in kwargs:
         item = get_object_or_404(Item, pk=kwargs['pk'])
@@ -97,7 +97,7 @@ class ItemListView(ListView):
 
     def get_queryset(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
-        if not self.event.can_edit(self.request.user):
+        if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(ItemListView, self).get_queryset()
         return qs.filter(event=self.event
@@ -112,7 +112,7 @@ class ItemListView(ListView):
 
 def discount_form(request, *args, **kwargs):
     event = get_event_or_404(kwargs['event_slug'])
-    if not event.can_edit(request.user):
+    if not event.editable_by(request.user):
         raise Http404
     if 'pk' in kwargs:
         discount = get_object_or_404(Discount, pk=kwargs['pk'])
@@ -145,7 +145,7 @@ class DiscountListView(ListView):
 
     def get_queryset(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
-        if not self.event.can_edit(self.request.user):
+        if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(DiscountListView, self).get_queryset()
         return qs.filter(event=self.event)
