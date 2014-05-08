@@ -67,6 +67,9 @@
 				});
 			};
 
+			$('.item-options-list').on('row_added.formset row_removes.formset reordered.formset', item_options_renumber);
+			$('.item-options-list').on('initialized.formset', function () { $(this).find('.hide-me').hide();});
+
 			$('.item-options-list').formset({
 				prefix: '{{ itemoption_formset.prefix }}',
 				deleteTrigger: '<a href="#"><i class="glyphicon glyphicon-remove"></i></a>',
@@ -76,7 +79,6 @@
 				sortableHandle: '.panel-heading',
 				sortableField: 'order'
 			})
-			$('.item-options-list').on('row_added.formset row_removes.formset reordered.formset', item_options_renumber);
 		}());
 	</script>
 {% endblock %}

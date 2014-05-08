@@ -4,9 +4,7 @@
 
 {% block rows %}
 	<div class='row'>
-		<div class='col-md-6'>{% formrow form.name %}</div>
-		<div class='col-md-3'>{% formrow form.order %}</div>
-		<div class='col-md-3'>{% formrow form.DELETE %}</div>
+		<div class='col-md-12'>{% formrow form.name %}</div>
 	</div>
 	<div class='row'>
 		<div class='col-md-4'>{% formrow form.price %}</div>
@@ -16,6 +14,10 @@
 	<div class='row'>
 		<div class='col-md-6'>{% formrow form.available_start %}</div>
 		<div class='col-md-6'>{% formrow form.available_end %}</div>
+	</div>
+	<div class='row hide-me'>
+		<div class='col-md-6'>{% formrow form.order %}</div>
+		<div class='col-md-6'>{% formrow form.DELETE %}</div>
 	</div>
 
 	{% for field in form.hidden_fields %}
