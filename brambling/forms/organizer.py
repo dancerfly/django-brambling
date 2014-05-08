@@ -1,5 +1,7 @@
 import datetime
+
 from django.core.exceptions import ValidationError
+from django.forms.models import BaseInlineFormSet
 from django.utils.crypto import get_random_string
 from zenaida.forms import inlineformset_factory
 from zenaida import forms
@@ -66,7 +68,20 @@ class ItemForm(forms.ModelForm):
         self.instance.event = self.event
 
 
-ItemOptionFormSet = inlineformset_factory(Item, ItemOption)
+# Patch in min_num value. See django ticket #17642
+# https://code.djangoproject.com/ticket/17642
+class BaseItemOptionFormSet(BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BaseItemOptionFormSet, self).__init__(*args, **kwargs)
+        self.min_num = 1
+        self.validate_min = True
+        if self.initial_form_count() == 0:
+            self.extra = 1
+
+ItemOptionFormSet = inlineformset_factory(Item,
+                                          ItemOption,
+                                          formset=BaseItemOptionFormSet,
+                                          extra=0)
 
 
 class DiscountForm(forms.ModelForm):

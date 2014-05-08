@@ -21,6 +21,12 @@
 
 		{{ itemoption_formset.management_form }}
 
+		{% if itemoption_formset.non_form_errors %}
+			{% for error in itemoption_formset.non_form_errors %}
+				<p class='text-danger'>{{ error }}</p>
+			{% endfor %}
+		{% endif %}
+
 		{# template for additional item option forms #}
 		<div class="hidden">
 			<div class='panel panel-default item-option item-option-template'>

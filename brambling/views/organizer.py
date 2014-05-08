@@ -74,6 +74,9 @@ def item_form(request, *args, **kwargs):
     if request.method == 'POST':
         form = ItemForm(event, request.POST, instance=item)
         formset = ItemOptionFormSet(request.POST, instance=item)
+        # Always run both.
+        form.is_valid()
+        formset.is_valid()
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
