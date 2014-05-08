@@ -9,7 +9,8 @@ from zenaida.forms import modelform_factory
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import Event, Item, Discount
-from brambling.views.utils import get_event_or_404
+from brambling.views.utils import (get_event_or_404, get_event_nav,
+                                   get_event_admin_nav)
 
 
 class EventCreateView(CreateView):
@@ -54,7 +55,11 @@ class EventUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
-        context['cart_total'] = self.request.user.get_cart_total(self.object)
+        context.update({
+            'cart_total': self.request.user.get_cart_total(self.object),
+            'event_nav': get_event_nav(self.object, self.request),
+            'event_admin_nav': get_event_admin_nav(self.object, self.request),
+        })
         return context
 
 
@@ -84,6 +89,8 @@ def item_form(request, *args, **kwargs):
         'item_form': form,
         'itemoption_formset': formset,
         'cart_total': request.user.get_cart_total(event),
+        'event_nav': get_event_nav(event, request),
+        'event_admin_nav': get_event_admin_nav(event, request),
     }
     return render_to_response('brambling/event/item_form.html',
                               context,
@@ -105,8 +112,12 @@ class ItemListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ItemListView, self).get_context_data(**kwargs)
-        context['event'] = self.event
-        context['cart_total'] = self.request.user.get_cart_total(self.event)
+        context.update({
+            'event': self.event,
+            'cart_total': self.request.user.get_cart_total(self.event),
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
         return context
 
 
@@ -132,6 +143,8 @@ def discount_form(request, *args, **kwargs):
         'discount': form.instance,
         'discount_form': form,
         'cart_total': request.user.get_cart_total(event),
+        'event_nav': get_event_nav(event, request),
+        'event_admin_nav': get_event_admin_nav(event, request),
     }
     return render_to_response('brambling/event/discount_form.html',
                               context,
@@ -152,6 +165,10 @@ class DiscountListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(DiscountListView, self).get_context_data(**kwargs)
-        context['event'] = self.event
-        context['cart_total'] = self.request.user.get_cart_total(self.event)
+        context.update({
+            'event': self.event,
+            'cart_total': self.request.user.get_cart_total(self.event),
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
         return context

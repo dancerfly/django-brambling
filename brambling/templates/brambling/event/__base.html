@@ -6,34 +6,23 @@
 {% endblock %}
 
 {% block side %}
-	{% url 'brambling_event_detail' slug=event.slug as event_detail_url %}
-	{% url 'brambling_event_reserve' slug=event.slug as event_reservation_url %}
-	{% url 'brambling_event_cart' slug=event.slug as event_cart_url %}
-	{% url 'brambling_event_checkout' slug=event.slug as event_checkout_url %}
 	<ul class='nav nav-pills nav-stacked'>
-		<li{% if request.path == event_detail_url %} class='active'{% endif %}><a href="{{ event_detail_url }}">View event</a></li>
-		{% with event_reservation_url_length=event_reservation_url|length|floatformat %}
-			<li{% if request.path|slice:event_reservation_url_length == event_reservation_url %} class='active'{% endif %}><a href="{{ event_reservation_url }}">Shop</a></li>
-		{% endwith %}
-		{% with event_cart_url_length=event_cart_url|length|floatformat %}
-			<li{% if request.path|slice:event_cart_url_length == event_cart_url %} class='active'{% endif %}><a href="{{ event_cart_url }}">Cart <span class='badge'>{{ cart_total|default:0 }}</span></a></li>
-		{% endwith %}
-		{% with event_checkout_url_length=event_checkout_url|length|floatformat %}
-			<li{% if request.path|slice:event_checkout_url_length == event_checkout_url %} class='active'{% endif %}><a href="{{ event_checkout_url }}">Checkout</a></li>
-		{% endwith %}
-	{% if request.user.is_authenticated and request.user.is_active %}
-		{% if request.user.is_superuser or request.user == event.owner or request.user in event.editors.all %}
-			{% url 'brambling_event_update' slug=event.slug as event_update_url %}
-			{% url 'brambling_item_list' event_slug=event.slug as item_list_url %}
-			{% url 'brambling_discount_list' event_slug=event.slug as discount_list_url %}
-			{% with item_list_url_length=item_list_url|length|floatformat discount_list_url_length=discount_list_url|length|floatformat %}
-				<li{% if request.path == event_update_url %} class='active'{% endif %}><a href="{{ event_update_url }}">Edit event</a></li>
-				<li{% if request.path|slice:item_list_url_length == item_list_url %} class='active'{% endif %}><a href="{{ item_list_url }}">Manage items</a></li>
-				<li{% if request.path|slice:discount_list_url_length == discount_list_url %} class='active'{% endif %}><a href="{{ discount_list_url }}">Manage discounts</a></li>
-			{% endwith %}
-		{% endif %}
-	{% endif %}
+		{% for item in event_nav %}
+			<li{% if item.is_active %} class='active'{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
+		{% endfor %}
 	</ul>
+	{% if event_admin_nav %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Manage event</h3>
+			</div>
+			<div class="list-group">
+			{% for item in event_admin_nav %}
+				<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">{{ item.label }}</a>
+			{% endfor %}
+			</div>
+		</div>
+	{% endif %}
 {% endblock %}
 
 {% block main %}

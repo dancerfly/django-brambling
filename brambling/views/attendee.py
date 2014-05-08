@@ -9,7 +9,8 @@ from zenaida.forms import modelformset_factory
 from brambling.forms.attendee import (ReservationForm, PersonItemForm,
                                       PersonItemFormSet, PersonDiscountForm)
 from brambling.models import Item, PersonItem, Payment
-from brambling.views.utils import get_event_or_404
+from brambling.views.utils import (get_event_or_404, get_event_nav,
+                                   get_event_admin_nav)
 
 
 class ReservationView(TemplateView):
@@ -60,6 +61,8 @@ class ReservationView(TemplateView):
             'cart': self.request.user.get_cart(self.event),
             'cart_total': self.request.user.get_cart_total(self.event),
             'discounts': self.request.user.get_discounts(self.event),
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
 
@@ -153,6 +156,8 @@ class CartView(TemplateView):
             'formset': self.formset,
             'discount_form': self.discount_form,
             'discounts': self.request.user.get_discounts(self.event),
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         context['formset'].forms
         return context
@@ -222,5 +227,7 @@ class CheckoutView(TemplateView):
             'payment_form': self.payment_form,
             'checkout_list': checkout_list,
             'balance': balance,
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
