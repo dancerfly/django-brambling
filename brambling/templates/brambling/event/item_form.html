@@ -51,7 +51,7 @@
 							<div class="actions pull-right"></div>
 						</div>{# /.panel-title #}
 					</header>
-						<div class="panel-collapse collapse{% if form.errors %} in{% endif %}" id="{{ form.prefix }}-collapse">
+						<div class="panel-collapse collapse{% if form.errors or not form.instance.pk %} in{% endif %}" id="{{ form.prefix }}-collapse">
 							<div class='panel-body'>
 								{% form form using "brambling/forms/itemoption.html" %}
 							</div>
