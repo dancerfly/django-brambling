@@ -1,54 +1,50 @@
 {% load floppyforms %}
 
-<div class="row">
-	<div class="col-md-8">
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Profile Information</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.name %}
-				{% formrow form.nickname %}
-				{% formrow form.email %}
-				{% formrow form.phone %}
-			</div>
-		</div>{# /.panel #}
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Preferences</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.dance_styles %}
-				{% formrow form.event_types %}
-				{% formrow form.dietary_restrictions %}
-				{% formrow form.housing_prefer %}
-			</div>
-		</div>
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Environmental factors</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.ef_cause %}
-				{% formrow form.ef_avoid %}
-			</div>
-		</div>
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">People</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.person_prefer %}
-				{% formrow form.person_avoid %}
-			</div>
-		</div>
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Other</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.other_needs %}
-			</div>
-		</div>
-	</div>{# /.col-md-8 #}
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Profile Information</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.name %}
+		{% formrow form.nickname %}
+		{% formrow form.email %}
+		{% formrow form.phone %}
+	</div>
+</div>{# /.panel #}
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Preferences</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.dance_styles %}
+		{% formrow form.event_types %}
+		{% formrow form.dietary_restrictions %}
+		{% formrow form.housing_prefer %}
+	</div>
+</div>
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Environmental factors</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.ef_cause %}
+		{% formrow form.ef_avoid %}
+	</div>
+</div>
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">People</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.person_prefer %}
+		{% formrow form.person_avoid %}
+	</div>
+</div>
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Other</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.other_needs %}
+	</div>
 </div>

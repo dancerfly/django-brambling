@@ -1,0 +1,67 @@
+{% extends 'brambling/layouts/100.html' %}
+
+{% load floppyforms static %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+	<script>
+		Stripe.setPublishableKey('{{ STRIPE_PUBLISHABLE_KEY }}');
+
+		$(function(){
+			$('#card-submit').on('click', function(e){
+				e.preventDefault();
+				$('.has-error').removeClass('has-error');
+				$('.help-block').remove();
+
+				Stripe.card.createToken({
+					number: $('#card-number').val(),
+					cvc: $('#card-cvc').val(),
+					exp_month: $('#card-expiry-month').val(),
+					exp_year: $('#card-expiry-year').val()
+				}, function(status, response) {
+					if (response.error) {
+						console.log(response.error);
+						var fieldId,
+							param=response.error.param;
+						if (param == 'number') {
+							fieldId = '#card-number';
+						} else if (param == 'exp_year') {
+							fieldId = '#card-expiry-year'
+						} else if (param == 'exp_month') {
+							fieldId = '#card-expiry-month'
+						} else if (param == 'cvc') {
+							fieldId = '#card-cvc'
+						}
+						if (fieldId) {
+							var group = $(fieldId).parent();
+							group.addClass('has-error');
+							group.append('<p class="help-block">' + response.error.message + '</p>');
+						}
+					} else {
+						var cardForm = $('#card-form');
+						cardForm.append("<input type='hidden' name='stripeToken' value='" + response['id'] + "'/>");
+						cardForm.get(0).submit();
+					}
+				});
+			});
+		});
+	</script>
+{% endblock %}
+
+{% block main %}
+	<div class='row'>
+		<div class='col-md-6 col-md-offset-3'>
+			<h2>Add a card</h2>
+
+			{% form form using "brambling/forms/creditcard.html" %}
+
+			<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
+			<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
+
+			<form id='card-form' action="{{ request.path }}" method="post">
+				{% csrf_token %}
+			</form>
+		</div>
+	</div>
+{% endblock %}

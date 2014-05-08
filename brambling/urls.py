@@ -6,7 +6,8 @@ from brambling.views import (ReservationView, EventCreateView,
                              ItemListView, item_form, DiscountListView,
                              discount_form, SignUpView, EmailConfirmView,
                              EventDetailView, send_confirmation_email_view,
-                             CartView, CheckoutView)
+                             CartView, CheckoutView, CreditCardAddView,
+                             CreditCardDeleteView)
 
 
 urlpatterns = patterns('',
@@ -35,6 +36,12 @@ urlpatterns = patterns('',
     url(r'^profile/$',
         PersonView.as_view(),
         name="brambling_user_profile"),
+    url(r'^profile/card/add/$',
+        CreditCardAddView.as_view(),
+        name="brambling_user_card_add"),
+    url(r'^profile/card/delete/(?P<pk>\d+)/$',
+        CreditCardDeleteView.as_view(),
+        name="brambling_user_card_delete"),
     url(r'^home/$',
         HomeView.as_view(),
         name="brambling_home"),

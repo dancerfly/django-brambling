@@ -1,8 +1,21 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/layouts/75_25.html' %}
 
 {% load floppyforms static %}
 
-{% block content %}
+{% block javascripts %}
+	{{ block.super }}
+	<script>
+		$('.remove-card').on('click', function(e) {
+			var $this = $(this);
+			e.preventDefault();
+			$.post($this.attr('target'), function() {
+				$this.parent().parent().fadeOut();
+			});
+		});
+	</script>
+{% endblock %}
+
+{% block main %}
 	<h2>Edit settings</h2>
 
 	<form action="{{ request.path }}" method="post">
@@ -11,4 +24,24 @@
 		<button class="btn btn-primary" type="submit">Save changes</button>
 		<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
 	</form>
+{% endblock %}
+
+{% block side %}
+	<h3>Cards</h3>
+
+	{% if cards %}
+		<p><a class='btn btn-link' href='{% url "brambling_user_card_add" %}'><span class='glyphicon glyphicon-plus'></span> Add another card</a></p>
+		{% for card in cards %}
+			<div class='clearfix'>
+				<h5>{{ card.brand }} <span class='pull-right'>&bull;&bull;&bull;&bull;{{ card.last4 }}</span></h5>
+				<p>
+					<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
+					<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='glyphicon glyphicon-remove'></span></a>
+				</p>
+			</a>
+		{% endfor %}
+	{% else %}
+		<p>No credit cards on record.</p>
+		<p><a href='{% url "brambling_user_card_add" %}'>Add a card!</a></p>
+	{% endif %}
 {% endblock %}

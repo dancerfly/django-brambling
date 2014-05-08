@@ -1,0 +1,29 @@
+{# This template requires Stripe.js #}
+
+{# TODO: Add a check for stripe.js (and to make sure we're not in form tags?) #}
+
+<div class='row'>
+	<div class='col-sm-9'>
+		<div class='form-group'>
+			<input type='text' class='form-control' id='card-number' maxlength='16' placeholder='Card number'>
+		</div>
+	</div>
+	<div class='col-sm-3'>
+		<div class='form-group'>
+			<input type='text' class='form-control' id='card-cvc' maxlength='4' placeholder='CVC'>
+		</div>
+	</div>
+</div>
+
+<div class='row'>
+	<div class='col-sm-6'>
+		<div class='form-group'>
+			<input type='text' class='form-control' id='card-expiry-month' placeholder='MM' maxlength='2'>
+		</div>
+	</div>
+	<div class='col-sm-6'>
+		<div class='form-group'>
+			<input type='text' class='form-control' id='card-expiry-year' placeholder='YY' maxlength='2'>
+		</div>
+	</div>
+</div>

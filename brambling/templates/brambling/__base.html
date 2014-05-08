@@ -1,5 +1,7 @@
 {% extends 'zenaida/__base.html' %}
 
+{% load staticfiles %}
+
 {% block title %}Brambling{% endblock %}</title>
 
 {% block body-classes %}brambling {{ block.super }}{% endblock %}
@@ -22,4 +24,9 @@
 		<li{% if request.path == login_url %} class='active'{% endif %}><a href="{{ login_url }}">Log in</a></li>
 		<li{% if request.path == brambling_signup_url %} class='active'{% endif %}><a href="{{ brambling_signup_url }}">Sign up</a></li>
 	{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
 {% endblock %}

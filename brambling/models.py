@@ -405,6 +405,12 @@ class Person(AbstractBaseUser, PermissionsMixin):
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     event_types = models.ManyToManyField(EventType, blank=True)
 
+    # Stripe-related fields
+    stripe_customer_id = models.CharField(max_length=36, blank=True)
+    default_card = models.OneToOneField('CreditCard', blank=True, null=True,
+                                        related_name='default_for',
+                                        on_delete=models.SET_NULL)
+
     class Meta:
         verbose_name = _('person')
         verbose_name_plural = _('people')
@@ -443,6 +449,39 @@ class Person(AbstractBaseUser, PermissionsMixin):
             discount__event=event,
             person=self
         ).order_by('-timestamp').select_related('discount')
+
+
+class CreditCard(models.Model):
+    BRAND_CHOICES = (
+        ('Visa', 'Visa'),
+        ('American Express', 'American Express'),
+        ('MasterCard', 'MasterCard'),
+        ('Discover', 'Discover'),
+        ('JCB', 'JCB'),
+        ('Diners Club', 'Diners Club'),
+        ('Unknown', 'Unknown'),
+    )
+    stripe_card_id = models.CharField(max_length=40)
+    person = models.ForeignKey(Person, related_name='cards')
+    added = models.DateTimeField(auto_now_add=True)
+
+    exp_month = models.PositiveSmallIntegerField()
+    exp_year = models.PositiveSmallIntegerField()
+    fingerprint = models.CharField(max_length=32)
+    last4 = models.CharField(max_length=4)
+    brand = models.CharField(max_length=16)
+
+    def is_default(self):
+        return self.person.default_card_id == self.id
+
+
+@receiver(signals.pre_delete, sender=CreditCard)
+def delete_stripe_card(sender, instance, **kwargs):
+    import stripe
+    from django.conf import settings
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
+    customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
 class Home(models.Model):

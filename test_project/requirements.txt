@@ -11,3 +11,5 @@ Pillow==2.3.1
 https://github.com/melinath/django-floppyforms/tarball/7ac637c5795f2776fb384ada0ed03c078d787625
 # littleweaver-forms - @master until we reach a peggable point.
 https://github.com/littleweaver/django-zenaida/tarball/master
+stripe==1.14.0
+requests==2.2.1
