@@ -67,7 +67,7 @@
 				});
 			};
 
-			$('.item-options-list').on('row_added.formset row_removes.formset reordered.formset', item_options_renumber);
+			$('.item-options-list').on('row_added.formset row_removed.formset reordered.formset', item_options_renumber);
 			$('.item-options-list').on('initialized.formset', function () { $(this).find('.hide-me').hide();});
 
 			$('.item-options-list').formset({
