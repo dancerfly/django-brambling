@@ -48,7 +48,7 @@
 				</div>
 			{% endfor %}
 		</div>
-		
+
 		<div class="well"></div>
 
 		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
@@ -72,9 +72,11 @@
 				deleteTrigger: '<a href="#"><i class="glyphicon glyphicon-remove"></i></a>',
 				deleteWrapper: '.actions',
 				addWrapper: '#itemForm .well',
-				formTemplate: '.item-option-template'
+				formTemplate: '.item-option-template',
+				sortableHandle: '.panel-heading',
+				sortableField: 'order'
 			})
-			$('.item-options-list').on('row_added.formset row_removes.formset', item_options_renumber);
+			$('.item-options-list').on('row_added.formset row_removes.formset reordered.formset', item_options_renumber);
 		}());
 	</script>
 {% endblock %}
