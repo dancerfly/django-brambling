@@ -33,13 +33,21 @@
 									<td>{% if not is_payment %}{{ item.get_status_display }}{% endif %}</td>
 									<td>{% if is_payment %}-{{ item.amount }}{% else %}{{ item.item_option.price }}{% endif %}</td>
 								</tr>
+								{% if item.discount_info %}
+									<tr>
+										<td class='text-muted'>{{ item.discount_info.timestamp|date:"n/j/Y H:i:s" }}</td>
+										<td>{{ item.discount_info.name }}</td>
+										<td class='text-muted'>{{ item.discount_info.code }}</td>
+										<td>-{{ item.discount_info.amount }}</td>
+									</tr>
+								{% endif %}
 							{% endwith %}
 						{% endfor %}
-							<tr>
-								<th>Balance</th>
-								<td></td><td></td>
-								<th>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}{{ balance }} {{ event.currency }}</th>
-							</tr>
+						<tr>
+							<th>Balance</th>
+							<td></td><td></td>
+							<th>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}{{ balance }} {{ event.currency }}</th>
+						</tr>
 					</tbody>
 				</table>
 			</div>

@@ -313,6 +313,7 @@ class Payment(models.Model):
     person = models.ForeignKey('Person')
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     timestamp = models.DateTimeField(default=timezone.now)
+    stripe_charge_id = models.CharField(max_length=40, blank=True)
 
 
 class PersonManager(BaseUserManager):

@@ -1,14 +1,17 @@
 import datetime
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import construct_instance
 from django.utils import timezone
+import stripe
 from zenaida import forms
 
 from brambling.models import (Person, Home, Item, Discount,
                               EventPerson, Date, EventHousing, PersonItem,
                               PersonDiscount, EnvironmentalFactor,
-                              HousingCategory, CreditCard)
+                              HousingCategory, CreditCard, Payment)
 
 
 CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
@@ -502,11 +505,76 @@ import floppyforms as forms
 class CheckoutForm(forms.Form):
     card = forms.ModelChoiceField(CreditCard)
 
-    def __init__(self, person, *args, **kwargs):
+    def __init__(self, event, person, *args, **kwargs):
         super(CheckoutForm, self).__init__(*args, **kwargs)
         self.person = person
+        self.event = event
         self.fields['card'].queryset = person.cards.all()
         self.fields['card'].initial = person.default_card
 
+        self.payments = Payment.objects.filter(event=self.event,
+                                               person=person)
+        reservation_start = (
+            timezone.now() -
+            datetime.timedelta(minutes=self.event.reservation_timeout)
+        )
+        self.personitems = PersonItem.objects.filter(
+            (models.Q(status=PersonItem.RESERVED) &
+             models.Q(added__gte=reservation_start) &
+             models.Q(buyer=person)) |
+            (~models.Q(status=PersonItem.RESERVED) &
+             models.Q(buyer=person)),
+            item_option__item__event=self.event,
+        ).distinct().select_related('item_option__item')
+
+        self.discounts = PersonDiscount.objects.filter(
+            person=person, discount__event=event).select_related('discount')
+
+        discount_map = {discount.discount.item_option_id: discount
+                        for discount in self.discounts}
+        savings = 0
+        for item in self.personitems:
+            if item.item_option_id not in discount_map:
+                continue
+            discount = discount_map[item.item_option_id]
+            discount, timestamp = discount.discount, discount.timestamp
+            amount = (discount.amount
+                      if discount.discount_type == Discount.FLAT
+                      else discount.amount / 100 * discount.item_option.price)
+            item.discount_info = {
+                'timestamp': timestamp,
+                'name': discount.name,
+                'code': discount.code,
+                'amount': amount,
+            }
+            savings += amount
+
+        self.balance = (
+            max(0, sum((item.item_option.price for item in self.personitems)) -
+                savings) -
+            sum((payment.amount for payment in self.payments))
+        )
+
+    def clean(self):
+        if self.balance <= 0:
+            raise ValidationError('No balance to charge.')
+        return super(CheckoutForm, self).clean()
+
     def save(self):
-        pass
+        card = self.cleaned_data['card']
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        charge = stripe.Charge.create(
+            amount=self.balance * 100,
+            currency=self.event.currency,
+            customer=self.person.stripe_customer_id,
+            card=card.stripe_card_id,
+        )
+        payment = Payment.objects.create(event=self.event,
+                                         person=self.person,
+                                         amount=self.balance,
+                                         stripe_charge_id=charge.id)
+        item_pks = [item.pk for item in self.personitems
+                    if item.status != PersonItem.PAID]
+        PersonItem.objects.filter(pk__in=item_pks
+                                  ).update(status=PersonItem.PAID)
+        return payment

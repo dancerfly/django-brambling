@@ -10,7 +10,7 @@ from zenaida.forms import modelformset_factory
 from brambling.forms.attendee import (ReservationForm, PersonItemForm,
                                       PersonItemFormSet, PersonDiscountForm,
                                       CheckoutForm)
-from brambling.models import Item, PersonItem, Payment
+from brambling.models import Item, PersonItem
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav)
 
@@ -158,6 +158,7 @@ class CheckoutView(TemplateView):
     def get_form(self):
         kwargs = {
             'person': self.request.user,
+            'event': self.event,
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
@@ -175,25 +176,11 @@ class CheckoutView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(CheckoutView, self).get_context_data(**kwargs)
 
-        payments = Payment.objects.filter(event=self.event,
-                                          person=self.request.user)
-        reservation_start = (timezone.now() -
-                             timedelta(minutes=self.event.reservation_timeout))
-        personitems = PersonItem.objects.filter(
-            (Q(status=PersonItem.RESERVED) &
-             Q(added__gte=reservation_start) &
-             Q(buyer=self.request.user)) |
-            (~Q(status=PersonItem.RESERVED) &
-             Q(buyer=self.request.user)),
-            item_option__item__event=self.event,
-        ).distinct().select_related('item_option__item')
-
-        checkout_list = [(payment.timestamp, payment) for payment in payments]
-        checkout_list += [(item.added, item) for item in personitems]
+        checkout_list = [(payment.timestamp, payment)
+                         for payment in self.form.payments]
+        checkout_list += [(item.added, item)
+                          for item in self.form.personitems]
         checkout_list.sort()
-
-        balance = (sum((item.item_option.price for item in personitems)) -
-                   sum((payment.amount for payment in payments)))
 
         context.update({
             'event': self.event,
@@ -204,7 +191,7 @@ class CheckoutView(TemplateView):
                                                 prefix='discount-form'),
             'form': self.form,
             'checkout_list': checkout_list,
-            'balance': balance,
+            'balance': self.form.balance,
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
