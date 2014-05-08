@@ -47,18 +47,12 @@ class ReservationView(TemplateView):
                               for option in item.options.all()])
                       for item in self.items)
 
-        discount_form_kwargs = {
-            'event': self.event,
-            'person': self.request.user,
-            'prefix': 'discount-form'
-        }
-        if self.request.method == 'POST':
-            discount_form_kwargs['data'] = self.request.POST
-
         context.update({
             'event': self.event,
             'items': items,
-            'discount_form': PersonDiscountForm(**discount_form_kwargs),
+            'discount_form': PersonDiscountForm(event=self.event,
+                                                person=self.request.user,
+                                                prefix='discount-form'),
             'cart': self.request.user.get_cart(self.event),
             'cart_total': self.request.user.get_cart_total(self.event),
             'discounts': self.request.user.get_discounts(self.event),
@@ -96,7 +90,6 @@ class CartView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
-        self.discount_form = self.get_discount_form()
         self.formset = self.get_formset()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -134,16 +127,6 @@ class CartView(TemplateView):
             kwargs['data'] = self.request.POST
         return formset_class(**kwargs)
 
-    def get_discount_form(self):
-        kwargs = {
-            'event': self.event,
-            'person': self.request.user,
-            'prefix': 'discount-form'
-        }
-        if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-        return PersonDiscountForm(**kwargs)
-
     def get_context_data(self, **kwargs):
         context = super(CartView, self).get_context_data(**kwargs)
 
@@ -151,7 +134,9 @@ class CartView(TemplateView):
             'event': self.event,
             'cart_total': self.request.user.get_cart_total(self.event),
             'formset': self.formset,
-            'discount_form': self.discount_form,
+            'discount_form': PersonDiscountForm(event=self.event,
+                                                person=self.request.user,
+                                                prefix='discount-form'),
             'discounts': self.request.user.get_discounts(self.event),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
@@ -165,20 +150,9 @@ class CheckoutView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
-        self.discount_form = self.get_discount_form()
         self.payment_form = self.get_payment_form()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
-
-    def get_discount_form(self):
-        kwargs = {
-            'event': self.event,
-            'person': self.request.user,
-            'prefix': 'discount-form'
-        }
-        if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-        return PersonDiscountForm(**kwargs)
 
     def get_payment_form(self):
         return None
@@ -216,7 +190,9 @@ class CheckoutView(TemplateView):
             'event': self.event,
             'cart_total': self.request.user.get_cart_total(self.event),
             'discounts': self.request.user.get_discounts(self.event),
-            'discount_form': self.discount_form,
+            'discount_form': PersonDiscountForm(event=self.event,
+                                                person=self.request.user,
+                                                prefix='discount-form'),
             'payment_form': self.payment_form,
             'checkout_list': checkout_list,
             'balance': balance,
