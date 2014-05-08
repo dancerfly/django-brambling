@@ -37,7 +37,7 @@ class UserDashboardView(TemplateView):
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(Dashboard, self).dispatch(*args, **kwargs)
+        return super(UserDashboardView, self).dispatch(*args, **kwargs)
 
 
 class EventListView(ListView):
