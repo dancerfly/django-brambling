@@ -101,8 +101,8 @@ LOGIN_REDIRECT_URL = '/'
 
 AUTH_USER_MODEL = 'brambling.Person'
 
-STRIPE_PUBLISHABLE_KEY = 'YOUR_PUBLISHABLE_KEY'
-STRIPE_SECRET_KEY = 'YOUR_SECRET_KEY'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_T2BEw7icCTxXzKvSOqv3YBtB'
+STRIPE_SECRET_KEY = 'sk_test_5qHdORM8FgXjuSvdbnoelTw7'
 
 
 from django.contrib.messages import constants as messages

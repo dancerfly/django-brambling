@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponse
-from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View)
 import stripe
@@ -136,7 +136,13 @@ class CreditCardAddView(TemplateView):
                 user.save()
 
             if not self.errors:
-                return HttpResponseRedirect(reverse('brambling_user_profile'))
+                if ('next_url' in request.GET and
+                        is_safe_url(url=request.GET['next_url'],
+                                    host=request.get_host())):
+                    next_url = request.GET['next_url']
+                else:
+                    next_url = reverse('brambling_user_profile')
+                return HttpResponseRedirect(next_url)
         return self.get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

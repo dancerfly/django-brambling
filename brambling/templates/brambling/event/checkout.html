@@ -46,7 +46,10 @@
 			<form novalidate action="" method="post">
 				{% csrf_token %}
 
+				{% form form %}
+
 				<button type="submit" class="btn btn-primary">Pay now</button>
+				<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
 			</form>
 		</div>
 		<div class='col-md-4'>

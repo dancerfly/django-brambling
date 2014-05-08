@@ -59,7 +59,7 @@
 			<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
 			<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
 
-			<form id='card-form' action="{{ request.path }}" method="post">
+			<form id='card-form' action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
 				{% csrf_token %}
 			</form>
 		</div>

@@ -8,7 +8,7 @@ from zenaida import forms
 from brambling.models import (Person, Home, Item, Discount,
                               EventPerson, Date, EventHousing, PersonItem,
                               PersonDiscount, EnvironmentalFactor,
-                              HousingCategory)
+                              HousingCategory, CreditCard)
 
 
 CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
@@ -494,3 +494,19 @@ class HostingForm(forms.MemoModelForm):
             self.home.housing_categories = instance.housing_categories.all()
             self.home.save()
         return instance
+
+
+import floppyforms as forms
+
+
+class CheckoutForm(forms.Form):
+    card = forms.ModelChoiceField(CreditCard)
+
+    def __init__(self, person, *args, **kwargs):
+        super(CheckoutForm, self).__init__(*args, **kwargs)
+        self.person = person
+        self.fields['card'].queryset = person.cards.all()
+        self.fields['card'].initial = person.default_card
+
+    def save(self):
+        pass

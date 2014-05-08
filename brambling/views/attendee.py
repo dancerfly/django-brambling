@@ -8,7 +8,8 @@ from django.views.generic import TemplateView, View
 from zenaida.forms import modelformset_factory
 
 from brambling.forms.attendee import (ReservationForm, PersonItemForm,
-                                      PersonItemFormSet, PersonDiscountForm)
+                                      PersonItemFormSet, PersonDiscountForm,
+                                      CheckoutForm)
 from brambling.models import Item, PersonItem, Payment
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav)
@@ -150,16 +151,24 @@ class CheckoutView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
-        self.payment_form = self.get_payment_form()
+        self.form = self.get_form()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
-    def get_payment_form(self):
-        return None
+    def get_form(self):
+        kwargs = {
+            'person': self.request.user,
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return CheckoutForm(**kwargs)
 
     def post(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
-        self.payment_form = self.get_payment_form()
+        self.form = self.get_form()
+        if self.form.is_valid():
+            self.form.save()
+            return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
@@ -193,7 +202,7 @@ class CheckoutView(TemplateView):
             'discount_form': PersonDiscountForm(event=self.event,
                                                 person=self.request.user,
                                                 prefix='discount-form'),
-            'payment_form': self.payment_form,
+            'form': self.form,
             'checkout_list': checkout_list,
             'balance': balance,
             'event_nav': get_event_nav(self.event, self.request),
