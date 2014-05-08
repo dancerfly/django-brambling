@@ -1,9 +1,11 @@
 from datetime import timedelta
 import json
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
 from zenaida.forms import modelformset_factory
 
@@ -23,6 +25,10 @@ class ReservationView(TemplateView):
         Item.PASS
     )
     template_name = 'brambling/event/reserve.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ReservationView, self).dispatch(*args, **kwargs)
 
     def get_items(self):
         now = timezone.now()
@@ -89,6 +95,10 @@ class ReservationView(TemplateView):
 class CartView(TemplateView):
     template_name = 'brambling/event/cart.html'
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(CartView, self).dispatch(*args, **kwargs)
+
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
         self.formset = self.get_formset()
@@ -148,6 +158,10 @@ class CartView(TemplateView):
 
 class CheckoutView(TemplateView):
     template_name = 'brambling/event/checkout.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(CheckoutView, self).dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])

@@ -97,7 +97,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+from django.core.urlresolvers import reverse_lazy
+
 LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = reverse_lazy('login')
 
 AUTH_USER_MODEL = 'brambling.Person'
 
