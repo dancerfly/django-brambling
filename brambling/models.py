@@ -474,6 +474,9 @@ class CreditCard(models.Model):
     def is_default(self):
         return self.person.default_card_id == self.id
 
+    def __unicode__(self):
+        return (u"{} " + u"\u2022" * 4 + u"{}").format(self.brand, self.last4)
+
 
 @receiver(signals.pre_delete, sender=CreditCard)
 def delete_stripe_card(sender, instance, **kwargs):

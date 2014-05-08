@@ -1,18 +1,35 @@
 from django.conf.urls import patterns, url, include
 
-from brambling.forms import FloppyAuthenticationForm
-from brambling.views import (ReservationView, EventCreateView,
-                             EventUpdateView, PersonView, HomeView,
-                             ItemListView, item_form, DiscountListView,
-                             discount_form, SignUpView, EmailConfirmView,
-                             EventDetailView, send_confirmation_email_view,
-                             CartView, CheckoutView, CreditCardAddView,
-                             CreditCardDeleteView)
+from brambling.forms.user import FloppyAuthenticationForm
+from brambling.views.attendee import (
+    EventDetailView,
+    ReservationView,
+    CartView,
+    CheckoutView,
+)
+from brambling.views.core import root_view
+from brambling.views.organizer import (
+    EventCreateView,
+    EventUpdateView,
+    ItemListView,
+    item_form,
+    DiscountListView,
+    discount_form,
+)
+from brambling.views.user import (
+    PersonView,
+    HomeView,
+    SignUpView,
+    EmailConfirmView,
+    send_confirmation_email_view,
+    CreditCardAddView,
+    CreditCardDeleteView,
+)
 
 
 urlpatterns = patterns('',
     url(r'^$',
-        "brambling.views.home",
+        root_view,
         name="brambling_dashboard"),
     url(r'^create/$',
         EventCreateView.as_view(),
