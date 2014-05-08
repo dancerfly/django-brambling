@@ -1,9 +1,10 @@
 from datetime import timedelta
+import json
 
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from zenaida.forms import modelformset_factory
 
 from brambling.forms.attendee import (ReservationForm, PersonItemForm,
@@ -102,10 +103,6 @@ class CartView(TemplateView):
 
     def post(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
-        self.discount_form = self.get_discount_form()
-        if self.discount_form.is_valid():
-            self.discount_form.save()
-            return HttpResponseRedirect('')
         self.formset = self.get_formset()
         if self.formset.is_valid():
             self.formset.save()
@@ -188,10 +185,6 @@ class CheckoutView(TemplateView):
 
     def post(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
-        self.discount_form = self.get_discount_form()
-        if self.discount_form.is_valid():
-            self.discount_form.save()
-            return HttpResponseRedirect('')
         self.payment_form = self.get_payment_form()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -231,3 +224,31 @@ class CheckoutView(TemplateView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
+
+
+class PersonDiscountView(View):
+    def post(self, request, *args, **kwargs):
+        if not request.is_ajax():
+            raise Http404
+
+        event = get_event_or_404(kwargs['slug'])
+
+        form = PersonDiscountForm(
+            event=event,
+            person=request.user,
+            prefix='discount-form',
+            data=json.loads(request.body),
+        )
+
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse({
+                'success': True,
+                'name': instance.discount.name,
+                'code': instance.discount.code,
+            })
+
+        return JsonResponse({
+            'success': False,
+            'errors': form.errors,
+        })

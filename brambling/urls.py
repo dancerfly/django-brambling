@@ -6,6 +6,7 @@ from brambling.views.attendee import (
     ReservationView,
     CartView,
     CheckoutView,
+    PersonDiscountView,
 )
 from brambling.views.core import (
     UserDashboardView,
@@ -84,10 +85,13 @@ urlpatterns = patterns('',
     url(r'^(?P<slug>[\w-]+)/checkout/$',
         CheckoutView.as_view(),
         name="brambling_event_checkout"),
+    url(r'^(?P<slug>[\w-]+)/discount/use/',
+        PersonDiscountView.as_view(),
+        name="brambling_event_use_discount"),
+
     url(r'^(?P<slug>[\w-]+)/edit/$',
         EventUpdateView.as_view(),
         name="brambling_event_update"),
-
     url(r'^(?P<event_slug>[\w-]+)/items/$',
         ItemListView.as_view(),
         name="brambling_item_list"),

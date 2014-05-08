@@ -2,6 +2,12 @@
 
 {% load floppyforms %}
 
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include 'brambling/event/_use_discount_js.html' %}
+{% endblock %}
+
 {% block main %}
 	<h2>Reserve things!</h2>
 
@@ -29,19 +35,8 @@
 			{% endfor %}
 		</div>
 		<div class="col-md-4">
-			<form action="" method='post'{% if discount_form.errors %} class="has-error"{% endif %}>
-				{% csrf_token %}
-				<div class='input-group'>
-					{% form discount_form using %}
-						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
-					{% endform %}
-					<span class='input-group-btn'>
-						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
-					</span>
-				</div>
-				{% include "floppyforms/errors.html" with errors=discount_form.discount.errors %}
+			{% include 'brambling/event/_use_discount_form.html' %}
 
-			</form>
 			{% if cart %}
 				<div class='panel panel-default'>
 					<header class='panel-heading'>
@@ -62,20 +57,18 @@
 				</div>
 			{% endif %}
 
-			{% if discounts %}
-				<div class='panel panel-default'>
-					<header class='panel-heading'>
-						<div class='panel-title'>Discounts</div>
-					</header>
-					<ul class='list-group'>
-						{% for discount in discounts %}
-							<li class='list-group-item'>
-								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
-							</li>
-						{% endfor %}
-					</ul>
-				</div>
-			{% endif %}
+			<div class='panel panel-default{% if not discounts %} hidden{% endif %}' id='discounts'>
+				<header class='panel-heading'>
+					<div class='panel-title'>Discounts</div>
+				</header>
+				<ul class='list-group'>
+					{% for discount in discounts %}
+						<li class='list-group-item'>
+							{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+						</li>
+					{% endfor %}
+				</ul>
+			</div>
 
 			<a class='btn btn-block btn-primary' href="{% url 'brambling_event_cart' slug=event.slug %}">
 				<span class='glyphicon glyphicon-shopping-cart'></span>

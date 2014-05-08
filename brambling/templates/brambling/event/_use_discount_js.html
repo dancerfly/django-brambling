@@ -1,0 +1,23 @@
+<script>
+	$(function(){
+		$('#discount-form').on('submit', function(e){
+			e.preventDefault();
+			var $this = $(this),
+				serialized = $this.serializeArray()[0],
+				data = {};
+			data[serialized.name] = serialized.value;
+			$this.removeClass('has-error');
+			$this.find('.help-block').remove();
+			$.post($this.attr('action'), JSON.stringify(data), function(data){
+				if (data.success) {
+					$('#discounts ul').prepend('<li class="list-group-item">' + data.name + ' <em class="text-muted">' + data.code + "</em></li>");
+					$('#discount-form input').val('');
+					$('#discounts').removeClass('hidden');
+				} else {
+					$this.append('<p class="help-block">' + data.errors['discount'][0] + '</p>');
+					$this.addClass('has-error');
+				}
+			});
+		});
+	});
+</script>
