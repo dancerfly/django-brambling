@@ -32,10 +32,11 @@ def route_view(test, if_true, if_false):
 
 
 class NavItem(object):
-    def __init__(self, request, url, label):
+    def __init__(self, request, url, label, disabled=False):
         self.request = request
         self.url = url
         self.label = label
+        self.disabled = disabled
 
     def is_active(self):
         return self.request.path.startswith(self.url)
@@ -44,19 +45,13 @@ class NavItem(object):
 def get_event_nav(event, request):
     cart = request.user.get_cart(event)
     items = (
-        ('brambling_event_shop', 'Shop'),
+        ('brambling_event_shop', 'Shop', False),
+        ('brambling_event_finalize', 'Finalize cart', not cart),
+        ('brambling_event_checkout', 'Checkout', False),
     )
-    if cart:
-        items += (
-            ('brambling_event_finalize', 'Finalize cart'.format(cart.total)),
-        )
-    items += (
-        ('brambling_event_checkout', 'Checkout'),
-    )
-    return [NavItem(request,
-                    reverse(view_name, kwargs={'slug': event.slug}),
-                    label)
-            for view_name, label in items]
+    return [NavItem(request=request, label=label, disabled=disabled,
+                    url=reverse(view_name, kwargs={'slug': event.slug}))
+            for view_name, label, disabled in items]
 
 
 def get_event_admin_nav(event, request):

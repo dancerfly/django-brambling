@@ -8,7 +8,7 @@
 {% block side %}
 	<ul class='nav nav-pills nav-stacked'>
 		{% for item in event_nav %}
-			<li{% if item.is_active %} class='active'{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
+			<li{% if item.is_active %} class='active'{% elif item.disabled %} class='disabled'{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
 		{% endfor %}
 	</ul>
 	{% if event_admin_nav %}
