@@ -190,8 +190,8 @@ class Event(models.Model):
 
     collect_housing_data = models.BooleanField(default=True)
     # Time in minutes.
-    reservation_timeout = models.PositiveSmallIntegerField(default=15,
-                                                           help_text="Minutes before reserved items are removed from cart.")
+    cart_timeout = models.PositiveSmallIntegerField(default=15,
+                                                    help_text="Minutes before a user's cart expires.")
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -245,21 +245,47 @@ class ItemOption(models.Model):
     def __unicode__(self):
         return smart_text(self.name)
 
+    def has_forms(self):
+        return self.item.category == Item.PASS
+
+
+class Cart(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    person = models.ForeignKey('Person')
+    event = models.ForeignKey(Event)
+    owners_set = models.BooleanField(default=False)
+
+    def expires(self):
+        return self.created + timedelta(minutes=self.event.cart_timeout)
+
+    def is_expired(self):
+        return timezone.now() > self.expires()
+
+    def get_groupable_contents(self):
+        return self.contents.order_by('item_option__item', 'item_option__order', '-added')
+
+    def is_finalized(self):
+        return (self.owners_set and
+                all((item.is_completed for item in self.contents.all())))
+
 
 class PersonItem(models.Model):
-    # "Reserved" can be lost after time expires.
-    RESERVED = 'reserved'
+    # These are essentially just sugar. They might be used
+    # for display, but they don't really guarantee anything.
     UNPAID = 'unpaid'
     PARTIAL = 'partial'
     PAID = 'paid'
+    REFUNDED = 'refunded'
     STATUS_CHOICES = (
-        (RESERVED, _('Reserved')),
         (UNPAID, _('Unpaid')),
         (PARTIAL, _('Partially paid')),
         (PAID, _('Paid')),
+        (REFUNDED, _('Refunded')),
     )
     item_option = models.ForeignKey(ItemOption)
-    added = models.DateTimeField(default=timezone.now)
+    added = models.DateTimeField(auto_now_add=True)
+    cart = models.ForeignKey(Cart, related_name='contents',
+                             blank=True, null=True)
     status = models.CharField(max_length=8,
                               choices=STATUS_CHOICES,
                               default=UNPAID)
@@ -268,6 +294,7 @@ class PersonItem(models.Model):
     owner = models.ForeignKey('Person',
                               related_name="items_owned",
                               blank=True, null=True)
+    is_completed = models.BooleanField(default=False)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
@@ -425,25 +452,24 @@ class Person(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.nickname or self.name
 
-    def get_cart(self, event):
-        reservation_start = (timezone.now() -
-                             timedelta(minutes=event.reservation_timeout))
-        return ItemOption.objects.filter(
-            item__event=event
-        ).filter(
-            (Q(personitem__status=PersonItem.RESERVED) &
-             Q(personitem__added__gte=reservation_start) &
-             Q(personitem__buyer=self)) |
-            (Q(personitem__status__in=(PersonItem.UNPAID,
-                                       PersonItem.PARTIAL)) &
-             Q(personitem__buyer=self))
-        ).distinct().annotate(
-            quantity=Count('personitem')
-        ).select_related('item').order_by('item', 'order')
+    def get_cart(self, event, create=False):
+        if not hasattr(self, '_carts'):
+            self._carts = {}
 
-    def get_cart_total(self, event):
-        return self.get_cart(event).aggregate(total=Sum('quantity')
-                                              )['total']
+        if event not in self._carts:
+            try:
+                qs = Cart.objects.annotate(total=Count('contents'))
+                cart = qs.get(person=self, event=event)
+            except Cart.DoesNotExist:
+                cart = None
+            else:
+                if cart.is_expired():
+                    cart.delete()
+                    cart = None
+            if cart is None and create:
+                cart = Cart.objects.create(person=self, event=event)
+            self._carts[event] = cart
+        return self._carts[event]
 
     def get_discounts(self, event):
         return PersonDiscount.objects.filter(

@@ -1,0 +1,58 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include 'brambling/event/_use_discount_js.html' %}
+{% endblock %}
+
+{% block main %}
+	<div class="row">
+		<div class="col-md-8">
+			<form action="" method="post" class='form-horizontal'>
+				{% csrf_token %}
+
+				{{ formset.management_form }}
+
+				<h4>Step 1: Set owners</h4>
+
+				{% for form in formset.forms %}
+					{% form form using %}
+						<div class='form-group'>
+							<label class='col-sm-4 control-label' for='{{ form.owner.auto_id }}'>
+								{{ form.instance.item_option.item.name }}
+								({{ form.instance.item_option.name }})
+							</label>
+							<div class='col-sm-8'>
+								{% formfield form.owner %}
+							</div>
+						</div>
+					{% endform %}
+					{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+				{% endfor %}
+
+				<div class='col-sm-8 col-sm-offset-4'>
+					<button type="submit" class="btn btn-primary">Save</button>
+				</div>
+			</form>
+		</div>
+		<div class='col-md-4'>
+			{% include 'brambling/event/_use_discount_form.html' %}
+
+			<div class='panel panel-default{% if not discounts %} hidden{% endif %}' id='discounts'>
+				<header class='panel-heading'>
+					<div class='panel-title'>Discounts</div>
+				</header>
+				<ul class='list-group'>
+					{% for discount in discounts %}
+						<li class='list-group-item'>
+							{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+						</li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+	</div>
+{% endblock %}

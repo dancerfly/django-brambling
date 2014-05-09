@@ -56,7 +56,7 @@ class EventUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
         context.update({
-            'cart_total': self.request.user.get_cart_total(self.object),
+            'cart': self.request.user.get_cart(self.object),
             'event_nav': get_event_nav(self.object, self.request),
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
         })
@@ -91,7 +91,7 @@ def item_form(request, *args, **kwargs):
         'item': item,
         'item_form': form,
         'itemoption_formset': formset,
-        'cart_total': request.user.get_cart_total(event),
+        'cart': request.user.get_cart(event),
         'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
@@ -117,7 +117,7 @@ class ItemListView(ListView):
         context = super(ItemListView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'cart_total': self.request.user.get_cart_total(self.event),
+            'cart': self.request.user.get_cart(self.event),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
@@ -145,7 +145,7 @@ def discount_form(request, *args, **kwargs):
         'event': event,
         'discount': form.instance,
         'discount_form': form,
-        'cart_total': request.user.get_cart_total(event),
+        'cart': request.user.get_cart(event),
         'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
@@ -170,7 +170,7 @@ class DiscountListView(ListView):
         context = super(DiscountListView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'cart_total': self.request.user.get_cart_total(self.event),
+            'cart': self.request.user.get_cart(self.event),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })

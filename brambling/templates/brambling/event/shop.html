@@ -6,30 +6,32 @@
 	{{ block.super }}
 
 	{% include 'brambling/event/_use_discount_js.html' %}
+
+	<script>
+		$(function(){
+			$('a[target]').on('click', function(e){
+				e.preventDefault();
+				$.post($(this).attr('target'), function(){
+					// For now, just reload the page.
+					location.reload();
+				});
+			})
+		});
+	</script>
 {% endblock %}
 
 {% block main %}
-	<h2>Reserve things!</h2>
-
 	<div class="row">
 		<div class="col-md-8">
-			{% for item, forms in items %}
+			{% for item in items %}
 				<div class='panel panel-default'>
 					<header class='panel-heading'>
 						<div class='panel-title'>{{ item.name }}</div>
 					</header>
-					<div class='panel-body'>
-						<ul class='list-inline'>
-							{% for form in forms %}
-								<li>
-									<form action="{{ request.path }}" method="post">
-										{% csrf_token %}
-										<button type="submit" class="btn btn-lg btn-primary">{{ form.item_option.name }}</button>
-										{% for field in form %}{{ field.as_hidden }}{% endfor %}
-									</form>
-								</li>
-							{% endfor %}
-						</ul>
+					<div class='list-group'>
+						{% for option in item.options.all %}
+							<a target='{% url "brambling_event_shop_add" slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">{{ option.name }} – {{ option.price }} {{ event.currency }} <span class='pull-right glyphicon glyphicon-plus'></span></a>
+						{% endfor %}
 					</div>
 				</div>
 			{% endfor %}
@@ -40,16 +42,15 @@
 			{% if cart %}
 				<div class='panel panel-default'>
 					<header class='panel-heading'>
-						<div class='panel-title'>Cart ({{ cart_total }})</div>
+						<div class='panel-title'>Cart ({{ cart.total }})</div>
 					</header>
-					{% regroup cart by item as cart_list %}
+					{% regroup cart.get_groupable_contents by item_option.item as cart_list %}
 					<ul class='list-group'>
 						{% for options in cart_list %}
 							<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
-							{% for option in options.list %}
+							{% for personitem in options.list %}
 								<li class='list-group-item'>
-									<span class="badge">{{ option.quantity }}</span>
-									{{ option.name }}
+									{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='glyphicon glyphicon-remove'></span></a>
 								</li>
 							{% endfor %}
 						{% endfor %}
@@ -70,10 +71,12 @@
 				</ul>
 			</div>
 
-			<a class='btn btn-block btn-primary' href="{% url 'brambling_event_cart' slug=event.slug %}">
-				<span class='glyphicon glyphicon-shopping-cart'></span>
-				Continue checkout
-			</a>
+			{% if cart %}
+				<a class='btn btn-block btn-primary' href="{% url 'brambling_event_finalize' slug=event.slug %}">
+					<span class='glyphicon glyphicon-shopping-cart'></span>
+					Finalize cart
+				</a>
+			{% endif %}
 		</div>
 	</div>
 {% endblock %}
