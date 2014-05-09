@@ -1,0 +1,25 @@
+{% load floppyforms %}
+<div class='panel panel-default' id='discounts'>
+	<header class='panel-heading'>
+		<div class='panel-title'>Discounts</div>
+	</header>
+	<ul class='list-group'>
+		{% for discount in discounts %}
+			<li class='list-group-item'>
+				{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+			</li>
+		{% endfor %}
+		<li class='list-group-item'>
+			<form id='discount-form' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
+				<div class='input-group'>
+					{% form discount_form using %}
+						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
+					{% endform %}
+					<span class='input-group-btn'>
+						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+					</span>
+				</div>
+			</form>
+		</li>
+	</ul>
+</div>
