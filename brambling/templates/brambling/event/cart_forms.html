@@ -77,20 +77,7 @@
 			</form>
 		</div>
 		<div class='col-md-4'>
-			{% include 'brambling/event/_use_discount_form.html' %}
-
-			<div class='panel panel-default{% if not discounts %} hidden{% endif %}' id='discounts'>
-				<header class='panel-heading'>
-					<div class='panel-title'>Discounts</div>
-				</header>
-				<ul class='list-group'>
-					{% for discount in discounts %}
-						<li class='list-group-item'>
-							{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
-						</li>
-					{% endfor %}
-				</ul>
-			</div>
+			{% include 'brambling/event/_discounts.html' %}
 		</div>
 	</div>
 {% endblock %}
