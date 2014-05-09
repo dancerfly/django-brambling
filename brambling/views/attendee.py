@@ -1,4 +1,3 @@
-from datetime import timedelta
 import json
 
 from django.contrib.auth.decorators import login_required
@@ -7,7 +6,6 @@ from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
-from zenaida.forms import modelformset_factory
 
 from brambling.forms.attendee import (EventPersonForm, PersonDiscountForm,
                                       CheckoutForm, OwnerFormSet)
