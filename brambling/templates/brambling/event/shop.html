@@ -1,6 +1,6 @@
 {% extends 'brambling/event/__base.html' %}
 
-{% load floppyforms %}
+{% load floppyforms zenaida %}
 
 {% block javascripts %}
 	{{ block.super }}
@@ -30,7 +30,13 @@
 					</header>
 					<div class='list-group'>
 						{% for option in item.options.all %}
-							<a target='{% url "brambling_event_shop_add" slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">{{ option.name }} – {{ option.price }} {{ event.currency }} <span class='pull-right glyphicon glyphicon-plus'></span></a>
+							<a target='{% url "brambling_event_shop_add" slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
+								<div class='row'>
+									<div class='col-xs-4'>{{ option.name }}</div>
+									<div class='col-xs-4 text-center'>{{ option.price|format_money:event.currency }}</div>
+									<div class='col-xs-4 text-right'><span class='glyphicon glyphicon-plus'></span></div>
+								</div>
+							</a>
 						{% endfor %}
 					</div>
 				</div>
