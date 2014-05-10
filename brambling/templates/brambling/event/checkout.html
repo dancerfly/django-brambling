@@ -12,6 +12,13 @@
 {% endblock %}
 
 {% block main %}
+	{% if cart and not cart.is_finalized %}
+		<div class='alert alert-warning'>
+			<strong>Warning!</strong>
+			Cart must be <a class='alert-link' href='{% url "brambling_event_finalize" slug=event.slug %}'>finalized</a> before paying.
+		</div>
+	{% endif %}
+
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='panel-title'>Items</div>
@@ -135,13 +142,20 @@
 		</table>
 	</div>
 
+	{% if cart and not cart.is_finalized %}
+		<div class='alert alert-warning'>
+			<strong>Warning!</strong>
+			Cart must be <a class='alert-link' href='{% url "brambling_event_finalize" slug=event.slug %}'>finalized</a> before paying.
+		</div>
+	{% endif %}
+
 	{% if form %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}
 
 			{% form form %}
 
-			<button type="submit" class="btn btn-primary">{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
+			<button type="submit" class="btn btn-primary"{% if cart and not cart.is_finalized %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
 			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
 		</form>
 	{% endif %}

@@ -279,6 +279,13 @@ class CheckoutForm(forms.Form):
         if self.balance <= 0:
             del self.fields['card']
 
+    def clean(self):
+        cleaned_data = super(CheckoutForm, self).clean()
+        cart = self.person.get_cart(self.event)
+        if cart is not None and not cart.is_finalized():
+            raise ValidationError("Cart must be finalized before paying.")
+        return cleaned_data
+
     def save(self):
         if self.balance <= 0:
             return
