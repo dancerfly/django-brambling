@@ -1,6 +1,6 @@
 {% extends 'brambling/event/__base.html' %}
 
-{% load floppyforms %}
+{% load floppyforms zenaida %}
 
 {% block javascripts %}
 	{{ block.super }}
@@ -36,12 +36,31 @@
 						<td class='text-right'>{{ item.item_option.price }}</td>
 					</tr>
 				{% endfor %}
+				<tr class='danger text-danger'>
+					<th>Total cost</th>
+					<td></td>
+					<td></td>
+					<td></td>
+					<th class='text-right'>{{ total_cost|format_money:event.currency }}</th>
+				</tr>
 			</tbody>
 		</table>
 	</div>
-	<div class='panel panel-info'>
+	<div class='panel panel-primary'>
 		<header class='panel-heading'>
-			<div class='panel-title'>Discounts</div>
+			<div class='row'>
+				<div class='panel-title col-xs-8'>Discounts</div>
+				<form id='discount-form' class='panel-heading-form col-xs-4' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
+					<div class='input-group'>
+						{% form discount_form using %}
+							{% formfield discount_form.discount with placeholder="Code" autocomplete="off" %}
+						{% endform %}
+						<span class='input-group-btn'>
+							<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+						</span>
+					</div>
+				</form>
+			</div>
 		</header>
 		<table class='table'>
 			<thead>
@@ -66,32 +85,20 @@
 							<td></td>
 							<th>{% if forloop.first %}Applied to:{% endif %}</th>
 							<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-							<td class='text-right'>-{{ amount }}</td>
+							<td class='text-right'>{{ amount|format_money:event.currency }}</td>
 						</tr>
 					{% endfor %}
 				{% endfor %}
-				<tr class='info'>
+				<tr class='success text-success'>
 					<th>Total savings</th>
 					<td></td>
 					<td></td>
-					<td class='text-right'>-{{ savings }}</td>
+					<th class='text-right'>{{ total_savings|format_money:event.currency }}</th>
 				</tr>
 			</tbody>
 		</table>
-		<div class='panel-footer'>
-			<form id='discount-form' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
-				<div class='input-group'>
-					{% form discount_form using %}
-						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
-					{% endform %}
-					<span class='input-group-btn'>
-						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
-					</span>
-				</div>
-			</form>
-		</div>
 	</div>
-	<div class='panel panel-success'>
+	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='panel-title'>Payments</div>
 		</header>
@@ -106,30 +113,36 @@
 				{% for payment in payments %}
 					<tr>
 						<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-						<td class='text-right'>-{{ payment.amount }}</td>
+						<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
 					</tr>
 				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-
-	<div class='panel panel-default'>
-		<table class='table'>
-			<tbody>
-				<tr>
-					<th>Balance</th>
-					<th class='text-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}{{ balance }} {{ event.currency }}</th>
+				<tr class='success text-success'>
+					<th>Total payments</th>
+					<th class='text-right'>{{ total_payments|format_money:event.currency }}</th>
 				</tr>
 			</tbody>
 		</table>
 	</div>
 
-	<form novalidate action="" method="post">
-		{% csrf_token %}
+	<div class='panel panel-primary'>
+		<table class='table'>
+			<tbody>
+				<tr{% if balance < 0 %} class='success text-success'{% elif balance > 0 %} class='danger text-danger'{% endif %}>
+					<th>Balance</th>
+					<td class='text-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}<strong>{{ balance|absolute_value|format_money:event.currency }}</strong></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 
-		{% form form %}
+	{% if form %}
+		<form novalidate action="" method="post">
+			{% csrf_token %}
 
-		<button type="submit" class="btn btn-primary">Pay now</button>
-		<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
-	</form>
+			{% form form %}
+
+			<button type="submit" class="btn btn-primary">{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
+			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
+		</form>
+	{% endif %}
 {% endblock %}

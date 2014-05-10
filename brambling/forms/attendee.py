@@ -276,16 +276,16 @@ class CheckoutForm(forms.Form):
         self.fields['card'].queryset = person.cards.all()
         self.fields['card'].initial = person.default_card
 
-    def clean(self):
         if self.balance <= 0:
-            raise ValidationError('No balance to charge.')
-        return super(CheckoutForm, self).clean()
+            del self.fields['card']
 
     def save(self):
+        if self.balance <= 0:
+            return
         card = self.cleaned_data['card']
         stripe.api_key = settings.STRIPE_SECRET_KEY
         charge = stripe.Charge.create(
-            amount=self.balance * 100,
+            amount=int(self.balance * 100),
             currency=self.event.currency,
             customer=self.person.stripe_customer_id,
             card=card.stripe_card_id,
@@ -294,8 +294,4 @@ class CheckoutForm(forms.Form):
                                          person=self.person,
                                          amount=self.balance,
                                          stripe_charge_id=charge.id)
-        item_pks = [item.pk for item in self.personitems
-                    if item.status != PersonItem.PAID]
-        PersonItem.objects.filter(pk__in=item_pks
-                                  ).update(status=PersonItem.PAID)
         return payment

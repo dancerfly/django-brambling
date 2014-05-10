@@ -272,7 +272,8 @@ class CheckoutView(TemplateView):
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
         self.balance = self.get_balance()
-        if self.balance > 0:
+        cart = request.user.get_cart(self.event)
+        if self.balance > 0 or cart is not None:
             self.form = self.get_form()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -280,14 +281,15 @@ class CheckoutView(TemplateView):
     def post(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
         self.balance = self.get_balance()
-        if self.balance > 0:
+        cart = request.user.get_cart(self.event)
+        if self.balance > 0 or cart is not None:
             self.form = self.get_form()
             if self.form.is_valid():
                 self.form.save()
                 # Remove items from cart and delete it.
                 cart = request.user.get_cart(self.event)
                 if cart is not None:
-                    cart.contents.all().update(cart=None)
+                    cart.contents.all().update(cart=None, status=PersonItem.PAID)
                     cart.delete()
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
@@ -336,12 +338,12 @@ class CheckoutView(TemplateView):
                 discount.items.append((item, amount))
                 savings += amount
 
-        self.savings = savings
-        return (
-            max(0, sum((item.item_option.price
-                        for item in self.personitems)) - savings) -
-            sum((payment.amount for payment in self.payments))
-        )
+        self.total_cost = sum((item.item_option.price
+                               for item in self.personitems))
+        self.total_savings = min(savings, self.total_cost)
+        self.total_payments = sum((payment.amount
+                                   for payment in self.payments))
+        return self.total_cost - self.total_savings - self.total_payments
 
     def get_context_data(self, **kwargs):
         context = super(CheckoutView, self).get_context_data(**kwargs)
@@ -357,7 +359,9 @@ class CheckoutView(TemplateView):
             'personitems': self.personitems,
             'payments': self.payments,
             'discounts': self.discounts,
-            'savings': self.savings,
+            'total_cost': self.total_cost,
+            'total_savings': self.total_savings,
+            'total_payments': self.total_payments,
             'balance': self.balance,
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
