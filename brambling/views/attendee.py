@@ -154,13 +154,14 @@ class FinalizeCartView(TemplateView):
                         self.event.collect_housing_data):
                     go_to_forms = True
                 else:
-                    personitem.is_complete = True
+                    personitem.is_completed = True
                     personitem.save()
             if go_to_forms:
                 url = reverse('brambling_event_finalize_forms',
                               kwargs={'slug': self.event.slug})
             else:
-                url = ''
+                url = reverse('brambling_event_checkout',
+                              kwargs={'slug': self.event.slug})
             return HttpResponseRedirect(url)
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
