@@ -105,15 +105,19 @@ class EventPersonForm(forms.MemoModelForm):
         kwargs['instance'] = instance
         super(EventPersonForm, self).__init__(memo_dict, *args, **kwargs)
         del kwargs['instance']
+        kwargs.pop('prefix', None)
 
+        guest_prefix = self.prefix + 'guest-'
         self.guest_form = GuestForm(personitem, event, memo_dict,
-                                    instance=instance, *args, **kwargs)
+                                    instance=instance,  prefix=guest_prefix,
+                                    *args, **kwargs)
 
         if personitem.owner != personitem.buyer:
             self.fields['housing'].choices = self.fields['housing'].choices[:-1]
         else:
+            host_prefix = self.prefix + 'host-'
             self.host_form = HostingForm(personitem.owner.home, event, memo_dict,
-                                         *args, **kwargs)
+                                         prefix=host_prefix, *args, **kwargs)
 
     def is_valid(self):
         valid = super(EventPersonForm, self).is_valid()
@@ -138,19 +142,10 @@ class EventPersonForm(forms.MemoModelForm):
 
 
 class GuestForm(forms.MemoModelForm):
-    ef_cause_confirm = forms.BooleanField(initial=False,
-                                          error_messages=CONFIRM_ERRORS)
-    ef_avoid_confirm = forms.BooleanField(initial=False,
-                                          error_messages=CONFIRM_ERRORS)
-
     class Meta:
         model = EventPerson
         exclude = ('event', 'person', 'car_spaces',
                    'bedtime', 'wakeup', 'housing', 'event_pass')
-        error_messages = {
-            'ef_cause_confirm': {'required': 'Must be marked correct.'},
-            'ef_avoid_confirm': {'required': 'Must be marked correct.'},
-        }
 
     def __init__(self, personitem, event, memo_dict,
                  *args, **kwargs):
@@ -159,6 +154,9 @@ class GuestForm(forms.MemoModelForm):
         self.memo_dict = memo_dict
 
         super(GuestForm, self).__init__(memo_dict, *args, **kwargs)
+        for field in ('ef_cause_confirm', 'ef_avoid_confirm'):
+            self.fields[field].required = True
+
         if personitem.buyer == personitem.owner:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True)
             if self.instance.pk is None:
@@ -202,12 +200,6 @@ class GuestForm(forms.MemoModelForm):
 
 
 class HostingForm(forms.MemoModelForm):
-    housing_categories_confirm = forms.BooleanField(initial=False,
-                                                    error_messages=CONFIRM_ERRORS)
-    ef_present_confirm = forms.BooleanField(initial=False,
-                                            error_messages=CONFIRM_ERRORS)
-    ef_avoid_confirm = forms.BooleanField(initial=False,
-                                          error_messages=CONFIRM_ERRORS)
     save_as_defaults = forms.BooleanField(initial=True)
 
     class Meta:
@@ -227,6 +219,9 @@ class HostingForm(forms.MemoModelForm):
         except EventHousing.DoesNotExist:
             kwargs['instance'] = None
         super(HostingForm, self).__init__(memo_dict, *args, **kwargs)
+        for field in ('ef_present_confirm', 'ef_avoid_confirm', 'housing_categories_confirm'):
+            self.fields[field].required = True
+
         if self.instance.pk is None and home is not None:
             self.initial.update({
                 'ef_present': home.ef_present.all(),

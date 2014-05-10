@@ -602,12 +602,14 @@ class EventPerson(models.Model):
                                       blank=True,
                                       null=True,
                                       verbose_name="People around me will be exposed to")
+    ef_cause_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='eventperson_avoid',
                                       blank=True,
                                       null=True,
                                       verbose_name="I can't/don't want to be around")
+    ef_avoid_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
 
     person_prefer = models.ManyToManyField(Person,
                                            related_name='event_preferred_by',
@@ -650,6 +652,7 @@ class EventHousing(models.Model):
                                         blank=True,
                                         null=True,
                                         verbose_name="People in the home will be exposed to")
+    ef_present_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='eventhousing_avoid',
@@ -657,6 +660,7 @@ class EventHousing(models.Model):
                                       null=True,
                                       verbose_name="I/We don't want in my/our home",
                                       help_text="Include resident preferences")
+    ef_avoid_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
 
     person_prefer = models.ManyToManyField(Person,
                                            related_name='preferred_by_eventhousing',
@@ -677,6 +681,7 @@ class EventHousing(models.Model):
                                                 blank=True,
                                                 null=True,
                                                 verbose_name="Our home is (a/an)")
+    housing_categories_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
 
 
 class HousingSlot(models.Model):

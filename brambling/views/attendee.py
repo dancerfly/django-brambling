@@ -241,9 +241,8 @@ class CartFormsView(TemplateView):
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
-        return [EventPersonForm(personitem, prefix=personitem.pk, **kwargs)
-                for personitem in cart.contents.all()
-                if not personitem.is_completed]
+        return [EventPersonForm(personitem, prefix=str(personitem.pk), **kwargs)
+                for personitem in cart.contents.all()]
 
     def get_context_data(self, **kwargs):
         context = super(CartFormsView, self).get_context_data(**kwargs)
