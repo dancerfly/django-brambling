@@ -12,59 +12,124 @@
 {% endblock %}
 
 {% block main %}
-	<div class="row">
-		<div class="col-md-8">
-			<div class='panel panel-default'>
-				<header class='panel-heading'>
-					<div class='panel-title'>Checkout</div>
-				</header>
-				<table class='table'>
-					<thead>
-						<tr>
-							<th>Timestamp</th>
-							<th>Type</th>
-							<th>Status</th>
-							<th>Amount</th>
+	<div class='panel panel-primary'>
+		<header class='panel-heading'>
+			<div class='panel-title'>Items</div>
+		</header>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Timestamp</th>
+					<th>Status</th>
+					<th class='text-right'>Amount ({{ event.currency }})</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for item in personitems %}
+					<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
+						<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
+						<td>{{ item.item_option.item.get_category_display }}</td>
+						<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
+						<td>{{ item.get_status_display }}</td>
+						<td class='text-right'>{{ item.item_option.price }}</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div class='panel panel-info'>
+		<header class='panel-heading'>
+			<div class='panel-title'>Discounts</div>
+		</header>
+		<table class='table'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Code</th>
+					<th></th>
+					<th class='text-right'>Amount ({{ event.currency }})</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for discount in discounts %}
+					{% cycle 0 1 as stripe silent %}
+					<tr{% if stripe %} class='active'{% endif %}>
+						<th>{{ discount.discount.name }}</th>
+						<td>{{ discount.discount.code }}</td>
+						<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td></td>
+					</tr>
+					{% for item, amount in discount.items %}
+						<tr{% if stripe %} class='active'{% endif %}>
+							<td></td>
+							<th>{% if forloop.first %}Applied to:{% endif %}</th>
+							<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
+							<td class='text-right'>-{{ amount }}</td>
 						</tr>
-					</thead>
-					<tbody>
-						{% for timestamp, item in checkout_list %}
-							{% with is_payment=item.timestamp %}
-								<tr>
-									<td>{{ timestamp|date:"n/j/Y H:i:s" }}</td>
-									<td>{% if is_payment %}Payment{% else %}{{ item.item_option.item.get_category_display }}{% endif %}</td>
-									<td>{% if not is_payment %}{{ item.get_status_display }}{% endif %}</td>
-									<td>{% if is_payment %}-{{ item.amount }}{% else %}{{ item.item_option.price }}{% endif %}</td>
-								</tr>
-								{% if item.discount_info %}
-									<tr>
-										<td class='text-muted'>{{ item.discount_info.timestamp|date:"n/j/Y H:i:s" }}</td>
-										<td>{{ item.discount_info.name }}</td>
-										<td class='text-muted'>{{ item.discount_info.code }}</td>
-										<td>-{{ item.discount_info.amount }}</td>
-									</tr>
-								{% endif %}
-							{% endwith %}
-						{% endfor %}
-						<tr>
-							<th>Balance</th>
-							<td></td><td></td>
-							<th>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}{{ balance }} {{ event.currency }}</th>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-			<form novalidate action="" method="post">
-				{% csrf_token %}
-
-				{% form form %}
-
-				<button type="submit" class="btn btn-primary">Pay now</button>
-				<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
+					{% endfor %}
+				{% endfor %}
+				<tr class='info'>
+					<th>Total savings</th>
+					<td></td>
+					<td></td>
+					<td class='text-right'>-{{ savings }}</td>
+				</tr>
+			</tbody>
+		</table>
+		<div class='panel-footer'>
+			<form id='discount-form' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
+				<div class='input-group'>
+					{% form discount_form using %}
+						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
+					{% endform %}
+					<span class='input-group-btn'>
+						<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+					</span>
+				</div>
 			</form>
 		</div>
-		<div class='col-md-4'>
-			{% include 'brambling/event/_discounts.html' %}
-		</div>
 	</div>
+	<div class='panel panel-success'>
+		<header class='panel-heading'>
+			<div class='panel-title'>Payments</div>
+		</header>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Timestamp</th>
+					<th class='text-right'>Amount ({{ event.currency }})</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for payment in payments %}
+					<tr>
+						<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td class='text-right'>-{{ payment.amount }}</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<div class='panel panel-default'>
+		<table class='table'>
+			<tbody>
+				<tr>
+					<th>Balance</th>
+					<th class='text-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}{{ balance }} {{ event.currency }}</th>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<form novalidate action="" method="post">
+		{% csrf_token %}
+
+		{% form form %}
+
+		<button type="submit" class="btn btn-primary">Pay now</button>
+		<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
+	</form>
 {% endblock %}

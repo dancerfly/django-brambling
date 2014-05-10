@@ -307,36 +307,36 @@ class CheckoutView(TemplateView):
         self.payments = Payment.objects.filter(
             event=self.event,
             person=self.request.user
-        )
+        ).order_by('timestamp')
         self.personitems = PersonItem.objects.filter(
             buyer=self.request.user,
             item_option__item__event=self.event
-        ).distinct()
+        ).order_by('added')
 
         self.discounts = PersonDiscount.objects.filter(
             person=self.request.user,
             discount__event=self.event
-        ).select_related('discount')
+        ).select_related('discount').order_by('timestamp')
 
-        discount_map = {discount.discount.item_option_id: discount
-                        for discount in self.discounts}
+        discount_map = {}
+
+        for discount in self.discounts:
+            discount_map.setdefault(discount.discount.item_option_id, []).append(discount)
         savings = 0
         for item in self.personitems:
             if item.item_option_id not in discount_map:
                 continue
-            discount = discount_map[item.item_option_id]
-            discount, timestamp = discount.discount, discount.timestamp
-            amount = (discount.amount
-                      if discount.discount_type == Discount.FLAT
-                      else discount.amount / 100 * discount.item_option.price)
-            item.discount_info = {
-                'timestamp': timestamp,
-                'name': discount.name,
-                'code': discount.code,
-                'amount': amount,
-            }
-            savings += amount
+            discounts = discount_map[item.item_option_id]
+            for discount in discounts:
+                amount = (discount.discount.amount
+                          if discount.discount.discount_type == Discount.FLAT
+                          else discount.discount.amount / 100 * discount.discount.item_option.price)
+                if not hasattr(discount, 'items'):
+                    discount.items = []
+                discount.items.append((item, amount))
+                savings += amount
 
+        self.savings = savings
         return (
             max(0, sum((item.item_option.price
                         for item in self.personitems)) - savings) -
@@ -346,12 +346,6 @@ class CheckoutView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(CheckoutView, self).get_context_data(**kwargs)
 
-        checkout_list = [(payment.timestamp, payment)
-                         for payment in self.payments]
-        checkout_list += [(item.added, item)
-                          for item in self.personitems]
-        checkout_list.sort()
-
         context.update({
             'event': self.event,
             'cart': self.request.user.get_cart(self.event),
@@ -360,7 +354,10 @@ class CheckoutView(TemplateView):
                                                 person=self.request.user,
                                                 prefix='discount-form'),
             'form': getattr(self, 'form', None),
-            'checkout_list': checkout_list,
+            'personitems': self.personitems,
+            'payments': self.payments,
+            'discounts': self.discounts,
+            'savings': self.savings,
             'balance': self.balance,
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
