@@ -1,14 +1,15 @@
 from django.core.urlresolvers import reverse
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, TemplateView
 from zenaida.forms import modelform_factory
 
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
-from brambling.models import Event, Item, Discount
+from brambling.models import (Event, Item, Discount, EventPerson, Payment,
+                              ItemOption, PersonItem)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav)
 
@@ -38,6 +39,67 @@ class EventCreateView(CreateView):
         return modelform_factory(self.model, form=self.form_class,
                                  exclude=('owner', 'editors', 'dates',
                                           'housing_dates'))
+
+
+class EventDashboardView(TemplateView):
+    template_name = 'brambling/event/dashboard.html'
+
+    def get(self, request, *args, **kwargs):
+        self.event = get_event_or_404(self.kwargs['slug'])
+        if not self.event.editable_by(request.user):
+            raise Http404
+        return super(EventDashboardView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(EventDashboardView, self).get_context_data(**kwargs)
+
+        itemoptions = ItemOption.objects.filter(
+            item__event=self.event
+        ).select_related('item').annotate(Count('personitem'))
+
+        total_costs = 0
+        itemoption_map = {}
+
+        for itemoption in itemoptions:
+            itemoption_map[itemoption.pk] = itemoption
+            total_costs += itemoption.price * itemoption.personitem__count
+
+        discounts = Discount.objects.filter(
+            event=self.event
+        ).annotate(Count('persondiscount'))
+
+        total_discounts = 0
+
+        for discount in discounts:
+            if discount.item_option_id in itemoption_map:
+                itemoption = itemoption_map[discount.item_option_id]
+                amount = (discount.amount
+                          if discount.discount_type == Discount.FLAT
+                          else discount.amount / 100 * itemoption.price)
+                discount.used_count = PersonItem.objects.filter(
+                    buyer__persondiscount__discount=discount,
+                    item_option__discount=discount
+                ).distinct().count()
+                total_discounts += amount * discount.used_count
+        total_discounts = min(total_discounts, total_costs)
+
+        total_payments = Payment.objects.filter(event=self.event).aggregate(sum=Sum('amount'))['sum']
+
+        context.update({
+            'event': self.event,
+            'cart': self.request.user.get_cart(self.event),
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+
+            'attendee_count': EventPerson.objects.filter(event=self.event).count(),
+            'itemoptions': itemoptions,
+
+            'total_costs': total_costs,
+            'total_discounts': total_discounts,
+            'payments_received': total_payments,
+            'payments_outstanding': total_costs - total_discounts - total_payments
+        })
+        return context
 
 
 class EventUpdateView(UpdateView):

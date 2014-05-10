@@ -8,7 +8,7 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import signals, Q, Count, Sum
+from django.db.models import signals, Count
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.encoding import smart_text
@@ -197,7 +197,7 @@ class Event(models.Model):
         return smart_text(self.name)
 
     def get_absolute_url(self):
-        return reverse('brambling_event_detail', kwargs={'slug': self.slug})
+        return reverse('brambling_event_root', kwargs={'slug': self.slug})
 
     def editable_by(self, user):
         return (user.is_authenticated() and user.is_active and
@@ -324,6 +324,9 @@ class Discount(models.Model):
 
     class Meta:
         unique_together = ('code', 'event')
+
+    def __unicode__(self):
+        return self.name
 
 
 class PersonDiscount(models.Model):
