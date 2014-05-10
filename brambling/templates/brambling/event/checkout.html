@@ -113,6 +113,7 @@
 			<thead>
 				<tr>
 					<th>Timestamp</th>
+					<th>Method</th>
 					<th class='text-right'>Amount ({{ event.currency }})</th>
 				</tr>
 			</thead>
@@ -120,11 +121,13 @@
 				{% for payment in payments %}
 					<tr>
 						<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td>{{ payment.card }}</td>
 						<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
 					</tr>
 				{% endfor %}
 				<tr class='success text-success'>
 					<th>Total payments</th>
+					<td></td>
 					<th class='text-right'>{{ total_payments|format_money:event.currency }}</th>
 				</tr>
 			</tbody>

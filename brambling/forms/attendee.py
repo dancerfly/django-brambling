@@ -300,5 +300,6 @@ class CheckoutForm(forms.Form):
         payment = Payment.objects.create(event=self.event,
                                          person=self.person,
                                          amount=self.balance,
-                                         stripe_charge_id=charge.id)
+                                         stripe_charge_id=charge.id,
+                                         card=card)
         return payment
