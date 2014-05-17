@@ -67,21 +67,11 @@ class ItemForm(forms.ModelForm):
         super(ItemForm, self)._post_clean()
         self.instance.event = self.event
 
-
-# Patch in min_num value. See django ticket #17642
-# https://code.djangoproject.com/ticket/17642
-class BaseItemOptionFormSet(BaseInlineFormSet):
-    def __init__(self, *args, **kwargs):
-        super(BaseItemOptionFormSet, self).__init__(*args, **kwargs)
-        self.min_num = 1
-        self.validate_min = True
-        if self.initial_form_count() == 0:
-            self.extra = 1
-
 ItemOptionFormSet = inlineformset_factory(Item,
                                           ItemOption,
-                                          formset=BaseItemOptionFormSet,
-                                          extra=0)
+                                          extra=0,
+                                          min_num=1,
+                                          validate_min=True)
 
 
 class DiscountForm(forms.ModelForm):
