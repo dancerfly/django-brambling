@@ -83,7 +83,7 @@ class EventDashboardView(TemplateView):
                 total_discounts += amount * discount.used_count
         total_discounts = min(total_discounts, total_costs)
 
-        total_payments = Payment.objects.filter(event=self.event).aggregate(sum=Sum('amount'))['sum']
+        total_payments = Payment.objects.filter(event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
 
         context.update({
             'event': self.event,
