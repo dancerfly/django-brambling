@@ -46,7 +46,10 @@
 			{% if cart %}
 				<div class='panel panel-default'>
 					<header class='panel-heading'>
-						<div class='panel-title'>Cart ({{ cart.total }})</div>
+						<div class='panel-title'>
+							Cart ({{ cart.total }})
+							{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only %}
+						</div>
 					</header>
 					{% regroup cart.get_groupable_contents by item_option.item as cart_list %}
 					<ul class='list-group'>

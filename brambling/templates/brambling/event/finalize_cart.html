@@ -11,32 +11,39 @@
 {% block main %}
 	<div class="row">
 		<div class="col-md-8">
-			<form action="" method="post" class='form-horizontal'>
-				{% csrf_token %}
-
-				{{ formset.management_form }}
-
-				<h4>Step 1: Set owners</h4>
-
-				{% for form in formset.forms %}
-					{% form form using %}
-						<div class='form-group'>
-							<label class='col-sm-4 control-label' for='{{ form.owner.auto_id }}'>
-								{{ form.instance.item_option.item.name }}
-								({{ form.instance.item_option.name }})
-							</label>
-							<div class='col-sm-8'>
-								{% formfield form.owner %}
-							</div>
-						</div>
-					{% endform %}
-					{% for field in form.hidden_fields %}{{ field }}{% endfor %}
-				{% endfor %}
-
-				<div class='col-sm-8 col-sm-offset-4'>
-					<button type="submit" class="btn btn-primary">Save</button>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<div class="panel-title">Your Cart {% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only%}</div>
 				</div>
-			</form>
+				<div class="panel-body">
+					<form action="" method="post" class='form-horizontal'>
+						{% csrf_token %}
+
+						{{ formset.management_form }}
+
+						<h4>Step 1: Set owners</h4>
+
+						{% for form in formset.forms %}
+							{% form form using %}
+								<div class='form-group'>
+									<label class='col-sm-4 control-label' for='{{ form.owner.auto_id }}'>
+										{{ form.instance.item_option.item.name }}
+										({{ form.instance.item_option.name }})
+									</label>
+									<div class='col-sm-8'>
+										{% formfield form.owner %}
+									</div>
+								</div>
+							{% endform %}
+							{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+						{% endfor %}
+
+						<div class='col-sm-8 col-sm-offset-4'>
+							<button type="submit" class="btn btn-primary">Save</button>
+						</div>
+					</form>
+				</div>{# /.panel-body #}
+			</div>{# /.panel #}
 		</div>
 		<div class='col-md-4'>
 			{% include 'brambling/event/_discounts.html' %}

@@ -21,7 +21,7 @@
 
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
-			<div class='panel-title'>Items</div>
+			<div class='panel-title'>Items {% if cart %}{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only %}{% endif%}</div>
 		</header>
 		<table class='table table-striped'>
 			<thead>

@@ -1,0 +1,9 @@
+{% load zenaida %}
+
+{% td_to_dict expiry_time|td_timeuntil as time_left %}
+<span class="label label-default {% if right %}pull-right{% endif %}" data-countdown="timer">
+	Items Expire:
+	{% if time_left.days %}<span data-countdown="days">{{ time_left.days }}</span> day{{ time_left.days|pluralize }}{% endif %}
+	{% if time_left.hours %}<span data-countdown="hours">{{ time_left.hours }}</span>:{% endif %}<span data-countdown="minutes">{% if time_left.minutes < 10 %}0{% endif %}{{ time_left.minutes }}</span>:<span data-countdown="seconds">{% if time_left.seconds < 10 %}0{% endif %}{{ time_left.seconds }}</span>
+	{% if not time_left.hours %}min{% endif %}
+</span>
