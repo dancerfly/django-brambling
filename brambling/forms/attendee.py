@@ -10,7 +10,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (Person, Discount, EventPerson, Date,
                               EventHousing, PersonItem, PersonDiscount,
                               EnvironmentalFactor, HousingCategory, CreditCard,
-                              Payment)
+                              Payment, Home)
 
 
 CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
@@ -115,7 +115,8 @@ class EventPersonForm(MemoModelForm):
             self.fields['housing'].choices = self.fields['housing'].choices[:-1]
         else:
             host_prefix = self.prefix + 'host-'
-            self.host_form = HostingForm(personitem.owner.home, event, memo_dict,
+            home = self.get(Home, id=personitem.owner.home_id)
+            self.host_form = HostingForm(home, event, memo_dict,
                                          prefix=host_prefix, *args, **kwargs)
 
     def is_valid(self):
@@ -161,11 +162,16 @@ class GuestForm(MemoModelForm):
             if self.instance.pk is None:
                 owner = self.personitem.owner
                 self.initial.update({
-                    'ef_cause': owner.ef_cause.all(),
-                    'ef_avoid': owner.ef_avoid.all(),
-                    'person_prefer': owner.person_prefer.all(),
-                    'person_avoid': owner.person_avoid.all(),
-                    'housing_prefer': owner.housing_prefer.all(),
+                    'ef_cause': self.filter(EnvironmentalFactor.objects.only('id'),
+                                            person_cause=owner),
+                    'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
+                                            person_avoid=owner),
+                    'person_prefer': self.filter(Person.objects.only('id'),
+                                                 preferred_by=owner),
+                    'person_avoid': self.filter(Person.objects.only('id'),
+                                                avoided_by=owner),
+                    'housing_prefer': self.filter(HousingCategory.objects.only('id'),
+                                                  preferred_by=owner),
                     'other_needs': owner.other_needs,
                 })
                 self.instance.event = event
@@ -223,11 +229,16 @@ class HostingForm(MemoModelForm):
 
         if self.instance.pk is None and home is not None:
             self.initial.update({
-                'ef_present': home.ef_present.all(),
-                'ef_avoid': home.ef_avoid.all(),
-                'person_prefer': home.person_prefer.all(),
-                'person_avoid': home.person_avoid.all(),
-                'housing_categories': home.housing_categories.all(),
+                'ef_present': self.filter(EnvironmentalFactor.objects.only('id'),
+                                          home_present=home),
+                'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
+                                        home_avoid=home),
+                'person_prefer': self.filter(Person.objects.only('id'),
+                                             preferred_by_homes=home),
+                'person_avoid': self.filter(Person.objects.only('id'),
+                                            avoided_by_homes=home),
+                'housing_categories': self.filter(HousingCategory.objects.only('id'),
+                                                  homes=home),
             })
             self.instance.event = event
             self.instance.home = home
@@ -254,9 +265,6 @@ class HostingForm(MemoModelForm):
             self.home.housing_categories = instance.housing_categories.all()
             self.home.save()
         return instance
-
-
-import floppyforms as forms
 
 
 class CheckoutForm(forms.Form):

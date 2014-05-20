@@ -242,9 +242,10 @@ class CartFormsView(TemplateView):
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
+        passes = cart.contents.filter(item_option__item__category=Item.PASS)
         return [EventPersonForm(personitem, prefix=str(personitem.pk), **kwargs)
-                for personitem in cart.contents.all()
-                if personitem.item_option.item.category == Item.PASS]
+                for personitem in passes.select_related('owner', 'buyer',
+                                                        'item_option__item')]
 
     def get_context_data(self, **kwargs):
         context = super(CartFormsView, self).get_context_data(**kwargs)

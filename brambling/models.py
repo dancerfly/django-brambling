@@ -467,6 +467,9 @@ class Person(AbstractBaseUser, PermissionsMixin):
             except Cart.DoesNotExist:
                 cart = None
             else:
+                # Cache here since we know what these are.
+                cart.person = self
+                cart.event = event
                 if cart.is_expired():
                     cart.delete()
                     cart = None
