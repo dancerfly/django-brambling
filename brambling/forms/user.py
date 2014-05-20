@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-import floppyforms as forms
+import floppyforms.__future__ as forms
 
 from brambling.models import Person, Home, DanceStyle, EventType
 from brambling.utils import send_confirmation_email
