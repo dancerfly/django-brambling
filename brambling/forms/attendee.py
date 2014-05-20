@@ -1,17 +1,16 @@
-import datetime
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.forms.models import construct_instance, BaseModelFormSet
+from django.forms.models import BaseModelFormSet
 from django.utils import timezone
+import floppyforms.__future__ as forms
 import stripe
-from zenaida import forms
+from zenaida.forms import MemoModelForm
 
-from brambling.models import (Person, Home, Item, Discount,
-                              EventPerson, Date, EventHousing, PersonItem,
-                              PersonDiscount, EnvironmentalFactor,
-                              HousingCategory, CreditCard, Payment)
+from brambling.models import (Person, Discount, EventPerson, Date,
+                              EventHousing, PersonItem, PersonDiscount,
+                              EnvironmentalFactor, HousingCategory, CreditCard,
+                              Payment)
 
 
 CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
@@ -78,7 +77,7 @@ OwnerFormSet = forms.modelformset_factory(PersonItem, OwnerForm, extra=0,
                                           formset=BaseOwnerFormSet)
 
 
-class EventPersonForm(forms.MemoModelForm):
+class EventPersonForm(MemoModelForm):
     """
     You only get to this form if housing data is being collected.
 
@@ -141,7 +140,7 @@ class EventPersonForm(forms.MemoModelForm):
         return instance
 
 
-class GuestForm(forms.MemoModelForm):
+class GuestForm(MemoModelForm):
     class Meta:
         model = EventPerson
         exclude = ('event', 'person', 'car_spaces',
@@ -199,7 +198,7 @@ class GuestForm(forms.MemoModelForm):
         return instance
 
 
-class HostingForm(forms.MemoModelForm):
+class HostingForm(MemoModelForm):
     save_as_defaults = forms.BooleanField(initial=True)
 
     class Meta:

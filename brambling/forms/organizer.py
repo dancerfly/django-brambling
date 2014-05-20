@@ -1,10 +1,8 @@
 import datetime
 
 from django.core.exceptions import ValidationError
-from django.forms.models import BaseInlineFormSet
 from django.utils.crypto import get_random_string
-from zenaida.forms import inlineformset_factory
-from zenaida import forms
+import floppyforms.__future__ as forms
 
 from brambling.models import Event, Item, ItemOption, Discount, Date
 
@@ -67,11 +65,11 @@ class ItemForm(forms.ModelForm):
         super(ItemForm, self)._post_clean()
         self.instance.event = self.event
 
-ItemOptionFormSet = inlineformset_factory(Item,
-                                          ItemOption,
-                                          extra=0,
-                                          min_num=1,
-                                          validate_min=True)
+ItemOptionFormSet = forms.inlineformset_factory(Item,
+                                                ItemOption,
+                                                extra=0,
+                                                min_num=1,
+                                                validate_min=True)
 
 
 class DiscountForm(forms.ModelForm):
