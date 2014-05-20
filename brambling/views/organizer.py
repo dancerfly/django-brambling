@@ -93,6 +93,7 @@ class EventDashboardView(TemplateView):
 
             'attendee_count': EventPerson.objects.filter(event=self.event).count(),
             'itemoptions': itemoptions,
+            'discounts': discounts,
 
             'total_costs': total_costs,
             'total_discounts': total_discounts,

@@ -31,8 +31,51 @@
 					<strong class='pull-right'>{{ payments_outstanding|format_money:event.currency }}</strong>
 				</div>
 			</div>
+			<div class='panel panel-default'>
+				<div class='panel-heading'>
+					<h4 class='panel-title'>
+						Sales summary
+					</h4>
+				</div>
+				<ul class='list-group'>
+					{% for itemoption in itemoptions %}
+						<li class='list-group-item'>
+							{{ itemoption.item.name }} ({{ itemoption.name }})
+							<strong class='pull-right'>{{ itemoption.personitem__count }}</strong>
+						</li>
+					{% endfor %}
+				</ul>
+			</div>
 		</div>
 		<div class='col-md-6'>
+			<div class='panel panel-default'>
+				<div class='panel-heading'>
+					<h4 class='panel-title'>
+						Discount summary
+					</h4>
+				</div>
+				<ul class='list-group'>
+					{% for discount in discounts %}
+						<li class='list-group-item'>
+							{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
+							<strong class='pull-right'>{{ discount.used_count }}</strong>
+						</li>
+					{% endfor %}
+				</ul>
+			</div>
+			<div class='panel panel-default'>
+				<div class='panel-heading'>
+					<h4 class='panel-title'>
+						Attendee summary
+					</h4>
+				</div>
+				<ul class='list-group'>
+					<li class='list-group-item'>
+						Total count
+						<strong class='pull-right'>{{ attendee_count }}</strong>
+					</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 {% endblock %}
