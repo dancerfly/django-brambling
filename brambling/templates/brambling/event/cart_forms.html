@@ -48,6 +48,7 @@
 						</header>
 						<div class='panel-body'>
 							{% form form using %}
+								{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 								{% formrow form.housing %}
 								<div class='row {{ form.prefix }}-show-guest {{ form.prefix }}-show-host'>
 									<div class='col-md-4'>
