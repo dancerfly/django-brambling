@@ -207,12 +207,16 @@ class CartFormsView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
+        if not self.event.collect_housing_data:
+            raise Http404("Event doesn't collect housing data.")
         self.forms = self.get_forms()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['slug'])
+        if not self.event.collect_housing_data:
+            raise Http404("Event doesn't collect housing data.")
         self.forms = self.get_forms()
         all_valid = True
         for form in self.forms:
