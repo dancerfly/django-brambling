@@ -524,8 +524,9 @@ class EventPerson(models.Model):
                               default=HAVE)
     liability_waiver = models.BooleanField(default=False)
     photos_ok = models.BooleanField(default=False)
-    heard_through = models.CharField(max_length=8, choices=HEARD_THROUGH_CHOICES)
-    heard_through_other = models.CharField(max_length=128)
+    heard_through = models.CharField(max_length=8, choices=HEARD_THROUGH_CHOICES,
+                                     blank=True)
+    heard_through_other = models.CharField(max_length=128, blank=True)
     send_flyers = models.BooleanField(default=False)
 
 
@@ -713,4 +714,4 @@ class HousingAssignment(models.Model):
 
     data = models.ForeignKey(HousingRequest)
     slot = models.ForeignKey(HousingSlot)
-    plan_type = models.CharField(choices=ASSIGNMENT_TYPE_CHOICES)
+    assignment_type = models.CharField(max_length=6, choices=ASSIGNMENT_TYPE_CHOICES)
