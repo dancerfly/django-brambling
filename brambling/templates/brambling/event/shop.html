@@ -45,6 +45,12 @@
 		</div>
 		<div class="col-md-5">
 			{% if cart %}
+				<div class='alert alert-info'>
+					<p class='lead text-right'>
+						<small>Cart expires</small>
+						{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}
+					</p>
+				</div>
 				<div class='form-group'>
 					<a class='btn btn-success btn-lg btn-block' href="{% url 'brambling_event_ownership' slug=event.slug %}">Next step <span class='glyphicon glyphicon-chevron-right'></span></a>
 				</div>
@@ -65,9 +71,6 @@
 							{% endfor %}
 						{% endfor %}
 					</ul>
-					<div class='panel-footer text-right'>
-						{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}
-					</div>
 				</div>
 			{% endif %}
 

@@ -48,10 +48,16 @@
 					</div>
 				{% endfor %}
 
-				<button type="submit" class="btn btn-primary btn-block btn-lg">Proceed to checkout <span class='glyphicon glyphicon-chevron-right'></span></button>
+				<button type="submit" class="btn btn-success btn-block btn-lg">Proceed to checkout <span class='glyphicon glyphicon-chevron-right'></span></button>
 			</form>
 		</div>
 		<div class='col-md-4'>
+			<div class='alert alert-info'>
+				<p class='lead text-right'>
+					<small>Cart expires</small>
+					{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}
+				</p>
+			</div>
 			{% include 'brambling/event/_discounts.html' %}
 		</div>
 	</div>

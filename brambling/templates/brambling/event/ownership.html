@@ -13,14 +13,13 @@
 
 	<div class="row">
 		<div class="col-md-8">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<div class="panel-title">Your Cart </div>
-				</div>
-				<div class="panel-body">
-					<form action="" method="post" class='form-horizontal'>
-						{% csrf_token %}
-
+			<form action="" method="post" class='form-horizontal'>
+				{% csrf_token %}
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<div class="panel-title">Your Cart </div>
+					</div>
+					<div class="panel-body">
 						{{ formset.management_form }}
 
 						{% for form in formset.forms %}
@@ -37,18 +36,18 @@
 							{% endform %}
 							{% for field in form.hidden_fields %}{{ field }}{% endfor %}
 						{% endfor %}
-
-						<div class='col-sm-8 col-sm-offset-4'>
-							<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='glyphicon glyphicon-chevron-right'></span></button>
-						</div>
-					</form>
-				</div>{# /.panel-body #}
-				<div class='panel-footer text-right'>
-					{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only%}
-				</div>
-			</div>{# /.panel #}
+					</div>{# /.panel-body #}
+				</div>{# /.panel #}
+				<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='glyphicon glyphicon-chevron-right'></span></button>
+			</form>
 		</div>
 		<div class='col-md-4'>
+			<div class='alert alert-info'>
+				<p class='lead text-right'>
+					<small>Cart expires</small>
+					{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}
+				</p>
+			</div>
 			{% include 'brambling/event/_discounts.html' %}
 		</div>
 	</div>
