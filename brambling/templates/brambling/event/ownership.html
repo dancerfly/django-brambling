@@ -9,19 +9,19 @@
 {% endblock %}
 
 {% block main %}
+	<h3>Step 2: Who do these belong to?</h3>
+
 	<div class="row">
 		<div class="col-md-8">
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<div class="panel-title">Your Cart {% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only%}</div>
+					<div class="panel-title">Your Cart </div>
 				</div>
 				<div class="panel-body">
 					<form action="" method="post" class='form-horizontal'>
 						{% csrf_token %}
 
 						{{ formset.management_form }}
-
-						<h4>Step 1: Set owners</h4>
 
 						{% for form in formset.forms %}
 							{% form form using %}
@@ -39,10 +39,13 @@
 						{% endfor %}
 
 						<div class='col-sm-8 col-sm-offset-4'>
-							<button type="submit" class="btn btn-primary">Save</button>
+							<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='glyphicon glyphicon-chevron-right'></span></button>
 						</div>
 					</form>
 				</div>{# /.panel-body #}
+				<div class='panel-footer text-right'>
+					{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only%}
+				</div>
 			</div>{# /.panel #}
 		</div>
 		<div class='col-md-4'>

@@ -1,0 +1,47 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include 'brambling/event/_use_discount_js.html' %}
+{% endblock %}
+
+{% block main %}
+	<h3>Step 3: Provide registration data</h3>
+
+	<div class="row">
+		<div class="col-md-8">
+			<form action="" method="post" novalidate>
+				{% csrf_token %}
+
+				{% for form in forms %}
+					<div class='panel panel-default'>
+						<header class='panel-heading'>
+							<div class='panel-title'>{{ form.instance.event_pass.item_option.item.name }} ({{ form.instance.event_pass.item_option.name }}) – {{ form.instance.person }}</div>
+						</header>
+						<div class='panel-body'>
+							{% form form using %}
+								{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+								{% formrow form.status %}
+								{% formrow form.liability_waiver %}
+								{% formrow form.photo_consent %}
+
+								{% formrow form.heard_through %}
+								{% formrow form.heard_through_other %}
+
+								{% formrow form.send_flyers %}
+							{% endform %}
+						</div>
+					</div>
+				{% endfor %}
+
+				<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='glyphicon glyphicon-chevron-right'></span></button>
+			</form>
+		</div>
+		<div class='col-md-4'>
+			{% include 'brambling/event/_discounts.html' %}
+		</div>
+	</div>
+{% endblock %}

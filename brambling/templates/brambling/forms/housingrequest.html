@@ -1,10 +1,6 @@
 {% load floppyforms %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-<fieldset class="{{ prefix }}-show-guest">
-
-<h4>Housing preferences</h4>
-
 <div class='row'>
 	<div class='col-md-6'>{% formrow form.nights %}</div>
 	<div class='col-md-6'>{% formrow form.housing_prefer %}</div>
@@ -23,5 +19,3 @@
 {% formrow form.other_needs %}
 
 {% formrow form.save_as_defaults %}
-
-</fieldset>

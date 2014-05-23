@@ -6,9 +6,9 @@
 {% endblock %}
 
 {% block side %}
-	<ul class='nav nav-pills nav-stacked'>
+	<div class='list-group'>
 		{% for item in event_nav %}
-			<li{% if item.is_active %} class='active'{% elif item.disabled %} class='disabled'{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
+			<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">{{ item.label }}</a>
 		{% endfor %}
 	</ul>
 	{% if event_admin_nav %}

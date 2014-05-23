@@ -1,17 +1,9 @@
 {% load floppyforms %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-<fieldset class="{{ prefix }}-show-host">
-
-<h4>Hosting preferences</h4>
+{% formrow form.point_person %}
 
 <div class='row'>
-	<div class='col-md-6'>{% formrow form.spaces %}</div>
-	<div class='col-md-6'>{% formrow form.spaces_max %}</div>
-</div>
-
-<div class='row'>
-	<div class='col-md-6'>{% formrow form.nights %}</div>
 	<div class='col-md-6'>{% formrow form.housing_categories using "floppyforms/rows/confirm.html" with confirm=form.housing_categories_confirm %}</div>
 </div>
 
@@ -28,5 +20,3 @@
 {% formrow form.other_needs %}
 
 {% formrow form.save_as_defaults %}
-
-</fieldset>

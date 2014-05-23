@@ -1,0 +1,58 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include 'brambling/event/_use_discount_js.html' %}
+{% endblock %}
+
+{% block main %}
+	<h4>Step 4: Provide housing data</h4>
+
+	<div class="row">
+		<div class="col-md-8">
+			<form action="" method="post" novalidate>
+				{% csrf_token %}
+
+
+				{% for form in forms %}
+					<div class='panel panel-default'>
+						<header class='panel-heading'>
+							<div class='panel-title'>
+							{% if form.instance.home %}
+								Hosting details for {{ form.eventperson.person.name }}
+							{% else %}
+								Housing request for {{ form.eventperson.person.name }}
+							{% endif %}
+							</div>
+						</header>
+						<div class='panel-body'>
+							{% if form.instance.home %}
+								{% form form using "brambling/forms/eventhousing.html" %}
+
+								{% for form in form.slot_forms %}
+									<h5>Spaces for {{ form.instance.night }}</h5>
+									{% form form using %}
+										<div class='row'>
+											<div class='col-xs-6'>{% formrow form.spaces with label="Comfy" %}</div>
+											<div class='col-xs-6'>{% formrow form.spaces_max with label="Max" %}</div>
+										</div>
+									{% endform %}
+								{% endfor %}
+							{% else %}
+								{% form form using "brambling/forms/housingrequest.html" %}
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+
+				<button type="submit" class="btn btn-primary btn-block btn-lg">Proceed to checkout <span class='glyphicon glyphicon-chevron-right'></span></button>
+			</form>
+		</div>
+		<div class='col-md-4'>
+			{% include 'brambling/event/_discounts.html' %}
+		</div>
+	</div>
+{% endblock %}

@@ -45,13 +45,12 @@ class NavItem(object):
 def get_event_nav(event, request):
     cart = request.user.get_cart(event)
     items = (
-        ('brambling_event_shop', 'Shop', False),
-        ('brambling_event_finalize', 'Finalize cart', not cart),
-        ('brambling_event_checkout', 'Checkout', False),
+        ('brambling_event_shop', 'Shop'),
+        ('brambling_event_records', 'Records'),
     )
-    return [NavItem(request=request, label=label, disabled=disabled,
+    return [NavItem(request=request, label=label,
                     url=reverse(view_name, kwargs={'slug': event.slug}))
-            for view_name, label, disabled in items]
+            for view_name, label in items]
 
 
 def get_event_admin_nav(event, request):

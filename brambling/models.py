@@ -264,10 +264,6 @@ class Cart(models.Model):
     def get_groupable_contents(self):
         return self.contents.order_by('item_option__item', 'item_option__order', '-added')
 
-    def is_finalized(self):
-        return (self.owners_set and
-                all((item.is_completed for item in self.contents.all())))
-
 
 class PersonItem(models.Model):
     # These are essentially just sugar. They might be used
@@ -294,7 +290,6 @@ class PersonItem(models.Model):
     owner = models.ForeignKey('Person',
                               related_name="items_owned",
                               blank=True, null=True)
-    is_completed = models.BooleanField(default=False)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
@@ -519,11 +514,12 @@ class EventPerson(models.Model):
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person)
     event_pass = models.OneToOneField(PersonItem)
+    is_completed = models.BooleanField(default=False)
 
     status = models.CharField(max_length=4, choices=STATUS_CHOICES,
-                              default=HAVE)
+                              default=HAVE, verbose_name='housing status')
     liability_waiver = models.BooleanField(default=False)
-    photos_ok = models.BooleanField(default=False)
+    photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
     heard_through = models.CharField(max_length=8, choices=HEARD_THROUGH_CHOICES,
                                      blank=True)
     heard_through_other = models.CharField(max_length=128, blank=True)
@@ -652,8 +648,7 @@ class EventHousing(models.Model):
 
 
 class HousingSlot(models.Model):
-    event = models.ForeignKey(Event)
-    home = models.ForeignKey(Home)
+    eventhousing = models.ForeignKey(EventHousing)
     night = models.ForeignKey(Date)
     spaces = models.PositiveSmallIntegerField(default=0,
                                               validators=[MaxValueValidator(100)])
