@@ -12,13 +12,6 @@
 {% endblock %}
 
 {% block main %}
-	{% if cart and not cart.is_finalized %}
-		<div class='alert alert-warning'>
-			<strong>Warning!</strong>
-			Cart must be <a class='alert-link' href='{% url "brambling_event_finalize" slug=event.slug %}'>finalized</a> before paying.
-		</div>
-	{% endif %}
-
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='panel-title'>Items {% if cart %}{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only %}{% endif%}</div>
@@ -144,13 +137,6 @@
 			</tbody>
 		</table>
 	</div>
-
-	{% if cart and not cart.is_finalized %}
-		<div class='alert alert-warning'>
-			<strong>Warning!</strong>
-			Cart must be <a class='alert-link' href='{% url "brambling_event_finalize" slug=event.slug %}'>finalized</a> before paying.
-		</div>
-	{% endif %}
 
 	{% if form %}
 		<form novalidate action="" method="post">

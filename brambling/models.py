@@ -264,10 +264,6 @@ class Cart(models.Model):
     def get_groupable_contents(self):
         return self.contents.order_by('item_option__item', 'item_option__order', '-added')
 
-    def is_finalized(self):
-        return (self.owners_set and
-                all((item.is_completed for item in self.contents.all())))
-
 
 class PersonItem(models.Model):
     # These are essentially just sugar. They might be used
@@ -294,7 +290,6 @@ class PersonItem(models.Model):
     owner = models.ForeignKey('Person',
                               related_name="items_owned",
                               blank=True, null=True)
-    is_completed = models.BooleanField(default=False)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
@@ -485,6 +480,52 @@ class Person(AbstractBaseUser, PermissionsMixin):
         ).order_by('-timestamp').select_related('discount')
 
 
+class EventPerson(models.Model):
+    NEED = 'need'
+    HAVE = 'have'
+    HOST = 'host'
+
+    STATUS_CHOICES = (
+        (NEED, 'Need housing'),
+        (HAVE, 'Already arranged'),
+        (HOST, 'Hosting others'),
+    )
+
+    FLYER = 'flyer'
+    FACEBOOK = 'facebook'
+    WEBSITE = 'website'
+    INTERNET = 'internet'
+    FRIEND = 'friend'
+    ATTENDEE = 'attendee'
+    DANCER = 'dancer'
+    OTHER = 'other'
+
+    HEARD_THROUGH_CHOICES = (
+        (FLYER, "Flyer"),
+        (FACEBOOK, 'Facebook'),
+        (WEBSITE, 'Event website'),
+        (INTERNET, 'Other website'),
+        (FRIEND, 'Friend'),
+        (ATTENDEE, 'Former attendee'),
+        (DANCER, 'Other dancer'),
+        (OTHER, 'Other'),
+    )
+
+    event = models.ForeignKey(Event)
+    person = models.ForeignKey(Person)
+    event_pass = models.OneToOneField(PersonItem)
+    is_completed = models.BooleanField(default=False)
+
+    status = models.CharField(max_length=4, choices=STATUS_CHOICES,
+                              default=HAVE, verbose_name='housing status')
+    liability_waiver = models.BooleanField(default=False)
+    photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
+    heard_through = models.CharField(max_length=8, choices=HEARD_THROUGH_CHOICES,
+                                     blank=True)
+    heard_through_other = models.CharField(max_length=128, blank=True)
+    send_flyers = models.BooleanField(default=False)
+
+
 class CreditCard(models.Model):
     BRAND_CHOICES = (
         ('Visa', 'Visa'),
@@ -563,95 +604,11 @@ class Home(models.Model):
                                                 verbose_name="My/Our home is (a/an)")
 
 
-class EventPerson(models.Model):
-    LATE = 'late'
-    EARLY = 'early'
-
-    BEDTIME_CHOICES = (
-        (LATE, _("Staying up late")),
-        (EARLY, _("Going to bed early"))
-    )
-    MORNING_CHOICES = (
-        (LATE, _("I'll be up when I'm up")),
-        (EARLY, _("There first thing."))
-    )
-
-    NEED = 'need'
-    HAVE = 'have'
-    HOST = 'host'
-
-    HOUSING_CHOICES = (
-        (NEED, 'Need housing'),
-        (HAVE, 'Already arranged'),
-        (HOST, 'Hosting others'),
-    )
-
-    event = models.ForeignKey(Event)
-    person = models.ForeignKey(Person)
-    event_pass = models.OneToOneField(PersonItem)
-
-    # Housing info.
-    car_spaces = models.SmallIntegerField(default=0,
-                                          validators=[MaxValueValidator(50),
-                                                      MinValueValidator(-1)],
-                                          help_text="Including the driver's seat.")
-
-    bedtime = models.CharField(max_length=5, choices=BEDTIME_CHOICES, blank=True)
-    wakeup = models.CharField(max_length=5, choices=MORNING_CHOICES, blank=True)
-    housing = models.CharField(max_length=4, choices=HOUSING_CHOICES,
-                               default=HAVE)
-
-    # Guest info
-    nights = models.ManyToManyField(Date, blank=True, null=True)
-    ef_cause = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='eventperson_cause',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="People around me will be exposed to")
-    ef_cause_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
-
-    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='eventperson_avoid',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="I can't/don't want to be around")
-    ef_avoid_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
-
-    person_prefer = models.ManyToManyField(Person,
-                                           related_name='event_preferred_by',
-                                           blank=True,
-                                           null=True,
-                                           verbose_name="I need to be placed with",
-                                           symmetrical=False)
-
-    person_avoid = models.ManyToManyField(Person,
-                                          related_name='event_avoided_by',
-                                          blank=True,
-                                          null=True,
-                                          verbose_name="I do not want to be around",
-                                          symmetrical=False)
-
-    housing_prefer = models.ManyToManyField(HousingCategory,
-                                            related_name='event_preferred_by',
-                                            blank=True,
-                                            null=True,
-                                            verbose_name="I prefer to stay somewhere that is (a/an)")
-
-    other_needs = models.TextField(blank=True)
-
-    def __unicode__(self):
-        return u"{} – {}".format(self.event, self.person)
-
-
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
     home = models.ForeignKey(Home)
 
-    spaces = models.PositiveSmallIntegerField(default=0,
-                                              validators=[MaxValueValidator(100)])
-    spaces_max = models.PositiveSmallIntegerField(default=0,
-                                                  validators=[MaxValueValidator(100)])
-    nights = models.ManyToManyField(Date, blank=True, null=True)
+    point_person = models.ForeignKey(Person)
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='eventhousing_present',
@@ -691,12 +648,65 @@ class EventHousing(models.Model):
 
 
 class HousingSlot(models.Model):
+    eventhousing = models.ForeignKey(EventHousing)
+    night = models.ForeignKey(Date)
+    spaces = models.PositiveSmallIntegerField(default=0,
+                                              validators=[MaxValueValidator(100)])
+    spaces_max = models.PositiveSmallIntegerField(default=0,
+                                                  validators=[MaxValueValidator(100)])
+
+
+class HousingRequest(models.Model):
     event = models.ForeignKey(Event)
-    home = models.ForeignKey(Home)
-    person = models.ManyToManyField(Person,
-                                    blank=True)
+    person = models.ForeignKey(Person)
+
     nights = models.ManyToManyField(Date, blank=True, null=True)
-    # Whether the slot was filled "manually" - i.e. whether
-    # this arrangment was made between the house and the person
-    # instead of by a housing coordinator.
-    manual = models.BooleanField(default=False)
+    ef_cause = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='eventperson_cause',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="People around me will be exposed to")
+    ef_cause_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
+
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='eventperson_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I can't/don't want to be around")
+    ef_avoid_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
+
+    person_prefer = models.ManyToManyField(Person,
+                                           related_name='event_preferred_by',
+                                           blank=True,
+                                           null=True,
+                                           verbose_name="I need to be placed with",
+                                           symmetrical=False)
+
+    person_avoid = models.ManyToManyField(Person,
+                                          related_name='event_avoided_by',
+                                          blank=True,
+                                          null=True,
+                                          verbose_name="I do not want to be around",
+                                          symmetrical=False)
+
+    housing_prefer = models.ManyToManyField(HousingCategory,
+                                            related_name='event_preferred_by',
+                                            blank=True,
+                                            null=True,
+                                            verbose_name="I prefer to stay somewhere that is (a/an)")
+
+    other_needs = models.TextField(blank=True)
+
+
+class HousingAssignment(models.Model):
+    # Home plans are ignored when checking against spaces.
+    AUTO = 'auto'
+    MANUAL = 'manual'
+    ASSIGNMENT_TYPE_CHOICES = (
+        (AUTO, _("Automatic")),
+        (MANUAL, _("Manual"))
+    )
+
+    data = models.ForeignKey(HousingRequest)
+    slot = models.ForeignKey(HousingSlot)
+    assignment_type = models.CharField(max_length=6, choices=ASSIGNMENT_TYPE_CHOICES)
