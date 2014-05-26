@@ -14,42 +14,41 @@
 {% block main %}
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
-			<div class='panel-title'>Items {% if cart %}{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires right=1 only %}{% endif%}</div>
+			<div class='panel-title'><a href='#items-collapse' data-toggle='collapse'>Items {% if personitems %}<span class='caret'></span>{% endif %}
+			</a> {% if cart %}<span class='pull-right'>{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}{% endif%}</div>
 		</header>
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Type</th>
-					<th>Timestamp</th>
-					<th>Status</th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for item in personitems %}
-					<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
-						<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-						<td>{{ item.item_option.item.get_category_display }}</td>
-						<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
-						<td>{{ item.get_status_display }}</td>
-						<td class='text-right'>{{ item.item_option.price }}</td>
+		<div class='collapse table-collapse-wrapper' id='items-collapse'>
+			<table class='table table-striped'>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Timestamp</th>
+						<th>Status</th>
+						<th class='text-right'>Amount ({{ event.currency }})</th>
 					</tr>
-				{% endfor %}
-				<tr class='danger text-danger'>
-					<th>Total cost</th>
-					<td></td>
-					<td></td>
-					<td></td>
-					<th class='text-right'>{{ total_cost|format_money:event.currency }}</th>
-				</tr>
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{% for item in personitems %}
+						<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
+							<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
+							<td>{{ item.item_option.item.get_category_display }}</td>
+							<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
+							<td>{{ item.get_status_display }}</td>
+							<td class='text-right'>{{ item.item_option.price }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		<ul class='list-group'>
+			<li class='list-group-item list-group-item-danger'><strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong></li>
+		</ul>
 	</div>
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='row'>
-				<div class='panel-title col-xs-8'>Discounts</div>
+				<div class='panel-title col-xs-8'><a href='#discounts-collapse' data-toggle='collapse'>Discounts {% if discounts %}<span class='caret'></span>{% endif %}</a></div>
 				<form id='discount-form' class='panel-heading-form col-xs-4' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
 					<div class='input-group'>
 						{% form discount_form using %}
@@ -62,69 +61,69 @@
 				</form>
 			</div>
 		</header>
-		<table class='table'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Code</th>
-					<th></th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for discount in discounts %}
-					{% cycle 0 1 as stripe silent %}
-					<tr{% if stripe %} class='active'{% endif %}>
-						<th>{{ discount.discount.name }}</th>
-						<td>{{ discount.discount.code }}</td>
-						<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-						<td></td>
+		<div class='collapse table-collapse-wrapper' id='discounts-collapse'>
+			<table class='table'>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Code</th>
+						<th></th>
+						<th class='text-right'>Amount ({{ event.currency }})</th>
 					</tr>
-					{% for item, amount in discount.items %}
+				</thead>
+				<tbody>
+					{% for discount in discounts %}
+						{% cycle 0 1 as stripe silent %}
 						<tr{% if stripe %} class='active'{% endif %}>
+							<th>{{ discount.discount.name }}</th>
+							<td>{{ discount.discount.code }}</td>
+							<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
 							<td></td>
-							<th>{% if forloop.first %}Applied to:{% endif %}</th>
-							<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-							<td class='text-right'>{{ amount|format_money:event.currency }}</td>
 						</tr>
+						{% for item, amount in discount.items %}
+							<tr{% if stripe %} class='active'{% endif %}>
+								<td></td>
+								<th>{% if forloop.first %}Applied to:{% endif %}</th>
+								<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
+								<td class='text-right'>{{ amount|format_money:event.currency }}</td>
+							</tr>
+						{% endfor %}
 					{% endfor %}
-				{% endfor %}
-				<tr class='success text-success'>
-					<th>Total savings</th>
-					<td></td>
-					<td></td>
-					<th class='text-right'>{{ total_savings|format_money:event.currency }}</th>
-				</tr>
-			</tbody>
-		</table>
+				</tbody>
+			</table>
+		</div>
+		<ul class='list-group'>
+			<li class='list-group-item list-group-item-success'><strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong></li>
+		</ul>
 	</div>
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
-			<div class='panel-title'>Payments</div>
+			<div class='panel-title'><a href='#payments-collapse' data-toggle='collapse'>Payments {% if payments %}<span class='caret'></span>{% endif %}
+			</a></div>
 		</header>
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Timestamp</th>
-					<th>Method</th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for payment in payments %}
+		<div class='collapse table-collapse-wrapper' id='payments-collapse'>
+			<table class='table table-striped'>
+				<thead>
 					<tr>
-						<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-						<td>{{ payment.card }}</td>
-						<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
+						<th>Timestamp</th>
+						<th>Method</th>
+						<th class='text-right'>Amount ({{ event.currency }})</th>
 					</tr>
-				{% endfor %}
-				<tr class='success text-success'>
-					<th>Total payments</th>
-					<td></td>
-					<th class='text-right'>{{ total_payments|format_money:event.currency }}</th>
-				</tr>
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{% for payment in payments %}
+						<tr>
+							<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+							<td>{{ payment.card }}</td>
+							<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		<ul class='list-group'>
+			<li class='list-group-item list-group-item-success'><strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong></li>
+		</ul>
 	</div>
 
 	<div class='panel panel-primary'>
