@@ -14,11 +14,11 @@
 				</div>
 				<ul class='list-group'>
 					<li class='list-group-item list-group-item-info'>
-						Total costs
-						<strong class='pull-right'>{{ total_costs|format_money:event.currency }}</strong>
+						Gross sales
+						<strong class='pull-right'>{{ gross_sales|format_money:event.currency }}</strong>
 					</li>
 					<li class='list-group-item list-group-item-danger'>
-						Total discounts
+						Discounts
 						<strong class='pull-right'>{{ total_discounts|format_money:event.currency }}</strong>
 					</li>
 					<li class='list-group-item list-group-item-success'>

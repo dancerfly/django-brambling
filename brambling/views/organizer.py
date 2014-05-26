@@ -57,12 +57,12 @@ class EventDashboardView(TemplateView):
             item__event=self.event
         ).select_related('item').annotate(Count('personitem'))
 
-        total_costs = 0
+        gross_sales = 0
         itemoption_map = {}
 
         for itemoption in itemoptions:
             itemoption_map[itemoption.pk] = itemoption
-            total_costs += itemoption.price * itemoption.personitem__count
+            gross_sales += itemoption.price * itemoption.personitem__count
 
         discounts = Discount.objects.filter(
             event=self.event
@@ -81,7 +81,7 @@ class EventDashboardView(TemplateView):
                     item_option__discount=discount
                 ).distinct().count()
                 total_discounts += amount * discount.used_count
-        total_discounts = min(total_discounts, total_costs)
+        total_discounts = min(total_discounts, gross_sales)
 
         total_payments = Payment.objects.filter(event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
 
@@ -95,10 +95,10 @@ class EventDashboardView(TemplateView):
             'itemoptions': itemoptions,
             'discounts': discounts,
 
-            'total_costs': total_costs,
+            'gross_sales': gross_sales,
             'total_discounts': total_discounts,
             'payments_received': total_payments,
-            'payments_outstanding': total_costs - total_discounts - total_payments
+            'payments_outstanding': gross_sales - total_discounts - total_payments
         })
         return context
 
