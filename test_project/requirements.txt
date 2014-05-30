@@ -8,9 +8,8 @@ django-debug-toolbar==1.2
 django-debug-toolbar-template-timings==0.6.1
 # Not strictly required, but we will definitely be using it eventually.
 Pillow==2.3.1
-# Melinath's fork of Floppyforms, until the patch is accepted.
-https://github.com/melinath/django-floppyforms/tarball/7ac637c5795f2776fb384ada0ed03c078d787625
-# littleweaver-forms - @master until we reach a peggable point.
+django-floppyforms==1.2.0
+# our own django-zenaida - @master until we reach a peggable point.
 https://github.com/littleweaver/django-zenaida/tarball/master
 stripe==1.14.0
 requests==2.2.1
