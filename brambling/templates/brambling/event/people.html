@@ -1,0 +1,9 @@
+{% extends 'brambling/event/__base.html' %}
+
+{% load floppyforms zenaida %}
+
+{% block main %}
+    {% for person in people %}
+        {{ person }}
+    {% endfor %}
+{% endblock %}
