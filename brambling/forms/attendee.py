@@ -260,8 +260,8 @@ class CheckoutForm(forms.Form):
     def clean(self):
         cleaned_data = super(CheckoutForm, self).clean()
         cart = self.person.get_cart(self.event)
-        if cart is not None and not cart.is_finalized():
-            raise ValidationError("Cart must be finalized before paying.")
+        if cart is not None and not cart.checkout_ready():
+            raise ValidationError("Cart must be ready for checkout before paying.")
         return cleaned_data
 
     def save(self):

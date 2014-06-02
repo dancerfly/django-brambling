@@ -255,6 +255,27 @@ class Cart(models.Model):
     event = models.ForeignKey(Event)
     owners_set = models.BooleanField(default=False)
 
+    def checkout_ready(self):
+        """
+        Check if the cart is ready to be paid for.
+
+        1. If there's a pass in the cart, check that the EventPerson is complete.
+        2. If there's a pass in the cart, check for a HousingRequest.
+        3.
+        """
+        cart_pass_count = len([pi for pi in self.contents.all()
+                               if pi.item_option.item.category == Item.PASS])
+        if cart_pass_count > 0:
+            event_person = EventPerson.objects.get(event=self.event, person=self.person)
+            if not event_person.is_completed or not self.owners_set:
+                return False
+            if event_person.status == EventPerson.NEED:
+                # If the person is marked as needing housing, they need a
+                # HousingRequest object.
+                if not HousingRequest.objects.get(event=self.event, person=self.person):
+                    return False
+        return True
+
     def expires(self):
         return self.created + timedelta(minutes=self.event.cart_timeout)
 

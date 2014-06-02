@@ -143,7 +143,7 @@
 
 			{% form form %}
 
-			<button type="submit" class="btn btn-primary"{% if cart and not cart.is_finalized %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
+			<button type="submit" class="btn btn-primary"{% if cart and not cart.checkout_ready %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
 			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
 		</form>
 	{% endif %}
