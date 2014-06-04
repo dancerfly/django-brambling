@@ -32,11 +32,12 @@ def route_view(test, if_true, if_false):
 
 
 class NavItem(object):
-    def __init__(self, request, url, label, disabled=False):
+    def __init__(self, request, url, label, icon, disabled=False):
         self.request = request
         self.url = url
         self.label = label
         self.disabled = disabled
+        self.icon = icon
 
     def is_active(self):
         return self.request.path.startswith(self.url)
@@ -45,25 +46,25 @@ class NavItem(object):
 def get_event_nav(event, request):
     cart = request.user.get_cart(event)
     items = (
-        ('brambling_event_shop', 'Shop'),
-        ('brambling_event_records', 'Records'),
+        ('brambling_event_shop', 'Shop', 'glyphicon-shopping-cart'),
+        ('brambling_event_records', 'Records', 'glyphicon-list-alt'),
     )
-    return [NavItem(request=request, label=label,
+    return [NavItem(request=request, label=label, icon=icon,
                     url=reverse(view_name, kwargs={'slug': event.slug}))
-            for view_name, label in items]
+            for view_name, label, icon in items]
 
 
 def get_event_admin_nav(event, request):
     if not event.editable_by(request.user):
         return []
     items = (
-        ('brambling_event_dashboard', 'Dashboard', {'slug': event.slug}),
-        ('brambling_event_update', 'Edit', {'slug': event.slug}),
-        ('brambling_item_list', 'Items', {'event_slug': event.slug}),
-        ('brambling_discount_list', 'Discounts', {'event_slug': event.slug}),
+        ('brambling_event_dashboard', 'Dashboard', 'glyphicon-dashboard', {'slug': event.slug}),
+        ('brambling_event_update', 'Edit', 'glyphicon-pencil', {'slug': event.slug}),
+        ('brambling_item_list', 'Items', 'glyphicon-list', {'event_slug': event.slug}),
+        ('brambling_discount_list', 'Discounts', 'glyphicon-usd', {'event_slug': event.slug}),
     )
-    return [NavItem(request, reverse(view_name, kwargs=kwargs), label)
-            for view_name, label, kwargs in items]
+    return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
+            for view_name, label, icon, kwargs in items]
 
 
 def ajax_required(view):
