@@ -59,7 +59,7 @@ def get_event_admin_nav(event, request):
         return []
     items = (
         ('brambling_event_dashboard', 'Dashboard', 'glyphicon-dashboard', {'slug': event.slug}),
-        ('brambling_event_update', 'Edit', 'glyphicon-pencil', {'slug': event.slug}),
+        ('brambling_event_update', 'Settings', 'glyphicon-cog', {'slug': event.slug}),
         ('brambling_item_list', 'Items', 'glyphicon-list', {'event_slug': event.slug}),
         ('brambling_discount_list', 'Discounts', 'glyphicon-usd', {'event_slug': event.slug}),
     )
