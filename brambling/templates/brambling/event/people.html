@@ -3,24 +3,41 @@
 {% load floppyforms zenaida %}
 
 {% block main %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Items</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for person in people %}
-                <tr>
-                    <th>{{ person.name }}</th>
-                    <td>{{ person.items_bought.count }} Items<td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="1">No one has purchased any items your shop.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="row">
+        <div class="col-md-3 col-md-push-9">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Filters</h4>
+                </div>
+                <div class="panel-body">
+                    <form action="" method="get">
+                        {% form filter.form %}
+                        <button class="btn btn-primary btn-block">Filter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9 col-md-pull-3">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for person in filter %}
+                        <tr>
+                            <th>{{ person.name }}</th>
+                            <td>{{ person.items_bought.count }} Items<td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2">No items match the filter criteria.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

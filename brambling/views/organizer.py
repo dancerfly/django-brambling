@@ -243,10 +243,15 @@ class DiscountListView(ListView):
         })
         return context
 
+
 class PersonFilterView(FilterView):
     filterset_class = PersonFilterSet
     template_name = 'brambling/event/people.html'
     context_object_name = 'people'
+
+    def get_filterset(self, filterset_class):
+        kwargs = self.get_filterset_kwargs(filterset_class)
+        return filterset_class(self.event, **kwargs)
 
     def get_queryset(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
