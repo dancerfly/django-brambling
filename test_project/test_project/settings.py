@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'zenaida',
     'floppyforms',
+    'django_filters',
 )
 
 MIDDLEWARE_CLASSES = (

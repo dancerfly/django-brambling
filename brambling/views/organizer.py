@@ -4,8 +4,12 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.views.generic import ListView, CreateView, UpdateView, TemplateView
+
+from django_filters.views import FilterView
+
 from floppyforms.__future__.models import modelform_factory
 
+from brambling.filters import EventPersonFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import (Event, Item, Discount, EventPerson, Payment,
@@ -236,5 +240,26 @@ class DiscountListView(ListView):
             'cart': self.request.user.get_cart(self.event),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        return context
+
+class EventPersonFilterView(FilterView):
+    filterset_class = EventPersonFilterSet
+    template_name = 'brambling/event/people.html'
+    context_object_name = 'people'
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        qs = EventPerson.objects.filter(event=self.event)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super(EventPersonFilterView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
