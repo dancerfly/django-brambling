@@ -32,4 +32,5 @@ $.ajaxSetup({
 
 $(function() {
     $('.disabled a').on('click', function(e){e.preventDefault();});
+    $('.tipped').tooltip();
 });

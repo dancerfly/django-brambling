@@ -1,0 +1,29 @@
+{% extends 'brambling/layouts/92_8.html' %}
+
+{% block before %}
+	<h1>{{ event.name }}</h1>
+	<h2>{{ event.start_date }} &#8211; {{ event.end_date }} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
+{% endblock %}
+
+{% block side %}
+	<div class='list-group'>
+		{% for item in event_nav %}
+			{% include "brambling/event/_nav_item.html" with item=item only %}
+		{% endfor %}
+	</ul>
+	{% if event_admin_nav %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title visible-sm visible-xs">Manage event</h3>
+			</div>
+			<div class="list-group">
+				{% for item in event_admin_nav %}
+					{% include "brambling/event/_nav_item.html" with item=item only %}
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block main %}
+{% endblock %}

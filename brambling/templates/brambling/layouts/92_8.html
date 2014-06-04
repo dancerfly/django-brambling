@@ -1,0 +1,22 @@
+{% extends "brambling/__base.html" %}
+
+{% block content %}
+	{% block before %}{% endblock %}
+	<div class="row">
+		<div class="col-md-11">
+			{% block messages %}
+				{% if messages %}
+					{% for message in messages %}
+						<div class="{{ message.tags }}">
+							{{ message }}
+						</div>
+					{% endfor %}
+				{% endif %}
+			{% endblock %}
+
+			{% block main %}{% endblock %}
+		</div>
+		<div class="col-md-1">{% block side %}{% endblock %}</div>
+	</div>
+	{% block after %}{% endblock %}
+{% endblock %}
