@@ -23,7 +23,7 @@ from brambling.views.organizer import (
     item_form,
     DiscountListView,
     discount_form,
-    EventPersonFilterView,
+    PersonFilterView,
 )
 from brambling.views.user import (
     PersonView,
@@ -122,7 +122,7 @@ urlpatterns = patterns('',
         item_form,
         name="brambling_item_update"),
     url(r'^(?P<event_slug>[\w-]+)/people/$',
-        EventPersonFilterView.as_view(),
+        PersonFilterView.as_view(),
         name="brambling_person_list"),
 
     url(r'^(?P<event_slug>[\w-]+)/discount/$',

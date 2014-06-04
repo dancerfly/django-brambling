@@ -9,11 +9,11 @@ from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 
-from brambling.filters import EventPersonFilterSet
+from brambling.filters import PersonFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import (Event, Item, Discount, EventPerson, Payment,
-                              ItemOption, PersonItem)
+                              ItemOption, PersonItem, Person)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav)
 
@@ -243,8 +243,8 @@ class DiscountListView(ListView):
         })
         return context
 
-class EventPersonFilterView(FilterView):
-    filterset_class = EventPersonFilterSet
+class PersonFilterView(FilterView):
+    filterset_class = PersonFilterSet
     template_name = 'brambling/event/people.html'
     context_object_name = 'people'
 
@@ -252,11 +252,12 @@ class EventPersonFilterView(FilterView):
         self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
-        qs = EventPerson.objects.filter(event=self.event)
+        qs = Person.objects.filter(
+            items_owned__item_option__item__event=self.event).distinct()
         return qs
 
     def get_context_data(self, **kwargs):
-        context = super(EventPersonFilterView, self).get_context_data(**kwargs)
+        context = super(PersonFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
             'event_nav': get_event_nav(self.event, self.request),

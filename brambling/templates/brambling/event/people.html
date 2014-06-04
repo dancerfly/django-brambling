@@ -7,14 +7,14 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Pass?</th>
+                <th>Items</th>
             </tr>
         </thead>
         <tbody>
             {% for person in people %}
                 <tr>
-                    <th>{{ person.person.name }}</th>
-                    <td>{{ person.event_pass }}<td>
+                    <th>{{ person.name }}</th>
+                    <td>{{ person.items_bought.count }} Items<td>
                 </tr>
             {% empty %}
                 <tr>

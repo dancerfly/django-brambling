@@ -1,9 +1,9 @@
 import django_filters
 
-from brambling.models import EventPerson
+from brambling.models import Person
 
 
-class EventPersonFilterSet(django_filters.FilterSet):
+class PersonFilterSet(django_filters.FilterSet):
     class Meta:
-        model = EventPerson
+        model = Person
         fields = []
