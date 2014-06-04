@@ -3,7 +3,24 @@
 {% load floppyforms zenaida %}
 
 {% block main %}
-    {% for person in people %}
-        {{ person }}
-    {% endfor %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Pass?</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for person in people %}
+                <tr>
+                    <th>{{ person.person.name }}</th>
+                    <td>{{ person.event_pass }}<td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="1">No one has purchased any items your shop.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
