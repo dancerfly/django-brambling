@@ -1,5 +1,7 @@
 {% extends 'brambling/event/__mini_nav.html' %}
 
+{% load zenaida %}
+
 {% block main %}
 	<p><a class="btn btn-primary" href="{% url 'brambling_discount_create' event_slug=event.slug %}">Create discount</a></p>
 	{% if discounts %}
@@ -18,7 +20,7 @@
 					<td><a href="{% url 'brambling_discount_update' event_slug=event.slug pk=discount.pk %}">{{ discount.name }}</a></td>
 					<td>{{ discount.code }}</td>
 					<td>{{ discount.item_option }}</td>
-					<td>{{ discount.amount }}{% if discount.discount_type == discount.PERCENT %}%{% else %} {{ event.currency }}{% endif %}</td>
+					<td>{% if discount.discount_type == discount.PERCENT %}{{ discount.amount }}%{% else %} {{ discount.amount|format_money:event.currency }}{% endif %}</td>
 				</tr>
 			{% endfor %}
 			</tbody>
