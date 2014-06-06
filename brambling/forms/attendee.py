@@ -7,12 +7,12 @@ import stripe
 from zenaida.forms import MemoModelForm
 
 from brambling.models import (Person, Discount, EventPerson, Date,
-                              EventHousing, BoughtItem, UsedDiscount,
+                              EventHousing, UsedDiscount,
                               EnvironmentalFactor, HousingCategory, CreditCard,
                               Payment, Home, Attendee, HousingSlot)
 
 
-CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
+CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
 
 class UsedDiscountForm(forms.ModelForm):
@@ -56,23 +56,6 @@ class UsedDiscountForm(forms.ModelForm):
         super(UsedDiscountForm, self)._post_clean()
 
 
-class EventPersonForm(forms.ModelForm):
-    class Meta:
-        model = EventPerson
-        exclude = ('event', 'person', 'event_pass')
-
-    def __init__(self, *args, **kwargs):
-        super(EventPersonForm, self).__init__(*args, **kwargs)
-
-        # You can't put someone else on the hook for hosting.
-        if self.instance.event_pass.owner != self.instance.event_pass.buyer:
-            self.fields['status'].choices = self.fields['status'].choices[:-1]
-
-    def save(self):
-        self.instance.is_completed = True
-        return super(EventPersonForm, self).save()
-
-
 class AttendeeBasicDataForm(forms.ModelForm):
     class Meta:
         model = Attendee
@@ -91,9 +74,8 @@ class AttendeeHousingDataForm(MemoModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
-        msg = "Please check this box to confirm the value is correct"
-        self.fields['ef_cause_confirm'].error_messages['required'] = msg
-        self.fields['ef_avoid_confirm'].error_messages['required'] = msg
+        self.fields['ef_cause_confirm'].error_messages['required'] = CONFIRM_ERROR
+        self.fields['ef_avoid_confirm'].error_messages['required'] = CONFIRM_ERROR
 
         for field in ('ef_cause_confirm', 'ef_avoid_confirm'):
             self.fields[field].required = True
@@ -159,10 +141,9 @@ class HostingForm(MemoModelForm):
 
     def __init__(self, *args, **kwargs):
         super(HostingForm, self).__init__({}, *args, **kwargs)
-        msg = "Please check this box to confirm the value is correct"
         for field in ('ef_present_confirm', 'ef_avoid_confirm', 'housing_categories_confirm'):
             self.fields[field].required = True
-            self.fields[field].error_messages['required'] = msg
+            self.fields[field].error_messages['required'] = CONFIRM_ERROR
 
         if self.instance.pk is None:
             person = self.instance.event_person.person

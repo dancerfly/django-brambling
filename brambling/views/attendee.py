@@ -8,16 +8,14 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
-from brambling.forms.attendee import (EventPersonForm, UsedDiscountForm,
-                                      CheckoutForm,
+from brambling.forms.attendee import (UsedDiscountForm, CheckoutForm,
                                       HostingForm, AttendeeBasicDataForm,
                                       AttendeeHousingDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption, Payment,
                               UsedDiscount, Discount, EventPerson,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav, ajax_required,
-                                   route_view)
+                                   get_event_admin_nav, ajax_required)
 
 
 class AddToCartView(View):
