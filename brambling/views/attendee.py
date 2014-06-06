@@ -329,6 +329,7 @@ class SurveyDataView(UpdateView):
 
     def form_valid(self, form):
         self.object.survey_completed = True
+        self.object.save()
         form.save()
         return HttpResponseRedirect(reverse('brambling_event_records',
                                             kwargs={'event_slug': self.event.slug}))
