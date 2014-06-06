@@ -44,13 +44,12 @@ class NavItem(object):
 
 
 def get_event_nav(event, request):
-    cart = request.user.get_cart(event)
     items = (
         ('brambling_event_shop', 'Shop', 'glyphicon-shopping-cart'),
         ('brambling_event_records', 'Records', 'glyphicon-list-alt'),
     )
     return [NavItem(request=request, label=label, icon=icon,
-                    url=reverse(view_name, kwargs={'slug': event.slug}))
+                    url=reverse(view_name, kwargs={'event_slug': event.slug}))
             for view_name, label, icon in items]
 
 
@@ -62,7 +61,7 @@ def get_event_admin_nav(event, request):
         ('brambling_event_update', 'Settings', 'glyphicon-cog', {'slug': event.slug}),
         ('brambling_item_list', 'Items', 'glyphicon-list', {'event_slug': event.slug}),
         ('brambling_discount_list', 'Discounts', 'glyphicon-usd', {'event_slug': event.slug}),
-        ('brambling_person_list', 'People', 'glyphicon-user', {'event_slug': event.slug}),
+        ('brambling_attendee_list', 'People', 'glyphicon-user', {'event_slug': event.slug}),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
             for view_name, label, icon, kwargs in items]

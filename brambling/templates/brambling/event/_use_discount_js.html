@@ -10,7 +10,7 @@
 			$this.find('.help-block').remove();
 			$.post($this.attr('action'), JSON.stringify(data), function(data){
 				if (data.success) {
-					if (discountReload) location.reload();
+					if (typeof(discountReload) !== "undefined" && discountReload) location.reload();
 					$('#discounts ul').prepend('<li class="list-group-item">' + data.name + ' <em class="text-muted">' + data.code + "</em></li>");
 					$('#discount-form input').val('');
 					$('#discounts').removeClass('hidden');

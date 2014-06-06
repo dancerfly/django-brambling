@@ -1,32 +1,32 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.forms.models import BaseModelFormSet
 from django.utils import timezone
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
 from brambling.models import (Person, Discount, EventPerson, Date,
-                              EventHousing, PersonItem, PersonDiscount,
+                              EventHousing, BoughtItem, UsedDiscount,
                               EnvironmentalFactor, HousingCategory, CreditCard,
-                              Payment, Home, HousingRequest, HousingSlot)
+                              Payment, Home, Attendee, HousingSlot)
 
 
 CONFIRM_ERRORS = {'required': 'Must be marked correct.'}
 
 
-class PersonDiscountForm(forms.ModelForm):
+class UsedDiscountForm(forms.ModelForm):
     discount = forms.CharField(max_length=20, label="discount code")
 
     class Meta:
         fields = ()
-        model = PersonDiscount
+        model = UsedDiscount
 
     def __init__(self, event, person, *args, **kwargs):
         self.event = event
         self.person = person
-        super(PersonDiscountForm, self).__init__(*args, **kwargs)
+        self.event_person = EventPerson.objects.get_cached(event, person)
+        super(UsedDiscountForm, self).__init__(*args, **kwargs)
 
     def clean_discount(self):
         discount = self.cleaned_data.get('discount')
@@ -50,31 +50,10 @@ class PersonDiscountForm(forms.ModelForm):
         return discount
 
     def _post_clean(self):
-        self.instance.person = self.person
+        self.instance.event_person = self.event_person
         if 'discount' in self.cleaned_data:
             self.instance.discount = self.cleaned_data['discount']
-        super(PersonDiscountForm, self)._post_clean()
-
-
-class OwnerForm(forms.ModelForm):
-    class Meta:
-        model = PersonItem
-        fields = ('owner',)
-
-
-# TODO: Must validate max_per_owner constraints.
-class BaseOwnerFormSet(BaseModelFormSet):
-    def __init__(self, default_owner, *args, **kwargs):
-        super(BaseOwnerFormSet, self).__init__(*args, **kwargs)
-        self.default_owner = default_owner
-
-    def _construct_form(self, i, **kwargs):
-        form = super(BaseOwnerFormSet, self)._construct_form(i, **kwargs)
-        form.initial['owner'] = self.default_owner
-        return form
-
-OwnerFormSet = forms.modelformset_factory(PersonItem, OwnerForm, extra=0,
-                                          formset=BaseOwnerFormSet)
+        super(UsedDiscountForm, self)._post_clean()
 
 
 class EventPersonForm(forms.ModelForm):
@@ -94,20 +73,32 @@ class EventPersonForm(forms.ModelForm):
         return super(EventPersonForm, self).save()
 
 
-class HousingRequestForm(MemoModelForm):
+class AttendeeBasicDataForm(forms.ModelForm):
     class Meta:
-        model = HousingRequest
-        exclude = ('event', 'person')
+        model = Attendee
 
-    def __init__(self, eventperson, request, *args, **kwargs):
-        self.eventperson = eventperson
-        self.request = request
-        super(HousingRequestForm, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
+        self.fields['liability_waiver'].required = True
+
+
+class AttendeeHousingDataForm(MemoModelForm):
+    class Meta:
+        model = Attendee
+        fields = ('nights', 'ef_cause', 'ef_cause_confirm', 'ef_avoid',
+                  'ef_avoid_confirm', 'person_prefer', 'person_avoid',
+                  'housing_prefer', 'other_needs')
+
+    def __init__(self, *args, **kwargs):
+        super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
+        msg = "Please check this box to confirm the value is correct"
+        self.fields['ef_cause_confirm'].error_messages['required'] = msg
+        self.fields['ef_avoid_confirm'].error_messages['required'] = msg
 
         for field in ('ef_cause_confirm', 'ef_avoid_confirm'):
             self.fields[field].required = True
 
-        if self.instance.person == request.user:
+        if self.instance.person == self.instance.event_person.person:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True)
             if self.instance.pk is None:
                 owner = self.instance.person
@@ -125,7 +116,7 @@ class HousingRequestForm(MemoModelForm):
                     'other_needs': owner.other_needs,
                 })
         self.fields['nights'].required = True
-        self.set_choices('nights', Date, event_housing_dates=self.instance.event)
+        self.set_choices('nights', Date, event_housing_dates=self.instance.event_person.event)
         self.set_choices('person_prefer',
                          Person.objects.only('id', 'name'))
         self.set_choices('person_avoid',
@@ -138,8 +129,9 @@ class HousingRequestForm(MemoModelForm):
                          HousingCategory.objects.only('id', 'name'))
 
     def save(self):
-        instance = super(HousingRequestForm, self).save()
-        if (self.instance.person == self.request.user and
+        self.instance.housing_completed = True
+        instance = super(AttendeeHousingDataForm, self).save()
+        if (self.instance.person == self.instance.event_person.person and
                 self.cleaned_data['save_as_defaults']):
             person = self.instance.person
             person.ef_cause = instance.ef_cause.all()
@@ -158,36 +150,46 @@ class HousingSlotForm(forms.ModelForm):
         fields = ('spaces', 'spaces_max')
 
 
-class EventHousingForm(MemoModelForm):
+class HostingForm(MemoModelForm):
     save_as_defaults = forms.BooleanField(initial=True)
 
     class Meta:
         model = EventHousing
-        exclude = ('event', 'home')
+        exclude = ('event', 'home', 'event_person')
 
-    def __init__(self, eventperson, request=None, *args, **kwargs):
-        # We don't actually use request, but we want similarity to
-        # HousingRequestForm.
-        self.request = request
-        self.eventperson = eventperson
-        super(EventHousingForm, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(HostingForm, self).__init__({}, *args, **kwargs)
+        msg = "Please check this box to confirm the value is correct"
         for field in ('ef_present_confirm', 'ef_avoid_confirm', 'housing_categories_confirm'):
             self.fields[field].required = True
+            self.fields[field].error_messages['required'] = msg
 
         if self.instance.pk is None:
-            home = self.instance.home
+            person = self.instance.event_person.person
             self.initial.update({
-                'ef_present': self.filter(EnvironmentalFactor.objects.only('id'),
-                                          home_present=home),
-                'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
-                                        home_avoid=home),
-                'person_prefer': self.filter(Person.objects.only('id'),
-                                             preferred_by_homes=home),
-                'person_avoid': self.filter(Person.objects.only('id'),
-                                            avoided_by_homes=home),
-                'housing_categories': self.filter(HousingCategory.objects.only('id'),
-                                                  homes=home),
+                'contact_name': person.name,
+                'contact_email': person.email,
+                'contact_phone': person.phone,
             })
+            home = self.instance.home
+            if home is not None:
+                self.initial.update({
+                    'address': home.address,
+                    'city': home.city,
+                    'state_or_province': home.state_or_province,
+                    'country': home.country,
+                    'public_transit_access': home.public_transit_access,
+                    'ef_present': self.filter(EnvironmentalFactor.objects.only('id'),
+                                              home_present=home),
+                    'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
+                                            home_avoid=home),
+                    'person_prefer': self.filter(Person.objects.only('id'),
+                                                 preferred_by_homes=home),
+                    'person_avoid': self.filter(Person.objects.only('id'),
+                                                avoided_by_homes=home),
+                    'housing_categories': self.filter(HousingCategory.objects.only('id'),
+                                                      homes=home),
+                })
         self.set_choices('person_prefer',
                          Person.objects.only('id', 'name'))
         self.set_choices('person_avoid',
@@ -200,7 +202,7 @@ class EventHousingForm(MemoModelForm):
                          HousingCategory.objects.only('id', 'name'))
 
         self.nights = self.filter(Date, event_housing_dates=self.instance.event)
-        slot_map = None
+        slot_map = {}
         if self.instance.pk is not None:
             slot_map = {slot.night_id: slot
                         for slot in self.filter(HousingSlot, eventhousing=self.instance)}
@@ -219,7 +221,7 @@ class EventHousingForm(MemoModelForm):
                                                    prefix='{}-{}'.format(self.prefix, night.pk)))
 
     def is_valid(self):
-        valid = super(EventHousingForm, self).is_valid()
+        valid = super(HostingForm, self).is_valid()
         if valid:
             for form in self.slot_forms:
                 if not form.is_valid():
@@ -228,18 +230,30 @@ class EventHousingForm(MemoModelForm):
         return valid
 
     def save(self):
-        instance = super(EventHousingForm, self).save()
+        self.instance.is_completed = True
+        instance = super(HostingForm, self).save()
         for form in self.slot_forms:
             form.instance.eventhousing = instance
             form.save()
         if self.cleaned_data['save_as_defaults']:
-            home = instance.home
+            home = instance.home or Home()
+            new_home = home.pk is None
+            home.address = instance.address
+            home.city = instance.city
+            home.state_or_province = instance.state_or_province
+            home.country = instance.country
+            home.public_transit_access = instance.public_transit_access
             home.ef_present = instance.ef_present.all()
             home.ef_avoid = instance.ef_avoid.all()
             home.person_prefer = instance.person_prefer.all()
             home.person_avoid = instance.person_avoid.all()
             home.housing_categories = instance.housing_categories.all()
             home.save()
+            if new_home:
+                instance.home = home
+                instance.save()
+                person = instance.event_person.person
+                person.home = home
         return instance
 
 
@@ -250,6 +264,7 @@ class CheckoutForm(forms.Form):
         super(CheckoutForm, self).__init__(*args, **kwargs)
         self.person = person
         self.event = event
+        self.event_person = EventPerson.objects.get_cached(self.event, self.person)
         self.balance = balance
         self.fields['card'].queryset = person.cards.all()
         self.fields['card'].initial = person.default_card
@@ -259,9 +274,8 @@ class CheckoutForm(forms.Form):
 
     def clean(self):
         cleaned_data = super(CheckoutForm, self).clean()
-        cart = self.person.get_cart(self.event)
-        if cart is not None and not cart.checkout_ready():
-            raise ValidationError("Cart must be ready for checkout before paying.")
+        if not self.event_person.cart_is_valid():
+            raise ValidationError("Cart must be ready for checkout before paying.", self.event_person.cart_errors)
         return cleaned_data
 
     def save(self):
@@ -275,8 +289,7 @@ class CheckoutForm(forms.Form):
             customer=self.person.stripe_customer_id,
             card=card.stripe_card_id,
         )
-        payment = Payment.objects.create(event=self.event,
-                                         person=self.person,
+        payment = Payment.objects.create(event_person=self.event_person,
                                          amount=self.balance,
                                          stripe_charge_id=charge.id,
                                          card=card)

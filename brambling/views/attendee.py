@@ -5,35 +5,34 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, View, UpdateView
+import floppyforms.__future__ as forms
 
-from brambling.forms.attendee import (EventPersonForm, PersonDiscountForm,
-                                      CheckoutForm, OwnerFormSet,
-                                      HousingRequestForm, EventHousingForm)
-from brambling.models import (Item, PersonItem, ItemOption, Payment,
-                              PersonDiscount, Discount, EventPerson,
-                              HousingRequest, EventHousing)
+from brambling.forms.attendee import (EventPersonForm, UsedDiscountForm,
+                                      CheckoutForm,
+                                      HostingForm, AttendeeBasicDataForm,
+                                      AttendeeHousingDataForm)
+from brambling.models import (Item, BoughtItem, ItemOption, Payment,
+                              UsedDiscount, Discount, EventPerson,
+                              Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav, ajax_required)
+                                   get_event_admin_nav, ajax_required,
+                                   route_view)
 
 
 class AddToCartView(View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        event = get_event_or_404(kwargs['slug'])
+        event = get_event_or_404(kwargs['event_slug'])
         try:
             item_option = ItemOption.objects.get(item__event=event,
                                                  pk=kwargs['pk'])
         except ItemOption.DoesNotExist:
             raise Http404
 
-        cart = request.user.get_cart(event, create=True)
-        PersonItem.objects.create(
-            item_option=item_option,
-            cart=cart,
-            buyer=request.user
-        )
+        event_person = EventPerson.objects.get_cached(event, request.user)
+        event_person.add_to_cart(item_option)
         return JsonResponse({'success': True})
 
 
@@ -41,34 +40,26 @@ class RemoveFromCartView(View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        event = get_event_or_404(kwargs['slug'])
+        event = get_event_or_404(kwargs['event_slug'])
         try:
-            personitem = PersonItem.objects.get(item_option__item__event=event,
-                                                pk=kwargs['pk'])
-        except PersonItem.DoesNotExist:
+            bought_item = BoughtItem.objects.get(item_option__item__event=event,
+                                                 pk=kwargs['pk'])
+        except BoughtItem.DoesNotExist:
             pass
         else:
-            cart = request.user.get_cart(event)
-
-            if personitem.cart == cart:
-                personitem.delete()
-
-            if not cart.contents.exists():
-                cart.delete()
+            event_person = EventPerson.objects.get_cached(event, request.user)
+            event_person.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
 
 
-class PersonDiscountView(View):
+class UseDiscountView(View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        if not request.is_ajax():
-            raise Http404
+        event = get_event_or_404(kwargs['event_slug'])
 
-        event = get_event_or_404(kwargs['slug'])
-
-        form = PersonDiscountForm(
+        form = UsedDiscountForm(
             event=event,
             person=request.user,
             prefix='discount-form',
@@ -97,6 +88,20 @@ class PersonDiscountView(View):
 # 5. Checkout - unpaid items only. List any applicable credits without explanation.
 
 
+def _shared_shopping_context(event, request):
+    event_person = EventPerson.objects.get_cached(event, request.user)
+    return {
+        'event': event,
+        'event_person': event_person,
+        'discount_form': UsedDiscountForm(event=event,
+                                          person=request.user,
+                                          prefix='discount-form'),
+        'discounts': event_person.useddiscount_set.all(),
+        'event_nav': get_event_nav(event, request),
+        'event_admin_nav': get_event_admin_nav(event, request),
+    }
+
+
 class ShopView(TemplateView):
     categories = (
         Item.MERCHANDISE,
@@ -113,7 +118,7 @@ class ShopView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ShopView, self).get_context_data(**kwargs)
 
-        event = get_event_or_404(self.kwargs['slug'])
+        event = get_event_or_404(self.kwargs['event_slug'])
         now = timezone.now()
         items = event.items.filter(
             options__available_start__lte=now,
@@ -122,218 +127,135 @@ class ShopView(TemplateView):
         ).select_related('options').distinct()
 
         context.update({
-            'event': event,
             'items': items,
-            'discount_form': PersonDiscountForm(event=event,
-                                                person=self.request.user,
-                                                prefix='discount-form'),
-            'cart': self.request.user.get_cart(event),
-            'discounts': self.request.user.get_discounts(event),
-            'event_nav': get_event_nav(event, self.request),
-            'event_admin_nav': get_event_admin_nav(event, self.request),
         })
+        context.update(_shared_shopping_context(event, self.request))
         return context
 
 
-class OwnershipView(TemplateView):
-    template_name = 'brambling/event/ownership.html'
+class AttendeeItemView(TemplateView):
+    template_name = 'brambling/event/attendee_items.html'
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['slug'])
-        cart = request.user.get_cart(self.event)
-        if cart is None:
-            return HttpResponseRedirect(reverse('brambling_event_shop',
-                                                kwargs={'slug': self.event.slug}))
-        return super(OwnershipView, self).dispatch(request, *args, **kwargs)
+        self.event = get_event_or_404(kwargs['event_slug'])
+        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        return super(AttendeeItemView, self).dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
-        cart = self.request.user.get_cart(self.event)
-        # Count of passes being bought.
-        cart_pass_count = len([pi for pi in cart.contents.all()
-                               if pi.item_option.item.category == Item.PASS])
-
-        # Whether user is already owner of a paid-for pass.
-        # People can only own one pass.
-        buyer_has_pass = PersonItem.objects.filter(
-            status__in=(PersonItem.PAID, PersonItem.PARTIAL),
-            owner=self.request.user,
-            item_option__item__event=self.event
-        ).exists()
-
-        if cart_pass_count == 0 or (cart_pass_count == 1 and not buyer_has_pass):
-            # Assume everything belongs to the buyer and skip to the next step.
-            cart.contents.update(owner=request.user)
-            cart.owners_set = True
-            cart.save()
-            return HttpResponseRedirect(self.get_success_url())
-        self.formset = self.get_formset()
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
-
-    def post(self, request, *args, **kwargs):
-        self.formset = self.get_formset()
-        if self.formset.is_valid():
-            # Force saving on all the forms.
-            for form in self.formset.forms:
-                form.save()
-            cart = request.user.get_cart(self.event)
-            cart.owners_set = True
-            cart.save()
-            return HttpResponseRedirect(self.get_success_url())
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
-
-    def get_success_url(self):
-        cart = self.request.user.get_cart(self.event)
-
-        # If they have any passes in their cart, send them to
-        # fill out pass data.
-        for item in cart.contents.all():
-            if item.item_option.item.category == Item.PASS:
-                return reverse('brambling_event_registration_data',
-                               kwargs={'slug': self.event.slug})
-        # Otherwise, straight to checkout.
-        return reverse('brambling_event_records',
-                       kwargs={'slug': self.event.slug})
-
-    def get_formset(self):
-        cart = self.request.user.get_cart(self.event)
-
-        if cart is None:
-            raise Http404
-
-        qs = cart.contents.all()
-        kwargs = {
-            'queryset': qs,
-            'default_owner': self.request.user,
-        }
+    def get_forms(self):
+        form_class = forms.models.modelform_factory(BoughtItem, fields=('attendee',))
+        form_class.base_fields['attendee'].queryset = self.event_person.attendees.all()
+        bought_items = self.event_person.bought_items.all()
+        kwargs = {}
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
-        return OwnerFormSet(**kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(OwnershipView, self).get_context_data(**kwargs)
-
-        context.update({
-            'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
-            'formset': self.formset,
-            'discount_form': PersonDiscountForm(event=self.event,
-                                                person=self.request.user,
-                                                prefix='discount-form'),
-            'discounts': self.request.user.get_discounts(self.event),
-            'event_nav': get_event_nav(self.event, self.request),
-            'event_admin_nav': get_event_admin_nav(self.event, self.request),
-        })
-        return context
-
-
-class RegistrationDataView(TemplateView):
-    template_name = 'brambling/event/registration_data.html'
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['slug'])
-        cart = request.user.get_cart(self.event)
-        if cart is None:
-            return HttpResponseRedirect(reverse('brambling_event_shop',
-                                                kwargs={'slug': self.event.slug}))
-        return super(RegistrationDataView, self).dispatch(request, *args, **kwargs)
+        return [form_class(prefix='form-{}-'.format(item.pk),
+                           instance=item, **kwargs)
+                for item in bought_items]
 
     def get(self, request, *args, **kwargs):
         self.forms = self.get_forms()
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
+        return self.render_to_response(self.get_context_data())
 
     def post(self, request, *args, **kwargs):
         self.forms = self.get_forms()
         all_valid = True
         for form in self.forms:
-            if not form.is_valid():
-                all_valid = False
+            all_valid = all_valid and form.is_valid()
         if all_valid:
             for form in self.forms:
                 form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
-
-    def get_success_url(self):
-        # If we're here, we know they have passes. All that matters
-        # is whether the event is doing housing (and whether they've
-        # asked for it/offered it)
-        if self.event.collect_housing_data:
-            cart = self.request.user.get_cart(self.event)
-            for item in cart.contents.all():
-                if (item.item_option.item.category == Item.PASS and
-                        item.eventperson.status in (EventPerson.NEED, EventPerson.HOST)):
-                    return reverse('brambling_event_housing_data',
-                                   kwargs={'slug': self.event.slug})
-        return reverse('brambling_event_records',
-                       kwargs={'slug': self.event.slug})
-
-    def get_forms(self):
-        cart = self.request.user.get_cart(self.event)
-        kwargs = {}
-        if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-
-        passes_with = cart.contents.filter(
-            item_option__item__category=Item.PASS,
-            eventperson__isnull=False
-        ).select_related('eventperson')
-        passes_without = cart.contents.filter(
-            item_option__item__category=Item.PASS,
-            eventperson__isnull=True
-        ).select_related('owner')
-
-        forms = []
-        for personitem in passes_with:
-            instance = personitem.eventperson
-            forms.append(EventPersonForm(instance=instance,
-                                         prefix=str(personitem.pk),
-                                         **kwargs))
-
-        for personitem in passes_without:
-            instance = EventPerson(event=self.event,
-                                   person=personitem.owner,
-                                   event_pass=personitem)
-            forms.append(EventPersonForm(instance=instance,
-                                         prefix=str(personitem.pk),
-                                         **kwargs))
-        return forms
+            if self.event.collect_housing_data:
+                url = reverse('brambling_event_attendee_housing',
+                              kwargs={'event_slug': self.event.slug})
+            else:
+                url = reverse('brambling_event_survey',
+                              kwargs={'event_slug': self.event.slug})
+            return HttpResponseRedirect(url)
+        return self.render_to_response(self.get_context_data())
 
     def get_context_data(self, **kwargs):
-        context = super(RegistrationDataView, self).get_context_data(**kwargs)
+        context = super(AttendeeItemView, self).get_context_data(**kwargs)
 
         context.update({
-            'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
             'forms': self.forms,
-            'discount_form': PersonDiscountForm(event=self.event,
-                                                person=self.request.user,
-                                                prefix='discount-form'),
-            'discounts': self.request.user.get_discounts(self.event),
-            'event_nav': get_event_nav(self.event, self.request),
-            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'attendees': self.event_person.attendees.all(),
         })
+        context.update(_shared_shopping_context(self.event, self.request))
         return context
 
 
-class HousingDataView(TemplateView):
-    template_name = 'brambling/event/housing_data.html'
+class AttendeeBasicDataView(UpdateView):
+    template_name = 'brambling/event/attendee_basic_data.html'
+    form_class = AttendeeBasicDataForm
+
+    def get_form_class(self):
+        fields = ('name', 'nickname', 'email', 'phone', 'liability_waiver',
+                  'photo_consent')
+        if self.event.collect_housing_data:
+            fields += ('housing_status',)
+        return forms.models.modelform_factory(Attendee, self.form_class, fields=fields)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['slug'])
-        if not self.event.collect_housing_data:
-            raise Http404("Event doesn't collect housing data.")
-        cart = request.user.get_cart(self.event)
-        if cart is None:
-            return HttpResponseRedirect(reverse('brambling_event_shop',
-                                                kwargs={'slug': self.event.slug}))
-        return super(HousingDataView, self).dispatch(request, *args, **kwargs)
+        self.event = get_event_or_404(kwargs['event_slug'])
+        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        return super(AttendeeBasicDataView, self).dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        if self.kwargs.get('pk') is None:
+            return None
+        else:
+            return self.event_person.attendees.get(pk=self.kwargs['pk'])
+
+    def get_initial(self):
+        initial = super(AttendeeBasicDataView, self).get_initial()
+        person = self.request.user
+        if not self.event_person.attendees.filter(person=person).exists():
+            initial.update({
+                'name': person.name,
+                'nickname': person.nickname,
+                'email': person.email,
+                'phone': person.phone
+            })
+        return initial
+
+    def form_valid(self, form):
+        if form.instance.email == self.request.user.email:
+            form.instance.person = self.request.user
+            form.instance.person_confirmed = True
+
+        form.instance.event_person = self.event_person
+        form.instance.basic_completed = True
+        self.object = form.save()
+        return super(AttendeeBasicDataView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('brambling_event_attendee_items',
+                       kwargs={'event_slug': self.event.slug})
+
+    def get_context_data(self, **kwargs):
+        context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
+        context.update({
+            'attendees': self.event_person.attendees.all(),
+        })
+        context.update(_shared_shopping_context(self.event, self.request))
+        return context
+
+
+class AttendeeHousingView(TemplateView):
+    template_name = 'brambling/event/attendee_housing.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.event = get_event_or_404(kwargs['event_slug'])
+        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.attendees = self.event_person.attendees.filter(housing_status=Attendee.NEED)
+        if not self.event.collect_housing_data or not self.attendees:
+            # Just skip ahead.
+            return HttpResponseRedirect(reverse('brambling_event_survey',
+                                        kwargs={'event_slug': self.event.slug}))
+        return super(AttendeeHousingView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         self.forms = self.get_forms()
@@ -356,101 +278,127 @@ class HousingDataView(TemplateView):
         return self.render_to_response(context)
 
     def get_success_url(self):
-        return reverse('brambling_event_records',
-                       kwargs={'slug': self.event.slug})
+        return reverse('brambling_event_survey',
+                       kwargs={'event_slug': self.event.slug})
 
     def get_forms(self):
-        cart = self.request.user.get_cart(self.event)
-
-        # One form for each EventPerson attached to the cart which is either
-        # requesting or offering housing. Owner is fixed at this point - as is
-        # housing status.
         memo_dict = {}
         kwargs = {
             'memo_dict': memo_dict,
-            'request': self.request,
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
 
-        eventpeople = EventPerson.objects.filter(event_pass__cart=cart,
-                                                 status__in=(EventPerson.NEED,
-                                                             EventPerson.HOST)
-                                                 ).select_related('person', 'event')
-        forms = []
-        for eventperson in eventpeople:
-            if eventperson.status == EventPerson.NEED:
-                form_class = HousingRequestForm
-                instance_kwargs = {
-                    'event': eventperson.event,
-                    'person': eventperson.person,
-                }
-                try:
-                    instance = HousingRequest.objects.get(**instance_kwargs)
-                except HousingRequest.DoesNotExist:
-                    instance = HousingRequest(**instance_kwargs)
-            else:
-                form_class = EventHousingForm
-                instance_kwargs = {
-                    'event': eventperson.event,
-                    'home': eventperson.person.home,
-                }
-                try:
-                    instance = EventHousing.objects.get(**instance_kwargs)
-                except EventHousing.DoesNotExist:
-                    instance = EventHousing(**instance_kwargs)
-            forms.append(form_class(instance=instance,
-                                    eventperson=eventperson,
-                                    prefix=str(eventperson.pk),
-                                    **kwargs))
-        return forms
+        return [AttendeeHousingDataForm(prefix='form-{}-'.format(attendee.pk),
+                                        instance=attendee,
+                                        **kwargs)
+                for attendee in self.attendees]
 
     def get_context_data(self, **kwargs):
-        context = super(HousingDataView, self).get_context_data(**kwargs)
+        context = super(AttendeeHousingView, self).get_context_data(**kwargs)
 
         context.update({
             'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
             'forms': self.forms,
-            'discount_form': PersonDiscountForm(event=self.event,
-                                                person=self.request.user,
-                                                prefix='discount-form'),
-            'discounts': self.request.user.get_discounts(self.event),
-            'event_nav': get_event_nav(self.event, self.request),
-            'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
+        context.update(_shared_shopping_context(self.event, self.request))
         return context
+
+
+class SurveyDataView(UpdateView):
+    template_name = 'brambling/event/survey_data.html'
+    fields = ('heard_through', 'heard_through_other', 'send_flyers',
+              'send_flyers_address', 'send_flyers_city',
+              'send_flyers_state_or_province', 'send_flyers_country',
+              'providing_housing')
+    context_object_name = 'event_person'
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.event = get_event_or_404(kwargs['event_slug'])
+        return super(SurveyDataView, self).dispatch(request, *args, **kwargs)
+
+    def get_form_class(self):
+        return forms.models.modelform_factory(EventPerson, fields=self.fields)
+
+    def get_object(self):
+        return EventPerson.objects.get_cached(self.event, self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super(SurveyDataView, self).get_context_data(**kwargs)
+        context.update(_shared_shopping_context(self.event, self.request))
+        return context
+
+    def form_valid(self, form):
+        self.object.survey_completed = True
+        form.save()
+        return HttpResponseRedirect(reverse('brambling_event_records',
+                                            kwargs={'event_slug': self.event.slug}))
+
+
+class HostingView(UpdateView):
+    template_name = 'brambling/event/hosting.html'
+    form_class = HostingForm
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.event = get_event_or_404(kwargs['event_slug'])
+        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        return super(HostingView, self).dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        try:
+            return EventHousing.objects.select_related('home').get(
+                event=self.event,
+                event_person=self.event_person,
+            )
+        except EventHousing.DoesNotExist:
+            return EventHousing(
+                event=self.event,
+                event_person=self.event_person,
+                home=self.event_person.person.home
+            )
+
+    def get_context_data(self, **kwargs):
+        context = super(HostingView, self).get_context_data(**kwargs)
+
+        context.update(_shared_shopping_context(self.event, self.request))
+
+        return context
+
+    def get_success_url(self):
+        return reverse('brambling_event_records',
+                       kwargs={'event_slug': self.event.slug})
 
 
 class RecordsView(TemplateView):
     template_name = 'brambling/event/records.html'
 
     @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(RecordsView, self).dispatch(*args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        self.event = get_event_or_404(kwargs['event_slug'])
+        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.balance = self.get_balance()
+        return super(RecordsView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['slug'])
-        self.balance = self.get_balance()
-        cart = request.user.get_cart(self.event)
-        if self.balance > 0 or cart is not None:
+        if self.balance > 0 or self.event_person.has_cart():
             self.form = self.get_form()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['slug'])
-        self.balance = self.get_balance()
-        cart = request.user.get_cart(self.event)
-        if self.balance > 0 or cart is not None:
+        if self.balance > 0 or self.event_person.has_cart():
             self.form = self.get_form()
             if self.form.is_valid():
                 self.form.save()
-                # Remove items from cart and delete it.
-                cart = request.user.get_cart(self.event)
-                if cart is not None:
-                    cart.contents.all().update(cart=None, status=PersonItem.PAID)
-                    cart.delete()
+                # Mark reserved / unpaid items as paid.
+                self.event_person.bought_items.filter(
+                    status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
+                ).update(status=BoughtItem.PAID)
+                if self.event_person.cart_start_time is not None:
+                    self.event_person.cart_start_time = None
+                    self.event_person.save()
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -467,17 +415,14 @@ class RecordsView(TemplateView):
 
     def get_balance(self):
         self.payments = Payment.objects.filter(
-            event=self.event,
-            person=self.request.user
+            event_person=self.event_person,
         ).order_by('timestamp')
-        self.personitems = PersonItem.objects.filter(
-            buyer=self.request.user,
-            item_option__item__event=self.event
+        self.personitems = BoughtItem.objects.filter(
+            event_person=self.event_person,
         ).order_by('added')
 
-        self.discounts = PersonDiscount.objects.filter(
-            person=self.request.user,
-            discount__event=self.event
+        self.discounts = UsedDiscount.objects.filter(
+            event_person=self.event_person,
         ).select_related('discount').order_by('timestamp')
 
         discount_map = {}
@@ -508,13 +453,9 @@ class RecordsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(RecordsView, self).get_context_data(**kwargs)
 
+        context.update(_shared_shopping_context(self.event, self.request))
+
         context.update({
-            'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
-            'discounts': self.request.user.get_discounts(self.event),
-            'discount_form': PersonDiscountForm(event=self.event,
-                                                person=self.request.user,
-                                                prefix='discount-form'),
             'form': getattr(self, 'form', None),
             'personitems': self.personitems,
             'payments': self.payments,
@@ -523,7 +464,5 @@ class RecordsView(TemplateView):
             'total_savings': self.total_savings,
             'total_payments': self.total_payments,
             'balance': self.balance,
-            'event_nav': get_event_nav(self.event, self.request),
-            'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context

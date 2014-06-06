@@ -16,6 +16,9 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 
 
+FULL_NAME_RE = r"^\w+( \w+)+"
+
+
 DEFAULT_DANCE_STYLES = {
     "Alt Blues": ["Recess"],
     "Trad Blues": ["Workshop", "Exchange", "Camp"],
@@ -249,75 +252,6 @@ class ItemOption(models.Model):
         return self.item.category == Item.PASS
 
 
-class Cart(models.Model):
-    created = models.DateTimeField(auto_now_add=True)
-    person = models.ForeignKey('Person')
-    event = models.ForeignKey(Event)
-    owners_set = models.BooleanField(default=False)
-
-    def checkout_ready(self):
-        """
-        Check if the cart is ready to be paid for.
-
-        1. If there's a pass in the cart, check that the EventPerson is complete.
-        2. If there's a pass in the cart, check for a HousingRequest.
-        3.
-        """
-        cart_pass_count = len([pi for pi in self.contents.all()
-                               if pi.item_option.item.category == Item.PASS])
-        if cart_pass_count > 0:
-            event_person = EventPerson.objects.get(event=self.event, person=self.person)
-            if not event_person.is_completed or not self.owners_set:
-                return False
-            if event_person.status == EventPerson.NEED:
-                # If the person is marked as needing housing, they need a
-                # HousingRequest object.
-                if not HousingRequest.objects.get(event=self.event, person=self.person):
-                    return False
-        return True
-
-    def expires(self):
-        return self.created + timedelta(minutes=self.event.cart_timeout)
-
-    def is_expired(self):
-        return timezone.now() > self.expires()
-
-    def get_groupable_contents(self):
-        return self.contents.order_by('item_option__item', 'item_option__order', '-added')
-
-
-class PersonItem(models.Model):
-    # These are essentially just sugar. They might be used
-    # for display, but they don't really guarantee anything.
-    UNPAID = 'unpaid'
-    PARTIAL = 'partial'
-    PAID = 'paid'
-    REFUNDED = 'refunded'
-    STATUS_CHOICES = (
-        (UNPAID, _('Unpaid')),
-        (PARTIAL, _('Partially paid')),
-        (PAID, _('Paid')),
-        (REFUNDED, _('Refunded')),
-    )
-    item_option = models.ForeignKey(ItemOption)
-    added = models.DateTimeField(auto_now_add=True)
-    cart = models.ForeignKey(Cart, related_name='contents',
-                             blank=True, null=True)
-    status = models.CharField(max_length=8,
-                              choices=STATUS_CHOICES,
-                              default=UNPAID)
-    buyer = models.ForeignKey('Person',
-                              related_name="items_bought")
-    owner = models.ForeignKey('Person',
-                              related_name="items_owned",
-                              blank=True, null=True)
-
-    def __unicode__(self):
-        return u"{} – {} ({})".format(self.item_option.name,
-                                      self.buyer.name,
-                                      self.pk)
-
-
 class Discount(models.Model):
     PERCENT = 'percent'
     FLAT = 'flat'
@@ -343,24 +277,6 @@ class Discount(models.Model):
 
     def __unicode__(self):
         return self.name
-
-
-class PersonDiscount(models.Model):
-    person = models.ForeignKey('Person')
-    discount = models.ForeignKey(Discount)
-    timestamp = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        unique_together = ('person', 'discount')
-
-
-class Payment(models.Model):
-    event = models.ForeignKey(Event)
-    person = models.ForeignKey('Person')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-    timestamp = models.DateTimeField(default=timezone.now)
-    stripe_charge_id = models.CharField(max_length=40, blank=True)
-    card = models.ForeignKey('CreditCard', blank=True, null=True)
 
 
 class PersonManager(BaseUserManager):
@@ -391,7 +307,9 @@ class PersonManager(BaseUserManager):
 class Person(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
-    name = models.CharField(max_length=100, verbose_name="Full name")
+    name = models.CharField(max_length=100, verbose_name="Full name",
+                            validators=[RegexValidator(FULL_NAME_RE)],
+                            help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
     nickname = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     home = models.ForeignKey('Home', blank=True, null=True,
@@ -472,80 +390,6 @@ class Person(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.nickname or self.name
 
-    def get_cart(self, event, create=False):
-        if not hasattr(self, '_carts'):
-            self._carts = {}
-
-        if event not in self._carts:
-            try:
-                qs = Cart.objects.annotate(total=Count('contents'))
-                cart = qs.get(person=self, event=event)
-            except Cart.DoesNotExist:
-                cart = None
-            else:
-                # Cache here since we know what these are.
-                cart.person = self
-                cart.event = event
-                if cart.is_expired():
-                    cart.delete()
-                    cart = None
-            if cart is None and create:
-                cart = Cart.objects.create(person=self, event=event)
-            self._carts[event] = cart
-        return self._carts[event]
-
-    def get_discounts(self, event):
-        return PersonDiscount.objects.filter(
-            discount__event=event,
-            person=self
-        ).order_by('-timestamp').select_related('discount')
-
-
-class EventPerson(models.Model):
-    NEED = 'need'
-    HAVE = 'have'
-    HOST = 'host'
-
-    STATUS_CHOICES = (
-        (NEED, 'Need housing'),
-        (HAVE, 'Already arranged'),
-        (HOST, 'Hosting others'),
-    )
-
-    FLYER = 'flyer'
-    FACEBOOK = 'facebook'
-    WEBSITE = 'website'
-    INTERNET = 'internet'
-    FRIEND = 'friend'
-    ATTENDEE = 'attendee'
-    DANCER = 'dancer'
-    OTHER = 'other'
-
-    HEARD_THROUGH_CHOICES = (
-        (FLYER, "Flyer"),
-        (FACEBOOK, 'Facebook'),
-        (WEBSITE, 'Event website'),
-        (INTERNET, 'Other website'),
-        (FRIEND, 'Friend'),
-        (ATTENDEE, 'Former attendee'),
-        (DANCER, 'Other dancer'),
-        (OTHER, 'Other'),
-    )
-
-    event = models.ForeignKey(Event)
-    person = models.ForeignKey(Person)
-    event_pass = models.OneToOneField(PersonItem)
-    is_completed = models.BooleanField(default=False)
-
-    status = models.CharField(max_length=4, choices=STATUS_CHOICES,
-                              default=HAVE, verbose_name='housing status')
-    liability_waiver = models.BooleanField(default=False)
-    photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
-    heard_through = models.CharField(max_length=8, choices=HEARD_THROUGH_CHOICES,
-                                     blank=True)
-    heard_through_other = models.CharField(max_length=128, blank=True)
-    send_flyers = models.BooleanField(default=False)
-
 
 class CreditCard(models.Model):
     BRAND_CHOICES = (
@@ -581,6 +425,319 @@ def delete_stripe_card(sender, instance, **kwargs):
     stripe.api_key = settings.STRIPE_SECRET_KEY
     customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
     customer.cards.retrieve(instance.stripe_card_id).delete()
+
+
+class EventPersonManager(models.Manager):
+    def __init__(self, *args, **kwargs):
+        super(EventPersonManager, self).__init__(*args, **kwargs)
+        self.cache = {}
+
+    def get_cached(self, event, person):
+        cache = self.cache.setdefault(self.db, {})
+        if (event, person) not in cache:
+            cache[(event, person)] = self.get_or_create(event=event,
+                                                        person=person)[0]
+        event_person = cache[(event, person)]
+        if event_person.cart_is_expired():
+            event_person.delete_cart()
+        return event_person
+
+
+class EventPerson(models.Model):
+    """
+    This model represents metadata connecting an event and a person.
+    For example, it links to the items that a person has bought. It
+    also contains denormalized metadata - for example, the person's
+    current balance.
+    """
+
+    FLYER = 'flyer'
+    FACEBOOK = 'facebook'
+    WEBSITE = 'website'
+    INTERNET = 'internet'
+    FRIEND = 'friend'
+    ATTENDEE = 'attendee'
+    DANCER = 'dancer'
+    OTHER = 'other'
+
+    HEARD_THROUGH_CHOICES = (
+        (FLYER, "Flyer"),
+        (FACEBOOK, 'Facebook'),
+        (WEBSITE, 'Event website'),
+        (INTERNET, 'Other website'),
+        (FRIEND, 'Friend'),
+        (ATTENDEE, 'Former attendee'),
+        (DANCER, 'Other dancer'),
+        (OTHER, 'Other'),
+    )
+
+    event = models.ForeignKey(Event)
+    person = models.ForeignKey(Person)
+
+    cart_start_time = models.DateTimeField(blank=True, null=True)
+    cart_owners_set = models.BooleanField(default=False)
+
+    # "Survey" questions for EventPerson
+    survey_completed = models.BooleanField(default=False)
+    heard_through = models.CharField(max_length=8,
+                                     choices=HEARD_THROUGH_CHOICES,
+                                     blank=True)
+    heard_through_other = models.CharField(max_length=128, blank=True)
+    send_flyers = models.BooleanField(default=False)
+    send_flyers_address = models.CharField(max_length=200, verbose_name='address', blank=True)
+    send_flyers_city = models.CharField(max_length=50, verbose_name='city', blank=True)
+    send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state or province', blank=True)
+    send_flyers_country = CountryField(verbose_name='country', blank=True)
+
+    providing_housing = models.BooleanField(default=False)
+
+    objects = EventPersonManager()
+
+    @property
+    def cart_errors(self):
+        if not hasattr(self, '_cart_errors'):
+            errors = []
+
+            # EventPerson *always* needs to touch the survey page before checkout.
+            if not self.survey_completed:
+                errors.append(('Survey must be completed',
+                               reverse('brambling_event_survey',
+                                       kwargs={'event_slug': self.event.slug})))
+
+            # Hosting data only needs to be provided if event cares and
+            # EventPerson says they're hosting.
+            if self.event.collect_housing_data and self.providing_housing:
+                if not EventHousing.objects.filter(event=self.event, home__residents=self.person).exists():
+                    errors.append(('Hosting information must be completed',
+                                   reverse('brambling_event_hosting',
+                                           kwargs={'event_slug': self.event.slug})))
+
+            # All non-merch items must be assigned to an attendee.
+            non_merch = self.bought_items.exclude(item_option__item__category=Item.MERCHANDISE)
+            if non_merch.filter(attendee__isnull=True).exists():
+                errors.append(('All items in cart must be assigned to an attendee.',
+                               reverse('brambling_event_attendee_items',
+                                       kwargs={'event_slug': self.event.slug})))
+
+            # All attendees must have at least one non-merch item.
+            # All attendees must have basic data filled out.
+            # If the event cares about housing, attendees that need housing
+            # also need to fill out housing data.
+            attendees = self.attendees.annotate(Count('bought_items'))
+
+            # First pass: no extra queries.
+            attendees_missing_items = False
+            for attendee in attendees:
+                if not attendee.basic_completed:
+                    errors.append(('{} missing basic data'.format(attendee.name),
+                                   reverse('brambling_event_attendee_edit',
+                                           kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
+
+                if attendee.bought_items__count == 0:
+                    attendees_missing_items = True
+
+                if (self.event.collect_housing_data and
+                        attendee.housing_status == Attendee.NEED and
+                        not attendee.housing_completed):
+                    errors.append(('{} missing housing data'.format(attendee.name),
+                                   reverse('brambling_event_attendee_housing',
+                                           kwargs={'event_slug': self.event.slug})))
+
+            if not attendees_missing_items:
+                # Second pass: extra queries.
+                for attendee in attendees:
+                    if not attendee.bought_items.exclude(item_option__item__category=Item.MERCHANDISE).exists():
+                        attendees_missing_items = True
+
+            if attendees_missing_items:
+                errors.append(('All attendees must have at least one non-merch item',
+                               reverse('brambling_event_attendee_items',
+                                       kwargs={'event_slug': self.event.slug})))
+            self._cart_errors = errors
+        return self._cart_errors
+
+    def cart_is_valid(self):
+        """
+        Check if the cart is ready to be paid for.
+
+        """
+        return not bool(self.cart_errors)
+
+    def requires_attendees(self):
+        return self.bought_items.exclude(item_option__item__category=Item.MERCHANDISE).exists()
+
+    def add_to_cart(self, item_option):
+        if self.cart_is_expired():
+            self.delete_cart()
+        BoughtItem.objects.create(
+            item_option=item_option,
+            event_person=self,
+            status=BoughtItem.RESERVED
+        )
+        if self.cart_start_time is None:
+            self.cart_start_time = timezone.now()
+            self.save()
+
+    def remove_from_cart(self, bought_item):
+        if bought_item.event_person_id == self.id:
+            bought_item.delete()
+        if not self.has_cart():
+            self.cart_start_time = None
+            self.save()
+
+    def cart_expire_time(self):
+        if self.cart_start_time is None:
+            return None
+        return self.cart_start_time + timedelta(minutes=self.event.cart_timeout)
+
+    def cart_is_expired(self):
+        return (self.cart_start_time is not None and
+                timezone.now() > self.cart_expire_time())
+
+    def has_cart(self):
+        if self.cart_is_expired():
+            self.delete_cart()
+        return (self.cart_start_time is not None and
+                self.bought_items.filter(status=BoughtItem.RESERVED).exists())
+
+    def delete_cart(self):
+        self.bought_items.filter(status=BoughtItem.RESERVED).delete()
+        if self.cart_start_time is not None:
+            self.cart_start_time = None
+            self.save()
+
+    def get_groupable_cart(self):
+        return self.bought_items.filter(
+            status=BoughtItem.RESERVED
+        ).order_by('item_option__item', 'item_option__order', '-added')
+
+
+class Payment(models.Model):
+    event_person = models.ForeignKey('EventPerson', related_name='payments')
+    amount = models.DecimalField(max_digits=5, decimal_places=2)
+    timestamp = models.DateTimeField(default=timezone.now)
+    stripe_charge_id = models.CharField(max_length=40, blank=True)
+    card = models.ForeignKey('CreditCard', blank=True, null=True)
+
+
+class BoughtItem(models.Model):
+    """
+    Represents an item bought (or reserved) by a person.
+    """
+    # These are essentially just sugar. They might be used
+    # for display, but they don't really guarantee anything.
+    RESERVED = 'reserved'
+    UNPAID = 'unpaid'
+    PAID = 'paid'
+    REFUNDED = 'refunded'
+    STATUS_CHOICES = (
+        (RESERVED, _('Reserved')),
+        (UNPAID, _('Unpaid')),
+        (PAID, _('Paid')),
+        (REFUNDED, _('Refunded')),
+    )
+    item_option = models.ForeignKey(ItemOption)
+    event_person = models.ForeignKey(EventPerson, related_name='bought_items')
+    added = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=8,
+                              choices=STATUS_CHOICES,
+                              default=UNPAID)
+    # BoughtItem has a single attendee, but attendee can have
+    # more than one BoughtItem. Basic example: Attendee can
+    # have more than one class. Or, hypothetically, merch bought
+    # by a single person could be assigned to multiple attendees.
+    # However, merch doesn't *need* an attendee.
+    attendee = models.ForeignKey('Attendee', blank=True, null=True, related_name='bought_items')
+
+    def __unicode__(self):
+        return u"{} – {} ({})".format(self.item_option.name,
+                                      self.event_person.person.name,
+                                      self.pk)
+
+
+class UsedDiscount(models.Model):
+    discount = models.ForeignKey(Discount)
+    event_person = models.ForeignKey(EventPerson)
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('event_person', 'discount')
+
+
+class Attendee(models.Model):
+    """
+    This model represents information attached to an event pass. It is
+    by default copied from the pass buyer (if they don't already have a pass).
+
+    """
+    NEED = 'need'
+    HAVE = 'have'
+    HOME = 'home'
+
+    HOUSING_STATUS_CHOICES = (
+        (NEED, 'Needs housing'),
+        (HAVE, 'Already arranged'),
+        (HOME, 'Staying at own home'),
+    )
+    # Internal tracking data
+    event_person = models.ForeignKey(EventPerson, related_name='attendees')
+    person = models.ForeignKey(Person, blank=True, null=True)
+    person_confirmed = models.BooleanField(default=False)
+
+    # Basic data - always required for attendees.
+    basic_completed = models.BooleanField(default=False)
+    name = models.CharField(max_length=100, verbose_name="Full name",
+                            validators=[RegexValidator(FULL_NAME_RE)],
+                            help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
+    nickname = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(max_length=254)
+    phone = models.CharField(max_length=50, blank=True)
+    liability_waiver = models.BooleanField(default=False)
+    photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
+    housing_status = models.CharField(max_length=4, choices=HOUSING_STATUS_CHOICES,
+                                      default=HAVE, verbose_name='housing status')
+
+    # Housing information - all optional.
+    housing_completed = models.BooleanField(default=False)
+    nights = models.ManyToManyField(Date, blank=True, null=True)
+    ef_cause = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='eventperson_cause',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="People around me will be exposed to")
+    ef_cause_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
+
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='eventperson_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I can't/don't want to be around")
+    ef_avoid_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
+
+    person_prefer = models.ManyToManyField(Person,
+                                           related_name='event_preferred_by',
+                                           blank=True,
+                                           null=True,
+                                           verbose_name="I need to be placed with",
+                                           symmetrical=False)
+
+    person_avoid = models.ManyToManyField(Person,
+                                          related_name='event_avoided_by',
+                                          blank=True,
+                                          null=True,
+                                          verbose_name="I do not want to be around",
+                                          symmetrical=False)
+
+    housing_prefer = models.ManyToManyField(HousingCategory,
+                                            related_name='event_preferred_by',
+                                            blank=True,
+                                            null=True,
+                                            verbose_name="I prefer to stay somewhere that is (a/an)")
+
+    other_needs = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.name
 
 
 class Home(models.Model):
@@ -627,9 +784,23 @@ class Home(models.Model):
 
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
-    home = models.ForeignKey(Home)
+    home = models.ForeignKey(Home, blank=True, null=True)
+    event_person = models.ForeignKey(EventPerson)
 
-    point_person = models.ForeignKey(Person)
+    # Eventually add a contact_person field.
+    contact_name = models.CharField(max_length=100,
+                                    validators=[RegexValidator(FULL_NAME_RE)],
+                                    help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=50, blank=True)
+
+    # Duplicated data from Home, plus confirm fields.
+    address = models.CharField(max_length=200)
+    city = models.CharField(max_length=50)
+    state_or_province = models.CharField(max_length=50)
+    country = CountryField()
+    public_transit_access = models.BooleanField(default=False,
+                                                verbose_name="My/Our house has easy access to public transit")
 
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='eventhousing_present',
@@ -677,48 +848,6 @@ class HousingSlot(models.Model):
                                                   validators=[MaxValueValidator(100)])
 
 
-class HousingRequest(models.Model):
-    event = models.ForeignKey(Event)
-    person = models.ForeignKey(Person)
-
-    nights = models.ManyToManyField(Date, blank=True, null=True)
-    ef_cause = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='eventperson_cause',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="People around me will be exposed to")
-    ef_cause_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
-
-    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='eventperson_avoid',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="I can't/don't want to be around")
-    ef_avoid_confirm = models.BooleanField(default=False, error_messages={'blank': 'Must be marked correct.'})
-
-    person_prefer = models.ManyToManyField(Person,
-                                           related_name='event_preferred_by',
-                                           blank=True,
-                                           null=True,
-                                           verbose_name="I need to be placed with",
-                                           symmetrical=False)
-
-    person_avoid = models.ManyToManyField(Person,
-                                          related_name='event_avoided_by',
-                                          blank=True,
-                                          null=True,
-                                          verbose_name="I do not want to be around",
-                                          symmetrical=False)
-
-    housing_prefer = models.ManyToManyField(HousingCategory,
-                                            related_name='event_preferred_by',
-                                            blank=True,
-                                            null=True,
-                                            verbose_name="I prefer to stay somewhere that is (a/an)")
-
-    other_needs = models.TextField(blank=True)
-
-
 class HousingAssignment(models.Model):
     # Home plans are ignored when checking against spaces.
     AUTO = 'auto'
@@ -728,6 +857,6 @@ class HousingAssignment(models.Model):
         (MANUAL, _("Manual"))
     )
 
-    data = models.ForeignKey(HousingRequest)
+    attendee = models.ForeignKey(Attendee)
     slot = models.ForeignKey(HousingSlot)
     assignment_type = models.CharField(max_length=6, choices=ASSIGNMENT_TYPE_CHOICES)

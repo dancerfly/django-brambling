@@ -12,6 +12,18 @@
 {% endblock %}
 
 {% block main %}
+	{% if not event_person.cart_is_valid %}
+		<div class='alert alert-danger'>
+			<h4>Please correct the following issues with your registration:</h4>
+
+			<ul>
+				{% for error, url in event_person.cart_errors %}
+					<li><a class='alert-link' href="{{ url }}">{{ error }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	{% endif %}
+
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='panel-title'><a href='#items-collapse' data-toggle='collapse'>Items {% if personitems %}<span class='caret'></span>{% endif %}
@@ -42,14 +54,14 @@
 			</table>
 		</div>
 		<ul class='list-group'>
-			<li class='list-group-item list-group-item-danger'><strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong></li>
+			<li class='list-group-item{% if total_cost > 0 %} list-group-item-danger{% endif %}'><strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong></li>
 		</ul>
 	</div>
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='row'>
 				<div class='panel-title col-xs-8'><a href='#discounts-collapse' data-toggle='collapse'>Discounts {% if discounts %}<span class='caret'></span>{% endif %}</a></div>
-				<form id='discount-form' class='panel-heading-form col-xs-4' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
+				<form id='discount-form' class='panel-heading-form col-xs-4' action='{% url "brambling_event_use_discount" event_slug=event.slug %}' method='post'>
 					<div class='input-group'>
 						{% form discount_form using %}
 							{% formfield discount_form.discount with placeholder="Code" autocomplete="off" %}
@@ -93,7 +105,7 @@
 			</table>
 		</div>
 		<ul class='list-group'>
-			<li class='list-group-item list-group-item-success'><strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong></li>
+			<li class='list-group-item{% if total_savings > 0 %} list-group-item-success{% endif %}'><strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong></li>
 		</ul>
 	</div>
 	<div class='panel panel-primary'>
@@ -122,7 +134,7 @@
 			</table>
 		</div>
 		<ul class='list-group'>
-			<li class='list-group-item list-group-item-success'><strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong></li>
+			<li class='list-group-item{% if total_payments > 0 %} list-group-item-success{% endif %}'><strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong></li>
 		</ul>
 	</div>
 
@@ -143,7 +155,7 @@
 
 			{% form form %}
 
-			<button type="submit" class="btn btn-primary"{% if cart and not cart.checkout_ready %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
+			<button type="submit" class="btn btn-primary"{% if event_person.has_cart and not event_person.cart_is_valid %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
 			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
 		</form>
 	{% endif %}

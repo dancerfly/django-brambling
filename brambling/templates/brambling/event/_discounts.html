@@ -10,7 +10,7 @@
 			</li>
 		{% endfor %}
 		<li class='list-group-item'>
-			<form id='discount-form' action='{% url "brambling_event_use_discount" slug=event.slug %}' method='post'>
+			<form id='discount-form' action='{% url "brambling_event_use_discount" event_slug=event.slug %}' method='post'>
 				<div class='input-group'>
 					{% form discount_form using %}
 						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}

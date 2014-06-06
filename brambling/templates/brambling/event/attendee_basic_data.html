@@ -1,0 +1,57 @@
+{% extends 'brambling/event/__full_nav.html' %}
+
+{% load floppyforms zenaida %}
+
+{% block main %}
+	<h3>{% if attendee.pk %}Edit attendee: {{ attendee.name }}{% else %}Add an attendee{% endif %}</h3>
+
+	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
+	<div class="row">
+		<div class="col-md-8">
+			<form action="{{ request.path }}" method="post" novalidate>
+				{% csrf_token %}
+				{% form form using %}
+					{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+
+					{% formrow form.name %}
+					{% formrow form.nickname %}
+					{% formrow form.email %}
+					{% formrow form.phone %}
+
+					{% formrow form.liability_waiver %}
+					{% formrow form.photo_consent %}
+
+					{% if form.housing_status %}
+						{% formrow form.housing_status %}
+					{% endif %}
+				{% endform %}
+				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Add attendee{% endif %}</button>
+				{% if attendee.pk %}<a href="../">Cancel</a>{% endif %}
+			</form>
+		</div>
+		<div class='col-md-4'>
+			{% with has_cart=event_person.has_cart %}
+				{% if has_cart %}
+					<div class='alert alert-info'>
+						<p class='lead text-right'>
+							<small>Cart expires</small>
+							{% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %}
+						</p>
+					</div>
+				{% endif %}
+			{% endwith %}
+			<div class='panel panel-default'>
+				<header class='panel-heading'>
+					<h3 class='panel-title'>Attendees <a href="{% url 'brambling_event_attendee_add' event_slug=event.slug %}"><span class='glyphicon glyphicon-plus'></span></a></h3>
+				</header>
+				<div class='list-group'>
+					{% for attendee in attendees %}
+						<a class='list-group-item' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'>{{ attendee.name }}</a>
+					{% endfor %}
+				</div>
+			</div>
+			{% include 'brambling/event/_discounts.html' %}
+		</div>
+	</div>
+{% endblock %}

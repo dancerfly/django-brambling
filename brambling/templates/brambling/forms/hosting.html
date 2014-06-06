@@ -1,0 +1,30 @@
+{% load floppyforms %}
+{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+{% formrow form.contact_name %}
+{% formrow form.contact_email %}
+{% formrow form.contact_phone %}
+
+
+{% formrow form.address %}
+{% formrow form.city %}
+{% formrow form.state_or_province %}
+{% formrow form.country %}
+
+{% formrow form.public_transit_access %}
+
+{% formrow form.housing_categories using "floppyforms/rows/confirm.html" with confirm=form.housing_categories_confirm %}
+
+<div class='row'>
+	<div class='col-md-6'>{% formrow form.ef_present using "floppyforms/rows/confirm.html" with confirm=form.ef_present_confirm %}</div>
+	<div class='col-md-6'>{% formrow form.ef_avoid using "floppyforms/rows/confirm.html" with confirm=form.ef_avoid_confirm %}</div>
+</div>
+
+<div class='row'>
+	<div class='col-md-6'>{% formrow form.person_prefer %}</div>
+	<div class='col-md-6'>{% formrow form.person_avoid %}</div>
+</div>
+
+{% formrow form.other_needs %}
+
+{% formrow form.save_as_defaults %}

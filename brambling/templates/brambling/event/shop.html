@@ -31,7 +31,7 @@
 					</header>
 					<div class='list-group'>
 						{% for option in item.options.all %}
-							<a target='{% url "brambling_event_shop_add" slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
+							<a target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
 								<div class='row'>
 									<div class='col-xs-4'>{{ option.name }}</div>
 									<div class='col-xs-4 text-center'>{{ option.price|format_money:event.currency }}</div>
@@ -44,35 +44,44 @@
 			{% endfor %}
 		</div>
 		<div class="col-md-5">
-			{% if cart %}
-				<div class='alert alert-info'>
-					<p class='lead text-right'>
-						<small>Cart expires</small>
-						{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}
-					</p>
-				</div>
+			{% with has_cart=event_person.has_cart %}
+				{% if event_person.requires_attendees %}
+					{% url 'brambling_event_attendee_items' event_slug=event.slug as next_url %}
+				{% elif not event_person.survey_completed %}
+					{% url 'brambling_event_survey' event_slug=event.slug as next_url %}
+				{% else %}
+					{% url 'brambling_event_records' event_slug=event.slug as next_url %}
+				{% endif %}
 				<div class='form-group'>
-					<a class='btn btn-success btn-lg btn-block' href="{% url 'brambling_event_ownership' slug=event.slug %}">Next step <span class='glyphicon glyphicon-chevron-right'></span></a>
+					<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='glyphicon glyphicon-chevron-right'></span></a>
 				</div>
-				<div class='panel panel-default'>
-					<header class='panel-heading'>
-						<div class='panel-title'>
-							Cart
-						</div>
-					</header>
-					{% regroup cart.get_groupable_contents by item_option.item as cart_list %}
-					<ul class='list-group'>
-						{% for options in cart_list %}
-							<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
-							{% for personitem in options.list %}
-								<li class='list-group-item'>
-									{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='glyphicon glyphicon-remove'></span></a>
-								</li>
+				{% if has_cart %}
+					<div class='alert alert-info'>
+						<p class='lead text-right'>
+							<small>Cart expires</small>
+							{% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %}
+						</p>
+					</div>
+					<div class='panel panel-default'>
+						<header class='panel-heading'>
+							<div class='panel-title'>
+								Cart
+							</div>
+						</header>
+						{% regroup event_person.get_groupable_cart by item_option.item as cart_list %}
+						<ul class='list-group'>
+							{% for options in cart_list %}
+								<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
+								{% for personitem in options.list %}
+									<li class='list-group-item'>
+										{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='glyphicon glyphicon-remove'></span></a>
+									</li>
+								{% endfor %}
 							{% endfor %}
-						{% endfor %}
-					</ul>
-				</div>
-			{% endif %}
+						</ul>
+					</div>
+				{% endif %}
+			{% endwith %}
 
 			{% include 'brambling/event/_discounts.html' %}
 		</div>

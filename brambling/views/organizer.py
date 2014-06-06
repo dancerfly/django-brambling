@@ -9,11 +9,11 @@ from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 
-from brambling.filters import PersonFilterSet
+from brambling.filters import AttendeeFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import (Event, Item, Discount, EventPerson, Payment,
-                              ItemOption, PersonItem, Person)
+                              ItemOption, BoughtItem, Attendee)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav)
 
@@ -59,18 +59,18 @@ class EventDashboardView(TemplateView):
 
         itemoptions = ItemOption.objects.filter(
             item__event=self.event
-        ).select_related('item').annotate(Count('personitem'))
+        ).select_related('item').annotate(Count('boughtitem'))
 
         gross_sales = 0
         itemoption_map = {}
 
         for itemoption in itemoptions:
             itemoption_map[itemoption.pk] = itemoption
-            gross_sales += itemoption.price * itemoption.personitem__count
+            gross_sales += itemoption.price * itemoption.boughtitem__count
 
         discounts = Discount.objects.filter(
             event=self.event
-        ).annotate(Count('persondiscount'))
+        ).annotate(Count('useddiscount'))
 
         total_discounts = 0
 
@@ -80,22 +80,25 @@ class EventDashboardView(TemplateView):
                 amount = (discount.amount
                           if discount.discount_type == Discount.FLAT
                           else discount.amount / 100 * itemoption.price)
-                discount.used_count = PersonItem.objects.filter(
-                    buyer__persondiscount__discount=discount,
+                # We need to count how many *items* have been bought using this
+                # discount. So we count things bought by people who have used
+                # this discount, and to which this discount applies.
+                discount.used_count = BoughtItem.objects.filter(
+                    event_person__useddiscount__discount=discount,
                     item_option__discount=discount
                 ).distinct().count()
                 total_discounts += amount * discount.used_count
         total_discounts = min(total_discounts, gross_sales)
 
-        total_payments = Payment.objects.filter(event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
+        total_payments = Payment.objects.filter(event_person__event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
 
         context.update({
             'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
+            'event_person': EventPerson.objects.get_cached(self.event, self.request.user),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
-            'attendee_count': EventPerson.objects.filter(event=self.event).count(),
+            'attendee_count': Attendee.objects.filter(event_person__event=self.event).count(),
             'itemoptions': itemoptions,
             'discounts': discounts,
 
@@ -123,7 +126,7 @@ class EventUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
         context.update({
-            'cart': self.request.user.get_cart(self.object),
+            'cart': None,
             'event_nav': get_event_nav(self.object, self.request),
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
         })
@@ -158,7 +161,7 @@ def item_form(request, *args, **kwargs):
         'item': item,
         'item_form': form,
         'itemoption_formset': formset,
-        'cart': request.user.get_cart(event),
+        'cart': None,
         'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
@@ -184,7 +187,7 @@ class ItemListView(ListView):
         context = super(ItemListView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
+            'cart': None,
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
@@ -212,7 +215,7 @@ def discount_form(request, *args, **kwargs):
         'event': event,
         'discount': form.instance,
         'discount_form': form,
-        'cart': request.user.get_cart(event),
+        'cart': None,
         'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
@@ -237,15 +240,15 @@ class DiscountListView(ListView):
         context = super(DiscountListView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'cart': self.request.user.get_cart(self.event),
+            'cart': None,
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
 
 
-class PersonFilterView(FilterView):
-    filterset_class = PersonFilterSet
+class AttendeeFilterView(FilterView):
+    filterset_class = AttendeeFilterSet
     template_name = 'brambling/event/people.html'
     context_object_name = 'people'
 
@@ -257,12 +260,12 @@ class PersonFilterView(FilterView):
         self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
-        qs = Person.objects.filter(
-            items_owned__item_option__item__event=self.event).distinct()
+        qs = Attendee.objects.filter(
+            event_person__event=self.event).distinct()
         return qs
 
     def get_context_data(self, **kwargs):
-        context = super(PersonFilterView, self).get_context_data(**kwargs)
+        context = super(AttendeeFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
             'event_nav': get_event_nav(self.event, self.request),
