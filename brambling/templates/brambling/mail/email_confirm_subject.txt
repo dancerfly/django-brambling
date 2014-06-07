@@ -1,1 +1,1 @@
-Confirm email for {{ site.name }} ({{ person.name|default:person.email }})
+Confirm your {{ site.name }} address!
