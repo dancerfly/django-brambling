@@ -249,8 +249,8 @@ class DiscountListView(ListView):
 
 class AttendeeFilterView(FilterView):
     filterset_class = AttendeeFilterSet
-    template_name = 'brambling/event/people.html'
-    context_object_name = 'people'
+    template_name = 'brambling/event/attendees.html'
+    context_object_name = 'attendees'
 
     def get_filterset(self, filterset_class):
         kwargs = self.get_filterset_kwargs(filterset_class)

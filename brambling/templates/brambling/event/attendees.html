@@ -26,10 +26,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for person in filter %}
+                    {% for attendee in filter %}
                         <tr>
-                            <th>{{ person.name }}</th>
-                            <td>{{ person.items_bought.count }} Items<td>
+                            <th>{{ attendee.name }}</th>
+                            <td>{{ attendee.items_bought.count }} Items<td>
                         </tr>
                     {% empty %}
                         <tr>
