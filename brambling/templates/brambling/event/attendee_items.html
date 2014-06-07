@@ -2,6 +2,24 @@
 
 {% load floppyforms zenaida %}
 
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include 'brambling/event/_use_discount_js.html' %}
+
+	<script>
+		$(function(){
+			$('a[target]').on('click', function(e){
+				e.preventDefault();
+				$.post($(this).attr('target'), function(){
+					// For now, just reload the page.
+					location.reload();
+				});
+			})
+		});
+	</script>
+{% endblock %}
+
 {% block main %}
 	<h3>Step 2: Assign items to attendees</h3>
 
@@ -44,11 +62,17 @@
 				<header class='panel-heading'>
 					<h3 class='panel-title'>Attendees <a href="{% url 'brambling_event_attendee_add' event_slug=event.slug %}"><span class='glyphicon glyphicon-plus'></span></a></h3>
 				</header>
-				<div class='list-group'>
+				<ul class='list-group'>
 					{% for attendee in attendees %}
-						<a class='list-group-item' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'>{{ attendee.name }}</a>
+						<li class='list-group-item'>
+							{{ attendee.name }}
+							<ul class='list-inline pull-right'>
+								<li><a href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'><span class='glyphicon glyphicon-pencil'></span></a></li>
+								<li><a target='{% url "brambling_event_attendee_delete" event_slug=event.slug pk=attendee.pk %}' href='javascript://' class='text-danger'><span class='glyphicon glyphicon-remove'></span></a></li>
+							</ul>
+						</li>
 					{% endfor %}
-				</div>
+				</ul>
 			</div>
 			{% include 'brambling/event/_discounts.html' %}
 		</div>

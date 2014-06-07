@@ -241,6 +241,17 @@ class AttendeeBasicDataView(UpdateView):
         return context
 
 
+class RemoveAttendeeView(View):
+    @method_decorator(ajax_required)
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        event = get_event_or_404(kwargs['event_slug'])
+        Attendee.objects.filter(event_person__event=event,
+                                pk=kwargs['pk']).delete()
+
+        return JsonResponse({'success': True})
+
+
 class AttendeeHousingView(TemplateView):
     template_name = 'brambling/event/attendee_housing.html'
 

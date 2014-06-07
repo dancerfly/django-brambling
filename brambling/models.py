@@ -647,7 +647,8 @@ class BoughtItem(models.Model):
     # have more than one class. Or, hypothetically, merch bought
     # by a single person could be assigned to multiple attendees.
     # However, merch doesn't *need* an attendee.
-    attendee = models.ForeignKey('Attendee', blank=True, null=True, related_name='bought_items')
+    attendee = models.ForeignKey('Attendee', blank=True, null=True,
+                                 related_name='bought_items', on_delete=models.SET_NULL)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
