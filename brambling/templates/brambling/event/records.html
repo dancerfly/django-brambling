@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__mini_nav.html' %}
+{% extends 'brambling/event/__full_nav.html' %}
 
 {% load floppyforms zenaida %}
 
@@ -12,6 +12,8 @@
 {% endblock %}
 
 {% block main %}
+	{{ block.super }}
+	
 	{% if not event_person.cart_is_valid %}
 		<div class='alert alert-danger'>
 			<h4>Please correct the following issues with your registration:</h4>

@@ -16,6 +16,12 @@
 			</a>
 		{% endfor %}
 	</div>
+	{% if event_person.has_cart %}
+		<div class='alert alert-info visible-md visible-lg'>
+			<h4>Cart Expires</h4>
+			<p>You have {% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %} to finish checkout.</p>
+		</div>
+	{% endif %}
 	{% if event_admin_nav %}
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -36,4 +42,9 @@
 {% endblock %}
 
 {% block main %}
+	{% if event_person.has_cart %}
+		<div class='alert alert-info visible-sm visible-xs'>
+			<p>You have {% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %} to finish checkout.</p>
+		</div>
+	{% endif %}
 {% endblock %}

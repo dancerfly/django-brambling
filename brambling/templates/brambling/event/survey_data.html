@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__mini_nav.html' %}
+{% extends 'brambling/event/__full_nav.html' %}
 
 {% load floppyforms %}
 
@@ -9,6 +9,8 @@
 {% endblock %}
 
 {% block main %}
+	{{ block.super }}
+	
 	<h3>Step 4: Survey</h3>
 
 	<div class="row">
@@ -34,14 +36,6 @@
 			</form>
 		</div>
 		<div class='col-md-4'>
-			{% if event_person.has_cart %}
-				<div class='alert alert-info'>
-					<p class='lead text-right'>
-						<small>Cart expires</small>
-						{% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %}
-					</p>
-				</div>
-			{% endif %}
 			{% include 'brambling/event/_discounts.html' %}
 		</div>
 	</div>

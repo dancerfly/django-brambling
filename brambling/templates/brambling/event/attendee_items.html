@@ -21,6 +21,8 @@
 {% endblock %}
 
 {% block main %}
+	{{ block.super }}
+	
 	<h3>Step 2: Assign items to attendees</h3>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
@@ -50,14 +52,6 @@
 			</form>
 		</div>
 		<div class='col-md-4'>
-			{% if event_person.has_cart %}
-				<div class='alert alert-info'>
-					<p class='lead text-right'>
-						<small>Cart expires</small>
-						{% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %}
-					</p>
-				</div>
-			{% endif %}
 			<div class='panel panel-default'>
 				<header class='panel-heading'>
 					<h3 class='panel-title'>Attendees <a href="{% url 'brambling_event_attendee_add' event_slug=event.slug %}"><span class='glyphicon glyphicon-plus'></span></a></h3>
