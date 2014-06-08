@@ -148,6 +148,9 @@ class AttendeeItemView(TemplateView):
         kwargs = {}
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
+        self.attendees = self.event_person.attendees.all()
+        if len(self.attendees) == 1:
+            kwargs['initial'] = {'attendee': self.attendees[0]}
         return [form_class(prefix='form-{}-'.format(item.pk),
                            instance=item, **kwargs)
                 for item in bought_items]
@@ -178,7 +181,7 @@ class AttendeeItemView(TemplateView):
 
         context.update({
             'forms': self.forms,
-            'attendees': self.event_person.attendees.all(),
+            'attendees': self.attendees,
         })
         context.update(_shared_shopping_context(self.event, self.request))
         return context

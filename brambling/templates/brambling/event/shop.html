@@ -48,7 +48,12 @@
 		<div class="col-md-5">
 			{% with has_cart=event_person.has_cart %}
 				<div class='form-group'>
-					<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{% url 'brambling_event_attendee_items' event_slug=event.slug %}">Next step <span class='glyphicon glyphicon-chevron-right'></span></a>
+					{% if event_person.attendees.exists %}
+						{% url 'brambling_event_attendee_items' event_slug=event.slug as next_url %}
+					{% else %}
+						{% url 'brambling_event_attendee_add' event_slug=event.slug as next_url %}
+					{% endif %}
+					<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='glyphicon glyphicon-chevron-right'></span></a>
 				</div>
 				{% if has_cart %}
 					<div class='panel panel-default'>
