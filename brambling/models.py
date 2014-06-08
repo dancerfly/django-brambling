@@ -248,9 +248,6 @@ class ItemOption(models.Model):
     def __unicode__(self):
         return smart_text(self.name)
 
-    def has_forms(self):
-        return self.item.category == Item.PASS
-
 
 class Discount(models.Model):
     PERCENT = 'percent'
@@ -512,45 +509,36 @@ class EventPerson(models.Model):
                                    reverse('brambling_event_hosting',
                                            kwargs={'event_slug': self.event.slug})))
 
-            # All non-merch items must be assigned to an attendee.
-            non_merch = self.bought_items.exclude(item_option__item__category=Item.MERCHANDISE)
-            if non_merch.filter(attendee__isnull=True).exists():
+            # All items must be assigned to an attendee.
+            if self.bought_items.filter(attendee__isnull=True).exists():
                 errors.append(('All items in cart must be assigned to an attendee.',
                                reverse('brambling_event_attendee_items',
                                        kwargs={'event_slug': self.event.slug})))
 
-            # All attendees must have at least one non-merch item.
             # All attendees must have basic data filled out.
-            # If the event cares about housing, attendees that need housing
-            # also need to fill out housing data.
-            attendees = self.attendees.annotate(Count('bought_items'))
-
-            # First pass: no extra queries.
-            attendees_missing_items = False
-            for attendee in attendees:
-                if not attendee.basic_completed:
+            missing_data = self.attendees.filter(basic_completed=False)
+            if missing_data:
+                for attendee in missing_data:
                     errors.append(('{} missing basic data'.format(attendee.name),
                                    reverse('brambling_event_attendee_edit',
                                            kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
 
-                if attendee.bought_items__count == 0:
-                    attendees_missing_items = True
+            # If the event cares about housing, attendees that need housing
+            # also need to fill out housing data.
+            if self.event.collect_housing_data:
+                missing_housing = self.attendees.filter(housing_status=Attendee.NEED,
+                                                        housing_completed=False)
+                if missing_housing:
+                    for attendee in missing_housing:
+                        errors.append(('{} missing housing data'.format(attendee.name),
+                                       reverse('brambling_event_attendee_housing',
+                                               kwargs={'event_slug': self.event.slug})))
 
-                if (self.event.collect_housing_data and
-                        attendee.housing_status == Attendee.NEED and
-                        not attendee.housing_completed):
-                    errors.append(('{} missing housing data'.format(attendee.name),
-                                   reverse('brambling_event_attendee_housing',
-                                           kwargs={'event_slug': self.event.slug})))
-
-            if not attendees_missing_items:
-                # Second pass: extra queries.
-                for attendee in attendees:
-                    if not attendee.bought_items.exclude(item_option__item__category=Item.MERCHANDISE).exists():
-                        attendees_missing_items = True
-
-            if attendees_missing_items:
-                errors.append(('All attendees must have at least one non-merch item',
+            # All attendees must have at least one class or pass.
+            total_count = self.attendees.count()
+            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS))
+            if with_count != total_count:
+                errors.append(('All attendees must have at least one pass or class',
                                reverse('brambling_event_attendee_items',
                                        kwargs={'event_slug': self.event.slug})))
             self._cart_errors = errors
@@ -562,9 +550,6 @@ class EventPerson(models.Model):
 
         """
         return not bool(self.cart_errors)
-
-    def requires_attendees(self):
-        return self.bought_items.exclude(item_option__item__category=Item.MERCHANDISE).exists()
 
     def add_to_cart(self, item_option):
         if self.cart_is_expired():

@@ -36,12 +36,17 @@
 						{% for field in form.hidden_fields %}
 							{{ field }}
 						{% endfor %}
-						<div class='form-group'>
-							<label class='control-label col-sm-4'>{{ form.instance.item_option.name }}</label>
-							<div class='col-sm-8'>
-								{% formfield form.attendee %}
+						{% with field=form.attendee %}
+							<div class='form-group{% if field.errors %} has-error{% endif %}'>
+								<label class='control-label col-sm-4'>{{ form.instance.item_option.name }}</label>
+								<div class='col-sm-8'>
+									{% formfield field %}
+									{% if field.errors %}
+										{% include "floppyforms/errors.html" with errors=field.errors %}
+									{% endif %}
+								</div>
 							</div>
-						</div>
+						{% endwith %}
 					{% endform %}
 				{% endfor %}
 				<div class='col-sm-8 col-sm-offset-4'>
