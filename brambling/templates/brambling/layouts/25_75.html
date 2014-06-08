@@ -6,13 +6,7 @@
 		<div class="col-md-3">{% block side %}{% endblock %}</div>
 		<div class="col-md-9">
 			{% block messages %}
-				{% if messages %}
-					{% for message in messages %}
-						<div class="{{ message.tags }}">
-							{{ message }}
-						</div>
-					{% endfor %}
-				{% endif %}
+				{% include "brambling/layouts/_messages.html" %}
 			{% endblock %}
 
 			{% block main %}{% endblock %}
