@@ -1,5 +1,7 @@
 {% extends 'brambling/layouts/75_25.html' %}
 
+{% load staticfiles %}
+
 {% block before %}
 	<h1>{{ event.name }}</h1>
 	<h2>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
@@ -46,5 +48,25 @@
 		<div class='alert alert-info visible-sm visible-xs'>
 			<p>You have {% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %} to finish checkout.</p>
 		</div>
+		<div class="modal fade" id="countdownCompleteModal" role="dialog" aria-labelledby="timeUpModal" aria-hidden="true">
+			<div class="modal-dialog modal-sm">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="myModalLabel">Time&#8217;s up!</h4>
+					</div>
+					<div class="modal-body">
+						<p><strong>Sorry!</strong> Your cart ran out of time. Please return to the event&#8217;s main page and start again.</p>
+					</div>
+					<div class="modal-footer">
+						<a href="{% url "brambling_event_root" event.slug %}" class="btn btn-primary">Return to <strong>{{ event.name }}</strong></a>
+					</div>
+				</div>
+			</div>
+		</div>
 	{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
 {% endblock %}
