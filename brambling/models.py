@@ -424,22 +424,6 @@ def delete_stripe_card(sender, instance, **kwargs):
     customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
-class EventPersonManager(models.Manager):
-    def __init__(self, *args, **kwargs):
-        super(EventPersonManager, self).__init__(*args, **kwargs)
-        self.cache = {}
-
-    def get_cached(self, event, person):
-        cache = self.cache.setdefault(self.db, {})
-        if (event, person) not in cache:
-            cache[(event, person)] = self.get_or_create(event=event,
-                                                        person=person)[0]
-        event_person = cache[(event, person)]
-        if event_person.cart_is_expired():
-            event_person.delete_cart()
-        return event_person
-
-
 class EventPerson(models.Model):
     """
     This model represents metadata connecting an event and a person.
@@ -487,8 +471,6 @@ class EventPerson(models.Model):
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
-
-    objects = EventPersonManager()
 
     @property
     def cart_errors(self):

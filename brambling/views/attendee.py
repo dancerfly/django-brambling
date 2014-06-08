@@ -29,7 +29,7 @@ class AddToCartView(View):
         except ItemOption.DoesNotExist:
             raise Http404
 
-        event_person = EventPerson.objects.get_cached(event, request.user)
+        event_person = EventPerson.objects.get(event=event, person=request.user)
         event_person.add_to_cart(item_option)
         return JsonResponse({'success': True})
 
@@ -45,7 +45,7 @@ class RemoveFromCartView(View):
         except BoughtItem.DoesNotExist:
             pass
         else:
-            event_person = EventPerson.objects.get_cached(event, request.user)
+            event_person = EventPerson.objects.get(event=event, user=request.user)
             event_person.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
@@ -56,10 +56,10 @@ class UseDiscountView(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         event = get_event_or_404(kwargs['event_slug'])
+        event_person = EventPerson.objects.get(event=event, person=request.user)
 
         form = UsedDiscountForm(
-            event=event,
-            person=request.user,
+            event_person=event_person,
             prefix='discount-form',
             data=json.loads(request.body),
         )
@@ -86,13 +86,12 @@ class UseDiscountView(View):
 # 5. Checkout - unpaid items only. List any applicable credits without explanation.
 
 
-def _shared_shopping_context(event, request):
-    event_person = EventPerson.objects.get_cached(event, request.user)
+def _shared_shopping_context(request, event_person):
+    event = event_person.event
     return {
         'event': event,
         'event_person': event_person,
-        'discount_form': UsedDiscountForm(event=event,
-                                          person=request.user,
+        'discount_form': UsedDiscountForm(event_person=event_person,
                                           prefix='discount-form'),
         'discounts': event_person.useddiscount_set.all(),
         'event_nav': get_event_nav(event, request),
@@ -127,7 +126,8 @@ class ShopView(TemplateView):
         context.update({
             'items': items,
         })
-        context.update(_shared_shopping_context(event, self.request))
+        event_person = EventPerson.objects.get(event=event, person=self.request.user)
+        context.update(_shared_shopping_context(self.request, event_person))
         return context
 
 
@@ -137,7 +137,7 @@ class AttendeeItemView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
         return super(AttendeeItemView, self).dispatch(request, *args, **kwargs)
 
     def get_forms(self):
@@ -183,7 +183,7 @@ class AttendeeItemView(TemplateView):
             'forms': self.forms,
             'attendees': self.attendees,
         })
-        context.update(_shared_shopping_context(self.event, self.request))
+        context.update(_shared_shopping_context(self.request, self.event_person))
         return context
 
 
@@ -201,7 +201,7 @@ class AttendeeBasicDataView(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
         return super(AttendeeBasicDataView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
@@ -241,7 +241,7 @@ class AttendeeBasicDataView(UpdateView):
         context.update({
             'attendees': self.event_person.attendees.all(),
         })
-        context.update(_shared_shopping_context(self.event, self.request))
+        context.update(_shared_shopping_context(self.request, self.event_person))
         return context
 
 
@@ -262,7 +262,7 @@ class AttendeeHousingView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
         self.attendees = self.event_person.attendees.filter(housing_status=Attendee.NEED)
         if not self.event.collect_housing_data or not self.attendees:
             # Just skip ahead.
@@ -314,7 +314,7 @@ class AttendeeHousingView(TemplateView):
             'event': self.event,
             'forms': self.forms,
         })
-        context.update(_shared_shopping_context(self.event, self.request))
+        context.update(_shared_shopping_context(self.request, self.event_person))
         return context
 
 
@@ -335,11 +335,11 @@ class SurveyDataView(UpdateView):
         return forms.models.modelform_factory(EventPerson, fields=self.fields)
 
     def get_object(self):
-        return EventPerson.objects.get_cached(self.event, self.request.user)
+        return EventPerson.objects.get(event=self.event, person=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super(SurveyDataView, self).get_context_data(**kwargs)
-        context.update(_shared_shopping_context(self.event, self.request))
+        context.update(_shared_shopping_context(self.request, self.object))
         return context
 
     def form_valid(self, form):
@@ -357,7 +357,7 @@ class HostingView(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
         return super(HostingView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
@@ -376,7 +376,7 @@ class HostingView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(HostingView, self).get_context_data(**kwargs)
 
-        context.update(_shared_shopping_context(self.event, self.request))
+        context.update(_shared_shopping_context(self.request, self.event_person))
 
         return context
 
@@ -391,7 +391,7 @@ class RecordsView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get_cached(self.event, request.user)
+        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
         self.balance = self.get_balance()
         return super(RecordsView, self).dispatch(request, *args, **kwargs)
 
@@ -467,7 +467,7 @@ class RecordsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(RecordsView, self).get_context_data(**kwargs)
 
-        context.update(_shared_shopping_context(self.event, self.request))
+        context.update(_shared_shopping_context(self.request, self.event_person))
 
         context.update({
             'form': getattr(self, 'form', None),

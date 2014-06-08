@@ -22,10 +22,8 @@ class UsedDiscountForm(forms.ModelForm):
         fields = ()
         model = UsedDiscount
 
-    def __init__(self, event, person, *args, **kwargs):
-        self.event = event
-        self.person = person
-        self.event_person = EventPerson.objects.get_cached(event, person)
+    def __init__(self, event_person, *args, **kwargs):
+        self.event_person = event_person
         super(UsedDiscountForm, self).__init__(*args, **kwargs)
 
     def clean_discount(self):
@@ -35,7 +33,7 @@ class UsedDiscountForm(forms.ModelForm):
             try:
                 discount = Discount.objects.filter(
                     code=discount,
-                    event=self.event,
+                    event=self.event_person.event,
                 ).filter(
                     (models.Q(available_start__lte=now) |
                      models.Q(available_start__isnull=True)),
@@ -245,7 +243,7 @@ class CheckoutForm(forms.Form):
         super(CheckoutForm, self).__init__(*args, **kwargs)
         self.person = person
         self.event = event
-        self.event_person = EventPerson.objects.get_cached(self.event, self.person)
+        self.event_person = EventPerson.objects.get(event=self.event, person=self.person)
         self.balance = balance
         self.fields['card'].queryset = person.cards.all()
         self.fields['card'].initial = person.default_card

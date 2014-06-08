@@ -94,7 +94,7 @@ class EventDashboardView(TemplateView):
 
         context.update({
             'event': self.event,
-            'event_person': EventPerson.objects.get_cached(self.event, self.request.user),
+            'event_person': EventPerson.objects.get(event=self.event, person=self.request.user),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
