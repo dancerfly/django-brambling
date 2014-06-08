@@ -165,7 +165,8 @@ class Event(models.Model):
     slug = models.SlugField(max_length=50,
                             validators=[RegexValidator("[a-z0-9-]+")],
                             help_text="URL-friendly version of the event name."
-                                      " Dashes, 0-9, and lower-case a-z only.")
+                                      " Dashes, 0-9, and lower-case a-z only.",
+                            unique=True)
     tagline = models.CharField(max_length=75, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
