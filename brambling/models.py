@@ -522,7 +522,7 @@ class EventPerson(models.Model):
 
             # All attendees must have at least one class or pass.
             total_count = self.attendees.count()
-            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).count()
+            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).distinct().count()
             if with_count != total_count:
                 errors.append(('All attendees must have at least one pass or class',
                                reverse('brambling_event_attendee_items',
