@@ -1,3 +1,30 @@
+/**
+ * jQuery Countdown
+ * @author Harris Lapiroff
+ * @requires jQuery
+ *
+ * Copyright (c) 2014, Little Weaver Web Collective
+ * All rights reserved.
+ *
+ * Licensed under the New BSD License
+ * See: http://www.opensource.org/licenses/bsd-license.php
+ *
+ * Documentation
+ * -------------
+ *
+ * Events
+ * ======
+ *
+ * * initialized.countdown -- Triggered when a coundown is first initialized.
+ * * pre_update.countdown  -- Triggered just before the countdown is updated.
+ *                            Receives a data  object with seconds, minutes,
+ *                            hours, and days.
+ * * updated.countdown     -- Triggered after the countdown is updated. Receives
+ *                            a data object with seconds, minutes, hours, days.
+ * * completed.countdown   -- Triggered when the countdown reaches
+ *                            0 days 0:00:00.
+ */
+
 (function () {
 	var Countdown = function (el) {
 		this.$el = $(el);
@@ -36,6 +63,8 @@
 
 		if (window.console && console.log) console.log("[countdown] Countdown timer initialized.");
 
+		this.$el.trigger("initialized.countdown");
+
 		return this;
 	};
 
@@ -63,11 +92,18 @@
 				hours: Math.floor(seconds_left/3600) % 24,
 				days: Math.floor(seconds_left/86400)
 			};
+		this.$el.trigger("pre_update.countdown", [new_values]);
 		// Update the element:
 		this.$seconds.html(new_values.seconds < 10 ? "0" + new_values.seconds : new_values.seconds); // always pad to two digits
 		this.$minutes.html(new_values.minutes < 10 && (new_values.hours || new_values.days) ? "0" + new_values.minutes : new_values.minutes); // pad to two digits if there are days or hours present
 		this.$hours.html(new_values.hours);
 		this.$days.html(new_values.days);
+		this.$el.trigger("updated.countdown", [new_values]);
+		// If seconds left is zero, trigger completed:
+		if (seconds_left === 0) {
+			this.$el.trigger("completed.countdown");
+			if (window.console && console.log) console.log("[countdown] Countdown timer completed.");
+		}
 		// Set a new timeout, unless the timer has run out:
 		if (seconds_left > 0) this.set_timeout()
 	};
