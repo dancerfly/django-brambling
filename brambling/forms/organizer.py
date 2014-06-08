@@ -35,8 +35,9 @@ class EventForm(forms.ModelForm):
         return cd
 
     def save(self):
+        created = self.instance.pk is None
         instance = super(EventForm, self).save()
-        if {'start_date', 'end_date'} & set(self.changed_data):
+        if {'start_date', 'end_date'} & set(self.changed_data) or created:
             cd = self.cleaned_data
             date_set = {cd['start_date'] + datetime.timedelta(n - 1) for n in
                         xrange((cd['end_date'] - cd['start_date']).days + 2)}

@@ -2,7 +2,7 @@
 
 {% block before %}
 	<h1>{{ event.name }}</h1>
-	<h2>{{ event.start_date }} &#8211; {{ event.end_date }} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
+	<h2>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
 {% endblock %}
 
 {% block side %}
