@@ -322,15 +322,24 @@ class AttendeeHousingView(TemplateView):
 
 class SurveyDataView(UpdateView):
     template_name = 'brambling/event/survey_data.html'
-    fields = ('heard_through', 'heard_through_other', 'send_flyers',
-              'send_flyers_address', 'send_flyers_city',
-              'send_flyers_state_or_province', 'send_flyers_country',
-              'providing_housing')
     context_object_name = 'event_person'
+
+    @property
+    def fields(self):
+        fields = ()
+        if self.event.collect_housing_data:
+            fields += ('providing_housing',)
+        if self.event.collect_survey_data:
+            fields += ('heard_through', 'heard_through_other', 'send_flyers',
+                       'send_flyers_address', 'send_flyers_city',
+                       'send_flyers_state_or_province', 'send_flyers_country')
+        return fields
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
+        if not self.fields:
+            return HttpResponseRedirect(self.get_success_url())
         return super(SurveyDataView, self).dispatch(request, *args, **kwargs)
 
     def get_form_class(self):
@@ -345,11 +354,16 @@ class SurveyDataView(UpdateView):
         return context
 
     def form_valid(self, form):
-        self.object.survey_completed = True
-        self.object.save()
+        if self.event.collect_survey_data:
+            self.object.survey_completed = True
         form.save()
-        return HttpResponseRedirect(reverse('brambling_event_records',
-                                            kwargs={'event_slug': self.event.slug}))
+        return super(SurveyDataView, self).form_valid(form)
+
+    def get_success_url(self):
+        kwargs = {'event_slug': self.event.slug}
+        if self.event.collect_housing_data and self.object.providing_housing:
+            return reverse('brambling_event_hosting', kwargs=kwargs)
+        return reverse('brambling_event_records', kwargs=kwargs)
 
 
 class HostingView(UpdateView):
@@ -359,6 +373,8 @@ class HostingView(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
+        if not self.event.collect_housing_data:
+            return HttpResponseRedirect(self.get_success_url())
         self.event_person = get_event_person(self.event, request.user)
         return super(HostingView, self).dispatch(request, *args, **kwargs)
 

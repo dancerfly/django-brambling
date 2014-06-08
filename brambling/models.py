@@ -193,6 +193,8 @@ class Event(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     collect_housing_data = models.BooleanField(default=True)
+    collect_survey_data = models.BooleanField(default=True)
+
     # Time in minutes.
     cart_timeout = models.PositiveSmallIntegerField(default=15,
                                                     help_text="Minutes before a user's cart expires.")
@@ -478,8 +480,9 @@ class EventPerson(models.Model):
         if not hasattr(self, '_cart_errors'):
             errors = []
 
-            # EventPerson *always* needs to touch the survey page before checkout.
-            if not self.survey_completed:
+            # EventPerson *always* needs to touch the survey page before checkout,
+            # if the event is using the survey.
+            if self.event.collect_survey_data and not self.survey_completed:
                 errors.append(('Survey must be completed',
                                reverse('brambling_event_survey',
                                        kwargs={'event_slug': self.event.slug})))
