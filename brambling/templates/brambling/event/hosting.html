@@ -9,6 +9,8 @@
 {% endblock %}
 
 {% block main %}
+	{{ block.super }}
+
 	<h3>Step 5: Provide hosting data</h3>
 
 	<div class="row">
@@ -32,14 +34,6 @@
 			</form>
 		</div>
 		<div class='col-md-4'>
-			{% if event_person.has_cart %}
-				<div class='alert alert-info'>
-					<p class='lead text-right'>
-						<small>Cart expires</small>
-						{% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %}
-					</p>
-				</div>
-			{% endif %}
 			{% include 'brambling/event/_discounts.html' %}
 		</div>
 	</div>
