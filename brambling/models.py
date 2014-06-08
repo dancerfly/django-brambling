@@ -254,8 +254,8 @@ class Discount(models.Model):
     FLAT = 'flat'
 
     TYPE_CHOICES = (
-        (PERCENT, _('Percent')),
         (FLAT, _('Flat')),
+        (PERCENT, _('Percent')),
     )
     name = models.CharField(max_length=40)
     code = models.CharField(max_length=20)
@@ -264,7 +264,7 @@ class Discount(models.Model):
     available_end = models.DateTimeField(blank=True, null=True)
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
-                                     default=PERCENT)
+                                     default=FLAT)
     amount = models.DecimalField(max_digits=5, decimal_places=2,
                                  validators=[MinValueValidator(0)])
     event = models.ForeignKey(Event)
