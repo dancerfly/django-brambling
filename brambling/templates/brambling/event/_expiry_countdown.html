@@ -4,7 +4,7 @@
 
 
 	<div class='alert
-		{% if time_left.minutes < 3 and time_left.minutes > 1 %}
+		{% if time_left.minutes < 3 and time_left.minutes > 0 %}
 			alert-warning
 		{% elif time_left.minutes < 1 %}
 			alert-danger

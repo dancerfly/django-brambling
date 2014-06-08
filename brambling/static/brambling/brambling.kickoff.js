@@ -46,8 +46,8 @@ $(function() {
                 "alert-warning",
                 "alert-danger"
             ];
-        // Give different colors at < 3 and < 1 minute left.
-        if (data.minutes < 3 && data.minutes > 1) {
+        // Give different colors at < 3 and > 0 minutes left.
+        if (data.minutes < 3 && data.minutes > 0) {
             alert = $(this).closest(".alert");
             if (alert.hasClass(alert_levels[0])) alert.removeClass(alert_levels[0]).addClass(alert_levels[1]);
         } else if (data.minutes < 1 && data.seconds > 0) {
