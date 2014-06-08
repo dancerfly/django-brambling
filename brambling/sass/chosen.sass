@@ -1,0 +1,72 @@
+@import variables
+
+@import compass/css3/border-radius
+@import compass/css3/box-shadow
+@import compass/css3/images
+
+// CHOSEN FIXES
+// ------------
+
+// Override jQuery Chosen styles to get it to better integrate with
+// Bootstrap 3.
+
+.chosen-container-multi .chosen-choices, .chosen-container-single .chosen-single
+	border: 1px solid $input-border
+	+background(none)
+	+border-radius($input-border-radius)
+	+box-shadow(inset 0 1px 1px rgba($black, 0.075))
+.chosen-container-active
+	&.chosen-container-multi .chosen-choices, &.chosen-container-single .chosen-single
+		border-color: $input-border-focus
+		+background(none)
+		+border-radius($input-border-radius)
+		+box-shadow(inset 0 1px 1px rgba($black, 0.075), 0 0 8px rgba($brand-primary,0.6))
+
+.chosen-container-multi .chosen-choices
+	padding: 0 2px
+	li.search-field input[type=text]
+		color: $input-color-placeholder
+		padding: 6px 12px
+		height: $input-height-base - 2px
+	li.search-choice
+		height: $input-height-base - 10px
+		margin: 5px 3px
+		padding: 6px 20px 3px 5px
+		border: none
+		+box-shadow(none)
+		+background(none)
+		background-color: $gray-lighter
+		.search-choice-close
+			top: 7px
+			right: 4px
+
+.chosen-container-single .chosen-single
+	padding: 6px 12px
+	height: $input-height-base - 2px
+	div b
+		background-position-y: 6px
+.chosen-container-active.chosen-container-single .chosen-single
+	div b
+		background-position-y: 6px
+
+
+.chosen-container
+	.chosen-drop
+		top: 110%
+		border: 1px solid $dropdown-border
+		+border-radius($border-radius-base)
+		overflow: hidden
+	.chosen-results li.highlighted
+		+background(none)
+		background-color: $link-hover-color
+
+.input-group .chosen-choices
+	+border-radius(0)
+
+	&:first-child
+		+border-top-left-radius($border-radius-base)
+		+border-bottom-left-radius($border-radius-base)
+
+	&:last-child
+		+border-top-right-radius($border-radius-base)
+		+border-bottom-right-radius($border-radius-base)
