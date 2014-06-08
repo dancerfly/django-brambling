@@ -54,14 +54,26 @@
 		<div class='col-md-6 col-md-offset-3'>
 			<h2>Add a card</h2>
 
+			{% if not request.is_secure %}
+				<div class="alert alert-danger">
+					<p><strong>Warning:</strong> This connection is not secure. Never submit real credit card data over an insecure connection. You may see this error if this site is in testing mode. If not, please contact a site administrator.</p>
+					<p>If you are testing this site, you may use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a>.</p>
+				</div>
+			{% endif %}
+
 			{% form form using "brambling/forms/creditcard.html" %}
 
-			<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
-			<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
+			<p>
+				<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
+				<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
+			</p>
 
 			<form id='card-form' action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
 				{% csrf_token %}
 			</form>
+
+			{% include "brambling/_stripe_note.html" %}
+
 		</div>
 	</div>
 {% endblock %}
