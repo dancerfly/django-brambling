@@ -56,7 +56,7 @@
 		var countdown = this,
 			ms_since_start = this.ms_since_start(),
 			s_since_start = Math.floor(ms_since_start/1000),
-			seconds_left = this.total_original_seconds - s_since_start,
+			seconds_left = Math.max(0, this.total_original_seconds - s_since_start),
 			new_values = {
 				seconds: seconds_left % 60,
 				minutes: Math.floor(seconds_left/60) % 60,
@@ -68,8 +68,8 @@
 		this.$minutes.html(new_values.minutes < 10 && (new_values.hours || new_values.days) ? "0" + new_values.minutes : new_values.minutes); // pad to two digits if there are days or hours present
 		this.$hours.html(new_values.hours);
 		this.$days.html(new_values.days);
-		// Set a new timeout:
-		this.set_timeout()
+		// Set a new timeout, unless the timer has run out:
+		if (seconds_left > 0) this.set_timeout()
 	};
 
 	// Plugin Definition
