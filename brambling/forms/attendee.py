@@ -6,7 +6,7 @@ import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
-from brambling.models import (Person, Discount, EventPerson, Date,
+from brambling.models import (Person, Discount, Date,
                               EventHousing, UsedDiscount,
                               EnvironmentalFactor, HousingCategory, CreditCard,
                               Payment, Home, Attendee, HousingSlot)
@@ -239,14 +239,12 @@ class HostingForm(MemoModelForm):
 class CheckoutForm(forms.Form):
     card = forms.ModelChoiceField(CreditCard)
 
-    def __init__(self, event, person, balance, *args, **kwargs):
+    def __init__(self, event_person, balance, *args, **kwargs):
         super(CheckoutForm, self).__init__(*args, **kwargs)
-        self.person = person
-        self.event = event
-        self.event_person = EventPerson.objects.get(event=self.event, person=self.person)
+        self.event_person = event_person
         self.balance = balance
-        self.fields['card'].queryset = person.cards.all()
-        self.fields['card'].initial = person.default_card
+        self.fields['card'].queryset = self.event_person.person.cards.all()
+        self.fields['card'].initial = self.event_person.person.default_card
 
         if self.balance <= 0:
             del self.fields['card']
@@ -264,8 +262,8 @@ class CheckoutForm(forms.Form):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         charge = stripe.Charge.create(
             amount=int(self.balance * 100),
-            currency=self.event.currency,
-            customer=self.person.stripe_customer_id,
+            currency=self.event_person.event.currency,
+            customer=self.event_person.person.stripe_customer_id,
             card=card.stripe_card_id,
         )
         payment = Payment.objects.create(event_person=self.event_person,

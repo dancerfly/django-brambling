@@ -5,13 +5,20 @@ from django.db.models import Max, Min
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 
-from brambling.models import Event
+from brambling.models import Event, EventPerson
 
 
 def get_event_or_404(slug):
     qs = Event.objects.annotate(start_date=Min('dates__date'),
                                 end_date=Max('dates__date'))
     return get_object_or_404(qs, slug=slug)
+
+
+def get_event_person(event, person):
+    event_person = EventPerson.objects.get_or_create(event=event, person=person)[0]
+    event_person.event = event
+    event_person.person = person
+    return event_person
 
 
 def split_view(test, if_true, if_false):

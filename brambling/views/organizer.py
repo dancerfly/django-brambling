@@ -15,7 +15,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
 from brambling.models import (Event, Item, Discount, EventPerson, Payment,
                               ItemOption, BoughtItem, Attendee)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav)
+                                   get_event_admin_nav, get_event_person)
 
 
 class EventCreateView(CreateView):
@@ -94,7 +94,7 @@ class EventDashboardView(TemplateView):
 
         context.update({
             'event': self.event,
-            'event_person': EventPerson.objects.get(event=self.event, person=self.request.user),
+            'event_person': get_event_person(self.event, self.request.user),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
