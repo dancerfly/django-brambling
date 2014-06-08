@@ -7,6 +7,17 @@
 {% block body-classes %}brambling {{ block.super }}{% endblock %}
 
 {% block navbar-brand %}Brambling{% endblock %}
+
+ 
+{% block stylesheets %}
+    <link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "brambling/css/chosen.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "zenaida/css/styles.css" %}" />
+    <link href='http://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "brambling/css/styles.css" %}" />
+{% endblock stylesheets %}
+ 
+  
 {% block navbar-collapse-inner %}
 	{% if request.user.is_authenticated %}
 		{% url 'brambling_dashboard' as brambling_dashboard_url %}
