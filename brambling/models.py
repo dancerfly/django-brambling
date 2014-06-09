@@ -503,11 +503,10 @@ class EventPerson(models.Model):
 
             # All attendees must have basic data filled out.
             missing_data = self.attendees.filter(basic_completed=False)
-            if missing_data:
-                for attendee in missing_data:
-                    errors.append(('{} missing basic data'.format(attendee.name),
-                                   reverse('brambling_event_attendee_edit',
-                                           kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
+            for attendee in missing_data:
+                errors.append(('{} missing basic data'.format(attendee.name),
+                               reverse('brambling_event_attendee_edit',
+                                       kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
 
             # If the event cares about housing, attendees that need housing
             # also need to fill out housing data.
@@ -527,6 +526,20 @@ class EventPerson(models.Model):
                 errors.append(('All attendees must have at least one pass or class',
                                reverse('brambling_event_attendee_items',
                                        kwargs={'event_slug': self.event.slug})))
+
+            # Attendees may not have more than one pass.
+            attendees = self.attendees.filter(
+                bought_items__item_option__item__category=Item.PASS
+            ).distinct().annotate(
+                Count('bought_items')
+            ).filter(
+                bought_items__count__gte=2
+            )
+            for attendee in attendees:
+                errors.append(('{} may not have more than one pass'.format(attendee.name),
+                               reverse('brambling_event_attendee_items',
+                                       kwargs={'event_slug': self.event.slug})))
+
             self._cart_errors = errors
         return self._cart_errors
 
