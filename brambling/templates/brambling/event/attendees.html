@@ -22,6 +22,9 @@
                 <thead>
                     <tr>
                         <th>Name</th>
+                        {% if event.collect_housing_data %}
+                            <th>Housing status</th>
+                        {% endif %}
                         <th>Items</th>
                     </tr>
                 </thead>
@@ -29,6 +32,9 @@
                     {% for attendee in filter %}
                         <tr>
                             <th>{{ attendee.name }}</th>
+                            {% if event.collect_housing_data %}
+                                <td>{{ attendee.get_housing_status_display }}</td>
+                            {% endif %}
                             <td>
                                 {% regroup attendee.get_groupable_items by item_option.item as item_list %}
 

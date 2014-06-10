@@ -107,6 +107,13 @@ class EventDashboardView(TemplateView):
             'payments_received': total_payments,
             'payments_outstanding': gross_sales - total_discounts - total_payments
         })
+
+        if self.event.collect_housing_data:
+            context.update({
+                'attendee_requesting_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.NEED).count(),
+                'attendee_arranged_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.HAVE).count(),
+                'attendee_home_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.HOME).count(),
+            })
         return context
 
 
