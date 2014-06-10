@@ -724,6 +724,9 @@ class Attendee(models.Model):
     def __unicode__(self):
         return self.name
 
+    def get_groupable_items(self):
+        return self.bought_items.order_by('item_option__item', 'item_option__order', '-added')
+
 
 class Home(models.Model):
     address = models.CharField(max_length=200)

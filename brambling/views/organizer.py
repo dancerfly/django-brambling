@@ -12,7 +12,7 @@ from floppyforms.__future__.models import modelform_factory
 from brambling.filters import AttendeeFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
-from brambling.models import (Event, Item, Discount, EventPerson, Payment,
+from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, BoughtItem, Attendee)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, get_event_person)

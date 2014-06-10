@@ -5,8 +5,7 @@ from brambling.models import Attendee, ItemOption
 
 class AttendeeFilterSet(django_filters.FilterSet):
     """
-    FilterSet for people who have purchased items from an event. Requires
-    the event as its first argument.
+    FilterSet for attendees of an event. Requires the event as its first argument.
 
     """
 

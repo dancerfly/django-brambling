@@ -29,7 +29,16 @@
                     {% for attendee in filter %}
                         <tr>
                             <th>{{ attendee.name }}</th>
-                            <td>{{ attendee.items_bought.count }} Items<td>
+                            <td>
+                                {% regroup attendee.get_groupable_items by item_option.item as item_list %}
+
+                                {% for options in item_list %}
+                                    <div class='row'>
+                                        <div class='col-sm-3'><strong>{{ options.grouper }}</strong></div>
+                                        <div class='col-sm-9'>{% for item in options.list %}{{ item.item_option.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                                    </div>
+                                {% endfor %}
+                            <td>
                         </tr>
                     {% empty %}
                         <tr>

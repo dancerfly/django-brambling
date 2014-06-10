@@ -67,8 +67,8 @@ def get_event_admin_nav(event, request):
         ('brambling_event_dashboard', 'Dashboard', 'glyphicon-dashboard', {'slug': event.slug}),
         ('brambling_event_update', 'Settings', 'glyphicon-cog', {'slug': event.slug}),
         ('brambling_item_list', 'Items', 'glyphicon-list', {'event_slug': event.slug}),
-        ('brambling_discount_list', 'Discounts', 'glyphicon-usd', {'event_slug': event.slug}),
-        ('brambling_attendee_list', 'People', 'glyphicon-user', {'event_slug': event.slug}),
+        ('brambling_discount_list', 'Discounts', 'glyphicon-gift', {'event_slug': event.slug}),
+        ('brambling_event_attendees', 'Attendees', 'glyphicon-user', {'event_slug': event.slug}),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
             for view_name, label, icon, kwargs in items]
