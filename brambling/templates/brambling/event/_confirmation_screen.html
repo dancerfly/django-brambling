@@ -1,0 +1,32 @@
+{% if not event_person.person.confirmed_email %}
+	<script>
+		$(function(){
+			var $body = $('body');
+			var scr = $('<div></div>');
+			scr.css('background-color', 'rgba(255,255,255,.5)');
+			scr.css('position', 'absolute');
+			scr.css('z-index', '10');
+			$('body').append(scr);
+			var left, right, top, bottom;
+
+			$('.alert').last().nextAll().each(function(idx, ele){
+				var $ele = $(ele),
+					offset = $ele.offset(),
+					offset_right = offset.left + $ele.outerWidth(true),
+					offset_bottom = offset.top + $ele.outerHeight(true);
+				if (left === undefined || offset.left < left) left = offset.left;
+				if (top === undefined || offset.top < top) top = offset.top;
+				if (right === undefined || offset_right > right) right = offset_right;
+				if (bottom === undefined || offset_bottom > bottom) bottom = offset_bottom;
+				console.log(left);
+				console.log(right);
+				console.log(bottom);
+				console.log(top);
+
+			});
+			scr.offset({left: left, top: top});
+			scr.width(right - left);
+			scr.height(bottom - top);
+		});
+	</script>
+{% endif %}

@@ -9,12 +9,13 @@
 		var discountReload = true;
 	</script>
 	{% include 'brambling/event/_use_discount_js.html' %}
+	{% include 'brambling/event/_confirmation_screen.html' %}
 {% endblock %}
 
 {% block main %}
 	{{ block.super }}
 	
-	{% if not event_person.cart_is_valid %}
+	{% if event_person.person.confirmed_email and not event_person.cart_is_valid %}
 		<div class='alert alert-danger'>
 			<h4>Please correct the following issues with your registration:</h4>
 

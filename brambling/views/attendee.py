@@ -32,8 +32,10 @@ class AddToCartView(View):
             raise Http404
 
         event_person = get_event_person(event, request.user)
-        event_person.add_to_cart(item_option)
-        return JsonResponse({'success': True})
+        if event_person.person.confirmed_email:
+            event_person.add_to_cart(item_option)
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False})
 
 
 class RemoveFromCartView(View):

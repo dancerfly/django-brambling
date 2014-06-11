@@ -11,13 +11,16 @@
 		$(function(){
 			$('a[target]').on('click', function(e){
 				e.preventDefault();
-				$.post($(this).attr('target'), function(){
+				$.post($(this).attr('target'), function(data){
 					// For now, just reload the page.
-					location.reload();
+					if (data.success) {
+						location.reload();
+					}
 				});
 			})
 		});
 	</script>
+	{% include "brambling/event/_confirmation_screen.html" %}
 {% endblock %}
 
 {% block main %}
