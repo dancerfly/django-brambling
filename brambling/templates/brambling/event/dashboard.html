@@ -37,14 +37,14 @@
 						Sales summary
 					</h4>
 				</div>
-				<ul class='list-group'>
+				<div class='list-group'>
 					{% for itemoption in itemoptions %}
-						<li class='list-group-item'>
+						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?bought_items__item_option={{ itemoption.pk }}'>
 							{{ itemoption.item.name }} ({{ itemoption.name }})
-							<strong class='pull-right'>{{ itemoption.personitem__count }}</strong>
-						</li>
+							<strong class='pull-right'>{{ itemoption.boughtitem__count }}</strong>
+						</a>
 					{% endfor %}
-				</ul>
+				</div>
 			</div>
 		</div>
 		<div class='col-md-6'>
@@ -69,12 +69,26 @@
 						Attendee summary
 					</h4>
 				</div>
-				<ul class='list-group'>
-					<li class='list-group-item'>
+				<div class='list-group'>
+					{% if event.collect_housing_data %}
+						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?housing_status=need'>
+							Requesting housing
+							<strong class='pull-right'>{{ attendee_requesting_count }}</strong>
+						</a>
+						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?housing_status=have'>
+							Arranged housing
+							<strong class='pull-right'>{{ attendee_arranged_count }}</strong>
+						</a>
+						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?housing_status=home'>
+							At own home
+							<strong class='pull-right'>{{ attendee_home_count }}</strong>
+						</a>
+					{% endif %}
+					<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}'>
 						Total count
 						<strong class='pull-right'>{{ attendee_count }}</strong>
-					</li>
-				</ul>
+					</a>
+				</div>
 			</div>
 		</div>
 	</div>

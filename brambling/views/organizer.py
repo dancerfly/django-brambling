@@ -12,7 +12,7 @@ from floppyforms.__future__.models import modelform_factory
 from brambling.filters import AttendeeFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
-from brambling.models import (Event, Item, Discount, EventPerson, Payment,
+from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, BoughtItem, Attendee)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, get_event_person)
@@ -107,6 +107,13 @@ class EventDashboardView(TemplateView):
             'payments_received': total_payments,
             'payments_outstanding': gross_sales - total_discounts - total_payments
         })
+
+        if self.event.collect_housing_data:
+            context.update({
+                'attendee_requesting_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.NEED).count(),
+                'attendee_arranged_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.HAVE).count(),
+                'attendee_home_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.HOME).count(),
+            })
         return context
 
 

@@ -31,6 +31,14 @@
 			<form class='form-horizontal' action="{{ request.path }}" method="post" novalidate>
 				{% csrf_token %}
 
+				{% if errors %}
+					<ul class='text-danger'>
+						{% for error in errors %}
+							<li>{{ error }}</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+
 				{% for form in forms %}
 					{% form form using %}
 						{% for field in form.hidden_fields %}

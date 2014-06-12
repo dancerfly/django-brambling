@@ -2,6 +2,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
+from django.db.models import Count
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -31,8 +32,10 @@ class AddToCartView(View):
             raise Http404
 
         event_person = get_event_person(event, request.user)
-        event_person.add_to_cart(item_option)
-        return JsonResponse({'success': True})
+        if event_person.person.confirmed_email:
+            event_person.add_to_cart(item_option)
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False})
 
 
 class RemoveFromCartView(View):
@@ -140,6 +143,7 @@ class AttendeeItemView(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
         self.event_person = get_event_person(self.event, request.user)
+        self.errors = []
         return super(AttendeeItemView, self).dispatch(request, *args, **kwargs)
 
     def get_forms(self):
@@ -169,6 +173,20 @@ class AttendeeItemView(TemplateView):
         if all_valid:
             for form in self.forms:
                 form.save()
+
+            attendees = self.attendees.filter(
+                bought_items__item_option__item__category=Item.PASS
+            ).distinct().annotate(
+                Count('bought_items')
+            ).filter(
+                bought_items__count__gte=2
+            )
+            if attendees:
+                all_valid = False
+                for attendee in attendees:
+                    self.errors.append('{} may not have more than one pass'.format(attendee.name))
+
+        if all_valid:
             if self.event.collect_housing_data:
                 url = reverse('brambling_event_attendee_housing',
                               kwargs={'event_slug': self.event.slug})
@@ -184,6 +202,7 @@ class AttendeeItemView(TemplateView):
         context.update({
             'forms': self.forms,
             'attendees': self.attendees,
+            'errors': self.errors,
         })
         context.update(_shared_shopping_context(self.request, self.event_person))
         return context

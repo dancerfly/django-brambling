@@ -238,9 +238,8 @@ class Item(models.Model):
 class ItemOption(models.Model):
     item = models.ForeignKey(Item, related_name='options')
     name = models.CharField(max_length=30)
-    price = models.DecimalField(max_digits=5, decimal_places=2)
+    price = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)])
     total_number = models.PositiveSmallIntegerField(blank=True, null=True)
-    max_per_owner = models.PositiveSmallIntegerField(blank=True, null=True)
     available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
     order = models.PositiveSmallIntegerField()
@@ -503,11 +502,10 @@ class EventPerson(models.Model):
 
             # All attendees must have basic data filled out.
             missing_data = self.attendees.filter(basic_completed=False)
-            if missing_data:
-                for attendee in missing_data:
-                    errors.append(('{} missing basic data'.format(attendee.name),
-                                   reverse('brambling_event_attendee_edit',
-                                           kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
+            for attendee in missing_data:
+                errors.append(('{} missing basic data'.format(attendee.name),
+                               reverse('brambling_event_attendee_edit',
+                                       kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
 
             # If the event cares about housing, attendees that need housing
             # also need to fill out housing data.
@@ -522,11 +520,25 @@ class EventPerson(models.Model):
 
             # All attendees must have at least one class or pass.
             total_count = self.attendees.count()
-            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).count()
+            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).distinct().count()
             if with_count != total_count:
                 errors.append(('All attendees must have at least one pass or class',
                                reverse('brambling_event_attendee_items',
                                        kwargs={'event_slug': self.event.slug})))
+
+            # Attendees may not have more than one pass.
+            attendees = self.attendees.filter(
+                bought_items__item_option__item__category=Item.PASS
+            ).distinct().annotate(
+                Count('bought_items')
+            ).filter(
+                bought_items__count__gte=2
+            )
+            for attendee in attendees:
+                errors.append(('{} may not have more than one pass'.format(attendee.name),
+                               reverse('brambling_event_attendee_items',
+                                       kwargs={'event_slug': self.event.slug})))
+
             self._cart_errors = errors
         return self._cart_errors
 
@@ -710,6 +722,9 @@ class Attendee(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def get_groupable_items(self):
+        return self.bought_items.order_by('item_option__item', 'item_option__order', '-added')
 
 
 class Home(models.Model):
