@@ -13,8 +13,8 @@
 .chosen-container-multi .chosen-choices, .chosen-container-single .chosen-single
 	border: 1px solid $input-border
 	+background(none)
-	+border-radius($input-border-radius)
 	+box-shadow(inset 0 1px 1px rgba($black, 0.075))
+	+border-radius($input-border-radius)
 .chosen-container-active
 	&.chosen-container-multi .chosen-choices, &.chosen-container-single .chosen-single
 		border-color: $input-border-focus
@@ -22,35 +22,7 @@
 		+border-radius($input-border-radius)
 		+box-shadow(inset 0 1px 1px rgba($black, 0.075), 0 0 8px rgba($brand-primary,0.6))
 
-.chosen-container-multi .chosen-choices
-	padding: 0 2px
-	li.search-field input[type=text]
-		color: $input-color-placeholder
-		padding: 6px 12px
-		height: $input-height-base - 2px
-	li.search-choice
-		height: $input-height-base - 10px
-		margin: 5px 3px
-		padding: 6px 20px 3px 5px
-		border: none
-		+box-shadow(none)
-		+background(none)
-		background-color: $gray-lighter
-		.search-choice-close
-			top: 7px
-			right: 4px
-
-.chosen-container-single .chosen-single
-	padding: 6px 12px
-	height: $input-height-base - 2px
-	div b
-		background-position-y: 6px
-.chosen-container-active.chosen-container-single .chosen-single
-	div b
-		background-position-y: 6px
-
-
-.chosen-container
+.chosen-container-multi
 	.chosen-drop
 		top: 110%
 		border: 1px solid $dropdown-border
@@ -59,6 +31,49 @@
 	.chosen-results li.highlighted
 		+background(none)
 		background-color: $link-hover-color
+	.chosen-choices
+		padding: 0 2px
+		li.search-field input[type=text]
+			color: $input-color-placeholder
+			height: $input-height-base - 2px
+			padding: 0 8px
+		li.search-choice
+			height: $input-height-base - 10px
+			margin: 5px 3px
+			padding: 6px 20px 3px 5px
+			border: none
+			+box-shadow(none)
+			+background(none)
+			background-color: $gray-lighter
+			.search-choice-close
+				top: 7px
+				right: 4px
+
+.chosen-container-single
+	.chosen-single
+		padding: 5px 12px
+		height: $input-height-base
+		div b
+			background-position-y: 6px
+	.chosen-drop
+		top: 90%
+		border: 1px solid $input-border-focus
+		border-top: none
+		+border-top-left-radius(0)
+		+border-top-right-radius(0)
+		+border-bottom-left-radius($input-border-radius)
+		+border-bottom-right-radius($input-border-radius)
+		+box-shadow(0 5px 6px rgba($brand-primary,0.6))
+		overflow: hidden
+	.chosen-results li.highlighted
+		+background(none)
+		background-color: $link-hover-color
+.chosen-container-active.chosen-container-single .chosen-single
+	div b
+		background-position-y: 6px
+
+
+
 
 .input-group .chosen-choices
 	+border-radius(0)
