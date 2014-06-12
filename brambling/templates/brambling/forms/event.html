@@ -40,10 +40,10 @@
 			</div>
 		</div>{# /.row #}
 		<div class="row">
-			<div class="col-sm-6">
+			<div class="col-sm-5">
 				{% formrow form.city %}
 			</div>
-			<div class="col-sm-2">
+			<div class="col-sm-3">
 				{% formrow form.state_or_province %}
 			</div>
 			<div class="col-sm-4">
@@ -61,13 +61,22 @@
 	</header>
 	<div class="panel-body">
 		<div class="row">
-			<div class="col-sm-6">
+			<div class="col-sm-5">
 				{% formrow form.editors %}
+			</div>
+			<div class="col-sm-4">
 				{% formrow form.privacy %}
 			</div>
-			<div class="col-sm-6">
-				{% formrow form.collect_housing_data %}
+			<div class="col-sm-3">
 				{% formrow form.cart_timeout %}
+			</div>
+		</div>
+		<div class="row">
+			<div class='col-sm-4'>
+				{% formrow form.collect_housing_data %}
+			</div>
+			<div class='col-sm-4'>
+				{% formrow form.collect_survey_data %}
 			</div>
 		</div>
 	</div>{# /.panel-body #}

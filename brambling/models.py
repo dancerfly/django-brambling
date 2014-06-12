@@ -165,7 +165,8 @@ class Event(models.Model):
     slug = models.SlugField(max_length=50,
                             validators=[RegexValidator("[a-z0-9-]+")],
                             help_text="URL-friendly version of the event name."
-                                      " Dashes, 0-9, and lower-case a-z only.")
+                                      " Dashes, 0-9, and lower-case a-z only.",
+                            unique=True)
     tagline = models.CharField(max_length=75, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
@@ -192,6 +193,8 @@ class Event(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     collect_housing_data = models.BooleanField(default=True)
+    collect_survey_data = models.BooleanField(default=True)
+
     # Time in minutes.
     cart_timeout = models.PositiveSmallIntegerField(default=15,
                                                     help_text="Minutes before a user's cart expires.")
@@ -254,8 +257,8 @@ class Discount(models.Model):
     FLAT = 'flat'
 
     TYPE_CHOICES = (
-        (PERCENT, _('Percent')),
         (FLAT, _('Flat')),
+        (PERCENT, _('Percent')),
     )
     name = models.CharField(max_length=40)
     code = models.CharField(max_length=20)
@@ -264,7 +267,7 @@ class Discount(models.Model):
     available_end = models.DateTimeField(blank=True, null=True)
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
-                                     default=PERCENT)
+                                     default=FLAT)
     amount = models.DecimalField(max_digits=5, decimal_places=2,
                                  validators=[MinValueValidator(0)])
     event = models.ForeignKey(Event)
@@ -477,8 +480,9 @@ class EventPerson(models.Model):
         if not hasattr(self, '_cart_errors'):
             errors = []
 
-            # EventPerson *always* needs to touch the survey page before checkout.
-            if not self.survey_completed:
+            # EventPerson *always* needs to touch the survey page before checkout,
+            # if the event is using the survey.
+            if self.event.collect_survey_data and not self.survey_completed:
                 errors.append(('Survey must be completed',
                                reverse('brambling_event_survey',
                                        kwargs={'event_slug': self.event.slug})))
@@ -518,7 +522,7 @@ class EventPerson(models.Model):
 
             # All attendees must have at least one class or pass.
             total_count = self.attendees.count()
-            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS))
+            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).count()
             if with_count != total_count:
                 errors.append(('All attendees must have at least one pass or class',
                                reverse('brambling_event_attendee_items',

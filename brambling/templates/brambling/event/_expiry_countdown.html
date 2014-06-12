@@ -2,8 +2,24 @@
 
 {% td_to_dict expiry_time|td_timeuntil as time_left %}
 
-<strong data-countdown="timer">
-	{% if time_left.days %}<span data-countdown="days">{{ time_left.days }}</span> day{{ time_left.days|pluralize }}{% endif %}
-	{% if time_left.hours %}<span data-countdown="hours">{{ time_left.hours }}</span>:{% endif %}<span data-countdown="minutes">{% if time_left.minutes < 10 and time_left.hours %}0{% endif %}{{ time_left.minutes }}</span>:<span data-countdown="seconds">{% if time_left.seconds < 10 %}0{% endif %}{{ time_left.seconds }}</span>
-	{% if not time_left.hours %}min{% endif %}
-</strong>
+
+	<div class='alert
+		{% if time_left.minutes < 3 and time_left.minutes > 0 %}
+			alert-warning
+		{% elif time_left.minutes < 1 %}
+			alert-danger
+		{% else %}
+			alert-info
+		{% endif %}
+	{{ extra_classes }}'>
+		{% if header %}<h4>Cart Expires</h4>{% endif %}
+		<p>
+			You have
+			<strong data-countdown="timer">
+				{% if time_left.days %}<span data-countdown="days">{{ time_left.days }}</span> day{{ time_left.days|pluralize }}{% endif %}
+				{% if time_left.hours %}<span data-countdown="hours">{{ time_left.hours }}</span>:{% endif %}<span data-countdown="minutes">{% if time_left.minutes < 10 and time_left.hours %}0{% endif %}{{ time_left.minutes }}</span>:<span data-countdown="seconds">{% if time_left.seconds < 10 %}0{% endif %}{{ time_left.seconds }}</span>
+				{% if not time_left.hours %}min{% endif %}
+			</strong>
+			to finish checkout.
+		</p>
+	</div>

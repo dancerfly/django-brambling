@@ -28,11 +28,11 @@ class EventForm(forms.ModelForm):
                                                   datetime.date.today)
 
     def clean(self):
-        cd = self.cleaned_data
-        if cd['start_date'] > cd['end_date']:
+        cleaned_data = super(EventForm, self).clean()
+        if cleaned_data['start_date'] > cleaned_data['end_date']:
             raise ValidationError("End date must be before or equal to "
                                   "the start date.")
-        return cd
+        return cleaned_data
 
     def save(self):
         created = self.instance.pk is None

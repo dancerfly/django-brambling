@@ -15,7 +15,8 @@ from brambling.models import (Item, BoughtItem, ItemOption, Payment,
                               UsedDiscount, Discount, EventPerson,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav, ajax_required)
+                                   get_event_admin_nav, ajax_required,
+                                   get_event_person)
 
 
 class AddToCartView(View):
@@ -29,7 +30,7 @@ class AddToCartView(View):
         except ItemOption.DoesNotExist:
             raise Http404
 
-        event_person = EventPerson.objects.get(event=event, person=request.user)
+        event_person = get_event_person(event, request.user)
         event_person.add_to_cart(item_option)
         return JsonResponse({'success': True})
 
@@ -45,7 +46,7 @@ class RemoveFromCartView(View):
         except BoughtItem.DoesNotExist:
             pass
         else:
-            event_person = EventPerson.objects.get(event=event, user=request.user)
+            event_person = get_event_person(event, request.user)
             event_person.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
@@ -56,7 +57,7 @@ class UseDiscountView(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         event = get_event_or_404(kwargs['event_slug'])
-        event_person = EventPerson.objects.get(event=event, person=request.user)
+        event_person = get_event_person(event, request.user)
 
         form = UsedDiscountForm(
             event_person=event_person,
@@ -126,7 +127,8 @@ class ShopView(TemplateView):
         context.update({
             'items': items,
         })
-        event_person = EventPerson.objects.get(event=event, person=self.request.user)
+        event_person = get_event_person(event, self.request.user)
+        event_person.event = event
         context.update(_shared_shopping_context(self.request, event_person))
         return context
 
@@ -137,7 +139,7 @@ class AttendeeItemView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
+        self.event_person = get_event_person(self.event, request.user)
         return super(AttendeeItemView, self).dispatch(request, *args, **kwargs)
 
     def get_forms(self):
@@ -201,7 +203,7 @@ class AttendeeBasicDataView(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
+        self.event_person = get_event_person(self.event, request.user)
         return super(AttendeeBasicDataView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
@@ -262,7 +264,7 @@ class AttendeeHousingView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
+        self.event_person = get_event_person(self.event, request.user)
         self.attendees = self.event_person.attendees.filter(housing_status=Attendee.NEED)
         if not self.event.collect_housing_data or not self.attendees:
             # Just skip ahead.
@@ -320,22 +322,31 @@ class AttendeeHousingView(TemplateView):
 
 class SurveyDataView(UpdateView):
     template_name = 'brambling/event/survey_data.html'
-    fields = ('heard_through', 'heard_through_other', 'send_flyers',
-              'send_flyers_address', 'send_flyers_city',
-              'send_flyers_state_or_province', 'send_flyers_country',
-              'providing_housing')
     context_object_name = 'event_person'
+
+    @property
+    def fields(self):
+        fields = ()
+        if self.event.collect_housing_data:
+            fields += ('providing_housing',)
+        if self.event.collect_survey_data:
+            fields += ('heard_through', 'heard_through_other', 'send_flyers',
+                       'send_flyers_address', 'send_flyers_city',
+                       'send_flyers_state_or_province', 'send_flyers_country')
+        return fields
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
+        if not self.fields:
+            return HttpResponseRedirect(self.get_success_url())
         return super(SurveyDataView, self).dispatch(request, *args, **kwargs)
 
     def get_form_class(self):
         return forms.models.modelform_factory(EventPerson, fields=self.fields)
 
     def get_object(self):
-        return EventPerson.objects.get(event=self.event, person=self.request.user)
+        return get_event_person(self.event, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super(SurveyDataView, self).get_context_data(**kwargs)
@@ -343,11 +354,16 @@ class SurveyDataView(UpdateView):
         return context
 
     def form_valid(self, form):
-        self.object.survey_completed = True
-        self.object.save()
+        if self.event.collect_survey_data:
+            self.object.survey_completed = True
         form.save()
-        return HttpResponseRedirect(reverse('brambling_event_records',
-                                            kwargs={'event_slug': self.event.slug}))
+        return super(SurveyDataView, self).form_valid(form)
+
+    def get_success_url(self):
+        kwargs = {'event_slug': self.event.slug}
+        if self.event.collect_housing_data and self.object.providing_housing:
+            return reverse('brambling_event_hosting', kwargs=kwargs)
+        return reverse('brambling_event_records', kwargs=kwargs)
 
 
 class HostingView(UpdateView):
@@ -357,7 +373,9 @@ class HostingView(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
+        if not self.event.collect_housing_data:
+            return HttpResponseRedirect(self.get_success_url())
+        self.event_person = get_event_person(self.event, request.user)
         return super(HostingView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
@@ -391,7 +409,7 @@ class RecordsView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = EventPerson.objects.get(event=self.event, person=request.user)
+        self.event_person = get_event_person(self.event, request.user)
         self.balance = self.get_balance()
         return super(RecordsView, self).dispatch(request, *args, **kwargs)
 
@@ -419,8 +437,7 @@ class RecordsView(TemplateView):
 
     def get_form(self):
         kwargs = {
-            'person': self.request.user,
-            'event': self.event,
+            'event_person': self.event_person,
             'balance': self.balance,
         }
         if self.request.method == 'POST':

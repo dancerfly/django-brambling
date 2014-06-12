@@ -8,15 +8,32 @@
 
 {% formrow form.item_option %}
 
-<div class="row">
-	<div class="col-md-6">{% formrow form.discount_type %}</div>
-	<div class="col-md-6">{% formrow form.amount %}</div>
-</div>
+
+{% with field=form.amount %}
+	<div class='form-group'>
+		<label class="control-label" for="{{ field|id }}">{{ field.label }} {% if field.field.required %} <span class="required">*</span>{% endif %}</label>
+		<div class="input-group{% if field.errors %} has-error{% endif %}">
+			{% formfield field %}
+			<div class='input-group-addon'>
+				<label class="radio-inline">
+					  <input type="radio" id="id_discount_type_flat" name="discount_type" value="{{ form.instance.FLAT }}"{% if form.instance.discount_type == form.instance.FLAT %} checked{% endif %}> {{ event.currency }}
+				</label>
+				<label class="radio-inline">
+					  <input type="radio" id="id_discount_type_percent" name="discount_type" value="{{ form.instance.PERCENT }}"{% if form.instance.discount_type == form.instance.PERCENT %} checked{% endif %}> %
+				</label>
+			</div>
+		</div>
+	</div>
+{% endwith %}
 
 <div class="panel-group">
 	<div class="panel panel-default">
 		<header class="panel-heading">
-			<h4 class="panel-title">Advanced options <a href="#collapseAdvanced" data-toggle="collapse"><span class="glyphicon glyphicon-collapse-down pull-right"></span></a></h4>
+			<h4 class="panel-title">
+				<a href="#collapseAdvanced" data-toggle="collapse">
+					<i class="glyphicon glyphicon-chevron-down"></i> Advanced options
+				</a>
+			</h4>
 		</header>
 		<div class="panel-collapse collapse" id="collapseAdvanced">
 			<div class="panel-body">
