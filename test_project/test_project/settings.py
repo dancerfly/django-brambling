@@ -105,8 +105,8 @@ LOGIN_URL = reverse_lazy('login')
 
 AUTH_USER_MODEL = 'brambling.Person'
 
-STRIPE_PUBLISHABLE_KEY = 'pk_test_T2BEw7icCTxXzKvSOqv3YBtB'
-STRIPE_SECRET_KEY = 'sk_test_5qHdORM8FgXjuSvdbnoelTw7'
+STRIPE_PUBLISHABLE_KEY = 'PK_YOUR_TEST_KEY'
+STRIPE_SECRET_KEY = 'SK_YOUR_TEST_KEY'
 
 
 from django.contrib.messages import constants as messages
