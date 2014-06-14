@@ -5,6 +5,8 @@
 {% block content %}
 	<h2>Edit settings</h2>
 
+	<p>Please include the preferences of all of the residents of your home when filling out this form.</p>
+
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using "brambling/forms/home.html" %}
