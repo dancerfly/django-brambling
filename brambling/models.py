@@ -324,7 +324,7 @@ class Person(AbstractBaseUser, PermissionsMixin):
     def is_staff(self):
         return self.is_superuser
 
-    is_active = True
+    is_active = models.BooleanField(default=True)
 
     objects = PersonManager()
     ### End custom user requirements

@@ -1,6 +1,10 @@
 from django.conf.urls import patterns, url, include
 
-from brambling.forms.user import FloppyAuthenticationForm
+from brambling.forms.user import (
+    FloppyAuthenticationForm,
+    FloppyPasswordResetForm,
+    FloppySetPasswordForm,
+)
 from brambling.views.attendee import (
     AddToCartView,
     RemoveFromCartView,
@@ -54,6 +58,14 @@ urlpatterns = patterns('',
         'django.contrib.auth.views.login',
         {'authentication_form': FloppyAuthenticationForm},
         name='login'),
+    url(r'^password_reset/$',
+        'django.contrib.auth.views.password_reset',
+        {'password_reset_form': FloppyPasswordResetForm},
+        name='password_reset'),
+    url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+        'django.contrib.auth.views.password_reset_confirm',
+        {'set_password_form': FloppySetPasswordForm},
+        name='password_reset_confirm'),
     url(r'^', include('django.contrib.auth.urls')),
     url(r'^signup/$',
         SignUpView.as_view(),

@@ -1,5 +1,6 @@
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import (AuthenticationForm, PasswordResetForm,
+                                       SetPasswordForm)
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -12,6 +13,17 @@ from brambling.utils import send_confirmation_email
 class FloppyAuthenticationForm(AuthenticationForm):
     username = forms.CharField(max_length=254)
     password = forms.CharField(label=_("Password"), widget=forms.PasswordInput)
+
+
+class FloppyPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(label=_("Email"), max_length=254)
+
+
+class FloppySetPasswordForm(SetPasswordForm):
+    new_password1 = forms.CharField(label=_("New password"),
+                                    widget=forms.PasswordInput)
+    new_password2 = forms.CharField(label=_("Confirm password"),
+                                    widget=forms.PasswordInput)
 
 
 class BasePersonForm(forms.ModelForm):
