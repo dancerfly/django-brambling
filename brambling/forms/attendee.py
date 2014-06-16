@@ -222,12 +222,12 @@ class HostingForm(MemoModelForm):
             home.state_or_province = instance.state_or_province
             home.country = instance.country
             home.public_transit_access = instance.public_transit_access
+            home.save()
             home.ef_present = instance.ef_present.all()
             home.ef_avoid = instance.ef_avoid.all()
             home.person_prefer = instance.person_prefer.all()
             home.person_avoid = instance.person_avoid.all()
             home.housing_categories = instance.housing_categories.all()
-            home.save()
             if new_home:
                 instance.home = home
                 instance.save()
