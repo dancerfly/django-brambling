@@ -14,7 +14,7 @@
 
 {% block main %}
 	{{ block.super }}
-	
+
 	{% if event_person.person.confirmed_email and not event_person.cart_is_valid %}
 		<div class='alert alert-danger'>
 			<h4>Please correct the following issues with your registration:</h4>
@@ -70,7 +70,7 @@
 							{% formfield discount_form.discount with placeholder="Code" autocomplete="off" %}
 						{% endform %}
 						<span class='input-group-btn'>
-							<button class='btn btn-default' type='submit'><span class='glyphicon glyphicon-plus'></span></button>
+							<button class='btn btn-default' type='submit'><span class='fa fa-plus'></span></button>
 						</span>
 					</div>
 				</form>
@@ -159,7 +159,7 @@
 			{% form form %}
 
 			<button type="submit" class="btn btn-primary"{% if event_person.has_cart and not event_person.cart_is_valid %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
-			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='glyphicon glyphicon-plus'></span> Add a card</a>
+			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='fa fa-plus'></span> Add a card</a>
 		</form>
 	{% endif %}
 {% endblock %}

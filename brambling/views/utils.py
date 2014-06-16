@@ -52,8 +52,8 @@ class NavItem(object):
 
 def get_event_nav(event, request):
     items = (
-        ('brambling_event_shop', 'Shop', 'glyphicon-shopping-cart'),
-        ('brambling_event_records', 'Records', 'glyphicon-list-alt'),
+        ('brambling_event_shop', 'Shop', 'fa-shopping-cart'),
+        ('brambling_event_records', 'Records', 'fa-list-alt'),
     )
     return [NavItem(request=request, label=label, icon=icon,
                     url=reverse(view_name, kwargs={'event_slug': event.slug}))
@@ -64,11 +64,11 @@ def get_event_admin_nav(event, request):
     if not event.editable_by(request.user):
         return []
     items = (
-        ('brambling_event_dashboard', 'Dashboard', 'glyphicon-dashboard', {'slug': event.slug}),
-        ('brambling_event_update', 'Settings', 'glyphicon-cog', {'slug': event.slug}),
-        ('brambling_item_list', 'Items', 'glyphicon-list', {'event_slug': event.slug}),
-        ('brambling_discount_list', 'Discounts', 'glyphicon-gift', {'event_slug': event.slug}),
-        ('brambling_event_attendees', 'Attendees', 'glyphicon-user', {'event_slug': event.slug}),
+        ('brambling_event_dashboard', 'Dashboard', 'fa-dashboard', {'slug': event.slug}),
+        ('brambling_event_update', 'Settings', 'fa-cog', {'slug': event.slug}),
+        ('brambling_item_list', 'Items', 'fa-list', {'event_slug': event.slug}),
+        ('brambling_discount_list', 'Discounts', 'fa-gift', {'event_slug': event.slug}),
+        ('brambling_event_attendees', 'Attendees', 'fa-users', {'event_slug': event.slug}),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
             for view_name, label, icon, kwargs in items]
