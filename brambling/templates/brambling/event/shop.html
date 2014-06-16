@@ -25,7 +25,7 @@
 
 {% block main %}
 	{{ block.super }}
-	
+
 	<h3>Step 1: Shop</h3>
 	<div class="row">
 		<div class="col-md-7">
@@ -40,7 +40,7 @@
 								<div class='row'>
 									<div class='col-xs-4'>{{ option.name }}</div>
 									<div class='col-xs-4 text-center'>{{ option.price|format_money:event.currency }}</div>
-									<div class='col-xs-4 text-right'><span class='glyphicon glyphicon-plus'></span></div>
+									<div class='col-xs-4 text-right'><span class='fa fa-plus'></span></div>
 								</div>
 							</a>
 						{% endfor %}
@@ -56,7 +56,7 @@
 					{% else %}
 						{% url 'brambling_event_attendee_add' event_slug=event.slug as next_url %}
 					{% endif %}
-					<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='glyphicon glyphicon-chevron-right'></span></a>
+					<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='fa fa-chevron-right'></span></a>
 				</div>
 				{% if has_cart %}
 					<div class='panel panel-default'>
@@ -71,7 +71,7 @@
 								<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
 								{% for personitem in options.list %}
 									<li class='list-group-item'>
-										{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='glyphicon glyphicon-remove'></span></a>
+										{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
 									</li>
 								{% endfor %}
 							{% endfor %}
