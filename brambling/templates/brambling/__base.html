@@ -7,17 +7,26 @@
 {% block body-classes %}brambling {{ block.super }}{% endblock %}
 
 {% block navbar-brand %}Brambling{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "brambling/css/chosen.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "zenaida/css/styles.css" %}" />
+    <link href='http://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "brambling/css/styles.css" %}" />
+{% endblock stylesheets %}
+
 {% block navbar-collapse-inner %}
 	{% if request.user.is_authenticated %}
 		{% url 'brambling_dashboard' as brambling_dashboard_url %}
 		{% url 'brambling_event_create' as brambling_event_create_url %}
 		{% url 'brambling_home' as brambling_home_url %}
 		{% url 'brambling_user_profile' as brambling_user_profile_url %}
-		<li{% if request.path == brambling_dashboard_url %} class='active'{% endif %}><a href="{{ brambling_dashboard_url }}"><i class="glyphicon glyphicon-dashboard"></i> Dashboard</a></li>
-		<li{% if request.path == brambling_event_create_url %} class='active'{% endif %}><a href="{{ brambling_event_create_url }}"><i class="glyphicon glyphicon-calendar"></i> Create an event</a></li>
-		<li{% if request.path == brambling_home_url %} class='active'{% endif %}><a href="{{ brambling_home_url }}"><i class="glyphicon glyphicon-home"></i> Home settings</a></li>
-		<li{% if request.path == brambling_user_profile_url %} class='active'{% endif %}><a href="{{ brambling_user_profile_url }}"><i class="glyphicon glyphicon-user"></i> Profile settings</a></li>
-		<li><a href="{% url 'logout' %}"><i class="glyphicon glyphicon-off"></i> Log out</a></li>
+		<li{% if request.path == brambling_dashboard_url %} class='active'{% endif %}><a href="{{ brambling_dashboard_url }}"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+		<li{% if request.path == brambling_event_create_url %} class='active'{% endif %}><a href="{{ brambling_event_create_url }}"><i class="fa fa-calendar"></i> Create an event</a></li>
+		<li{% if request.path == brambling_home_url %} class='active'{% endif %}><a href="{{ brambling_home_url }}"><i class="fa fa-home"></i> Home settings</a></li>
+		<li{% if request.path == brambling_user_profile_url %} class='active'{% endif %}><a href="{{ brambling_user_profile_url }}"><i class="fa fa-user"></i> Profile settings</a></li>
+		<li><a href="{% url 'logout' %}"><i class="fa fa-power-off"></i> Log out</a></li>
 	{% else %}
 		{% url 'login' as login_url %}
 		{% url 'brambling_signup' as brambling_signup_url %}
