@@ -87,20 +87,14 @@ class AttendeeHousingDataForm(MemoModelForm):
                                             person_cause=owner),
                     'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
                                             person_avoid=owner),
-                    'person_prefer': self.filter(Person.objects.only('id'),
-                                                 preferred_by=owner),
-                    'person_avoid': self.filter(Person.objects.only('id'),
-                                                avoided_by=owner),
+                    'person_prefer': owner.person_prefer,
+                    'person_avoid': owner.person_prefer,
                     'housing_prefer': self.filter(HousingCategory.objects.only('id'),
                                                   preferred_by=owner),
                     'other_needs': owner.other_needs,
                 })
         self.fields['nights'].required = True
         self.set_choices('nights', Date, event_housing_dates=self.instance.event_person.event)
-        self.set_choices('person_prefer',
-                         Person.objects.only('id', 'name'))
-        self.set_choices('person_avoid',
-                         Person.objects.only('id', 'name'))
         self.set_choices('ef_cause',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
@@ -116,8 +110,8 @@ class AttendeeHousingDataForm(MemoModelForm):
             person = self.instance.person
             person.ef_cause = instance.ef_cause.all()
             person.ef_avoid = instance.ef_avoid.all()
-            person.person_prefer = instance.person_prefer.all()
-            person.person_avoid = instance.person_avoid.all()
+            person.person_prefer = instance.person_prefer
+            person.person_avoid = instance.person_avoid
             person.housing_prefer = instance.housing_prefer.all()
             person.other_needs = instance.other_needs
             person.save()
@@ -162,17 +156,11 @@ class HostingForm(MemoModelForm):
                                               home_present=home),
                     'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
                                             home_avoid=home),
-                    'person_prefer': self.filter(Person.objects.only('id'),
-                                                 preferred_by_homes=home),
-                    'person_avoid': self.filter(Person.objects.only('id'),
-                                                avoided_by_homes=home),
+                    'person_prefer': home.person_prefer,
+                    'person_avoid': home.person_avoid,
                     'housing_categories': self.filter(HousingCategory.objects.only('id'),
                                                       homes=home),
                 })
-        self.set_choices('person_prefer',
-                         Person.objects.only('id', 'name'))
-        self.set_choices('person_avoid',
-                         Person.objects.only('id', 'name'))
         self.set_choices('ef_present',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
@@ -225,8 +213,8 @@ class HostingForm(MemoModelForm):
             home.save()
             home.ef_present = instance.ef_present.all()
             home.ef_avoid = instance.ef_avoid.all()
-            home.person_prefer = instance.person_prefer.all()
-            home.person_avoid = instance.person_avoid.all()
+            home.person_prefer = instance.person_prefer
+            home.person_avoid = instance.person_avoid
             home.housing_categories = instance.housing_categories.all()
             if new_home:
                 instance.home = home
