@@ -25,6 +25,8 @@ USE_DEBUG_TOOLBAR = DEBUG
 
 TEMPLATE_DEBUG = True
 
+ACCEPT_FEEDBACK = True
+
 ALLOWED_HOSTS = []
 
 
@@ -138,3 +140,11 @@ if USE_DEBUG_TOOLBAR:
         'debug_toolbar.panels.redirects.RedirectsPanel',
         'template_timings_panel.panels.TemplateTimings.TemplateTimings',
     ]
+
+if ACCEPT_FEEDBACK:
+    MIDDLEWARE_CLASSES += (
+        'zenaida.contrib.feedback.middleware.FeedbackMiddleware',
+    )
+    INSTALLED_APPS += (
+        'zenaida.contrib.feedback',
+    )
