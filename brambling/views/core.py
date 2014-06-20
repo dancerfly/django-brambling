@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Min
 from django.utils.decorators import method_decorator
 from django.utils import timezone
-from django.views.generic import ListView, TemplateView
+from django.views.generic import TemplateView
 
 from brambling.models import Event
 
@@ -40,11 +40,5 @@ class UserDashboardView(TemplateView):
         return super(UserDashboardView, self).dispatch(*args, **kwargs)
 
 
-class EventListView(ListView):
-    model = Event
-    template_name = 'brambling/event/list.html'
-    context_object_name = 'events'
-
-    def get_queryset(self):
-        qs = super(EventListView, self).get_queryset()
-        return qs.filter(privacy=Event.PUBLIC)
+class SplashView(TemplateView):
+    template_name = 'brambling/splash.html'

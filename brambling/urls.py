@@ -20,7 +20,7 @@ from brambling.views.attendee import (
 )
 from brambling.views.core import (
     UserDashboardView,
-    EventListView,
+    SplashView,
 )
 from brambling.views.organizer import (
     EventCreateView,
@@ -48,7 +48,7 @@ urlpatterns = patterns('',
     url(r'^$',
         split_view(lambda r, *a, **k: r.user.is_authenticated(),
                    UserDashboardView.as_view(),
-                   EventListView.as_view()),
+                   SplashView.as_view()),
         name="brambling_dashboard"),
     url(r'^create/$',
         EventCreateView.as_view(),
