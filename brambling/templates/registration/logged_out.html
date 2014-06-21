@@ -1,5 +1,12 @@
 {% extends 'brambling/__base.html' %}
 
+{% block meta %}
+    {{ block.super }}
+    <meta http-equiv="refresh" content="4; url=/">
+{% endblock %}
+
 {% block content %}
-	Woo! You logged out! <a href="/">Home</a>
+	<div class='alert alert-success'>
+		<strong>K, goodbye!</strong> You'll be redirected to the <a href="/">home page</a> shortly.
+	</div>
 {% endblock %}
