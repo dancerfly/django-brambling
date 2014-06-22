@@ -96,6 +96,7 @@ class PersonForm(BasePersonForm):
                   'housing_prefer', 'other_needs')
 
     def save(self, commit=True):
+        self.instance.modified_directly = True
         person = super(PersonForm, self).save(commit)
         if commit:
             self.email_confirmation()

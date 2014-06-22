@@ -13,11 +13,18 @@
 
 {% formrow form.public_transit_access %}
 
-{% formrow form.housing_categories using "floppyforms/rows/confirm.html" with confirm=form.housing_categories_confirm %}
+{% formrow form.housing_categories d%}
+{% if form.housing_categories_confirm %}{% formrow form.housing_categories_confirm %}{% endif %}
 
 <div class='row'>
-	<div class='col-md-6'>{% formrow form.ef_present using "floppyforms/rows/confirm.html" with confirm=form.ef_present_confirm %}</div>
-	<div class='col-md-6'>{% formrow form.ef_avoid using "floppyforms/rows/confirm.html" with confirm=form.ef_avoid_confirm %}</div>
+	<div class='col-md-6'>
+		{% formrow form.ef_present %}
+		{% if form.ef_present_confirm %}{% formrow form.ef_present_confirm %}{% endif %}
+	</div>
+	<div class='col-md-6'>
+		{% formrow form.ef_avoid %}
+{% if form.ef_avoid_confirm %}{% formrow form.ef_avoid_confirm %}{% endif %}
+	</div>
 </div>
 
 <div class='row'>

@@ -7,8 +7,14 @@
 </div>
 
 <div class='row'>
-	<div class='col-md-6'>{% formrow form.ef_cause using "floppyforms/rows/confirm.html" with confirm=form.ef_cause_confirm %}</div>
-	<div class='col-md-6'>{% formrow form.ef_avoid using "floppyforms/rows/confirm.html" with confirm=form.ef_avoid_confirm %}</div>
+	<div class='col-md-6'>
+		{% formrow form.ef_cause %}
+		{% if form.ef_cause_confirm %}{% formrow form.ef_cause_confirm %}{% endif %}
+	</div>
+	<div class='col-md-6'>
+		{% formrow form.ef_avoid %}
+		{% if form.ef_avoid_confirm %}{% formrow form.ef_avoid_confirm %}{% endif %}
+	</div>
 </div>
 
 <div class='row'>

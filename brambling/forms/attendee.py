@@ -6,8 +6,7 @@ import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
-from brambling.models import (Person, Discount, Date,
-                              EventHousing, UsedDiscount,
+from brambling.models import (Discount, Date, EventHousing, UsedDiscount,
                               EnvironmentalFactor, HousingCategory, CreditCard,
                               Payment, Home, Attendee, HousingSlot)
 
@@ -66,21 +65,28 @@ class AttendeeBasicDataForm(forms.ModelForm):
 class AttendeeHousingDataForm(MemoModelForm):
     class Meta:
         model = Attendee
-        fields = ('nights', 'ef_cause', 'ef_cause_confirm', 'ef_avoid',
-                  'ef_avoid_confirm', 'person_prefer', 'person_avoid',
-                  'housing_prefer', 'other_needs')
+        fields = ('nights', 'ef_cause', 'ef_avoid', 'person_prefer',
+                  'person_avoid', 'housing_prefer', 'other_needs')
 
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
-        self.fields['ef_cause_confirm'].error_messages['required'] = CONFIRM_ERROR
-        self.fields['ef_avoid_confirm'].error_messages['required'] = CONFIRM_ERROR
-
-        for field in ('ef_cause_confirm', 'ef_avoid_confirm'):
-            self.fields[field].required = True
 
         if self.instance.person == self.instance.event_person.person:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True)
-            if self.instance.pk is None:
+
+            if not self.instance.housing_completed:
+                if self.instance.person.modified_directly:
+                    self.fields['ef_cause_confirm'] = forms.BooleanField(
+                        required=True,
+                        error_messages={'required': CONFIRM_ERROR},
+                        label="Is this still correct?",
+                    )
+                    self.fields['ef_avoid_confirm'] = forms.BooleanField(
+                        required=True,
+                        error_messages={'required': CONFIRM_ERROR},
+                        label="Is this still correct?",
+                    )
+
                 owner = self.instance.person
                 self.initial.update({
                     'ef_cause': self.filter(EnvironmentalFactor.objects.only('id'),
@@ -93,6 +99,7 @@ class AttendeeHousingDataForm(MemoModelForm):
                                                   preferred_by=owner),
                     'other_needs': owner.other_needs,
                 })
+
         self.fields['nights'].required = True
         self.set_choices('nights', Date, event_housing_dates=self.instance.event_person.event)
         self.set_choices('ef_cause',
@@ -114,6 +121,7 @@ class AttendeeHousingDataForm(MemoModelForm):
             person.person_avoid = instance.person_avoid
             person.housing_prefer = instance.housing_prefer.all()
             person.other_needs = instance.other_needs
+            person.modified_directly = True
             person.save()
         return instance
 
@@ -133,9 +141,6 @@ class HostingForm(MemoModelForm):
 
     def __init__(self, *args, **kwargs):
         super(HostingForm, self).__init__({}, *args, **kwargs)
-        for field in ('ef_present_confirm', 'ef_avoid_confirm', 'housing_categories_confirm'):
-            self.fields[field].required = True
-            self.fields[field].error_messages['required'] = CONFIRM_ERROR
 
         if self.instance.pk is None:
             person = self.instance.event_person.person
@@ -146,6 +151,21 @@ class HostingForm(MemoModelForm):
             })
             home = self.instance.home
             if home is not None:
+                self.fields['ef_present_confirm'] = forms.BooleanField(
+                    required=True,
+                    error_messages={'required': CONFIRM_ERROR},
+                    label="Is this still correct?",
+                )
+                self.fields['ef_avoid_confirm'] = forms.BooleanField(
+                    required=True,
+                    error_messages={'required': CONFIRM_ERROR},
+                    label="Is this still correct?",
+                )
+                self.fields['housing_categories_confirm'] = forms.BooleanField(
+                    required=True,
+                    error_messages={'required': CONFIRM_ERROR},
+                    label="Is this still correct?",
+                )
                 self.initial.update({
                     'address': home.address,
                     'city': home.city,
