@@ -221,6 +221,7 @@ class HostingForm(MemoModelForm):
                 instance.save()
                 person = instance.event_person.person
                 person.home = home
+                person.save()
         return instance
 
 
