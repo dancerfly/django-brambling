@@ -168,7 +168,7 @@ class Event(models.Model):
     housing_dates = models.ManyToManyField(Date, blank=True, null=True,
                                            related_name='event_housing_dates')
 
-    dance_style = models.ForeignKey(DanceStyle, blank=True, null=True)
+    dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
     has_classes = models.BooleanField(verbose_name="Is a class / Has class(es)", default=False)
 

@@ -16,7 +16,7 @@ class UserDashboardView(TemplateView):
 
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
-            dance_style__person=user,
+            dance_styles__person=user,
         ).annotate(start_date=Min('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
