@@ -100,34 +100,35 @@ class HousingCategory(models.Model):
 
 @receiver(signals.post_migrate)
 def create_defaults(app_config, **kwargs):
-    if not DanceStyle.objects.exists():
-        if kwargs.get('verbosity') >= 2:
-            print("Creating default dance styles")
-        DanceStyle.objects.bulk_create([
-            DanceStyle(name=name)
-            for name in DEFAULT_DANCE_STYLES
-        ])
-    if not DietaryRestriction.objects.exists():
-        if kwargs.get('verbosity') >= 2:
-            print("Creating default dietary restrictions")
-        DietaryRestriction.objects.bulk_create([
-            DietaryRestriction(name=name)
-            for name in DEFAULT_DIETARY_RESTRICTIONS
-        ])
-    if not EnvironmentalFactor.objects.exists():
-        if kwargs.get('verbosity') >= 2:
-            print("Creating default environmental factors")
-        EnvironmentalFactor.objects.bulk_create([
-            EnvironmentalFactor(name=name)
-            for name in DEFAULT_ENVIRONMENTAL_FACTORS
-        ])
-    if not HousingCategory.objects.exists():
-        if kwargs.get('verbosity') >= 2:
-            print("Creating default housing categories")
-        HousingCategory.objects.bulk_create([
-            HousingCategory(name=name)
-            for name in DEFAULT_HOUSING_CATEGORIES
-        ])
+    if app_config.name == 'brambling':
+        if not DanceStyle.objects.exists():
+            if kwargs.get('verbosity') >= 2:
+                print("Creating default dance styles")
+            DanceStyle.objects.bulk_create([
+                DanceStyle(name=name)
+                for name in DEFAULT_DANCE_STYLES
+            ])
+        if not DietaryRestriction.objects.exists():
+            if kwargs.get('verbosity') >= 2:
+                print("Creating default dietary restrictions")
+            DietaryRestriction.objects.bulk_create([
+                DietaryRestriction(name=name)
+                for name in DEFAULT_DIETARY_RESTRICTIONS
+            ])
+        if not EnvironmentalFactor.objects.exists():
+            if kwargs.get('verbosity') >= 2:
+                print("Creating default environmental factors")
+            EnvironmentalFactor.objects.bulk_create([
+                EnvironmentalFactor(name=name)
+                for name in DEFAULT_ENVIRONMENTAL_FACTORS
+            ])
+        if not HousingCategory.objects.exists():
+            if kwargs.get('verbosity') >= 2:
+                print("Creating default housing categories")
+            HousingCategory.objects.bulk_create([
+                HousingCategory(name=name)
+                for name in DEFAULT_HOUSING_CATEGORIES
+            ])
 
 
 class Date(models.Model):
