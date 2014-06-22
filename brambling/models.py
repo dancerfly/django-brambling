@@ -24,11 +24,13 @@ DEFAULT_DANCE_STYLES = (
     "Trad Blues",
     "Fusion",
     "Swing",
+    "Balboa",
     "Contra",
     "West Coast Swing",
     "Argentine Tango",
     "Ballroom",
     "Folk",
+    "Contact Improv",
 )
 
 DEFAULT_ENVIRONMENTAL_FACTORS = (
