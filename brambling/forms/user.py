@@ -6,7 +6,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
-from brambling.models import Person, Home, DanceStyle, EventType
+from brambling.models import Person, Home, DanceStyle
 from brambling.utils import send_confirmation_email
 
 
@@ -80,7 +80,6 @@ class SignUpForm(BasePersonForm):
         person.set_password(self.cleaned_data["password1"])
         person.save()
         person.dance_styles = DanceStyle.objects.all()
-        person.event_types = EventType.objects.all()
         self.email_confirmation()
         user = authenticate(email=self.cleaned_data['email'],
                             password=self.cleaned_data['password1'])
@@ -92,7 +91,7 @@ class PersonForm(BasePersonForm):
     class Meta:
         model = Person
         fields = ('email', 'name', 'nickname', 'phone', 'dance_styles',
-                  'event_types', 'dietary_restrictions', 'ef_cause',
+                  'dietary_restrictions', 'ef_cause',
                   'ef_avoid', 'person_prefer', 'person_avoid',
                   'housing_prefer', 'other_needs')
 

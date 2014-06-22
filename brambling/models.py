@@ -19,17 +19,17 @@ from django_countries.fields import CountryField
 FULL_NAME_RE = r"^\w+( \w+)+"
 
 
-DEFAULT_DANCE_STYLES = {
-    "Alt Blues": ["Recess"],
-    "Trad Blues": ["Workshop", "Exchange", "Camp"],
-    "Fusion": ["Exchange"],
-    "Swing": ["Workshop", "Exchange", "Camp"],
-    "Contra": ["Workshop", "Camp"],
-    "West Coast Swing": [],
-    "Argentine Tango": [],
-    "Ballroom": [],
-    "Folk": [],
-}
+DEFAULT_DANCE_STYLES = (
+    "Alt Blues",
+    "Trad Blues",
+    "Fusion",
+    "Swing",
+    "Contra",
+    "West Coast Swing",
+    "Argentine Tango",
+    "Ballroom",
+    "Folk",
+)
 
 DEFAULT_ENVIRONMENTAL_FACTORS = (
     "Dogs",
@@ -68,18 +68,8 @@ DEFAULT_HOUSING_CATEGORIES = (
 )
 
 
-class EventType(models.Model):
-    name = models.CharField(max_length=30, unique=True)
-
-    def __unicode__(self):
-        return smart_text(self.name)
-
-
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    common_event_types = models.ManyToManyField(EventType,
-                                                related_name="common_for",
-                                                blank=True)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -108,15 +98,13 @@ class HousingCategory(models.Model):
 
 @receiver(signals.post_migrate)
 def create_defaults(app_config, **kwargs):
-    if not DanceStyle.objects.exists() and not EventType.objects.exists():
+    if not DanceStyle.objects.exists():
         if kwargs.get('verbosity') >= 2:
-            print("Creating default dance styles and event types")
-
-        for name, event_types in DEFAULT_DANCE_STYLES.items():
-            style = DanceStyle.objects.create(name=name)
-            for event_type in event_types:
-                style.common_event_types.add(
-                    EventType.objects.get_or_create(name=event_type)[0])
+            print("Creating default dance styles")
+        DanceStyle.objects.bulk_create([
+            DanceStyle(name=name)
+            for name in DEFAULT_DANCE_STYLES
+        ])
     if not DietaryRestriction.objects.exists():
         if kwargs.get('verbosity') >= 2:
             print("Creating default dietary restrictions")
@@ -179,7 +167,8 @@ class Event(models.Model):
                                            related_name='event_housing_dates')
 
     dance_style = models.ForeignKey(DanceStyle, blank=True, null=True)
-    event_type = models.ForeignKey(EventType, blank=True, null=True)
+    has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
+    has_classes = models.BooleanField(verbose_name="Is a class / Has class(es)", default=False)
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC, help_text="Who can view this event.")
@@ -360,7 +349,6 @@ class Person(AbstractBaseUser, PermissionsMixin):
     other_needs = models.TextField(blank=True)
 
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
-    event_types = models.ManyToManyField(EventType, blank=True)
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)

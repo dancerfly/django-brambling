@@ -6,20 +6,18 @@
 		<h4 class="panel-title">Information</h4>
 	</header>
 	<div class="panel-body">
-
 		{% formrow form.name %}
 		{% formrow form.slug %}
 		{% formrow form.tagline %}
-
-		<div class="row">
-			<div class="col-sm-6">
-				{% formrow form.dance_style %}
-			</div>
-			<div class="col-sm-6">
-				{% formrow form.event_type %}
-			</div>
-		</div>{# /.row #}
-
+		{% formrow form.dance_style %}
+		<div class='form-group'>
+			{% with field=form.has_dances %}
+				<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+			{% endwith %}
+			{% with field=form.has_classes %}
+				<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+			{% endwith %}
+		</div>
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
 
@@ -62,7 +60,18 @@
 	<div class="panel-body">
 		<div class="row">
 			<div class="col-sm-5">
-				{% formrow form.editors %}
+				<div class='form-group'>
+					{% with field=form.collect_housing_data %}
+						<div class='checkbox'>
+							<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+						</div>
+					{% endwith %}
+					{% with field=form.collect_survey_data %}
+						<div class='checkbox'>
+							<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+						</div>
+					{% endwith %}
+				</div>
 			</div>
 			<div class="col-sm-4">
 				{% formrow form.privacy %}
@@ -71,13 +80,7 @@
 				{% formrow form.cart_timeout %}
 			</div>
 		</div>
-		<div class="row">
-			<div class='col-sm-4'>
-				{% formrow form.collect_housing_data %}
-			</div>
-			<div class='col-sm-4'>
-				{% formrow form.collect_survey_data %}
-			</div>
-		</div>
+
+		{% formrow form.editors %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
