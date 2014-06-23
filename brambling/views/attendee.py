@@ -1,19 +1,17 @@
-import json
-
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
-from brambling.forms.attendee import (UsedDiscountForm, CheckoutForm,
-                                      HostingForm, AttendeeBasicDataForm,
+from brambling.forms.attendee import (CheckoutForm, HostingForm,
+                                      AttendeeBasicDataForm,
                                       AttendeeHousingDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption, Payment,
-                              UsedDiscount, Discount, EventPerson,
+                              BoughtItemDiscount, Discount, EventPerson,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, ajax_required,
@@ -60,25 +58,36 @@ class UseDiscountView(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         event = get_event_or_404(kwargs['event_slug'])
-        event_person = get_event_person(event, request.user)
-
-        form = UsedDiscountForm(
-            event_person=event_person,
-            prefix='discount-form',
-            data=json.loads(request.body),
-        )
-
-        if form.is_valid():
-            instance = form.save()
+        now = timezone.now()
+        try:
+            discount = Discount.objects.filter(
+                code=kwargs['discount'],
+                event=event
+            ).filter(
+                (Q(available_start__lte=now) |
+                 Q(available_start__isnull=True)),
+                (Q(available_end__gte=now) |
+                 Q(available_end__isnull=True))
+            ).get()
+        except Discount.DoesNotExist:
             return JsonResponse({
-                'success': True,
-                'name': instance.discount.name,
-                'code': instance.discount.code,
+                'success': False,
+                'errors': {
+                    'discount': ("No discount with that code is currently "
+                                 "active for this event.")
+                },
             })
 
+        event_person = get_event_person(event, request.user)
+        created = event_person.add_discount(discount)
+        if created:
+            return JsonResponse({
+                'success': True,
+                'name': discount.name,
+                'code': discount.code,
+            })
         return JsonResponse({
-            'success': False,
-            'errors': form.errors,
+            'success': True,
         })
 
 
@@ -95,9 +104,7 @@ def _shared_shopping_context(request, event_person):
     return {
         'event': event,
         'event_person': event_person,
-        'discount_form': UsedDiscountForm(event_person=event_person,
-                                          prefix='discount-form'),
-        'discounts': event_person.useddiscount_set.all(),
+        'discounts': event_person.discounts.all(),
         'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
@@ -467,34 +474,27 @@ class RecordsView(TemplateView):
         self.payments = Payment.objects.filter(
             event_person=self.event_person,
         ).order_by('timestamp')
-        self.personitems = BoughtItem.objects.filter(
+        self.bought_items = list(BoughtItem.objects.filter(
             event_person=self.event_person,
-        ).order_by('added')
+        ).select_related('item_option').order_by('added'))
 
-        self.discounts = UsedDiscount.objects.filter(
-            event_person=self.event_person,
-        ).select_related('discount').order_by('timestamp')
+        self.discounts = BoughtItemDiscount.objects.filter(
+            bought_item__in=self.bought_items,
+        ).select_related('discount').order_by('discount', 'timestamp')
 
-        discount_map = {}
-
-        for discount in self.discounts:
-            discount_map.setdefault(discount.discount.item_option_id, []).append(discount)
+        bought_item_map = {bought_item.id: bought_item
+                           for bought_item in self.bought_items}
         savings = 0
-        for item in self.personitems:
-            if item.item_option_id not in discount_map:
+        for discount in self.discounts:
+            try:
+                bought_item = bought_item_map[discount.bought_item_id]
+            except KeyError:
                 continue
-            discounts = discount_map[item.item_option_id]
-            for discount in discounts:
-                amount = (discount.discount.amount
-                          if discount.discount.discount_type == Discount.FLAT
-                          else discount.discount.amount / 100 * discount.discount.item_option.price)
-                if not hasattr(discount, 'items'):
-                    discount.items = []
-                discount.items.append((item, amount))
-                savings += amount
+            discount.bought_item = bought_item
+            savings += discount.savings()
 
         self.total_cost = sum((item.item_option.price
-                               for item in self.personitems))
+                               for item in self.bought_items))
         self.total_savings = min(savings, self.total_cost)
         self.total_payments = sum((payment.amount
                                    for payment in self.payments))
@@ -507,7 +507,7 @@ class RecordsView(TemplateView):
 
         context.update({
             'form': getattr(self, 'form', None),
-            'personitems': self.personitems,
+            'bought_items': self.bought_items,
             'payments': self.payments,
             'discounts': self.discounts,
             'total_cost': self.total_cost,

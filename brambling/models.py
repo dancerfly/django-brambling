@@ -253,7 +253,7 @@ class Discount(models.Model):
     )
     name = models.CharField(max_length=40)
     code = models.CharField(max_length=20)
-    item_option = models.ForeignKey(ItemOption)
+    item_options = models.ManyToManyField(ItemOption)
     available_start = models.DateTimeField(blank=True, null=True)
     available_end = models.DateTimeField(blank=True, null=True)
     discount_type = models.CharField(max_length=7,
@@ -535,14 +535,42 @@ class EventPerson(models.Model):
         """
         return not bool(self.cart_errors)
 
+    def add_discount(self, discount):
+        if discount.event_id != self.event_id:
+            raise ValueError("Discount is not for the correct event")
+        event_person_discount, created = EventPersonDiscount.objects.get_or_create(
+            discount=discount,
+            event_person=self
+        )
+        if created:
+            bought_items = BoughtItem.objects.filter(
+                event_person=self,
+                item_option__discount=discount,
+            )
+            BoughtItemDiscount.objects.bulk_create([
+                BoughtItemDiscount(discount=discount,
+                                   bought_item=bought_item)
+                for bought_item in bought_items
+            ])
+        return created
+
     def add_to_cart(self, item_option):
         if self.cart_is_expired():
             self.delete_cart()
-        BoughtItem.objects.create(
+        bought_item = BoughtItem.objects.create(
             item_option=item_option,
             event_person=self,
             status=BoughtItem.RESERVED
         )
+        discounts = self.discounts.filter(
+            discount__item_options=item_option
+        ).select_related('discount').distinct()
+        if discounts:
+            BoughtItemDiscount.objects.bulk_create([
+                BoughtItemDiscount(discount=discount.discount,
+                                   bought_item=bought_item)
+                for discount in discounts
+            ])
         if self.cart_start_time is None:
             self.cart_start_time = timezone.now()
             self.save()
@@ -625,13 +653,32 @@ class BoughtItem(models.Model):
                                       self.pk)
 
 
-class UsedDiscount(models.Model):
+class EventPersonDiscount(models.Model):
+    """Tracks whether a person has entered a code for an event."""
     discount = models.ForeignKey(Discount)
-    event_person = models.ForeignKey(EventPerson)
+    event_person = models.ForeignKey(EventPerson, related_name='discounts')
     timestamp = models.DateTimeField(default=timezone.now)
 
     class Meta:
         unique_together = ('event_person', 'discount')
+
+
+class BoughtItemDiscount(models.Model):
+    """"Tracks whether an item has had a discount applied to it."""
+    discount = models.ForeignKey(Discount)
+    bought_item = models.ForeignKey(BoughtItem, related_name='discounts')
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('bought_item', 'discount')
+
+    def savings(self):
+        discount = self.discount
+        item_option = self.bought_item.item_option
+        return min(discount.amount
+                   if discount.discount_type == Discount.FLAT
+                   else discount.amount / 100 * item_option.price,
+                   item_option.price)
 
 
 class Attendee(models.Model):

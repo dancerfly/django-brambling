@@ -83,7 +83,7 @@ class DiscountForm(forms.ModelForm):
     def __init__(self, event, *args, **kwargs):
         self.event = event
         super(DiscountForm, self).__init__(*args, **kwargs)
-        self.fields['item_option'].queryset = ItemOption.objects.filter(item__event=event)
+        self.fields['item_options'].queryset = ItemOption.objects.filter(item__event=event)
         if not self.instance.code:
             self.generated_code = get_random_string(6)
             while Discount.objects.filter(event=self.event,

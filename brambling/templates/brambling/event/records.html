@@ -64,13 +64,11 @@
 		<header class='panel-heading'>
 			<div class='row'>
 				<div class='panel-title col-xs-8'><a href='#discounts-collapse' data-toggle='collapse'>Discounts {% if discounts %}<span class='caret'></span>{% endif %}</a></div>
-				<form id='discount-form' class='panel-heading-form col-xs-4' action='{% url "brambling_event_use_discount" event_slug=event.slug %}' method='post'>
+				<div class='panel-heading-form col-xs-4'>
 					<div class='input-group'>
-						{% form discount_form using %}
-							{% formfield discount_form.discount with placeholder="Code" autocomplete="off" %}
-						{% endform %}
+						<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
 						<span class='input-group-btn'>
-							<button class='btn btn-default' type='submit'><span class='fa fa-plus'></span></button>
+							<button id='discountCodeButton' class='btn btn-default' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
 						</span>
 					</div>
 				</form>
@@ -87,20 +85,23 @@
 					</tr>
 				</thead>
 				<tbody>
-					{% for discount in discounts %}
+					{% regroup discounts by discount as discount_list %}
+					{% for discount in discount_list %}
 						{% cycle 0 1 as stripe silent %}
 						<tr{% if stripe %} class='active'{% endif %}>
-							<th>{{ discount.discount.name }}</th>
-							<td>{{ discount.discount.code }}</td>
-							<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+							<th>{{ discount.grouper.name }}</th>
+							<td>{{ discount.grouper.code }}</td>
+							<td></td>
 							<td></td>
 						</tr>
-						{% for item, amount in discount.items %}
+						{% for bought_item_discount in discount.list %}
 							<tr{% if stripe %} class='active'{% endif %}>
-								<td></td>
 								<th>{% if forloop.first %}Applied to:{% endif %}</th>
-								<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-								<td class='text-right'>{{ amount|format_money:event.currency }}</td>
+								{% with item_option=bought_item_discount.bought_item.item_option %}
+									<td>{{ item_option.item.name }} ({{ item_option.name }})</td>
+								{% endwith %}
+								<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+								<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
 							</tr>
 						{% endfor %}
 					{% endfor %}

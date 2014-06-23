@@ -10,16 +10,12 @@
 			</li>
 		{% endfor %}
 		<li class='list-group-item'>
-			<form id='discount-form' action='{% url "brambling_event_use_discount" event_slug=event.slug %}' method='post'>
-				<div class='input-group'>
-					{% form discount_form using %}
-						{% formfield discount_form.discount with placeholder="Discount code" autocomplete="off" %}
-					{% endform %}
-					<span class='input-group-btn'>
-						<button class='btn btn-default' type='submit'><span class='fa fa-plus'></span></button>
-					</span>
-				</div>
-			</form>
+			<div class='input-group'>
+				<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
+				<span class='input-group-btn'>
+					<button id='discountCodeButton' class='btn btn-default' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
+				</span>
+			</div>
 		</li>
 	</ul>
 </div>

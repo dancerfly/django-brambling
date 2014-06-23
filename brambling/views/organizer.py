@@ -13,7 +13,8 @@ from brambling.filters import AttendeeFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import (Event, Item, Discount, Payment,
-                              ItemOption, BoughtItem, Attendee)
+                              ItemOption, Attendee, EventPersonDiscount,
+                              BoughtItemDiscount)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, get_event_person)
 
@@ -68,26 +69,20 @@ class EventDashboardView(TemplateView):
             itemoption_map[itemoption.pk] = itemoption
             gross_sales += itemoption.price * itemoption.boughtitem__count
 
-        discounts = Discount.objects.filter(
+        discounts = list(Discount.objects.filter(
             event=self.event
-        ).annotate(Count('useddiscount'))
+        ).annotate(used_count=Count('boughtitemdiscount')))
+
+        bought_item_discounts = BoughtItemDiscount.objects.filter(
+            discount__in=discounts
+        ).select_related('bought_item', 'discount')
 
         total_discounts = 0
 
-        for discount in discounts:
-            if discount.item_option_id in itemoption_map:
-                itemoption = itemoption_map[discount.item_option_id]
-                amount = (discount.amount
-                          if discount.discount_type == Discount.FLAT
-                          else discount.amount / 100 * itemoption.price)
-                # We need to count how many *items* have been bought using this
-                # discount. So we count things bought by people who have used
-                # this discount, and to which this discount applies.
-                discount.used_count = BoughtItem.objects.filter(
-                    event_person__useddiscount__discount=discount,
-                    item_option__discount=discount
-                ).distinct().count()
-                total_discounts += amount * discount.used_count
+        for discount in bought_item_discounts:
+            if discount.bought_item.item_option_id in itemoption_map:
+                discount.bought_item.item_option = itemoption_map[discount.bought_item.item_option_id]
+            total_discounts += discount.savings()
         total_discounts = min(total_discounts, gross_sales)
 
         total_payments = Payment.objects.filter(event_person__event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0

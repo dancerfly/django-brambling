@@ -131,7 +131,7 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/records/$',
         RecordsView.as_view(),
         name="brambling_event_records"),
-    url(r'^(?P<event_slug>[\w-]+)/discount/use/',
+    url(r'^(?P<event_slug>[\w-]+)/discount/use/(?P<discount>[0-9A-Za-z]+)/$',
         UseDiscountView.as_view(),
         name="brambling_event_use_discount"),
 

@@ -6,51 +6,12 @@ import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
-from brambling.models import (Discount, Date, EventHousing, UsedDiscount,
-                              EnvironmentalFactor, HousingCategory, CreditCard,
-                              Payment, Home, Attendee, HousingSlot)
+from brambling.models import (Date, EventHousing, EnvironmentalFactor,
+                              HousingCategory, CreditCard, Payment, Home,
+                              Attendee, HousingSlot)
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
-
-
-class UsedDiscountForm(forms.ModelForm):
-    discount = forms.CharField(max_length=20, label="discount code")
-
-    class Meta:
-        fields = ()
-        model = UsedDiscount
-
-    def __init__(self, event_person, *args, **kwargs):
-        self.event_person = event_person
-        super(UsedDiscountForm, self).__init__(*args, **kwargs)
-
-    def clean_discount(self):
-        discount = self.cleaned_data.get('discount')
-        if discount is not None:
-            now = timezone.now()
-            try:
-                discount = Discount.objects.filter(
-                    code=discount,
-                    event=self.event_person.event,
-                ).filter(
-                    (models.Q(available_start__lte=now) |
-                     models.Q(available_start__isnull=True)),
-                    (models.Q(available_end__gte=now) |
-                     models.Q(available_end__isnull=True))
-                ).get()
-            except Discount.DoesNotExist:
-                discount = None
-        if discount is None:
-            raise ValidationError("No discount with that code is currently "
-                                  "active for this event.")
-        return discount
-
-    def _post_clean(self):
-        self.instance.event_person = self.event_person
-        if 'discount' in self.cleaned_data:
-            self.instance.discount = self.cleaned_data['discount']
-        super(UsedDiscountForm, self)._post_clean()
 
 
 class AttendeeBasicDataForm(forms.ModelForm):
