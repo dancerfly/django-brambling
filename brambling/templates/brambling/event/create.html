@@ -1,8 +1,16 @@
 {% extends 'brambling/layouts/100.html' %}
 
-{% load floppyforms %}
+{% load staticfiles %}
 
 {% block main %}
 	<h2>Create New Event</h2>
 	{% include "brambling/event/_form.html" %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript">window.django = {'jQuery': jQuery};</script>
+	<script type="text/javascript" src="{% static "admin/js/urlify.js" %}"></script>
+	<script type="text/javascript" src="{% static "admin/js/prepopulate.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/brambling.slug.js" %}"></script>
 {% endblock %}
