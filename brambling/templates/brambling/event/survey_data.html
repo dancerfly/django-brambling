@@ -13,30 +13,23 @@
 
 	<h3>Step 4: Survey</h3>
 
-	<div class="row">
-		<div class="col-md-8">
-			<form action="" method="post" novalidate>
-				{% csrf_token %}
-				{% form form using %}
-					{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+	<form action="" method="post" novalidate>
+		{% csrf_token %}
+		{% form form using %}
+			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-					{% formrow form.heard_through %}
-					{% formrow form.heard_through_other %}
+			{% formrow form.heard_through %}
+			{% formrow form.heard_through_other %}
 
-					{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
-					{% formrow form.send_flyers_address %}
-					{% formrow form.send_flyers_city %}
-					{% formrow form.send_flyers_state_or_province %}
-					{% formrow form.send_flyers_country %}
+			{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
+			{% formrow form.send_flyers_address %}
+			{% formrow form.send_flyers_city %}
+			{% formrow form.send_flyers_state_or_province %}
+			{% formrow form.send_flyers_country %}
 
-					{% formrow form.providing_housing %}
-				{% endform %}
+			{% formrow form.providing_housing %}
+		{% endform %}
 
-				<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='fa fa-chevron-right'></span></button>
-			</form>
-		</div>
-		<div class='col-md-4'>
-			{% include 'brambling/event/_discounts.html' %}
-		</div>
-	</div>
+		<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='fa fa-chevron-right'></span></button>
+	</form>
 {% endblock %}

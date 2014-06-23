@@ -12,30 +12,23 @@
 	{{ block.super }}
 	<h3>Step 3: Provide housing data for attendees</h3>
 
-	<div class="row">
-		<div class="col-md-8">
-			<form action="" method="post" novalidate>
-				{% csrf_token %}
+	<form action="" method="post" novalidate>
+		{% csrf_token %}
 
 
-				{% for form in forms %}
-					<div class='panel panel-default'>
-						<header class='panel-heading'>
-							<div class='panel-title'>
-								{{ form.instance.name }}
-							</div>
-						</header>
-						<div class='panel-body'>
-							{% form form using "brambling/forms/attendee_housing.html" %}
-						</div>
+		{% for form in forms %}
+			<div class='panel panel-default'>
+				<header class='panel-heading'>
+					<div class='panel-title'>
+						{{ form.instance.name }}
 					</div>
-				{% endfor %}
+				</header>
+				<div class='panel-body'>
+					{% form form using "brambling/forms/attendee_housing.html" %}
+				</div>
+			</div>
+		{% endfor %}
 
-				<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
-			</form>
-		</div>
-		<div class='col-md-4'>
-			{% include 'brambling/event/_discounts.html' %}
-		</div>
-	</div>
+		<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
+	</form>
 {% endblock %}
