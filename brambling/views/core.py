@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from brambling.models import Event
+from brambling.models import Event, BoughtItem
 
 
 class UserDashboardView(TemplateView):
@@ -27,6 +27,7 @@ class UserDashboardView(TemplateView):
 
         registered_events = Event.objects.filter(
             eventperson__person=user,
+            eventperson__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('-start_date')
         return {
