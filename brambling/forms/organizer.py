@@ -6,6 +6,8 @@ import floppyforms.__future__ as forms
 
 from brambling.models import Event, Item, ItemOption, Discount, Date
 
+from zenaida.forms import GroupedModelMultipleChoiceField
+
 
 class EventForm(forms.ModelForm):
     start_date = forms.DateField()
@@ -75,6 +77,10 @@ ItemOptionFormSet = forms.inlineformset_factory(Item,
 
 class DiscountForm(forms.ModelForm):
     generated_code = None
+    item_options = GroupedModelMultipleChoiceField(
+                        queryset=ItemOption.objects.all(),
+                        group_by_field="item",
+                        group_label=lambda x: x.name)
 
     class Meta:
         model = Discount
