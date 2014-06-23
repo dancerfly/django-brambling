@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Min
+from django.db.models import Q, Min, Max
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -17,16 +17,17 @@ class UserDashboardView(TemplateView):
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             dance_styles__person=user,
-        ).annotate(start_date=Min('dates__date')
+        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
         admin_events = Event.objects.filter(
             (Q(owner=user) | Q(editors=user)),
-        ).order_by('-last_modified')
+        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
+                   ).order_by('-last_modified')
 
         registered_events = Event.objects.filter(
             eventperson__person=user,
-        ).annotate(start_date=Min('dates__date')
+        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('-start_date')
         return {
             'upcoming_events': upcoming_events,
