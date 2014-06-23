@@ -1,3 +1,4 @@
+@import url(../fonts/stryde.css);
 /*! normalize.css v3.0.1 | MIT License | git.io/normalize */
 html {
   font-family: sans-serif;
@@ -420,7 +421,7 @@ hr {
 
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4, .h5, .h6 {
-  font-family: Lobster, Georgia, "Times New Roman", Times, serif;
+  font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
   font-weight: 500;
   line-height: 1.1;
   color: #bf8800;
@@ -5758,6 +5759,7 @@ button.close {
     display: none !important;
   }
 }
-.panel-title {
-  font-size: 23px;
+h1, h2, h3, h4, h5, h6 {
+  position: relative;
+  top: 0.125em;
 }

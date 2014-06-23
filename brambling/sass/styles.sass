@@ -1,5 +1,7 @@
 @import variables
 
+@import "../fonts/stryde.css"
+
 // The following imports are from https://github.com/twbs/bootstrap-sass/blob/master/vendor/assets/stylesheets/bootstrap.scss
 // with glyphicons removed.
 
@@ -53,5 +55,8 @@
 @import "bootstrap/utilities"
 @import "bootstrap/responsive-utilities"
 
-.panel-title
-	font-size: ceil($font-size-base * 1.6)
+h1, h2, h3, h4, h5, h6
+	// Sloppy fix for St. Ryde's high baseline.
+	// TODO: Fix this in the font file instead.
+	position: relative
+	top: .125em
