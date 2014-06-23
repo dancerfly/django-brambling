@@ -100,6 +100,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(os.path.dirname(__file__), 'media')
+
 from django.core.urlresolvers import reverse_lazy
 
 LOGIN_REDIRECT_URL = '/'
