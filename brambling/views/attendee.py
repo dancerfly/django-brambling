@@ -157,7 +157,7 @@ class AttendeeItemView(TemplateView):
         form_class = forms.models.modelform_factory(BoughtItem, fields=('attendee',))
         form_class.base_fields['attendee'].queryset = self.event_person.attendees.all()
         form_class.base_fields['attendee'].required = True
-        bought_items = self.event_person.bought_items.all()
+        bought_items = self.event_person.bought_items.order_by('item_option__item', 'item_option')
         kwargs = {}
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST

@@ -41,23 +41,28 @@
 					</ul>
 				{% endif %}
 
-				{% for form in forms %}
-					{% form form using %}
-						{% for field in form.hidden_fields %}
-							{{ field }}
-						{% endfor %}
-						{% with field=form.attendee %}
-							<div class='form-group{% if field.errors %} has-error{% endif %}'>
-								<label class='control-label col-sm-4'>{{ form.instance.item_option.name }}</label>
-								<div class='col-sm-8'>
-									{% formfield field %}
-									{% if field.errors %}
-										{% include "floppyforms/errors.html" with errors=field.errors %}
-									{% endif %}
+				{% regroup forms by instance.item_option.item as item_forms %}
+
+				{% for form_group in item_forms %}
+					<h4>{{ form_group.grouper.name }}</h4>
+					{% for form in form_group.list %}
+						{% form form using %}
+							{% for field in form.hidden_fields %}
+								{{ field }}
+							{% endfor %}
+							{% with field=form.attendee %}
+								<div class='form-group{% if field.errors %} has-error{% endif %}'>
+									<label class='control-label col-sm-4'>{{ form.instance.item_option.name }}</label>
+									<div class='col-sm-8'>
+										{% formfield field %}
+										{% if field.errors %}
+											{% include "floppyforms/errors.html" with errors=field.errors %}
+										{% endif %}
+									</div>
 								</div>
-							</div>
-						{% endwith %}
-					{% endform %}
+							{% endwith %}
+						{% endform %}
+					{% endfor %}
 				{% endfor %}
 				<div class='col-sm-8 col-sm-offset-4'>
 					<div class='form-group'>
