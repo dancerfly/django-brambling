@@ -2,6 +2,8 @@
 
 {% load floppyforms %}
 
+{% block title %}{% if item.pk %}Edit {{ item.name }}{% else %}Add an item{% endif %} – {{ block.super }}{% endblock %}
+
 {% block main %}
 	<h2>{% if item.pk %}Edit item: {{ item.name }}{% else %}Add an item{% endif %}</h2>
 

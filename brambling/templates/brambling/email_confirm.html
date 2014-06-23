@@ -1,5 +1,7 @@
 {% extends "brambling/__base.html" %}
 
+{% block title %}Email confirmed – {{ block.super }}{% endblock %}
+
 {% block meta %}
     {{ block.super }}
     <meta http-equiv="refresh" content="3; url={% url 'brambling_dashboard' %}">

@@ -2,6 +2,8 @@
 
 {% load floppyforms zenaida %}
 
+{% block title %}{% if attendee.pk %}Edit {{ attendee.name }}{% else %}Add an attendee{% endif %} – {{ block.super }}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 

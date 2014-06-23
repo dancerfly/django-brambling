@@ -1,5 +1,7 @@
 {% extends "brambling/layouts/75_25.html" %}
 
+{% block title %}Your events – {{ block.super }}{% endblock %}
+
 {% block main %}
 	<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
 	{% for event in upcoming_events|slice:"5" %}

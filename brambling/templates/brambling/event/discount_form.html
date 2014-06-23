@@ -2,6 +2,8 @@
 
 {% load floppyforms %}
 
+{% block title %}{% if discount.pk %}Edit {{ discount.name }}{% else %}Add a discount{% endif %} – {{ block.super }}{% endblock %}
+
 {% block main %}
 	<h2>{% if discount.pk %}Edit discount: {{ discount.name }}{% else %}Add a discount{% endif %}</h2>
 

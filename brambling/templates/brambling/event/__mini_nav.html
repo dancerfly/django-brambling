@@ -1,5 +1,7 @@
 {% extends 'brambling/layouts/92_8.html' %}
 
+{% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
+
 {% block before %}
 	<h1>{{ event.name }}</h1>
 	<h2>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
