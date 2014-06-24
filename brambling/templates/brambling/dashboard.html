@@ -3,9 +3,14 @@
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
+	<div class="page-header">
+		<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
+	</div>
 	{% for event in upcoming_events|slice:"5" %}
-		<h3><a href="{{ event.get_absolute_url }}">{{ event.name }} <small>{{ event.start_date|date }} – {{ event.end_date|date }}</small></a></h3>
+		<a href="{{ event.get_absolute_url }}" class="link-unstyled">
+			<h3>{{ event.name }}</h3>
+			<h4 class="text-muted">{{ event.start_date|date }} – {{ event.end_date|date }}</h4>
+		</a>
 	{% endfor %}
 {% endblock %}
 
@@ -17,14 +22,16 @@
 			</header>
 			<div class="list-group">
 				{% for event in admin_events|slice:"5" %}
-					<a class="list-group-item media" href="{{ event.get_absolute_url }}">
-						<div class="pull-left">
-							<i class="fa fa-calendar-o fa-fw text-muted"></i>
-						</div>
-						<div class="media-body">
-							{{ event.name }}<br />
-							<small class="text-muted">{{ event.start_date|date }} — {{ event.end_date|date }}</small>
-						</div>
+					<a class="list-group-item" href="{{ event.get_absolute_url }}">
+						<div class="media">
+							<div class="pull-left">
+								<i class="fa fa-calendar-o fa-fw text-muted"></i>
+							</div>
+							<div class="media-body">
+								{{ event.name }}<br />
+								<small class="text-muted">{{ event.start_date|date }} — {{ event.end_date|date }}</small>
+							</div>
+						</div>{# /.media #}
 					</a>
 				{% endfor %}
 				<a class="list-group-item" href="{% url 'brambling_event_create' %}">
@@ -42,14 +49,16 @@
 			</header>
 			<div class="list-group">
 					{% for event in registered_events|slice:"5" %}
-				<a class="list-group-item media" href="{{ event.get_absolute_url }}">
-					<div class="pull-left">
-						<i class="fa fa-calendar-o fa-fw text-muted"></i>
-					</div>
-					<div class="media-body">
-						{{ event.name }}<br />
-						<small class="text-muted">{{ event.start_date|date }} — {{ event.end_date|date }}</small>
-					</div>
+				<a class="list-group-item" href="{{ event.get_absolute_url }}">
+					<div class="media">
+						<div class="pull-left">
+							<i class="fa fa-calendar-o fa-fw text-muted"></i>
+						</div>
+						<div class="media-body">
+							{{ event.name }}<br />
+							<small class="text-muted">{{ event.start_date|date }} — {{ event.end_date|date }}</small>
+						</div>
+					</div>{# /.media #}
 				</a>
 			{% endfor %}
 			</div>

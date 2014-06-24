@@ -5763,3 +5763,12 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   top: 0.125em;
 }
+
+.page-header, .page-header > h1, .page-header > h2, .page-header > h3, .page-header > h4, .page-header > h5, .page-header > h6 {
+  margin-top: 0;
+}
+
+.link-unstyled, .link-unstyled:hover, .link-unstyled:active, .link-unstyled:focus {
+  text-decoration: inherit;
+  color: inherit;
+}
