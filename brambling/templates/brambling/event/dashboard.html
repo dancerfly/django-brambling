@@ -5,6 +5,10 @@
 {% block title %}Dashboard – {{ block.super }}{% endblock %}
 
 {% block main %}
+	{{ block.super }}
+
+	{% include "brambling/event/_empty_shop_alert.html" %}
+
 	<h2>Dashboard</h2>
 	<div class='row'>
 		<div class='col-md-6'>

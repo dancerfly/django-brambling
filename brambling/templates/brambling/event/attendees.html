@@ -5,6 +5,10 @@
 {% block title %}Attendees – {{ block.super }}{% endblock %}
 
 {% block main %}
+    {{ block.super }}
+
+    {% include "brambling/event/_empty_shop_alert.html" %}
+
     <div class="row">
         <div class="col-md-3 col-md-push-9">
             <div class="panel panel-default">

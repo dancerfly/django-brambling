@@ -28,80 +28,90 @@
 {% block main %}
 	{{ block.super }}
 
-	<h3>Step 1: Shop</h3>
-	<div class="row">
-		<div class="col-md-7">
-			{% for item in items %}
-				<div class='panel panel-default'>
-					<header class='panel-heading'>
-						<div class='panel-title'>{{ item.name }}</div>
-					</header>
-					<div class='list-group'>
-						{% for option in item.options.all %}
-							<a target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
-								<div class='row'>
-									<div class='col-xs-4'>{{ option.name }}</div>
-									<div class='col-xs-4 text-center'>{{ option.price|format_money:event.currency }}</div>
-									<div class='col-xs-4 text-right'><span class='fa fa-plus'></span></div>
-								</div>
-							</a>
-						{% endfor %}
-					</div>
-				</div>
-			{% endfor %}
-		</div>
-		<div class="col-md-5">
-			{% with has_cart=event_person.has_cart %}
-				<div class='form-group'>
-					{% if event_person.attendees.exists %}
-						{% url 'brambling_event_attendee_items' event_slug=event.slug as next_url %}
-					{% else %}
-						{% url 'brambling_event_attendee_add' event_slug=event.slug as next_url %}
-					{% endif %}
-					<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='fa fa-chevron-right'></span></a>
-				</div>
-				{% if has_cart %}
+	{% include "brambling/event/_empty_shop_alert.html" %}
+
+	{% if items %}
+		<h3>Step 1: Shop</h3>
+		<div class="row">
+			<div class="col-md-7">
+				{% for item in items %}
 					<div class='panel panel-default'>
 						<header class='panel-heading'>
-							<div class='panel-title'>
-								Cart
-							</div>
+							<div class='panel-title'>{{ item.name }}</div>
 						</header>
-						{% regroup event_person.get_groupable_cart by item_option.item as cart_list %}
-						<ul class='list-group'>
-							{% for options in cart_list %}
-								<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
-								{% for personitem in options.list %}
-									<li class='list-group-item'>
-										{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
-									</li>
-								{% endfor %}
+						<div class='list-group'>
+							{% for option in item.options.all %}
+								<a target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
+									<div class='row'>
+										<div class='col-xs-4'>{{ option.name }}</div>
+										<div class='col-xs-4 text-center'>{{ option.price|format_money:event.currency }}</div>
+										<div class='col-xs-4 text-right'><span class='fa fa-plus'></span></div>
+									</div>
+								</a>
 							{% endfor %}
-						</ul>
-					</div>
-				{% endif %}
-			{% endwith %}
-
-			<div class='panel panel-default' id='discounts'>
-				<header class='panel-heading'>
-					<div class='panel-title'>Discounts</div>
-				</header>
-				<ul class='list-group'>
-					{% for discount in discounts %}
-						<li class='list-group-item'>
-							{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
-						</li>
-					{% endfor %}
-					<li class='list-group-item'>
-						<div class='input-group'>
-							<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
-							<span class='input-group-btn'>
-								<button id='discountCodeButton' class='btn btn-default' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
-							</span>
 						</div>
-					</li>
-				</ul>
+					</div>
+				{% endfor %}
+			</div>
+			<div class="col-md-5">
+				{% with has_cart=event_person.has_cart %}
+					<div class='form-group'>
+						{% if event_person.attendees.exists %}
+							{% url 'brambling_event_attendee_items' event_slug=event.slug as next_url %}
+						{% else %}
+							{% url 'brambling_event_attendee_add' event_slug=event.slug as next_url %}
+						{% endif %}
+						<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='fa fa-chevron-right'></span></a>
+					</div>
+					{% if has_cart %}
+						<div class='panel panel-default'>
+							<header class='panel-heading'>
+								<div class='panel-title'>
+									Cart
+								</div>
+							</header>
+							{% regroup event_person.get_groupable_cart by item_option.item as cart_list %}
+							<ul class='list-group'>
+								{% for options in cart_list %}
+									<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
+									{% for personitem in options.list %}
+										<li class='list-group-item'>
+											{{ personitem.item_option.name }} <a target='{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+										</li>
+									{% endfor %}
+								{% endfor %}
+							</ul>
+						</div>
+					{% endif %}
+				{% endwith %}
+
+				<div class='panel panel-default' id='discounts'>
+					<header class='panel-heading'>
+						<div class='panel-title'>Discounts</div>
+					</header>
+					<ul class='list-group'>
+						{% for discount in discounts %}
+							<li class='list-group-item'>
+								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+							</li>
+						{% endfor %}
+						<li class='list-group-item'>
+							<div class='input-group'>
+								<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
+								<span class='input-group-btn'>
+									<button id='discountCodeButton' class='btn btn-default' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
+								</span>
+							</div>
+						</li>
+					</ul>
+				</div>
 			</div>
 		</div>
-	</div>
+	{% else %}
+		<div class="row">
+			<div class="col-sm-8">
+				<h4>{{ event.name }} doesn't have any passes or merchandise available right now. Check back later or contact an event organizer.</h4>
+			</div>
+		</div>
+	{% endif %}
 {% endblock %}

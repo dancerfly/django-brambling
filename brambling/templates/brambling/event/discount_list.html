@@ -5,6 +5,10 @@
 {% block title %}Discounts – {{ block.super }}{% endblock %}
 
 {% block main %}
+	{{ block.super }}
+
+	{% include "brambling/event/_empty_shop_alert.html" %}
+
 	<p><a class="btn btn-primary" href="{% url 'brambling_discount_create' event_slug=event.slug %}">Create discount</a></p>
 	{% if discounts %}
 		<table class='table table-striped'>

@@ -3,6 +3,8 @@
 {% block title %}Items – {{ block.super }}{% endblock %}
 
 {% block main %}
+	{{ block.super }}
+
 	<p><a class="btn btn-primary" href="{% url 'brambling_item_create' event_slug=event.slug %}">Create item</a></p>
 	{% if items %}
 		<table class='table table-striped'>
