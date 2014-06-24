@@ -4,9 +4,10 @@ from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
-from brambling.models import Event, Item, ItemOption, Discount, Date
+from brambling.models import Attendee, Event, Item, ItemOption, Discount, Date
 
-from zenaida.forms import GroupedModelMultipleChoiceField
+from zenaida.forms import (GroupedModelMultipleChoiceField,
+                           GroupedModelChoiceField)
 
 
 class EventForm(forms.ModelForm):
@@ -104,3 +105,24 @@ class DiscountForm(forms.ModelForm):
             self.instance.validate_unique()
         except ValidationError as e:
             self._update_errors(e)
+
+
+class AttendeeFilterSetForm(forms.Form):
+    ORDERING_CHOICES = (
+        ("name", "Name"),
+        ("name", "Name (descending)"),
+    )
+    HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES
+
+    # TODO: Automatically generate fields from the parent filterset.
+    bought_items__item_option = GroupedModelChoiceField(label="Bought Item",
+                    queryset=ItemOption.objects.all(),
+                    group_by_field="item",
+                    group_label=lambda x: x.name,
+                    required=False)
+    housing_status = forms.ChoiceField(label="Housing Status",
+                                       choices=HOUSING_STATUS_CHOICES,
+                                       required=False)
+    o = forms.ChoiceField(label="Sort by",
+                          choices=ORDERING_CHOICES,
+                          required=True)
