@@ -55,23 +55,8 @@
 @import "bootstrap/utilities"
 @import "bootstrap/responsive-utilities"
 
-// Base
-
-h1, h2, h3, h4, h5, h6
-	// Sloppy fix for St. Ryde's high baseline.
-	// TODO: Fix this in the font file instead.
-	position: relative
-	top: .125em
-
-// Bootstrap Overrides
-
-.page-header
-	&, & > h1, & > h2, & > h3, & > h4, & > h5, & > h6
-		margin-top: 0
-
-// Modules
-
-.link-unstyled
-	&, &:hover, &:active, &:focus
-		text-decoration: inherit
-		color: inherit
+// Brambling
+@import modules/base
+@import modules/headings
+@import modules/masthead
+@import modules/navbar
