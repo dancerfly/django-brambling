@@ -1,0 +1,12 @@
+{% load floppyforms %}
+
+{% formconfig row using "brambling/forms/signup_row.html" %}
+
+<div class="row">
+	{% for field in form.visible_fields %}
+		{% formrow field %}
+	{% endfor %}
+	{% for field in form.hidden_fields %}
+		{{ field }}
+	{% endfor %}
+</div>

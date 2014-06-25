@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 
 from brambling.models import Event, BoughtItem
+from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
 class UserDashboardView(TemplateView):
@@ -43,3 +44,9 @@ class UserDashboardView(TemplateView):
 
 class SplashView(TemplateView):
     template_name = 'brambling/splash.html'
+
+    def get_context_data(self):
+        return {
+            'signup_form': SignUpForm(self.request),
+            'login_form': FloppyAuthenticationForm()
+        }

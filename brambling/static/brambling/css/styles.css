@@ -5779,7 +5779,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-right: -6000px;
   padding: 19px 6000px;
   background: #f3b911;
-  color: white;
+  color: #fef9eb;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
 }
 .masthead *:first-child {
@@ -5787,6 +5787,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 .masthead *:last-child {
   margin-bottom: 0;
+}
+.masthead strong {
+  color: white;
+}
+
+.masthead-link {
+  color: #fae4a3;
+  font-weight: bold;
+}
+.masthead-link:hover {
+  color: white;
 }
 
 .navbar-default {
@@ -5815,4 +5826,12 @@ h1, h2, h3, h4, h5, h6 {
   .navbar-default .navbar-collapse {
     padding: 0;
   }
+}
+
+.text-large {
+  font-size: 18px;
+}
+
+.text-jumbo {
+  font-size: 28px;
 }

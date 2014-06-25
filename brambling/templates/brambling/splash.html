@@ -1,31 +1,38 @@
 {% extends "brambling/__base.html" %}
 
+{% load floppyforms %}
+
 {% block content %}
-	<div class='row'>
-		<div class='col-md-8 col-md-offset-2'>
-			<div class='jumbotron'>
-				<h1>Welcome to Brambling!</h1>
-
-				<div class='row'>
-					<div class='col-sm-4'>
-						<p><a class='btn btn-block btn-primary btn-lg' href='{% url "login" %}'><i class='fa fa-sign-in'></i> Log in</a></p>
-					</div>
-					<div class='col-sm-4'>
-						<p><a class='btn btn-block btn-success btn-lg' href='{% url "brambling_signup" %}'><i class='fa fa-rocket'></i> Sign up</a></p>
-					</div>
-					<div class='col-sm-4'>
-						<p><a class='btn btn-block btn-default btn-lg' href='https://github.com/littleweaver/django-brambling'><i class='fa fa-github-alt'></i> Get the code</a></p>
-					</div>
+	<div class="masthead">
+		<div class="row">
+			<div class="col-sm-6">
+				<p class="text-jumbo"><strong>Brambling</strong> is an easy-to-use dance event registration and ticketing system.</p>
+				<p class="text-jumbo">Sign up now to start <strong>organizing</strong> and <strong>attending</strong> dance events.</p>
 			</div>
-
-				<p>Brambling is an <a href="https://github.com/littleweaver/django-brambling">open source</a> dance registration platform built <strong>by dancers, for dancers</strong>. We're still in the early stages of development, so we'd love your feedback! (There will be a feedback button in the lower right of your screen once you've logged in.)</p>
-
-				<p><strong>Why open source?</strong> No single dance scene has enough resources (in terms of skilled volunteers) to truly focus on creating an application that meets all of their needs. As dancers, we've seen a variety of homegrown systems over the years, none of them quite polished enough for general use.</p>
-
-				<p>By providing a <strong>solid, easy-to-use</strong> alternative, we hope to save some time for local organizers and volunteers – and if we're lucky, to get a hand in return to make this the most awesomest social dance event registration system ever!</p>
-
-				<p>Thanks for your help!</p>
-				<h2><a href="http://littleweaverweb.com/">Little Weaver Web Collective</a></h2>
+			<div class="col-sm-6">
+				<p class="text-jumbo"><strong>Sign Up</strong> or <a href="{% url "login" %}" class="masthead-link">Log In</a></p>
+				<form action="{% url "brambling_signup" %}" method="post">
+					{% csrf_token %}
+					{% form signup_form using "brambling/forms/signup.html" %}
+					<button class="btn btn-primary">Sign Up</button>
+				</form>
+			</div>
+		</div>{# /.row #}
+	</div>
+	<div class='row'>
+		<div class='col-sm-6'>
+			<h2>About Brambling</h2>
+			<p>Brambling is an <a href="https://github.com/littleweaver/django-brambling">open source</a> dance registration platform built <strong>by dancers, for dancers</strong>. We're still in the early stages of development, so we'd love your feedback! (There will be a feedback button in the lower right of your screen once you've logged in.)</p>
+			<p><strong>Why open source?</strong> No single dance scene has enough resources (in terms of skilled volunteers) to truly focus on creating an application that meets all of their needs. As dancers, we've seen a variety of homegrown systems over the years, none of them quite polished enough for general use.</p>
+			<p>By providing a <strong>solid, easy-to-use</strong> alternative, we hope to save some time for local organizers and volunteers – and if we're lucky, to get a hand in return to make this the most awesomest social dance event registration system ever!</p>
+			<p>Thanks for your help!</p>
+			<p class="text-large"><a href="http://littleweaverweb.com/">Little Weaver Web Collective</a></p>
+		</div>
+		<div class="col-sm-6">
+			<h2>Upcoming Events on Brambling</h2>
+			<p>
+				Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+			</p>
 		</div>
 	</div>
 {% endblock %}
