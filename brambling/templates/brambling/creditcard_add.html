@@ -1,0 +1,33 @@
+{% extends 'brambling/layouts/100.html' %}
+
+{% load floppyforms static %}
+
+{% block title %}Add a card – {{ block.super }}{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% include "brambling/_stripe_js.html" %}
+{% endblock %}
+
+{% block main %}
+	<div class='row'>
+		<div class='col-md-6 col-md-offset-3'>
+			<h2>Add a card</h2>
+
+			{% include 'brambling/_stripe_form.html' %}
+
+			<p>
+				<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
+				<a href="{% url 'brambling_user_profile' %}" class="btn btn-link">Cancel</a>
+			</p>
+
+			{% include "brambling/_stripe_note.html" %}
+
+			<form id='card-form' action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
+				{% csrf_token %}
+			</form>
+
+
+		</div>
+	</div>
+{% endblock %}

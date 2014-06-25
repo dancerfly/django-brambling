@@ -12,6 +12,7 @@
 	</script>
 	{% include 'brambling/event/_use_discount_js.html' %}
 	{% include 'brambling/event/_confirmation_screen.html' %}
+	{% include "brambling/_stripe_js.html" %}
 {% endblock %}
 
 {% block main %}
@@ -154,15 +155,60 @@
 			</tbody>
 		</table>
 	</div>
+	{% if balance > 0 %}
+		{% if has_cards %}
+			<div class="panel-group" id="accordion">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+								Pay with a saved card
+							</a>
+						</h4>
+					</div>
+					<div id="collapseOne" class="panel-collapse collapse in">
+						<div class="panel-body">
+							<form novalidate action="" method="post">
+								{% csrf_token %}
+								<input name='choose_card' value='1' type='hidden'>
+								{% formrow choose_card_form.card %}
+								<button type="submit" class="btn btn-primary"{% if not event_person.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+							</form>
+						</div>
+					</div>
+				</div>
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+								Pay with a new card
+							</a>
+						</h4>
+					</div>
+					<div id="collapseTwo" class="panel-collapse collapse">
+						<div class="panel-body">
+		{% endif %}
 
-	{% if form %}
+		{% include 'brambling/_stripe_form.html' %}
+		<form novalidate action="" method="post" id='card-form'>
+			{% csrf_token %}
+			<input name='new_card' value='1' type='hidden'>
+			{% formrow new_card_form.save_card %}
+
+			<button type="submit" id='card-submit' class="btn btn-primary"{% if not event_person.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+		</form>
+
+		{% if has_cards %}
+						</div>
+					</div>
+				</div>
+			</div>
+		{% endif %}
+		{% include 'brambling/_stripe_note.html' %}
+	{% elif event_person.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}
-
-			{% form form %}
-
-			<button type="submit" class="btn btn-primary"{% if event_person.has_cart and not event_person.cart_is_valid %} disabled{% endif %}>{% if balance > 0 %}Pay now ({{ balance|format_money:event.currency }}){% else %}Confirm cart purchases{% endif %}</button>
-			<a class='btn btn-default' href='{% url "brambling_user_card_add" %}?next_url={{ request.path }}'><span class='fa fa-plus'></span> Add a card</a>
+			<button type="submit" class="btn btn-primary"{% if not event_person.cart_is_valid %} disabled{% endif %}>Confirm cart purchases</button>
 		</form>
 	{% endif %}
 {% endblock %}

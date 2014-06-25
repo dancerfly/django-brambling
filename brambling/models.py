@@ -387,7 +387,7 @@ class CreditCard(models.Model):
         ('Unknown', 'Unknown'),
     )
     stripe_card_id = models.CharField(max_length=40)
-    person = models.ForeignKey(Person, related_name='cards')
+    person = models.ForeignKey(Person, related_name='cards', blank=True, null=True)
     added = models.DateTimeField(auto_now_add=True)
 
     exp_month = models.PositiveSmallIntegerField()
@@ -579,6 +579,14 @@ class EventPerson(models.Model):
         if bought_item.event_person_id == self.id:
             bought_item.delete()
         if not self.has_cart():
+            self.cart_start_time = None
+            self.save()
+
+    def mark_cart_paid(self):
+        self.bought_items.filter(
+            status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
+        ).update(status=BoughtItem.PAID)
+        if self.cart_start_time is not None:
             self.cart_start_time = None
             self.save()
 

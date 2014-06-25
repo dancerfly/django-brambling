@@ -206,38 +206,128 @@ class HostingForm(MemoModelForm):
         return instance
 
 
-class CheckoutForm(forms.Form):
+class AddCardForm(forms.Form):
+    token = forms.CharField(required=True,
+                            error_messages={'required': "No token was provided. Please try again."})
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super(AddCardForm, self).__init__(*args, **kwargs)
+
+    def save(self):
+        return self.save_card(self.user, self.cleaned_data['token'])
+
+    def save_card(self, user, token):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        save_user = False
+        if not user.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=user.email,
+                description=user.name,
+                metadata={
+                    'brambling_id': user.id
+                },
+            )
+            user.stripe_customer_id = customer.id
+            save_user = True
+        else:
+            customer = stripe.Customer.retrieve(user.stripe_customer_id)
+        self.customer = customer
+        # This could throw some errors.
+        card = customer.cards.create(card=token)
+
+        # Check the fingerprint. Save and redirect if there's no conflict.
+        # Otherwise error time!
+        creditcard, created = CreditCard.objects.get_or_create(
+            person=user,
+            fingerprint=card.fingerprint,
+            defaults={
+                'stripe_card_id': card.id,
+                'exp_month': card.exp_month,
+                'exp_year': card.exp_year,
+                'last4': card.last4,
+                'brand': card.type,
+            }
+        )
+        if not created:
+            # Use the saved card on our system; delete the new stripe card.
+            card.delete()
+
+        if user.default_card_id is None:
+            user.default_card = creditcard
+            save_user = True
+
+        if save_user:
+            user.save()
+        return creditcard
+
+
+class BasePaymentForm(forms.Form):
+    def __init__(self, event_person, amount, *args, **kwargs):
+        self.event_person = event_person
+        self.amount = amount
+        super(BasePaymentForm, self).__init__(*args, **kwargs)
+
+    def charge(self, card_or_token, customer=None):
+        if self.amount <= 0:
+            return None
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        # Amount is number of smallest currency units.
+        return stripe.Charge.create(
+            amount=int(self.amount * 100),
+            currency=self.event_person.event.currency,
+            customer=customer,
+            card=card_or_token,
+        )
+
+    def save_payment(self, charge, creditcard):
+        payment = Payment.objects.create(event_person=self.event_person,
+                                         amount=self.amount,
+                                         stripe_charge_id=charge.id,
+                                         card=creditcard)
+        return payment
+
+
+class OneTimePaymentForm(BasePaymentForm, AddCardForm):
+    save_card = forms.BooleanField(required=False)
+
+    def __init__(self, event_person, amount, user, *args, **kwargs):
+        super(OneTimePaymentForm, self).__init__(
+            event_person=event_person,
+            amount=amount,
+            user=user,
+            *args, **kwargs
+        )
+
+    def save(self):
+        if self.cleaned_data['save_card']:
+            creditcard = self.save_card(self.user, self.cleaned_data['token'])
+            charge = self.charge(creditcard.stripe_card_id,
+                                 self.customer)
+        else:
+            charge = self.charge(self.cleaned_data['token'])
+            creditcard = CreditCard.objects.create(
+                stripe_card_id=charge.card.id,
+                exp_month=charge.card.exp_month,
+                exp_year=charge.card.exp_year,
+                last4=charge.card.last4,
+                brand=charge.card.type,
+                fingerprint=charge.card.fingerprint
+            )
+
+        return self.save_payment(charge, creditcard)
+
+
+class SavedCardPaymentForm(BasePaymentForm):
     card = forms.ModelChoiceField(CreditCard)
 
-    def __init__(self, event_person, balance, *args, **kwargs):
-        super(CheckoutForm, self).__init__(*args, **kwargs)
-        self.event_person = event_person
-        self.balance = balance
+    def __init__(self, *args, **kwargs):
+        super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
         self.fields['card'].queryset = self.event_person.person.cards.all()
         self.fields['card'].initial = self.event_person.person.default_card
 
-        if self.balance <= 0:
-            del self.fields['card']
-
-    def clean(self):
-        cleaned_data = super(CheckoutForm, self).clean()
-        if not self.event_person.cart_is_valid():
-            raise ValidationError("Cart must be ready for checkout before paying.", self.event_person.cart_errors)
-        return cleaned_data
-
     def save(self):
-        if self.balance <= 0:
-            return
         card = self.cleaned_data['card']
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        charge = stripe.Charge.create(
-            amount=int(self.balance * 100),
-            currency=self.event_person.event.currency,
-            customer=self.event_person.person.stripe_customer_id,
-            card=card.stripe_card_id,
-        )
-        payment = Payment.objects.create(event_person=self.event_person,
-                                         amount=self.balance,
-                                         stripe_charge_id=charge.id,
-                                         card=card)
-        return payment
+        charge = self.charge(card.stripe_card_id,
+                             self.event_person.person.stripe_customer_id)
+        return self.save_payment(charge, card)

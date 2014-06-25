@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
@@ -7,8 +8,8 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
-from brambling.forms.attendee import (CheckoutForm, HostingForm,
-                                      AttendeeBasicDataForm,
+from brambling.forms.attendee import (SavedCardPaymentForm, OneTimePaymentForm,
+                                      HostingForm, AttendeeBasicDataForm,
                                       AttendeeHousingDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption, Payment,
                               BoughtItemDiscount, Discount, EventPerson,
@@ -441,34 +442,39 @@ class RecordsView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         if self.balance > 0 or self.event_person.has_cart():
-            self.form = self.get_form()
+            self.get_forms()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        if self.balance > 0 or self.event_person.has_cart():
-            self.form = self.get_form()
-            if self.form.is_valid():
-                self.form.save()
-                # Mark reserved / unpaid items as paid.
-                self.event_person.bought_items.filter(
-                    status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
-                ).update(status=BoughtItem.PAID)
-                if self.event_person.cart_start_time is not None:
-                    self.event_person.cart_start_time = None
-                    self.event_person.save()
-                return HttpResponseRedirect('')
+        if self.balance == 0:
+            self.event_person.mark_cart_paid()
+        else:
+            self.get_forms()
+            form = None
+            if 'choose_card' in request.POST:
+                # Get a choose form.
+                form = self.choose_card_form
+            if 'new_card' in request.POST:
+                # Get a new form.
+                form = self.new_card_form
+            if form and form.is_valid():
+                form.save()
+            self.event_person.mark_cart_paid()
+
+            return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
-    def get_form(self):
+    def get_forms(self):
         kwargs = {
             'event_person': self.event_person,
-            'balance': self.balance,
+            'amount': self.balance,
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
-        return CheckoutForm(**kwargs)
+        self.choose_card_form = SavedCardPaymentForm(**kwargs)
+        self.new_card_form = OneTimePaymentForm(user=self.request.user, **kwargs)
 
     def get_balance(self):
         self.payments = Payment.objects.filter(
@@ -506,7 +512,8 @@ class RecordsView(TemplateView):
         context.update(_shared_shopping_context(self.request, self.event_person))
 
         context.update({
-            'form': getattr(self, 'form', None),
+            'new_card_form': getattr(self, 'new_card_form', None),
+            'choose_card_form': getattr(self, 'choose_card_form', None),
             'bought_items': self.bought_items,
             'payments': self.payments,
             'discounts': self.discounts,
@@ -514,5 +521,8 @@ class RecordsView(TemplateView):
             'total_savings': self.total_savings,
             'total_payments': self.total_payments,
             'balance': self.balance,
+            'STRIPE_PUBLISHABLE_KEY': getattr(settings,
+                                              'STRIPE_PUBLISHABLE_KEY',
+                                              ''),
         })
         return context

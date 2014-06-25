@@ -5,8 +5,8 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View)
-import stripe
 
+from brambling.forms.attendee import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
@@ -82,67 +82,21 @@ class PersonView(UpdateView):
 
 
 class CreditCardAddView(TemplateView):
-    template_name = 'brambling/creditcard_form.html'
+    template_name = 'brambling/creditcard_add.html'
 
     def post(self, request, *args, **kwargs):
-        # Handle the stripe token. Create a customer if necessary.
-        token = request.POST.get('stripeToken')
-        user = request.user
-        self.errors = {}
-        if not token:
-            self.errors['__all__'] = "No token was provided. Please try again."
-        else:
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            save_user = False
-            if not user.stripe_customer_id:
-                customer = stripe.Customer.create(
-                    email=user.email,
-                    description=user.name,
-                    metadata={
-                        'brambling_id': user.id,
-                    },
-                )
-                user.stripe_customer_id = customer.id
-                save_user = True
+        form = AddCardForm(request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+
+            if ('next_url' in request.GET and
+                    is_safe_url(url=request.GET['next_url'],
+                                host=request.get_host())):
+                next_url = request.GET['next_url']
             else:
-                customer = stripe.Customer.retrieve(user.stripe_customer_id)
-
-            # This could throw some errors.
-            card = customer.cards.create(card=token)
-
-            # Check the fingerprint. Save and redirect if there's no conflict.
-            # Otherwise error time!
-            creditcard, created = CreditCard.objects.get_or_create(
-                person=user,
-                fingerprint=card.fingerprint,
-                defaults={
-                    'stripe_card_id': card.id,
-                    'exp_month': card.exp_month,
-                    'exp_year': card.exp_year,
-                    'last4': card.last4,
-                    'brand': card.type,
-                }
-            )
-            if not created:
-                card.delete()
-                self.errors['number'] = ('You already have a card with this '
-                                         'number')
-
-            if user.default_card_id is None:
-                user.default_card = creditcard
-                save_user = True
-
-            if save_user:
-                user.save()
-
-            if not self.errors:
-                if ('next_url' in request.GET and
-                        is_safe_url(url=request.GET['next_url'],
-                                    host=request.get_host())):
-                    next_url = request.GET['next_url']
-                else:
-                    next_url = reverse('brambling_user_profile')
-                return HttpResponseRedirect(next_url)
+                next_url = reverse('brambling_user_profile')
+            return HttpResponseRedirect(next_url)
+        self.errors = form.errors
         return self.get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

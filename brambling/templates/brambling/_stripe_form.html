@@ -1,6 +1,9 @@
-{# This template requires Stripe.js #}
-
-{# TODO: Add a check for stripe.js (and to make sure we're not in form tags?) #}
+{% if not request.is_secure %}
+	<div class="alert alert-danger">
+		<p><strong>Warning:</strong> This connection is not secure. Never submit real credit card data over an insecure connection. You may see this error if this site is in testing mode. If not, please contact a site administrator.</p>
+		<p>If you are testing this site, you may use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a>.</p>
+	</div>
+{% endif %}
 
 <div class='row'>
 	<div class='col-sm-9'>
