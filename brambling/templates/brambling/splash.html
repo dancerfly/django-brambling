@@ -21,7 +21,10 @@
 	</div>
 	<div class='row'>
 		<div class='col-sm-6'>
-			<h2>About Brambling</h2>
+			<h2>
+				About Brambling
+				<a class="btn btn-default pull-right" href="https://github.com/littleweaver/django-brambling"><i class="fa fa-github"></i> Check us out on GitHub!</a>
+			</h2>
 			<p>Brambling is an <a href="https://github.com/littleweaver/django-brambling">open source</a> dance registration platform built <strong>by dancers, for dancers</strong>. We're still in the early stages of development, so we'd love your feedback! (There will be a feedback button in the lower right of your screen once you've logged in.)</p>
 			<p><strong>Why open source?</strong> No single dance scene has enough resources (in terms of skilled volunteers) to truly focus on creating an application that meets all of their needs. As dancers, we've seen a variety of homegrown systems over the years, none of them quite polished enough for general use.</p>
 			<p>By providing a <strong>solid, easy-to-use</strong> alternative, we hope to save some time for local organizers and volunteers – and if we're lucky, to get a hand in return to make this the most awesomest social dance event registration system ever!</p>
@@ -30,9 +33,12 @@
 		</div>
 		<div class="col-sm-6">
 			<h2>Upcoming Events on Brambling</h2>
-			<p>
-				Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-			</p>
+			{% for event in upcoming_events|slice:"5" %}
+				<a href="{{ event.get_absolute_url }}">
+					<h3>{{ event.name }}</h3>
+					<h4 class="text-muted">{{ event.start_date|date }} – {{ event.end_date|date }}</h4>
+				</a>
+			{% endfor %}
 		</div>
 	</div>
 {% endblock %}

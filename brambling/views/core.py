@@ -46,7 +46,12 @@ class SplashView(TemplateView):
     template_name = 'brambling/splash.html'
 
     def get_context_data(self):
+        today = timezone.now().date()
+        upcoming_events = Event.objects.filter(privacy=Event.PUBLIC).annotate(
+            start_date=Min('dates__date'), end_date=Max('dates__date')
+            ).filter(start_date__gte=today).order_by('start_date')
         return {
             'signup_form': SignUpForm(self.request),
-            'login_form': FloppyAuthenticationForm()
+            'login_form': FloppyAuthenticationForm(),
+            'upcoming_events': upcoming_events,
         }
