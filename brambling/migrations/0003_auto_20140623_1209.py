@@ -44,18 +44,6 @@ class Migration(migrations.Migration):
             name='eventpersondiscount',
             unique_together=set([(b'event_person', b'discount')]),
         ),
-        migrations.AlterUniqueTogether(
-            name='useddiscount',
-            unique_together=None,
-        ),
-        migrations.RemoveField(
-            model_name='useddiscount',
-            name='discount',
-        ),
-        migrations.RemoveField(
-            model_name='useddiscount',
-            name='event_person',
-        ),
         migrations.DeleteModel(
             name='UsedDiscount',
         ),
