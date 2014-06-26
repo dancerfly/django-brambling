@@ -512,6 +512,7 @@ class RecordsView(TemplateView):
         context.update(_shared_shopping_context(self.request, self.event_person))
 
         context.update({
+            'has_cards': self.event_person.person.cards.exists(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'bought_items': self.bought_items,
