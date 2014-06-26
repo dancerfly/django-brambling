@@ -5778,8 +5778,8 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 19px;
   margin-right: -6000px;
   padding: 19px 6000px;
-  background: #f3b911;
-  color: #fef9eb;
+  background: #de8e0f;
+  color: #fceed6;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
 }
 .masthead *:first-child {
@@ -5793,7 +5793,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .masthead-link {
-  color: #fae4a3;
+  color: #f7cf8f;
   font-weight: bold;
 }
 .masthead-link:hover {
@@ -5801,7 +5801,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .navbar-default {
-  background: #f3b911;
+  background: #de8e0f;
   border: 0;
   color: white;
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
