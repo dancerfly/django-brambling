@@ -16,7 +16,8 @@ from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, EventPersonDiscount,
                               BoughtItemDiscount)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav, get_event_person)
+                                   get_event_admin_nav, get_event_person,
+                                   clear_expired_carts)
 
 
 class EventCreateView(CreateView):
@@ -53,6 +54,7 @@ class EventDashboardView(TemplateView):
         self.event = get_event_or_404(self.kwargs['slug'])
         if not self.event.editable_by(request.user):
             raise Http404
+        clear_expired_carts(self.event)
         return super(EventDashboardView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

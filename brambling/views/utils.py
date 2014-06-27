@@ -1,11 +1,13 @@
+from datetime import timedelta
 from functools import wraps
 
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Min
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
-from brambling.models import Event, EventPerson
+from brambling.models import Event, EventPerson, BoughtItem
 
 
 def get_event_or_404(slug):
@@ -81,3 +83,13 @@ def ajax_required(view):
             raise Http404
         return view(request, *args, **kwargs)
     return wrapped
+
+
+def clear_expired_carts(event):
+    expired_before = timezone.now() - timedelta(minutes=event.cart_timeout)
+    BoughtItem.objects.filter(
+        status=BoughtItem.RESERVED,
+        event_person__event=event,
+        event_person__cart_start_time__isnull=False,
+        event_person__cart_start_time__lte=expired_before
+    ).delete()

@@ -16,7 +16,7 @@ from brambling.models import (Item, BoughtItem, ItemOption, Payment,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, ajax_required,
-                                   get_event_person)
+                                   get_event_person, clear_expired_carts)
 
 
 class AddToCartView(View):
@@ -128,6 +128,7 @@ class ShopView(TemplateView):
         context = super(ShopView, self).get_context_data(**kwargs)
 
         event = get_event_or_404(self.kwargs['event_slug'])
+        clear_expired_carts(event)
         now = timezone.now()
         items = event.items.filter(
             options__available_start__lte=now,
