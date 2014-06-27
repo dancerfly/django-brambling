@@ -461,9 +461,8 @@ class RecordsView(TemplateView):
                 form = self.new_card_form
             if form and form.is_valid():
                 form.save()
-            self.event_person.mark_cart_paid()
-
-            return HttpResponseRedirect('')
+                self.event_person.mark_cart_paid()
+                return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
@@ -472,10 +471,15 @@ class RecordsView(TemplateView):
             'event_person': self.event_person,
             'amount': self.balance,
         }
+        choose_data = None
+        new_data = None
         if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-        self.choose_card_form = SavedCardPaymentForm(**kwargs)
-        self.new_card_form = OneTimePaymentForm(user=self.request.user, **kwargs)
+            if 'choose_card' in self.request.POST:
+                choose_data = self.request.POST
+            elif 'new_card' in self.request.POST:
+                new_data = self.request.POST
+        self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
+        self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
 
     def get_balance(self):
         self.payments = Payment.objects.filter(

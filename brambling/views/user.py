@@ -96,7 +96,7 @@ class CreditCardAddView(TemplateView):
             else:
                 next_url = reverse('brambling_user_profile')
             return HttpResponseRedirect(next_url)
-        self.errors = form.errors
+        self.errors = form.errors['__all__']
         return self.get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
