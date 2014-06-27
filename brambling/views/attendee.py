@@ -24,6 +24,7 @@ class AddToCartView(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         event = get_event_or_404(kwargs['event_slug'])
+        clear_expired_carts(event)
         try:
             item_option = ItemOption.objects.annotate(taken=Count('boughtitem')
                                            ).get(item__event=event,
