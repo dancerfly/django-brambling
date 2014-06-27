@@ -10,14 +10,22 @@
 		{% formrow form.slug %}
 		{% formrow form.tagline %}
 		{% formrow form.dance_styles %}
-		<div class='form-group'>
-			{% with field=form.has_dances %}
-				<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
-			{% endwith %}
-			{% with field=form.has_classes %}
-				<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
-			{% endwith %}
-		</div>
+		<div class="row">
+			<div class="col-sm-6">
+				<div class='form-group'>
+					{% with field=form.has_dances %}
+						<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+					{% endwith %}
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class='form-group'>
+					{% with field=form.has_classes %}
+						<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+					{% endwith %}
+				</div>
+			</div>
+		</div>{# /.row #}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
 

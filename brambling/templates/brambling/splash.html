@@ -11,7 +11,7 @@
 			</div>
 			<div class="col-sm-6">
 				<p class="text-jumbo"><strong>Sign Up</strong> or <a href="{% url "login" %}" class="masthead-link">Log In</a></p>
-				<form action="{% url "brambling_signup" %}" method="post">
+				<form action="{% url "brambling_signup" %}" class="masthead-form" method="post">
 					{% csrf_token %}
 					{% form signup_form using "brambling/forms/signup.html" %}
 					<button class="btn btn-primary">Sign Up</button>

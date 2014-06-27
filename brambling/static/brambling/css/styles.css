@@ -5768,6 +5768,12 @@ h1, h2, h3, h4, h5, h6 {
   top: 0.125em;
 }
 
+.form-control, .form-control:focus {
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+}
+
 .page-header, .page-header > h1, .page-header > h2, .page-header > h3, .page-header > h4, .page-header > h5, .page-header > h6 {
   margin-top: 0;
 }
@@ -5800,6 +5806,15 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
 }
 
+.masthead-form input {
+  background-color: white;
+  border: 0;
+}
+
+.dropdown-menu > li > a {
+  padding: 3px 9.5px;
+}
+
 .navbar-default {
   background: #de8e0f;
   border: 0;
@@ -5819,7 +5834,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(0, 0, 0, 0.25);
 }
 .navbar-default > .container {
-  border-bottom: 1px solid white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   margin-bottom: -1px;
 }
 @media (min-width: 768px) {
