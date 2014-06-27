@@ -242,6 +242,12 @@ class ItemOption(models.Model):
     def __unicode__(self):
         return smart_text(self.name)
 
+    @property
+    def remaining(self):
+        if not hasattr(self, 'taken'):
+            self.taken = self.boughtitem_set.count()
+        return self.total_number - self.taken
+
 
 class Discount(models.Model):
     PERCENT = 'percent'

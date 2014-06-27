@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -25,10 +25,14 @@ class AddToCartView(View):
     def post(self, request, *args, **kwargs):
         event = get_event_or_404(kwargs['event_slug'])
         try:
-            item_option = ItemOption.objects.get(item__event=event,
+            item_option = ItemOption.objects.annotate(taken=Count('boughtitem')
+                                           ).get(item__event=event,
                                                  pk=kwargs['pk'])
         except ItemOption.DoesNotExist:
             raise Http404
+
+        if item_option.taken >= item_option.total_number:
+            return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
         event_person = get_event_person(event, request.user)
         if event_person.person.confirmed_email:
@@ -112,12 +116,6 @@ def _shared_shopping_context(request, event_person):
 
 
 class ShopView(TemplateView):
-    categories = (
-        Item.MERCHANDISE,
-        Item.COMPETITION,
-        Item.CLASS,
-        Item.PASS
-    )
     template_name = 'brambling/event/shop.html'
 
     @method_decorator(login_required)
@@ -130,14 +128,15 @@ class ShopView(TemplateView):
         event = get_event_or_404(self.kwargs['event_slug'])
         clear_expired_carts(event)
         now = timezone.now()
-        items = event.items.filter(
-            options__available_start__lte=now,
-            options__available_end__gte=now,
-            category__in=self.categories,
-        ).select_related('options').distinct()
+        item_options = ItemOption.objects.filter(
+            available_start__lte=now,
+            available_end__gte=now,
+        ).annotate(taken=Count('boughtitem')).filter(
+            total_number__gt=F('taken')
+        ).order_by('item')
 
         context.update({
-            'items': items,
+            'item_options': item_options,
         })
         event_person = get_event_person(event, self.request.user)
         event_person.event = event
