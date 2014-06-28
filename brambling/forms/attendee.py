@@ -30,7 +30,7 @@ class AttendeeHousingDataForm(MemoModelForm):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
 
         if self.instance.person == self.instance.event_person.person:
-            self.fields['save_as_defaults'] = forms.BooleanField(initial=True)
+            self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
 
             if not self.instance.housing_completed:
                 if self.instance.person.modified_directly:
@@ -91,7 +91,7 @@ class HousingSlotForm(forms.ModelForm):
 
 
 class HostingForm(MemoModelForm):
-    save_as_defaults = forms.BooleanField(initial=True)
+    save_as_defaults = forms.BooleanField(initial=True, required=False)
 
     class Meta:
         model = EventHousing
