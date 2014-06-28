@@ -174,7 +174,7 @@ class Event(models.Model):
     has_classes = models.BooleanField(verbose_name="Is a class / Has class(es)", default=False)
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PUBLIC, help_text="Who can view this event.")
+                               default=PRIVATE, help_text="Who can view this event.")
 
     owner = models.ForeignKey('Person',
                               related_name='owner_events')
