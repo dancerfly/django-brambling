@@ -260,8 +260,8 @@ class Discount(models.Model):
     name = models.CharField(max_length=40)
     code = models.CharField(max_length=20)
     item_options = models.ManyToManyField(ItemOption)
-    available_start = models.DateTimeField(blank=True, null=True)
-    available_end = models.DateTimeField(blank=True, null=True)
+    available_start = models.DateTimeField(default=timezone.now)
+    available_end = models.DateTimeField()
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
                                      default=FLAT)

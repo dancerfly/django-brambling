@@ -147,7 +147,7 @@ def item_form(request, *args, **kwargs):
         item = Item()
     if request.method == 'POST':
         form = ItemForm(event, request.POST, instance=item)
-        formset = ItemOptionFormSet(request.POST, instance=item)
+        formset = ItemOptionFormSet(event, request.POST, instance=item)
         # Always run both.
         form.is_valid()
         formset.is_valid()
@@ -159,7 +159,7 @@ def item_form(request, *args, **kwargs):
             return HttpResponseRedirect(url)
     else:
         form = ItemForm(event, instance=item)
-        formset = ItemOptionFormSet(instance=item)
+        formset = ItemOptionFormSet(event, instance=item)
     context = {
         'event': event,
         'item': item,

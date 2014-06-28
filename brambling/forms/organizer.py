@@ -69,8 +69,31 @@ class ItemForm(forms.ModelForm):
         super(ItemForm, self)._post_clean()
         self.instance.event = self.event
 
+
+class ItemOptionForm(forms.ModelForm):
+    class Meta:
+        model = ItemOption
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(ItemOptionForm, self).__init__(*args, **kwargs)
+        self.fields['available_end'].initial = event.start_date
+
+
+class BaseItemOptionFormSet(forms.BaseInlineFormSet):
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(BaseItemOptionFormSet, self).__init__(*args, **kwargs)
+
+    def _construct_form(self, i, **kwargs):
+        kwargs['event'] = self.event
+        return super(BaseItemOptionFormSet, self)._construct_form(i, **kwargs)
+
+
 ItemOptionFormSet = forms.inlineformset_factory(Item,
                                                 ItemOption,
+                                                form=ItemOptionForm,
+                                                formset=BaseItemOptionFormSet,
                                                 extra=0,
                                                 min_num=1,
                                                 validate_min=True)
@@ -91,6 +114,7 @@ class DiscountForm(forms.ModelForm):
         self.event = event
         super(DiscountForm, self).__init__(*args, **kwargs)
         self.fields['item_options'].queryset = ItemOption.objects.filter(item__event=event)
+        self.fields['available_end'].initial = event.start_date
         if not self.instance.code:
             self.generated_code = get_random_string(6)
             while Discount.objects.filter(event=self.event,
