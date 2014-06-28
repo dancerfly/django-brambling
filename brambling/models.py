@@ -217,7 +217,7 @@ class Item(models.Model):
     )
 
     name = models.CharField(max_length=30)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     category = models.CharField(max_length=7, choices=CATEGORIES)
     event = models.ForeignKey(Event, related_name='items')
 
