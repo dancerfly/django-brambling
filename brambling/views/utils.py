@@ -66,7 +66,7 @@ def get_event_admin_nav(event, request):
     if not event.editable_by(request.user):
         return []
     items = (
-        ('brambling_event_dashboard', 'Dashboard', 'fa-dashboard', {'slug': event.slug}),
+        ('brambling_event_dashboard', 'Summary', 'fa-dashboard', {'slug': event.slug}),
         ('brambling_event_update', 'Settings', 'fa-cog', {'slug': event.slug}),
         ('brambling_item_list', 'Items', 'fa-list', {'event_slug': event.slug}),
         ('brambling_discount_list', 'Discounts', 'fa-gift', {'event_slug': event.slug}),

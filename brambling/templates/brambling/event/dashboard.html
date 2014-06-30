@@ -2,34 +2,34 @@
 
 {% load zenaida %}
 
-{% block title %}Dashboard – {{ block.super }}{% endblock %}
+{% block title %}Event Summary – {{ block.super }}{% endblock %}
 
 {% block main %}
 	{{ block.super }}
 
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
-	<h2>Dashboard</h2>
+	<h2>Event Summary</h2>
 	<div class='row'>
 		<div class='col-md-6'>
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
-					<div class='panel-title'>
+					<h4 class='panel-title'>
 						Finance Summary
-					</div>
+					</h4>
 				</div>
 				<ul class='list-group'>
-					<li class='list-group-item list-group-item-info'>
+					<li class='list-group-item'>
 						Gross sales
-						<strong class='pull-right'>{{ gross_sales|format_money:event.currency }}</strong>
+						<strong class='pull-right text-info'>{{ gross_sales|format_money:event.currency }}</strong>
 					</li>
-					<li class='list-group-item list-group-item-danger'>
+					<li class='list-group-item'>
 						Discounts
-						<strong class='pull-right'>{{ total_discounts|format_money:event.currency }}</strong>
+						<strong class='pull-right text-danger'>{{ total_discounts|format_money:event.currency }}</strong>
 					</li>
-					<li class='list-group-item list-group-item-success'>
+					<li class='list-group-item'>
 						Payments received
-						<strong class='pull-right'>{{ payments_received|format_money:event.currency }}</strong>
+						<strong class='pull-right text-success'>{{ payments_received|format_money:event.currency }}</strong>
 					</li>
 				</ul>
 				<div class='panel-footer'>
@@ -40,7 +40,7 @@
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
 					<h4 class='panel-title'>
-						Sales summary
+						Sales Summary
 					</h4>
 				</div>
 				<div class='list-group'>
@@ -49,6 +49,10 @@
 							{{ itemoption.item.name }} ({{ itemoption.name }})
 							<strong class='pull-right'>{{ itemoption.boughtitem__count }}</strong>
 						</a>
+					{% empty %}
+						<div class='list-group-item text-muted'>
+							This event has no items for purchase.
+						</div>
 					{% endfor %}
 				</div>
 			</div>
@@ -57,7 +61,7 @@
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
 					<h4 class='panel-title'>
-						Discount summary
+						Discount Summary
 					</h4>
 				</div>
 				<ul class='list-group'>
@@ -66,13 +70,15 @@
 							{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							<strong class='pull-right'>{{ discount.used_count }}</strong>
 						</li>
+					{% empty %}
+						<li class='list-group-item text-muted'>This event has no discounts.</li>
 					{% endfor %}
 				</ul>
 			</div>
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
 					<h4 class='panel-title'>
-						Attendee summary
+						Attendee Summary
 					</h4>
 				</div>
 				<div class='list-group'>

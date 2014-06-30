@@ -6,8 +6,8 @@
 
 {% block before %}
 	<div class="masthead">
-		<h1>{{ event.name }}</h1>
-		<h2>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h2>
+		<h1 class="masthead-bold">{{ event.name }}</h1>
+		<h3>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h3>
 	</div>
 {% endblock %}
 

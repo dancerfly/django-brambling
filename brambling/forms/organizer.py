@@ -134,7 +134,7 @@ class DiscountForm(forms.ModelForm):
 class AttendeeFilterSetForm(forms.Form):
     ORDERING_CHOICES = (
         ("name", "Name"),
-        ("name", "Name (descending)"),
+        ("-name", "Name (descending)"),
     )
     HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES
 
@@ -149,4 +149,4 @@ class AttendeeFilterSetForm(forms.Form):
                                        required=False)
     o = forms.ChoiceField(label="Sort by",
                           choices=ORDERING_CHOICES,
-                          required=True)
+                          required=False)
