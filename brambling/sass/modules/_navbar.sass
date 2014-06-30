@@ -1,0 +1,22 @@
+.navbar-default
+    background: $brand-yellow
+    border: 0
+    color: #FFF
+    font-family: $headings-font-family
+    .navbar-nav > li > a, .navbar-brand
+        color: $white
+        text-shadow: 0 1px 0 rgba(0, 0, 0, .15)
+        &:hover, &:active, &:focus
+            color: $white
+            background: rgba(0, 0, 0, .15)
+    .navbar-nav > .open > a
+        &, &:hover, &:focus
+            color: $white
+            background: rgba(0, 0, 0, .25)
+    & > .container
+        // A bottom border that only shows up if there's a color field beneath it
+        border-bottom: 1px solid rgba(255, 255, 255, .35)
+        margin-bottom: -1px
+    .navbar-collapse
+        @media (min-width: $screen-sm-min)
+            padding: 0
