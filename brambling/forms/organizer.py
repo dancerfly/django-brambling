@@ -89,6 +89,17 @@ class BaseItemOptionFormSet(forms.BaseInlineFormSet):
         kwargs['event'] = self.event
         return super(BaseItemOptionFormSet, self)._construct_form(i, **kwargs)
 
+    @property
+    def empty_form(self):
+        form = self.form(
+            self.event,
+            auto_id=self.auto_id,
+            prefix=self.add_prefix('__prefix__'),
+            empty_permitted=True,
+        )
+        self.add_fields(form, None)
+        return form
+
 
 ItemOptionFormSet = forms.inlineformset_factory(Item,
                                                 ItemOption,
