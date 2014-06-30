@@ -782,16 +782,13 @@ class Home(models.Model):
                                       related_name='home_avoid',
                                       blank=True,
                                       null=True,
-                                      verbose_name="I/We don't want in my/our home",
-                                      help_text="Include resident preferences")
+                                      verbose_name="I/We don't want in my/our home")
 
     person_prefer = models.TextField(blank=True,
-                                     verbose_name="I/We would love to host",
-                                     help_text="Include resident preferences")
+                                     verbose_name="I/We would love to host")
 
     person_avoid = models.TextField(blank=True,
-                                    verbose_name="I/We don't want to host",
-                                    help_text="Include resident preferences")
+                                    verbose_name="I/We don't want to host")
 
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='homes',
@@ -830,16 +827,13 @@ class EventHousing(models.Model):
                                       related_name='eventhousing_avoid',
                                       blank=True,
                                       null=True,
-                                      verbose_name="I/We don't want in my/our home",
-                                      help_text="Include resident preferences")
+                                      verbose_name="I/We don't want in my/our home")
 
     person_prefer = models.TextField(blank=True,
-                                     verbose_name="I/We would love to host",
-                                     help_text="Include resident preferences")
+                                     verbose_name="I/We would love to host")
 
     person_avoid = models.TextField(blank=True,
-                                    verbose_name="I/We don't want to host",
-                                    help_text="Include resident preferences")
+                                    verbose_name="I/We don't want to host")
 
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='eventhousing',
