@@ -5,6 +5,7 @@ from brambling.forms.user import (
     FloppyPasswordResetForm,
     FloppySetPasswordForm,
 )
+from brambling.models import Discount
 from brambling.views.attendee import (
     AddToCartView,
     RemoveFromCartView,
@@ -131,7 +132,7 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/records/$',
         RecordsView.as_view(),
         name="brambling_event_records"),
-    url(r'^(?P<event_slug>[\w-]+)/discount/use/(?P<discount>[0-9A-Za-z]+)/$',
+    url(r'^(?P<event_slug>[\w-]+)/discount/use/(?P<discount>{})/$'.format(Discount.CODE_REGEX),
         UseDiscountView.as_view(),
         name="brambling_event_use_discount"),
 

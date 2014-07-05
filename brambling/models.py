@@ -250,6 +250,7 @@ class ItemOption(models.Model):
 
 
 class Discount(models.Model):
+    CODE_REGEX = '[0-9A-Za-z \'"~]+'
     PERCENT = 'percent'
     FLAT = 'flat'
 
@@ -258,7 +259,8 @@ class Discount(models.Model):
         (PERCENT, _('Percent')),
     )
     name = models.CharField(max_length=40)
-    code = models.CharField(max_length=20)
+    code = models.CharField(max_length=20, validators=[RegexValidator(CODE_REGEX)],
+                            help_text="Allowed characters: 0-9, a-z, A-Z, space, and '\"~")
     item_options = models.ManyToManyField(ItemOption)
     available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
