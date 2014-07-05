@@ -624,10 +624,15 @@ class EventPerson(models.Model):
 
 
 class Payment(models.Model):
+    STRIPE = 'stripe'
+    METHOD_CHOICES = (
+        (STRIPE, 'Stripe'),
+    )
     event_person = models.ForeignKey('EventPerson', related_name='payments')
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     timestamp = models.DateTimeField(default=timezone.now)
-    stripe_charge_id = models.CharField(max_length=40, blank=True)
+    method = models.CharField(max_length=6, choices=METHOD_CHOICES)
+    remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
 
 

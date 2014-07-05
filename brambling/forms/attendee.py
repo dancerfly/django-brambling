@@ -279,7 +279,8 @@ class BasePaymentForm(forms.Form):
     def save_payment(self, charge, creditcard):
         payment = Payment.objects.create(event_person=self.event_person,
                                          amount=self.amount,
-                                         stripe_charge_id=charge.id,
+                                         method=Payment.STRIPE,
+                                         remote_id=charge.id,
                                          card=creditcard)
         return payment
 
