@@ -66,12 +66,12 @@
 				</div>
 				<ul class='list-group'>
 					{% for discount in discounts %}
-						<li class='list-group-item'>
+						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?bought_items__discounts__discount={{ discount.pk }}'>
 							{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							<strong class='pull-right'>{{ discount.used_count }}</strong>
-						</li>
+						</a>
 					{% empty %}
-						<li class='list-group-item text-muted'>This event has no discounts.</li>
+						<div class='list-group-item text-muted'>This event has no discounts.</div>
 					{% endfor %}
 				</ul>
 			</div>

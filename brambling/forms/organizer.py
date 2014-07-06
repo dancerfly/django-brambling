@@ -155,6 +155,9 @@ class AttendeeFilterSetForm(forms.Form):
                     group_by_field="item",
                     group_label=lambda x: x.name,
                     required=False)
+    bought_items__discounts__discount = forms.ModelChoiceField(label="Discount",
+                                                               queryset=Discount.objects.all(),
+                                                               required=False)
     housing_status = forms.ChoiceField(label="Housing Status",
                                        choices=HOUSING_STATUS_CHOICES,
                                        required=False)

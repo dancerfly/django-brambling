@@ -1,7 +1,7 @@
 import django_filters
 
 from brambling.forms.organizer import AttendeeFilterSetForm
-from brambling.models import Attendee, ItemOption
+from brambling.models import Attendee, ItemOption, Discount
 
 
 class AttendeeFilterSet(django_filters.FilterSet):
@@ -19,6 +19,10 @@ class AttendeeFilterSet(django_filters.FilterSet):
             'queryset': ItemOption.objects.filter(item__event=self.event),
             'empty_label': 'Any Items',
         })
+        self.filters['bought_items__discounts__discount'].extra.update({
+            'queryset': Discount.objects.filter(event=self.event),
+            'empty_label': 'Any Discounts',
+        })
         if not event.collect_housing_data:
             del self.filters['housing_status']
 
@@ -33,5 +37,6 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
     class Meta:
         model = Attendee
-        fields = ['bought_items__item_option', 'housing_status']
+        fields = ['bought_items__item_option', 'housing_status',
+                  'bought_items__discounts__discount']
         order_by = ['name', '-name']
