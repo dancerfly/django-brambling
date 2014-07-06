@@ -25,7 +25,7 @@ from brambling.views.core import (
 )
 from brambling.views.organizer import (
     EventCreateView,
-    EventDashboardView,
+    EventSummaryView,
     EventUpdateView,
     ItemListView,
     item_form,
@@ -136,9 +136,9 @@ urlpatterns = patterns('',
         UseDiscountView.as_view(),
         name="brambling_event_use_discount"),
 
-    url(r'^(?P<slug>[\w-]+)/dashboard/$',
-        EventDashboardView.as_view(),
-        name="brambling_event_dashboard"),
+    url(r'^(?P<slug>[\w-]+)/summary/$',
+        EventSummaryView.as_view(),
+        name="brambling_event_summary"),
     url(r'^(?P<slug>[\w-]+)/edit/$',
         EventUpdateView.as_view(),
         name="brambling_event_update"),

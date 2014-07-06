@@ -47,18 +47,18 @@ class EventCreateView(CreateView):
                                           'housing_dates'))
 
 
-class EventDashboardView(TemplateView):
-    template_name = 'brambling/event/dashboard.html'
+class EventSummaryView(TemplateView):
+    template_name = 'brambling/event/summary.html'
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(self.kwargs['slug'])
         if not self.event.editable_by(request.user):
             raise Http404
         clear_expired_carts(self.event)
-        return super(EventDashboardView, self).get(request, *args, **kwargs)
+        return super(EventSummaryView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(EventDashboardView, self).get_context_data(**kwargs)
+        context = super(EventSummaryView, self).get_context_data(**kwargs)
 
         itemoptions = ItemOption.objects.filter(
             item__event=self.event
