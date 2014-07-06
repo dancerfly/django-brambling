@@ -28,14 +28,14 @@
 						<strong class='pull-right text-danger'>{{ total_discounts|format_money:event.currency }}</strong>
 					</li>
 					<li class='list-group-item'>
-						Payments received
+						Payments outstanding
+						<strong class='pull-right{% if payments_outstanding %} text-danger{% endif %}'>{{ payments_outstanding|format_money:event.currency }}</strong>
+					</li>
+					<li class='list-group-item list-group-item-success'>
+						<strong>Net total</strong>
 						<strong class='pull-right text-success'>{{ payments_received|format_money:event.currency }}</strong>
 					</li>
 				</ul>
-				<div class='panel-footer'>
-					Payments outstanding
-					<strong class='pull-right'>{{ payments_outstanding|format_money:event.currency }}</strong>
-				</div>
 			</div>
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
@@ -97,7 +97,7 @@
 						</a>
 					{% endif %}
 					<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}'>
-						Total count
+						<strong>Total count</strong>
 						<strong class='pull-right'>{{ attendee_count }}</strong>
 					</a>
 				</div>
