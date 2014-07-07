@@ -5759,7 +5759,7 @@ button.close {
     display: none !important;
   }
 }
-body {
+html, body {
   overflow-x: hidden;
 }
 
