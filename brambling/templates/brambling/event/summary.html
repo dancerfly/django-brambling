@@ -51,7 +51,14 @@
 						</a>
 					{% empty %}
 						<div class='list-group-item text-muted'>
-							This event has no items for purchase.
+							<ul class='list-inline'>
+								<li>This event has no items for purchase.</li>
+
+								<li><a class='btn btn-primary' href='{% url "brambling_item_create" event_slug=event.slug %}'>
+									Create item
+									<span class='fa fa-plus'></span>
+								</a></li>
+							</ul>
 						</div>
 					{% endfor %}
 				</div>
@@ -71,7 +78,15 @@
 							<strong class='pull-right'>{{ discount.used_count }}</strong>
 						</a>
 					{% empty %}
-						<div class='list-group-item text-muted'>This event has no discounts.</div>
+						<div class='list-group-item text-muted'>
+							<ul class='list-inline'>
+								<li>This event has no discounts.</li>
+
+								<li><a class='btn btn-primary' href='{% url "brambling_discount_create" event_slug=event.slug %}'>
+									Create discount
+									<span class='fa fa-plus'></span>
+								</a></li>
+							</ul></div>
 					{% endfor %}
 				</ul>
 			</div>
