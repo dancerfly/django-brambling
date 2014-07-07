@@ -94,7 +94,7 @@ urlpatterns = patterns('',
     url(r'^(?P<slug>[\w-]+)/$',
         route_view(lambda r, *a, **k: get_event_or_404(k['slug']
                                                        ).editable_by(r.user),
-                   'dashboard/',
+                   'summary/',
                    'shop/'),
         name="brambling_event_root"),
     url(r'^(?P<event_slug>[\w-]+)/shop/$',
