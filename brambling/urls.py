@@ -6,7 +6,7 @@ from brambling.forms.user import (
     FloppySetPasswordForm,
 )
 from brambling.models import Discount
-from brambling.views.attendee import (
+from brambling.views.orders import (
     AddToCartView,
     RemoveFromCartView,
     UseDiscountView,

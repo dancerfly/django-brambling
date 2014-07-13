@@ -8,9 +8,9 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
-from brambling.forms.attendee import (SavedCardPaymentForm, OneTimePaymentForm,
-                                      HostingForm, AttendeeBasicDataForm,
-                                      AttendeeHousingDataForm)
+from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
+                                    HostingForm, AttendeeBasicDataForm,
+                                    AttendeeHousingDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption, Payment,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)

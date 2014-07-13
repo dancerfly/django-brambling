@@ -6,7 +6,7 @@ from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View)
 
-from brambling.forms.attendee import AddCardForm
+from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
