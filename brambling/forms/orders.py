@@ -29,7 +29,7 @@ class AttendeeHousingDataForm(MemoModelForm):
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
 
-        if self.instance.person == self.instance.event_person.person:
+        if self.instance.person == self.instance.order.person:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
 
             if not self.instance.housing_completed:
@@ -59,7 +59,7 @@ class AttendeeHousingDataForm(MemoModelForm):
                 })
 
         self.fields['nights'].required = True
-        self.set_choices('nights', Date, event_housing_dates=self.instance.event_person.event)
+        self.set_choices('nights', Date, event_housing_dates=self.instance.order.event)
         self.set_choices('ef_cause',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
@@ -70,7 +70,7 @@ class AttendeeHousingDataForm(MemoModelForm):
     def save(self):
         self.instance.housing_completed = True
         instance = super(AttendeeHousingDataForm, self).save()
-        if (self.instance.person == self.instance.event_person.person and
+        if (self.instance.person == self.instance.order.person and
                 self.cleaned_data['save_as_defaults']):
             person = self.instance.person
             person.ef_cause = instance.ef_cause.all()
@@ -95,13 +95,13 @@ class HostingForm(MemoModelForm):
 
     class Meta:
         model = EventHousing
-        exclude = ('event', 'home', 'event_person')
+        exclude = ('event', 'home', 'order')
 
     def __init__(self, *args, **kwargs):
         super(HostingForm, self).__init__({}, *args, **kwargs)
 
         if self.instance.pk is None:
-            person = self.instance.event_person.person
+            person = self.instance.order.person
             self.initial.update({
                 'contact_name': person.name,
                 'contact_email': person.email,
@@ -197,7 +197,7 @@ class HostingForm(MemoModelForm):
             if new_home:
                 instance.home = home
                 instance.save()
-                person = instance.event_person.person
+                person = instance.order.person
                 person.home = home
                 person.save()
         return instance
@@ -259,9 +259,9 @@ class AddCardForm(forms.Form):
 
 
 class BasePaymentForm(forms.Form):
-    def __init__(self, event_person, amount, *args, **kwargs):
+    def __init__(self, order, amount, *args, **kwargs):
         stripe.api_key = settings.STRIPE_SECRET_KEY
-        self.event_person = event_person
+        self.order = order
         self.amount = amount
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
@@ -271,13 +271,13 @@ class BasePaymentForm(forms.Form):
         # Amount is number of smallest currency units.
         return stripe.Charge.create(
             amount=int(self.amount * 100),
-            currency=self.event_person.event.currency,
+            currency=self.order.event.currency,
             customer=customer,
             card=card_or_token,
         )
 
     def save_payment(self, charge, creditcard):
-        payment = Payment.objects.create(event_person=self.event_person,
+        payment = Payment.objects.create(order=self.order,
                                          amount=self.amount,
                                          method=Payment.STRIPE,
                                          remote_id=charge.id,
@@ -288,9 +288,9 @@ class BasePaymentForm(forms.Form):
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
     save_card = forms.BooleanField(required=False)
 
-    def __init__(self, event_person, amount, user, *args, **kwargs):
+    def __init__(self, order, amount, user, *args, **kwargs):
         super(OneTimePaymentForm, self).__init__(
-            event_person=event_person,
+            order=order,
             amount=amount,
             user=user,
             *args, **kwargs
@@ -321,14 +321,14 @@ class SavedCardPaymentForm(BasePaymentForm):
 
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['card'].queryset = self.event_person.person.cards.all()
-        self.fields['card'].initial = self.event_person.person.default_card
+        self.fields['card'].queryset = self.order.person.cards.all()
+        self.fields['card'].initial = self.order.person.default_card
 
     def _post_clean(self):
         self.card = self.cleaned_data['card']
         try:
             self._charge = self.charge(self.card.stripe_card_id,
-                                       self.event_person.person.stripe_customer_id)
+                                       self.order.person.stripe_customer_id)
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
 
