@@ -18,121 +18,76 @@
 {% block main %}
 	{{ block.super }}
 
-	<div class='panel panel-primary'>
-		<header class='panel-heading'>
-			<div class='panel-title'>Items</div>
-		</header>
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Type</th>
-					<th>Timestamp</th>
-					<th>Status</th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
+	<table class='table'>
+		<thead>
+			<tr>
+				<th>Items</th>
+				<th>Type</th>
+				<th>Timestamp</th>
+				<th>Status</th>
+				<th class='text-right'>Amount ({{ event.currency }})</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for item in bought_items %}
+				<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
+					<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
+					<td>{{ item.item_option.item.get_category_display }}</td>
+					<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
+					<td>{{ item.get_status_display }}</td>
+					<td class='text-right'>{{ item.item_option.price }}</td>
 				</tr>
-			</thead>
-			<tbody>
-				{% for item in bought_items %}
-					<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
-						<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-						<td>{{ item.item_option.item.get_category_display }}</td>
-						<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
-						<td>{{ item.get_status_display }}</td>
-						<td class='text-right'>{{ item.item_option.price }}</td>
-					</tr>
-				{% endfor %}
-				<tr class='active'>
-					<td colspan=5>
-						<strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<div class='panel panel-primary'>
-		<header class='panel-heading'>
-			<div class='row'>
-				<div class='panel-title col-xs-8'>Discounts</div>
-			</div>
-		</header>
-		<table class='table'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Code</th>
-					<th></th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% regroup discounts by discount as discount_list %}
-				{% for discount in discount_list %}
-					{% cycle 0 1 as stripe silent %}
-					<tr{% if stripe %} class='active'{% endif %}>
-						<th>{{ discount.grouper.name }}</th>
-						<td>{{ discount.grouper.code }}</td>
-						<td></td>
-						<td></td>
-					</tr>
-					{% for bought_item_discount in discount.list %}
-						<tr{% if stripe %} class='active'{% endif %}>
-							<th>{% if forloop.first %}Applied to:{% endif %}</th>
-							{% with item_option=bought_item_discount.bought_item.item_option %}
-								<td>{{ item_option.item.name }} ({{ item_option.name }})</td>
-							{% endwith %}
-							<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-							<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
-						</tr>
-					{% endfor %}
-				{% endfor %}
-				<tr{% if total_savings > 0 %} class='danger'{% endif %}>
-					<td colspan=4>
-						<strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<div class='panel panel-primary'>
-		<header class='panel-heading'>
-			<div class='panel-title'>Payments</div>
-		</header>
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Timestamp</th>
-					<th>Method</th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for payment in payments %}
+			{% endfor %}
+			<tr class='active'>
+				<td colspan=5>
+					<strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong>
+				</td>
+			</tr>
+			<tr>
+				<th colspan=5>Discounts</th>
+			</tr>
+			{% regroup discounts by discount as discount_list %}
+			{% for discount in discount_list %}
+				{% for bought_item_discount in discount.list %}
 					<tr>
-						<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-						<td>{{ payment.card }}</td>
-						<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
+						<td>{% if forloop.first%}{{ discount.grouper.name }}{% endif %}</td>
+						{% with item_option=bought_item_discount.bought_item.item_option %}
+							<td>{{ item_option.item.name }} ({{ item_option.name }})</td>
+						{% endwith %}
+						<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td></td>
+						<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
 					</tr>
 				{% endfor %}
-				<tr{% if total_payments > 0 %} class='success'{% endif %}>
-					<td colspan=3>
-						<strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong>
-					</td>
+			{% endfor %}
+			<tr{% if total_savings > 0 %} class='danger'{% endif %}>
+				<td colspan=5>
+					<strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong>
+				</td>
+			</tr>
+			<tr>
+				<th colspan=5>Payments</th>
+			</tr>
+			{% for payment in payments %}
+				<tr>
+					<td>{{ payment.card }}</td>
+					<td>{{ payment.get_method_display }}</td>
+					<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+					<td></td>
+					<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
 				</tr>
-			</tbody>
-		</table>
-	</div>
+			{% endfor %}
+			<tr{% if total_payments > 0 %} class='success'{% endif %}>
+				<td colspan=5>
+					<strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong>
+				</td>
+			</tr>
+			<tr class='{% if balance < 0 %}success text-success{% elif balance > 0 %}danger text-danger{% else %}active{% endif %}'>
+				<td colspan=5><strong>Balance</strong><strong class='pull-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owes {% endif %}{{ balance|absolute_value|format_money:event.currency }}</strong></td>
+			</tr>
+		</tbody>
+	</table>
 
-	<div class='panel panel-primary'>
-		<table class='table'>
-			<tbody>
-				<tr{% if balance < 0 %} class='success text-success'{% elif balance > 0 %} class='danger text-danger'{% endif %}>
-					<th>Balance</th>
-					<td class='text-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}<strong>{{ balance|absolute_value|format_money:event.currency }}</strong></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
 	<h2>Manually enter payment</h2>
 	{% include 'brambling/_stripe_form.html' %}
 	<form novalidate action="" method="post" id='card-form'>
