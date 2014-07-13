@@ -1,7 +1,7 @@
 import django_filters
 
 from brambling.forms.organizer import AttendeeFilterSetForm
-from brambling.models import Attendee, ItemOption, Discount
+from brambling.models import Attendee, ItemOption, Discount, Order
 
 
 class AttendeeFilterSet(django_filters.FilterSet):
@@ -40,3 +40,9 @@ class AttendeeFilterSet(django_filters.FilterSet):
         fields = ['bought_items__item_option', 'housing_status',
                   'bought_items__discounts__discount']
         order_by = ['name', '-name']
+
+
+class OrderFilterSet(django_filters.FilterSet):
+    class Meta:
+        model = Order
+        fields = ['providing_housing', 'send_flyers']

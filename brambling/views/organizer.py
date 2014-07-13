@@ -9,12 +9,12 @@ from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 
-from brambling.filters import AttendeeFilterSet
+from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, OrderDiscount,
-                              BoughtItemDiscount)
+                              BoughtItemDiscount, Order)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
@@ -270,6 +270,28 @@ class AttendeeFilterView(FilterView):
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+        })
+        return context
+
+
+class OrderFilterView(FilterView):
+    filterset_class = OrderFilterSet
+    template_name = 'brambling/event/orders.html'
+    context_object_name = 'orders'
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        qs = Order.objects.filter(event=self.event)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
             'event_nav': get_event_nav(self.event, self.request),
