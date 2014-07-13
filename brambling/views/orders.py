@@ -392,7 +392,7 @@ class SurveyDataView(UpdateView):
         kwargs = {'event_slug': self.event.slug}
         if self.event.collect_housing_data and self.object.providing_housing:
             return reverse('brambling_event_hosting', kwargs=kwargs)
-        return reverse('brambling_event_records', kwargs=kwargs)
+        return reverse('brambling_event_order_summary', kwargs=kwargs)
 
 
 class HostingView(UpdateView):
@@ -428,11 +428,11 @@ class HostingView(UpdateView):
         return context
 
     def get_success_url(self):
-        return reverse('brambling_event_records',
+        return reverse('brambling_event_order_summary',
                        kwargs={'event_slug': self.event.slug})
 
 
-class RecordsView(TemplateView):
+class OrderSummaryView(TemplateView):
     template_name = 'brambling/event/records.html'
 
     @method_decorator(login_required)
@@ -440,7 +440,7 @@ class RecordsView(TemplateView):
         self.event = get_event_or_404(kwargs['event_slug'])
         self.order = get_order(self.event, request.user)
         self.balance = self.get_balance()
-        return super(RecordsView, self).dispatch(request, *args, **kwargs)
+        return super(OrderSummaryView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         if self.balance > 0 or self.order.has_cart():
@@ -513,7 +513,7 @@ class RecordsView(TemplateView):
         return self.total_cost - self.total_savings - self.total_payments
 
     def get_context_data(self, **kwargs):
-        context = super(RecordsView, self).get_context_data(**kwargs)
+        context = super(OrderSummaryView, self).get_context_data(**kwargs)
 
         context.update(_shared_shopping_context(self.request, self.order))
 

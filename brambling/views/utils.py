@@ -55,7 +55,7 @@ class NavItem(object):
 def get_event_nav(event, request):
     items = (
         ('brambling_event_shop', 'Shop', 'fa-shopping-cart'),
-        ('brambling_event_records', 'Records', 'fa-list-alt'),
+        ('brambling_event_order_summary', 'Order Summary', 'fa-list-alt'),
     )
     return [NavItem(request=request, label=label, icon=icon,
                     url=reverse(view_name, kwargs={'event_slug': event.slug}))
