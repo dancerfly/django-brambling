@@ -433,7 +433,7 @@ class HostingView(UpdateView):
 
 
 class OrderSummaryView(TemplateView):
-    template_name = 'brambling/event/records.html'
+    template_name = 'brambling/event/order_summary.html'
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
