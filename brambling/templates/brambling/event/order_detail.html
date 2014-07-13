@@ -1,0 +1,153 @@
+{% extends 'brambling/event/__full_nav.html' %}
+
+{% load floppyforms zenaida %}
+
+{% block title %}Order {{ order.pk }} – {{ block.super }}{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	<script type='text/javascript'>
+		var discountReload = true;
+	</script>
+	{% include 'brambling/event/_use_discount_js.html' %}
+	{% include 'brambling/event/_confirmation_screen.html' %}
+	{% include "brambling/_stripe_js.html" %}
+{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	<div class='panel panel-primary'>
+		<header class='panel-heading'>
+			<div class='panel-title'>Items</div>
+		</header>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Timestamp</th>
+					<th>Status</th>
+					<th class='text-right'>Amount ({{ event.currency }})</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for item in bought_items %}
+					<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
+						<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
+						<td>{{ item.item_option.item.get_category_display }}</td>
+						<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
+						<td>{{ item.get_status_display }}</td>
+						<td class='text-right'>{{ item.item_option.price }}</td>
+					</tr>
+				{% endfor %}
+				<tr class='active'>
+					<td colspan=5>
+						<strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class='panel panel-primary'>
+		<header class='panel-heading'>
+			<div class='row'>
+				<div class='panel-title col-xs-8'>Discounts</div>
+			</div>
+		</header>
+		<table class='table'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Code</th>
+					<th></th>
+					<th class='text-right'>Amount ({{ event.currency }})</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% regroup discounts by discount as discount_list %}
+				{% for discount in discount_list %}
+					{% cycle 0 1 as stripe silent %}
+					<tr{% if stripe %} class='active'{% endif %}>
+						<th>{{ discount.grouper.name }}</th>
+						<td>{{ discount.grouper.code }}</td>
+						<td></td>
+						<td></td>
+					</tr>
+					{% for bought_item_discount in discount.list %}
+						<tr{% if stripe %} class='active'{% endif %}>
+							<th>{% if forloop.first %}Applied to:{% endif %}</th>
+							{% with item_option=bought_item_discount.bought_item.item_option %}
+								<td>{{ item_option.item.name }} ({{ item_option.name }})</td>
+							{% endwith %}
+							<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+							<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
+						</tr>
+					{% endfor %}
+				{% endfor %}
+				<tr{% if total_savings > 0 %} class='danger'{% endif %}>
+					<td colspan=4>
+						<strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class='panel panel-primary'>
+		<header class='panel-heading'>
+			<div class='panel-title'>Payments</div>
+		</header>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Timestamp</th>
+					<th>Method</th>
+					<th class='text-right'>Amount ({{ event.currency }})</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for payment in payments %}
+					<tr>
+						<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td>{{ payment.card }}</td>
+						<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
+					</tr>
+				{% endfor %}
+				<tr{% if total_payments > 0 %} class='success'{% endif %}>
+					<td colspan=3>
+						<strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class='panel panel-primary'>
+		<table class='table'>
+			<tbody>
+				<tr{% if balance < 0 %} class='success text-success'{% elif balance > 0 %} class='danger text-danger'{% endif %}>
+					<th>Balance</th>
+					<td class='text-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}<strong>{{ balance|absolute_value|format_money:event.currency }}</strong></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<h2>Manually enter payment</h2>
+	{% include 'brambling/_stripe_form.html' %}
+	<form novalidate action="" method="post" id='card-form'>
+		{% csrf_token %}
+		<input name='new_card' value='1' type='hidden'>
+
+		{% formrow new_card_form.save_card %}
+
+		{% for error in new_card_form.non_field_errors %}
+			<div class='alert alert-danger'>
+				{{ error }}
+			</div>
+		{% endfor %}
+
+		<button type="submit" id='card-submit' class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+	</form>
+	{% include 'brambling/_stripe_note.html' %}
+{% endblock %}

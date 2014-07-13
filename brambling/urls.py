@@ -33,6 +33,7 @@ from brambling.views.organizer import (
     discount_form,
     AttendeeFilterView,
     OrderFilterView,
+    OrderDetailView,
 )
 from brambling.views.user import (
     PersonView,
@@ -158,6 +159,9 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/orders/$',
         OrderFilterView.as_view(),
         name="brambling_event_orders"),
+    url(r'^(?P<event_slug>[\w-]+)/orders/(?P<pk>\d+)/$',
+        OrderDetailView.as_view(),
+        name="brambling_event_order_detail"),
 
     url(r'^(?P<event_slug>[\w-]+)/discount/$',
         DiscountListView.as_view(),

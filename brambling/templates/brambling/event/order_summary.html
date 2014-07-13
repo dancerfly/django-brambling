@@ -32,8 +32,7 @@
 
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
-			<div class='panel-title'><a href='#items-collapse' data-toggle='collapse'>Items {% if bought_items %}<span class='caret'></span>{% endif %}
-			</a> {% if cart %}<span class='pull-right'>{% include "brambling/event/_expiry_countdown.html" with expiry_time=cart.expires only %}{% endif%}</div>
+			<div class='panel-title'><a href='#items-collapse' data-toggle='collapse'>Items {% if bought_items %}<span class='caret'></span>{% endif %}</a></div>
 		</header>
 		<div class='collapse table-collapse-wrapper' id='items-collapse'>
 			<table class='table table-striped'>

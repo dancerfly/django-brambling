@@ -439,7 +439,8 @@ class OrderSummaryView(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
         self.order = get_order(self.event, request.user)
-        self.balance = self.get_balance()
+        self.summary_data = self.order.get_summary_data()
+        self.balance = self.summary_data['balance']
         return super(OrderSummaryView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -482,36 +483,6 @@ class OrderSummaryView(TemplateView):
         self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
         self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
 
-    def get_balance(self):
-        self.payments = Payment.objects.filter(
-            order=self.order,
-        ).order_by('timestamp')
-        self.bought_items = list(BoughtItem.objects.filter(
-            order=self.order,
-        ).select_related('item_option').order_by('added'))
-
-        self.discounts = BoughtItemDiscount.objects.filter(
-            bought_item__in=self.bought_items,
-        ).select_related('discount').order_by('discount', 'timestamp')
-
-        bought_item_map = {bought_item.id: bought_item
-                           for bought_item in self.bought_items}
-        savings = 0
-        for discount in self.discounts:
-            try:
-                bought_item = bought_item_map[discount.bought_item_id]
-            except KeyError:
-                continue
-            discount.bought_item = bought_item
-            savings += discount.savings()
-
-        self.total_cost = sum((item.item_option.price
-                               for item in self.bought_items))
-        self.total_savings = min(savings, self.total_cost)
-        self.total_payments = sum((payment.amount
-                                   for payment in self.payments))
-        return self.total_cost - self.total_savings - self.total_payments
-
     def get_context_data(self, **kwargs):
         context = super(OrderSummaryView, self).get_context_data(**kwargs)
 
@@ -521,15 +492,10 @@ class OrderSummaryView(TemplateView):
             'has_cards': self.order.person.cards.exists(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
-            'bought_items': self.bought_items,
-            'payments': self.payments,
-            'discounts': self.discounts,
-            'total_cost': self.total_cost,
-            'total_savings': self.total_savings,
-            'total_payments': self.total_payments,
             'balance': self.balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
         })
+        context.update(self.order.get_summary_data())
         return context

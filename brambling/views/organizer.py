@@ -3,7 +3,8 @@ from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
-from django.views.generic import ListView, CreateView, UpdateView, TemplateView
+from django.views.generic import (ListView, CreateView, UpdateView,
+                                  TemplateView, DetailView)
 
 from django_filters.views import FilterView
 
@@ -297,4 +298,27 @@ class OrderFilterView(FilterView):
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
+        return context
+
+
+class OrderDetailView(DetailView):
+    model = Order
+    context_object_name = 'order'
+    template_name = 'brambling/event/order_detail.html'
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        qs = super(OrderDetailView, self).get_queryset()
+        return qs.filter(event=self.event)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderDetailView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_nav': get_event_nav(self.event, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+        })
+        context.update(self.object.get_summary_data())
         return context

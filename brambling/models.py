@@ -624,6 +624,38 @@ class Order(models.Model):
             status=BoughtItem.RESERVED
         ).order_by('item_option__item', 'item_option__order', '-added')
 
+    def get_summary_data(self):
+        payments = self.payments.order_by('timestamp')
+        bought_items = list(self.bought_items.select_related('item_option').order_by('added'))
+        discounts = BoughtItemDiscount.objects.filter(bought_item__in=bought_items).select_related('discount').order_by('discount', 'timestamp')
+
+        bought_item_map = {bought_item.id: bought_item
+                           for bought_item in bought_items}
+        savings = 0
+        for discount in discounts:
+            try:
+                bought_item = bought_item_map[discount.bought_item_id]
+            except KeyError:
+                continue
+            discount.bought_item = bought_item
+            savings += discount.savings()
+
+        total_cost = sum((item.item_option.price
+                          for item in bought_items))
+        total_savings = min(savings, total_cost)
+        total_payments = sum((payment.amount
+                              for payment in payments))
+        balance = total_cost - total_savings - total_payments
+        return {
+            'bought_items': bought_items,
+            'discounts': discounts,
+            'payments': payments,
+            'total_cost': total_cost,
+            'total_savings': total_savings,
+            'total_payments': total_payments,
+            'balance': balance
+        }
+
 
 class Payment(models.Model):
     STRIPE = 'stripe'
