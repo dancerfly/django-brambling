@@ -132,6 +132,7 @@ class ShopView(TemplateView):
         item_options = ItemOption.objects.filter(
             available_start__lte=now,
             available_end__gte=now,
+            item__event=event,
         ).annotate(taken=Count('boughtitem')).filter(
             total_number__gt=F('taken')
         ).order_by('item')
