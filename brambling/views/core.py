@@ -27,8 +27,8 @@ class UserDashboardView(TemplateView):
                    ).order_by('-last_modified')
 
         registered_events = Event.objects.filter(
-            eventperson__person=user,
-            eventperson__bought_items__status=BoughtItem.PAID,
+            order__person=user,
+            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('-start_date')
         return {

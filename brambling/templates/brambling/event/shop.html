@@ -60,9 +60,9 @@
 				{% endfor %}
 			</div>
 			<div class="col-md-5">
-				{% with has_cart=event_person.has_cart %}
+				{% with has_cart=order.has_cart %}
 					<div class='form-group'>
-						{% if event_person.attendees.exists %}
+						{% if order.attendees.exists %}
 							{% url 'brambling_event_attendee_items' event_slug=event.slug as next_url %}
 						{% else %}
 							{% url 'brambling_event_attendee_add' event_slug=event.slug as next_url %}
@@ -76,7 +76,7 @@
 									Cart
 								</div>
 							</header>
-							{% regroup event_person.get_groupable_cart by item_option.item as cart_list %}
+							{% regroup order.get_groupable_cart by item_option.item as cart_list %}
 							<ul class='list-group'>
 								{% for options in cart_list %}
 									<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>

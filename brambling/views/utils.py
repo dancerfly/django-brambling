@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from brambling.models import Event, EventPerson, BoughtItem
+from brambling.models import Event, Order, BoughtItem
 
 
 def get_event_or_404(slug):
@@ -16,11 +16,11 @@ def get_event_or_404(slug):
     return get_object_or_404(qs, slug=slug)
 
 
-def get_event_person(event, person):
-    event_person = EventPerson.objects.get_or_create(event=event, person=person)[0]
-    event_person.event = event
-    event_person.person = person
-    return event_person
+def get_order(event, person):
+    order = Order.objects.get_or_create(event=event, person=person)[0]
+    order.event = event
+    order.person = person
+    return order
 
 
 def split_view(test, if_true, if_false):
@@ -89,7 +89,7 @@ def clear_expired_carts(event):
     expired_before = timezone.now() - timedelta(minutes=event.cart_timeout)
     BoughtItem.objects.filter(
         status=BoughtItem.RESERVED,
-        event_person__event=event,
-        event_person__cart_start_time__isnull=False,
-        event_person__cart_start_time__lte=expired_before
+        order__event=event,
+        order__cart_start_time__isnull=False,
+        order__cart_start_time__lte=expired_before
     ).delete()

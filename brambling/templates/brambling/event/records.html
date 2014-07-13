@@ -18,12 +18,12 @@
 {% block main %}
 	{{ block.super }}
 
-	{% if event_person.person.confirmed_email and not event_person.cart_is_valid %}
+	{% if order.person.confirmed_email and not order.cart_is_valid %}
 		<div class='alert alert-danger'>
 			<h4>Please correct the following issues with your registration:</h4>
 
 			<ul>
-				{% for error, url in event_person.cart_errors %}
+				{% for error, url in order.cart_errors %}
 					<li><a class='alert-link' href="{{ url }}">{{ error }}</a></li>
 				{% endfor %}
 			</ul>
@@ -179,7 +179,7 @@
 									</div>
 								{% endfor %}
 
-								<button type="submit" class="btn btn-primary"{% if not event_person.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+								<button type="submit" class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
 							</form>
 						</div>
 					</div>
@@ -209,7 +209,7 @@
 				</div>
 			{% endfor %}
 
-			<button type="submit" id='card-submit' class="btn btn-primary"{% if not event_person.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+			<button type="submit" id='card-submit' class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
 		</form>
 
 		{% if has_cards %}
@@ -219,10 +219,10 @@
 			</div>
 		{% endif %}
 		{% include 'brambling/_stripe_note.html' %}
-	{% elif event_person.has_cart %}
+	{% elif order.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}
-			<button type="submit" class="btn btn-primary"{% if not event_person.cart_is_valid %} disabled{% endif %}>Confirm cart purchases</button>
+			<button type="submit" class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Confirm cart purchases</button>
 		</form>
 	{% endif %}
 {% endblock %}

@@ -12,11 +12,11 @@ from brambling.forms.attendee import (SavedCardPaymentForm, OneTimePaymentForm,
                                       HostingForm, AttendeeBasicDataForm,
                                       AttendeeHousingDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption, Payment,
-                              BoughtItemDiscount, Discount, EventPerson,
+                              BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, ajax_required,
-                                   get_event_person, clear_expired_carts)
+                                   get_order, clear_expired_carts)
 
 
 class AddToCartView(View):
@@ -35,9 +35,9 @@ class AddToCartView(View):
         if item_option.taken >= item_option.total_number:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
-        event_person = get_event_person(event, request.user)
-        if event_person.person.confirmed_email:
-            event_person.add_to_cart(item_option)
+        order = get_order(event, request.user)
+        if order.person.confirmed_email:
+            order.add_to_cart(item_option)
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})
 
@@ -53,8 +53,8 @@ class RemoveFromCartView(View):
         except BoughtItem.DoesNotExist:
             pass
         else:
-            event_person = get_event_person(event, request.user)
-            event_person.remove_from_cart(bought_item)
+            order = get_order(event, request.user)
+            order.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
 
@@ -84,8 +84,8 @@ class UseDiscountView(View):
                 },
             })
 
-        event_person = get_event_person(event, request.user)
-        created = event_person.add_discount(discount)
+        order = get_order(event, request.user)
+        created = order.add_discount(discount)
         if created:
             return JsonResponse({
                 'success': True,
@@ -100,17 +100,17 @@ class UseDiscountView(View):
 # Registration works like this:
 # 1. Shop. Choose things.
 # 2. Who are these for? <- part of shop?
-# 3. Any relevant EventPerson fields <- Registration information. one page per pass.
+# 3. Any relevant Order fields <- Registration information. one page per pass.
 # 4. If housing is enabled, one page per pass that requests or offers housing.
 # 5. Checkout - unpaid items only. List any applicable credits without explanation.
 
 
-def _shared_shopping_context(request, event_person):
-    event = event_person.event
+def _shared_shopping_context(request, order):
+    event = order.event
     return {
         'event': event,
-        'event_person': event_person,
-        'discounts': event_person.discounts.all(),
+        'order': order,
+        'discounts': order.discounts.all(),
         'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
@@ -139,9 +139,9 @@ class ShopView(TemplateView):
         context.update({
             'item_options': item_options,
         })
-        event_person = get_event_person(event, self.request.user)
-        event_person.event = event
-        context.update(_shared_shopping_context(self.request, event_person))
+        order = get_order(event, self.request.user)
+        order.event = event
+        context.update(_shared_shopping_context(self.request, order))
         return context
 
 
@@ -151,19 +151,19 @@ class AttendeeItemView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = get_event_person(self.event, request.user)
+        self.order = get_order(self.event, request.user)
         self.errors = []
         return super(AttendeeItemView, self).dispatch(request, *args, **kwargs)
 
     def get_forms(self):
         form_class = forms.models.modelform_factory(BoughtItem, fields=('attendee',))
-        form_class.base_fields['attendee'].queryset = self.event_person.attendees.all()
+        form_class.base_fields['attendee'].queryset = self.order.attendees.all()
         form_class.base_fields['attendee'].required = True
-        bought_items = self.event_person.bought_items.order_by('item_option__item', 'item_option')
+        bought_items = self.order.bought_items.order_by('item_option__item', 'item_option')
         kwargs = {}
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
-        self.attendees = self.event_person.attendees.all()
+        self.attendees = self.order.attendees.all()
         if len(self.attendees) == 1:
             kwargs['initial'] = {'attendee': self.attendees[0]}
         return [form_class(prefix='form-{}-'.format(item.pk),
@@ -213,7 +213,7 @@ class AttendeeItemView(TemplateView):
             'attendees': self.attendees,
             'errors': self.errors,
         })
-        context.update(_shared_shopping_context(self.request, self.event_person))
+        context.update(_shared_shopping_context(self.request, self.order))
         return context
 
 
@@ -231,19 +231,19 @@ class AttendeeBasicDataView(UpdateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = get_event_person(self.event, request.user)
+        self.order = get_order(self.event, request.user)
         return super(AttendeeBasicDataView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
         if self.kwargs.get('pk') is None:
             return None
         else:
-            return self.event_person.attendees.get(pk=self.kwargs['pk'])
+            return self.order.attendees.get(pk=self.kwargs['pk'])
 
     def get_initial(self):
         initial = super(AttendeeBasicDataView, self).get_initial()
         person = self.request.user
-        if not self.event_person.attendees.filter(person=person).exists():
+        if not self.order.attendees.filter(person=person).exists():
             initial.update({
                 'name': person.name,
                 'nickname': person.nickname,
@@ -257,7 +257,7 @@ class AttendeeBasicDataView(UpdateView):
             form.instance.person = self.request.user
             form.instance.person_confirmed = True
 
-        form.instance.event_person = self.event_person
+        form.instance.order = self.order
         form.instance.basic_completed = True
         self.object = form.save()
         return super(AttendeeBasicDataView, self).form_valid(form)
@@ -269,9 +269,9 @@ class AttendeeBasicDataView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context.update({
-            'attendees': self.event_person.attendees.all(),
+            'attendees': self.order.attendees.all(),
         })
-        context.update(_shared_shopping_context(self.request, self.event_person))
+        context.update(_shared_shopping_context(self.request, self.order))
         return context
 
 
@@ -280,7 +280,7 @@ class RemoveAttendeeView(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         event = get_event_or_404(kwargs['event_slug'])
-        Attendee.objects.filter(event_person__event=event,
+        Attendee.objects.filter(order__event=event,
                                 pk=kwargs['pk']).delete()
 
         return JsonResponse({'success': True})
@@ -292,8 +292,8 @@ class AttendeeHousingView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = get_event_person(self.event, request.user)
-        self.attendees = self.event_person.attendees.filter(housing_status=Attendee.NEED)
+        self.order = get_order(self.event, request.user)
+        self.attendees = self.order.attendees.filter(housing_status=Attendee.NEED)
         if not self.event.collect_housing_data or not self.attendees:
             # Just skip ahead.
             return HttpResponseRedirect(reverse('brambling_event_survey',
@@ -344,13 +344,13 @@ class AttendeeHousingView(TemplateView):
             'event': self.event,
             'forms': self.forms,
         })
-        context.update(_shared_shopping_context(self.request, self.event_person))
+        context.update(_shared_shopping_context(self.request, self.order))
         return context
 
 
 class SurveyDataView(UpdateView):
     template_name = 'brambling/event/survey_data.html'
-    context_object_name = 'event_person'
+    context_object_name = 'order'
 
     @property
     def fields(self):
@@ -371,10 +371,10 @@ class SurveyDataView(UpdateView):
         return super(SurveyDataView, self).dispatch(request, *args, **kwargs)
 
     def get_form_class(self):
-        return forms.models.modelform_factory(EventPerson, fields=self.fields)
+        return forms.models.modelform_factory(Order, fields=self.fields)
 
     def get_object(self):
-        return get_event_person(self.event, self.request.user)
+        return get_order(self.event, self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super(SurveyDataView, self).get_context_data(**kwargs)
@@ -403,26 +403,26 @@ class HostingView(UpdateView):
         self.event = get_event_or_404(kwargs['event_slug'])
         if not self.event.collect_housing_data:
             return HttpResponseRedirect(self.get_success_url())
-        self.event_person = get_event_person(self.event, request.user)
+        self.order = get_order(self.event, request.user)
         return super(HostingView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
         try:
             return EventHousing.objects.select_related('home').get(
                 event=self.event,
-                event_person=self.event_person,
+                order=self.order,
             )
         except EventHousing.DoesNotExist:
             return EventHousing(
                 event=self.event,
-                event_person=self.event_person,
-                home=self.event_person.person.home
+                order=self.order,
+                home=self.order.person.home
             )
 
     def get_context_data(self, **kwargs):
         context = super(HostingView, self).get_context_data(**kwargs)
 
-        context.update(_shared_shopping_context(self.request, self.event_person))
+        context.update(_shared_shopping_context(self.request, self.order))
 
         return context
 
@@ -437,19 +437,19 @@ class RecordsView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
-        self.event_person = get_event_person(self.event, request.user)
+        self.order = get_order(self.event, request.user)
         self.balance = self.get_balance()
         return super(RecordsView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        if self.balance > 0 or self.event_person.has_cart():
+        if self.balance > 0 or self.order.has_cart():
             self.get_forms()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         if self.balance == 0:
-            self.event_person.mark_cart_paid()
+            self.order.mark_cart_paid()
         else:
             self.get_forms()
             form = None
@@ -461,14 +461,14 @@ class RecordsView(TemplateView):
                 form = self.new_card_form
             if form and form.is_valid():
                 form.save()
-                self.event_person.mark_cart_paid()
+                self.order.mark_cart_paid()
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def get_forms(self):
         kwargs = {
-            'event_person': self.event_person,
+            'order': self.order,
             'amount': self.balance,
         }
         choose_data = None
@@ -483,10 +483,10 @@ class RecordsView(TemplateView):
 
     def get_balance(self):
         self.payments = Payment.objects.filter(
-            event_person=self.event_person,
+            order=self.order,
         ).order_by('timestamp')
         self.bought_items = list(BoughtItem.objects.filter(
-            event_person=self.event_person,
+            order=self.order,
         ).select_related('item_option').order_by('added'))
 
         self.discounts = BoughtItemDiscount.objects.filter(
@@ -514,10 +514,10 @@ class RecordsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(RecordsView, self).get_context_data(**kwargs)
 
-        context.update(_shared_shopping_context(self.request, self.event_person))
+        context.update(_shared_shopping_context(self.request, self.order))
 
         context.update({
-            'has_cards': self.event_person.person.cards.exists(),
+            'has_cards': self.order.person.cards.exists(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'bought_items': self.bought_items,

@@ -22,8 +22,8 @@
 			</a>
 		{% endfor %}
 	</div>
-	{% if event_person.has_cart %}
-		{% include "brambling/event/_expiry_countdown.html" with header="True" extra_classes="visible-md visible-lg" expiry_time=event_person.cart_expire_time only %}
+	{% if order.has_cart %}
+		{% include "brambling/event/_expiry_countdown.html" with header="True" extra_classes="visible-md visible-lg" expiry_time=order.cart_expire_time only %}
 	{% endif %}
 	{% if event_admin_nav %}
 		<div class="panel panel-default">
@@ -45,8 +45,8 @@
 {% endblock %}
 
 {% block main %}
-	{% if event_person.has_cart %}
-		{% include "brambling/event/_expiry_countdown.html" with extra_classes="visible-sm visible-xs" expiry_time=event_person.cart_expire_time only %}
+	{% if order.has_cart %}
+		{% include "brambling/event/_expiry_countdown.html" with extra_classes="visible-sm visible-xs" expiry_time=order.cart_expire_time only %}
 		<div class="modal fade" id="countdownCompleteModal" role="dialog" aria-labelledby="timeUpModal" aria-hidden="true">
 			<div class="modal-dialog modal-sm">
 				<div class="modal-content">

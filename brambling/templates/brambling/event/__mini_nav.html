@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% block main %}
-	{% if event_person.has_cart %}
-		{% include "brambling/event/_expiry_countdown.html" with expiry_time=event_person.cart_expire_time only %}
+	{% if order.has_cart %}
+		{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
 	{% endif %}
 {% endblock %}

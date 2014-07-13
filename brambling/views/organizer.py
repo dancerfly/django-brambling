@@ -13,10 +13,10 @@ from brambling.filters import AttendeeFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm)
 from brambling.models import (Event, Item, Discount, Payment,
-                              ItemOption, Attendee, EventPersonDiscount,
+                              ItemOption, Attendee, OrderDiscount,
                               BoughtItemDiscount)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav, get_event_person,
+                                   get_event_admin_nav, get_order,
                                    clear_expired_carts)
 
 
@@ -87,15 +87,15 @@ class EventSummaryView(TemplateView):
             total_discounts += discount.savings()
         total_discounts = min(total_discounts, gross_sales)
 
-        total_payments = Payment.objects.filter(event_person__event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
+        total_payments = Payment.objects.filter(order__event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
 
         context.update({
             'event': self.event,
-            'event_person': get_event_person(self.event, self.request.user),
+            'order': get_order(self.event, self.request.user),
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
-            'attendee_count': Attendee.objects.filter(event_person__event=self.event).count(),
+            'attendee_count': Attendee.objects.filter(order__event=self.event).count(),
             'itemoptions': itemoptions,
             'discounts': discounts,
 
@@ -107,9 +107,9 @@ class EventSummaryView(TemplateView):
 
         if self.event.collect_housing_data:
             context.update({
-                'attendee_requesting_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.NEED).count(),
-                'attendee_arranged_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.HAVE).count(),
-                'attendee_home_count': Attendee.objects.filter(event_person__event=self.event, housing_status=Attendee.HOME).count(),
+                'attendee_requesting_count': Attendee.objects.filter(order__event=self.event, housing_status=Attendee.NEED).count(),
+                'attendee_arranged_count': Attendee.objects.filter(order__event=self.event, housing_status=Attendee.HAVE).count(),
+                'attendee_home_count': Attendee.objects.filter(order__event=self.event, housing_status=Attendee.HOME).count(),
             })
         return context
 
@@ -265,7 +265,7 @@ class AttendeeFilterView(FilterView):
         if not self.event.editable_by(self.request.user):
             raise Http404
         qs = Attendee.objects.filter(
-            event_person__event=self.event).distinct()
+            order__event=self.event).distinct()
         return qs
 
     def get_context_data(self, **kwargs):

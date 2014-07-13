@@ -420,7 +420,7 @@ def delete_stripe_card(sender, instance, **kwargs):
     customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
-class EventPerson(models.Model):
+class Order(models.Model):
     """
     This model represents metadata connecting an event and a person.
     For example, it links to the items that a person has bought. It
@@ -454,7 +454,7 @@ class EventPerson(models.Model):
     cart_start_time = models.DateTimeField(blank=True, null=True)
     cart_owners_set = models.BooleanField(default=False)
 
-    # "Survey" questions for EventPerson
+    # "Survey" questions for Order
     survey_completed = models.BooleanField(default=False)
     heard_through = models.CharField(max_length=8,
                                      choices=HEARD_THROUGH_CHOICES,
@@ -473,7 +473,7 @@ class EventPerson(models.Model):
         if not hasattr(self, '_cart_errors'):
             errors = []
 
-            # EventPerson *always* needs to touch the survey page before checkout,
+            # Order *always* needs to touch the survey page before checkout,
             # if the event is using the survey.
             if self.event.collect_survey_data and not self.survey_completed:
                 errors.append(('Survey must be completed',
@@ -481,7 +481,7 @@ class EventPerson(models.Model):
                                        kwargs={'event_slug': self.event.slug})))
 
             # Hosting data only needs to be provided if event cares and
-            # EventPerson says they're hosting.
+            # Order says they're hosting.
             if self.event.collect_housing_data and self.providing_housing:
                 if not EventHousing.objects.filter(event=self.event, home__residents=self.person).exists():
                     errors.append(('Hosting information must be completed',
@@ -546,13 +546,13 @@ class EventPerson(models.Model):
     def add_discount(self, discount):
         if discount.event_id != self.event_id:
             raise ValueError("Discount is not for the correct event")
-        event_person_discount, created = EventPersonDiscount.objects.get_or_create(
+        event_person_discount, created = OrderDiscount.objects.get_or_create(
             discount=discount,
-            event_person=self
+            order=self
         )
         if created:
             bought_items = BoughtItem.objects.filter(
-                event_person=self,
+                order=self,
                 item_option__discount=discount,
             )
             BoughtItemDiscount.objects.bulk_create([
@@ -567,7 +567,7 @@ class EventPerson(models.Model):
             self.delete_cart()
         bought_item = BoughtItem.objects.create(
             item_option=item_option,
-            event_person=self,
+            order=self,
             status=BoughtItem.RESERVED
         )
         discounts = self.discounts.filter(
@@ -630,7 +630,7 @@ class Payment(models.Model):
     METHOD_CHOICES = (
         (STRIPE, 'Stripe'),
     )
-    event_person = models.ForeignKey('EventPerson', related_name='payments')
+    order = models.ForeignKey('Order', related_name='payments')
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     timestamp = models.DateTimeField(default=timezone.now)
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
@@ -655,7 +655,7 @@ class BoughtItem(models.Model):
         (REFUNDED, _('Refunded')),
     )
     item_option = models.ForeignKey(ItemOption)
-    event_person = models.ForeignKey(EventPerson, related_name='bought_items')
+    order = models.ForeignKey(Order, related_name='bought_items')
     added = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=8,
                               choices=STATUS_CHOICES,
@@ -670,18 +670,18 @@ class BoughtItem(models.Model):
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
-                                      self.event_person.person.name,
+                                      self.order.person.name,
                                       self.pk)
 
 
-class EventPersonDiscount(models.Model):
+class OrderDiscount(models.Model):
     """Tracks whether a person has entered a code for an event."""
     discount = models.ForeignKey(Discount)
-    event_person = models.ForeignKey(EventPerson, related_name='discounts')
+    order = models.ForeignKey(Order, related_name='discounts')
     timestamp = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ('event_person', 'discount')
+        unique_together = ('order', 'discount')
 
 
 class BoughtItemDiscount(models.Model):
@@ -718,7 +718,7 @@ class Attendee(models.Model):
         (HOME, 'Staying at own home'),
     )
     # Internal tracking data
-    event_person = models.ForeignKey(EventPerson, related_name='attendees')
+    order = models.ForeignKey(Order, related_name='attendees')
     person = models.ForeignKey(Person, blank=True, null=True)
     person_confirmed = models.BooleanField(default=False)
 
@@ -739,13 +739,13 @@ class Attendee(models.Model):
     housing_completed = models.BooleanField(default=False)
     nights = models.ManyToManyField(Date, blank=True, null=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='eventperson_cause',
+                                      related_name='attendee_cause',
                                       blank=True,
                                       null=True,
                                       verbose_name="People around me will be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='eventperson_avoid',
+                                      related_name='attendee_avoid',
                                       blank=True,
                                       null=True,
                                       verbose_name="I can't/don't want to be around")
@@ -807,7 +807,7 @@ class Home(models.Model):
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
     home = models.ForeignKey(Home, blank=True, null=True)
-    event_person = models.ForeignKey(EventPerson)
+    order = models.ForeignKey(Order)
 
     # Eventually add a contact_person field.
     contact_name = models.CharField(max_length=100,
