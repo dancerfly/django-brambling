@@ -142,6 +142,14 @@ class DiscountForm(forms.ModelForm):
             self._update_errors(e)
 
 
+class DiscountChoiceForm(forms.Form):
+    discount = forms.ModelChoiceField(Discount)
+
+    def __init__(self, event, *args, **kwargs):
+        super(DiscountChoiceForm, self).__init__(*args, **kwargs)
+        self.fields['discount'].queryset = Discount.objects.filter(event=event)
+
+
 class AttendeeFilterSetForm(forms.Form):
     ORDERING_CHOICES = (
         ("name", "Name"),

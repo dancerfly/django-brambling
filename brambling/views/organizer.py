@@ -1,10 +1,12 @@
+from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
-                                  TemplateView, DetailView)
+                                  TemplateView, DetailView, View)
 
 from django_filters.views import FilterView
 
@@ -12,13 +14,13 @@ from floppyforms.__future__.models import modelform_factory
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
-                                       DiscountForm)
+                                       DiscountForm, DiscountChoiceForm)
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, OrderDiscount,
                               BoughtItemDiscount, Order)
 from brambling.views.utils import (get_event_or_404, get_event_nav,
                                    get_event_admin_nav, get_order,
-                                   clear_expired_carts)
+                                   clear_expired_carts, ajax_required)
 
 
 class EventCreateView(CreateView):
@@ -316,9 +318,51 @@ class OrderDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
         context.update({
+            'discount_form': DiscountChoiceForm(self.event),
             'event': self.event,
             'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         context.update(self.object.get_summary_data())
         return context
+
+
+class RemoveDiscountView(View):
+    @method_decorator(ajax_required)
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        event = get_event_or_404(kwargs['event_slug'])
+        if not event.editable_by(request.user):
+            raise Http404
+        try:
+            order = Order.objects.get(event=event, pk=kwargs['pk'])
+            boughtitemdiscount = BoughtItemDiscount.objects.get(bought_item__order=order, pk=kwargs['discount_pk'])
+        except (Order.DoesNotExist, BoughtItemDiscount.DoesNotExist):
+            pass
+        else:
+            boughtitemdiscount.delete()
+        return JsonResponse({'success': True})
+
+
+class ApplyDiscountView(View):
+    @method_decorator(ajax_required)
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        event = get_event_or_404(kwargs['event_slug'])
+        if not event.editable_by(request.user):
+            raise Http404("Event not editable by user.")
+        try:
+            order = Order.objects.get(event=event, pk=kwargs['pk'])
+        except Order.DoesNotExist:
+            raise Http404("Order does not exist.")
+        form = DiscountChoiceForm(event, data=request.POST)
+        if not form.is_valid():
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors,
+            })
+        discount = form.cleaned_data['discount']
+        order.add_discount(discount, force=True)
+        return JsonResponse({
+            'success': True,
+        })

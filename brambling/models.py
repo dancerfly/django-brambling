@@ -543,14 +543,14 @@ class Order(models.Model):
         """
         return not bool(self.cart_errors)
 
-    def add_discount(self, discount):
+    def add_discount(self, discount, force=False):
         if discount.event_id != self.event_id:
             raise ValueError("Discount is not for the correct event")
         event_person_discount, created = OrderDiscount.objects.get_or_create(
             discount=discount,
             order=self
         )
-        if created:
+        if created or force:
             bought_items = BoughtItem.objects.filter(
                 order=self,
                 item_option__discount=discount,

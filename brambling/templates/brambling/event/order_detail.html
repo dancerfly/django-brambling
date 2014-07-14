@@ -1,18 +1,39 @@
 {% extends 'brambling/event/__full_nav.html' %}
 
-{% load floppyforms zenaida %}
+{% load floppyforms zenaida staticfiles %}
 
 {% block title %}Order {{ order.pk }} – {{ block.super }}{% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
 
-	<script type='text/javascript'>
-		var discountReload = true;
-	</script>
-	{% include 'brambling/event/_use_discount_js.html' %}
-	{% include 'brambling/event/_confirmation_screen.html' %}
 	{% include "brambling/_stripe_js.html" %}
+	<script src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
+	<script>
+		$('[data-toggle=tab]').click(function (e) {
+			e.preventDefault();
+			$(this).tab('show');
+		});
+		$('.removeDiscountLink').on('click', function(e){
+			e.preventDefault();
+			$.post($(this).attr('href'), function(){
+				location.reload();
+			});
+		});
+		$('#applyDiscountForm button').on('click', function(e){
+			e.preventDefault();
+			var url = $('#applyDiscountForm').attr('action');
+			$.post(url, $('#applyDiscountForm').serialize(), function(data) {
+				if (data.success) {
+					location.reload();
+				} else {
+					var select = $('applyDiscountForm select');
+					select.after('<p class="help-block">' + data.errors.discount + '</p>');
+					select.parent().addClass('has-error');
+				}
+			});
+		});
+	</script>
 {% endblock %}
 
 {% block main %}
@@ -37,7 +58,7 @@
 					<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
 					<td>{{ item.get_status_display }}</td>
 					<td>Edit item / attendee! Remove item from order!</td>
-					<td class='text-right'>{{ item.item_option.price }}</td>
+					<td class='text-right'>{{ item.item_option.price|format_money:event.currency }}</td>
 				</tr>
 			{% endfor %}
 			<tr class='active'>
@@ -58,7 +79,7 @@
 						{% endwith %}
 						<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
 						<td></td>
-						<td>Remove discount from item!</td>
+						<td><a href="{% url 'brambling_event_remove_discount' event_slug=event.slug pk=order.pk discount_pk=bought_item_discount.pk %}" class='removeDiscountLink'><span class='fa fa-times fa text-danger'></span></a></td>
 						<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
 					</tr>
 				{% endfor %}
@@ -92,27 +113,48 @@
 		</tbody>
 	</table>
 
-	<h2>Manual actions</h2>
-	<ul>
-		<li>Record payment - either process credit card payment or enter cash/check payment</li>
-		<li>Add item to order</li>
-		<li>Apply discount to order</li>
-		<li>Issue refund</li>
-	</ul>
-	{% include 'brambling/_stripe_form.html' %}
-	<form novalidate action="" method="post" id='card-form'>
-		{% csrf_token %}
-		<input name='new_card' value='1' type='hidden'>
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" role="tablist">
+  <li class="active"><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
+  <li><a href="#item" role="tab" data-toggle="tab">Add Item</a></li>
+  <li><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
+  <li><a href="#refund" role="tab" data-toggle="tab">Settings</a></li>
+</ul>
 
-		{% formrow new_card_form.save_card %}
+<!-- Tab panes -->
+<div class="tab-content">
+	<div class="tab-pane active" id="payment">
+		<h3>Record payment - either process credit card payment or enter cash/check payment</h3>
+		{% include 'brambling/_stripe_form.html' %}
+		<form novalidate action="" method="post" id='card-form'>
+			{% csrf_token %}
+			<input name='new_card' value='1' type='hidden'>
 
-		{% for error in new_card_form.non_field_errors %}
-			<div class='alert alert-danger'>
-				{{ error }}
-			</div>
-		{% endfor %}
+			{% formrow new_card_form.save_card %}
 
-		<button type="submit" id='card-submit' class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
-	</form>
-	{% include 'brambling/_stripe_note.html' %}
+			{% for error in new_card_form.non_field_errors %}
+				<div class='alert alert-danger'>
+					{{ error }}
+				</div>
+			{% endfor %}
+
+			<button type="submit" id='card-submit' class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+		</form>
+		{% include 'brambling/_stripe_note.html' %}
+	</div>
+	<div class="tab-pane" id="item">
+		<h3>Add item to order</h3>
+	</div>
+	<div class="tab-pane" id="discount">
+		<h3>Apply discount to order</h3>
+		<form id="applyDiscountForm" method='post' action='{% url "brambling_event_apply_discount" event_slug=event.slug pk=order.pk %}'>
+			{% csrf_token %}
+			{% form discount_form %}
+			<button type='submit' class='btn btn-primary'>Apply discount</button>
+		</form>
+	</div>
+	<div class="tab-pane" id="refund">
+		<h3>Issue refund</h3>
+	</div>
+</div>
 {% endblock %}
