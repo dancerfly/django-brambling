@@ -25,6 +25,7 @@
 				<th>Type</th>
 				<th>Timestamp</th>
 				<th>Status</th>
+				<th></th>
 				<th class='text-right'>Amount ({{ event.currency }})</th>
 			</tr>
 		</thead>
@@ -35,16 +36,17 @@
 					<td>{{ item.item_option.item.get_category_display }}</td>
 					<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
 					<td>{{ item.get_status_display }}</td>
+					<td>Edit item / attendee! Remove item from order!</td>
 					<td class='text-right'>{{ item.item_option.price }}</td>
 				</tr>
 			{% endfor %}
 			<tr class='active'>
-				<td colspan=5>
+				<td colspan=6>
 					<strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong>
 				</td>
 			</tr>
 			<tr>
-				<th colspan=5>Discounts</th>
+				<th colspan=6>Discounts</th>
 			</tr>
 			{% regroup discounts by discount as discount_list %}
 			{% for discount in discount_list %}
@@ -56,17 +58,18 @@
 						{% endwith %}
 						<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
 						<td></td>
+						<td>Remove discount from item!</td>
 						<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
 					</tr>
 				{% endfor %}
 			{% endfor %}
-			<tr{% if total_savings > 0 %} class='danger'{% endif %}>
-				<td colspan=5>
+			<tr class='active'>
+				<td colspan=6>
 					<strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong>
 				</td>
 			</tr>
 			<tr>
-				<th colspan=5>Payments</th>
+				<th colspan=6>Payments</th>
 			</tr>
 			{% for payment in payments %}
 				<tr>
@@ -74,21 +77,28 @@
 					<td>{{ payment.get_method_display }}</td>
 					<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
 					<td></td>
+					<td>Refund!</td>
 					<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
 				</tr>
 			{% endfor %}
-			<tr{% if total_payments > 0 %} class='success'{% endif %}>
-				<td colspan=5>
+			<tr class='active'>
+				<td colspan=6>
 					<strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong>
 				</td>
 			</tr>
-			<tr class='{% if balance < 0 %}success text-success{% elif balance > 0 %}danger text-danger{% else %}active{% endif %}'>
-				<td colspan=5><strong>Balance</strong><strong class='pull-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owes {% endif %}{{ balance|absolute_value|format_money:event.currency }}</strong></td>
+			<tr>
+				<td colspan=6><strong>Balance</strong><strong class='pull-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owes {% endif %}{{ balance|absolute_value|format_money:event.currency }}</strong></td>
 			</tr>
 		</tbody>
 	</table>
 
-	<h2>Manually enter payment</h2>
+	<h2>Manual actions</h2>
+	<ul>
+		<li>Record payment - either process credit card payment or enter cash/check payment</li>
+		<li>Add item to order</li>
+		<li>Apply discount to order</li>
+		<li>Issue refund</li>
+	</ul>
 	{% include 'brambling/_stripe_form.html' %}
 	<form novalidate action="" method="post" id='card-form'>
 		{% csrf_token %}
