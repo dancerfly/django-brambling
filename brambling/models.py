@@ -70,6 +70,43 @@ DEFAULT_HOUSING_CATEGORIES = (
 )
 
 
+class AbstractNamedModel(models.Model):
+    "A base model for any model which needs a human name."
+
+    NAME_ORDER_CHOICES = (
+        ('GMS', "Given Middle Surname"),
+        ('SGM', "Surname Given Middle"),
+        ('GS', "Given Surname"),
+        ('SG', "Surname Given"),
+    )
+
+    NAME_ORDER_PATTERNS = {
+        'GMS': "{given} {middle} {surname}",
+        'SGM': "{surname} {given} {middle}",
+        'GS': "{given} {surname}",
+        'SG': "{surname} {given}",
+    }
+
+    given_name = models.CharField(max_length=50)
+    middle_name = models.CharField(max_length=50, blank=True)
+    surname = models.CharField(max_length=50)
+    name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="GMS")
+
+    def get_full_name(self):
+        name_dict = {
+            'given': self.given_name,
+            'middle': self.middle_name,
+            'surname': self.surname,
+        }
+        return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+
+    def get_short_name(self):
+        return self.given_name
+
+    class Meta:
+        abstract = True
+
+
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
@@ -303,13 +340,9 @@ class PersonManager(BaseUserManager):
         return self._create_user(email, password, name, True, **extra_fields)
 
 
-class Person(AbstractBaseUser, PermissionsMixin):
+class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
-    name = models.CharField(max_length=100, verbose_name="Full name",
-                            validators=[RegexValidator(FULL_NAME_RE)],
-                            help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
-    nickname = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
@@ -375,13 +408,7 @@ class Person(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('people')
 
     def __unicode__(self):
-        return smart_text(self.name or self.email)
-
-    def get_full_name(self):
-        return self.name
-
-    def get_short_name(self):
-        return self.nickname or self.name
+        return self.get_full_name()
 
 
 class CreditCard(models.Model):
@@ -734,7 +761,7 @@ class BoughtItemDiscount(models.Model):
                    item_option.price)
 
 
-class Attendee(models.Model):
+class Attendee(AbstractNamedModel):
     """
     This model represents information attached to an event pass. It is
     by default copied from the pass buyer (if they don't already have a pass).
@@ -756,10 +783,6 @@ class Attendee(models.Model):
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
-    name = models.CharField(max_length=100, verbose_name="Full name",
-                            validators=[RegexValidator(FULL_NAME_RE)],
-                            help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
-    nickname = models.CharField(max_length=50, blank=True)
     email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=50, blank=True)
     liability_waiver = models.BooleanField(default=False)
