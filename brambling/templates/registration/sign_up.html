@@ -8,7 +8,7 @@
 
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
-		{% form form %}
+		{% form form using "brambling/forms/signup.html" %}
 		<button class='btn btn-primary' type="submit">Create your account!</button>
 	</form>
 {% endblock %}
