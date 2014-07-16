@@ -103,7 +103,7 @@ class HostingForm(MemoModelForm):
         if self.instance.pk is None:
             person = self.instance.order.person
             self.initial.update({
-                'contact_name': person.name,
+                'contact_name': person.get_full_name,
                 'contact_email': person.email,
                 'contact_phone': person.phone,
             })

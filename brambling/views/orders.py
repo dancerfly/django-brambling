@@ -194,7 +194,7 @@ class AttendeeItemView(TemplateView):
             if attendees:
                 all_valid = False
                 for attendee in attendees:
-                    self.errors.append('{} may not have more than one pass'.format(attendee.name))
+                    self.errors.append('{} may not have more than one pass'.format(attendee.get_full_name))
 
         if all_valid:
             if self.event.collect_housing_data:
@@ -223,8 +223,8 @@ class AttendeeBasicDataView(UpdateView):
     form_class = AttendeeBasicDataForm
 
     def get_form_class(self):
-        fields = ('name', 'nickname', 'email', 'phone', 'liability_waiver',
-                  'photo_consent')
+        fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
+                  'phone', 'liability_waiver', 'photo_consent')
         if self.event.collect_housing_data:
             fields += ('housing_status',)
         return forms.models.modelform_factory(Attendee, self.form_class, fields=fields)
@@ -246,8 +246,10 @@ class AttendeeBasicDataView(UpdateView):
         person = self.request.user
         if not self.order.attendees.filter(person=person).exists():
             initial.update({
-                'name': person.name,
-                'nickname': person.nickname,
+                'given_name': person.given_name,
+                'middle_name': person.middle_name,
+                'surname': person.surname,
+                'name_order': person.name_order,
                 'email': person.email,
                 'phone': person.phone
             })

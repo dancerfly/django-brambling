@@ -524,7 +524,7 @@ class Order(models.Model):
             # All attendees must have basic data filled out.
             missing_data = self.attendees.filter(basic_completed=False)
             for attendee in missing_data:
-                errors.append(('{} missing basic data'.format(attendee.name),
+                errors.append(('{} missing basic data'.format(attendee.get_full_name()),
                                reverse('brambling_event_attendee_edit',
                                        kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
 
@@ -535,7 +535,7 @@ class Order(models.Model):
                                                         housing_completed=False)
                 if missing_housing:
                     for attendee in missing_housing:
-                        errors.append(('{} missing housing data'.format(attendee.name),
+                        errors.append(('{} missing housing data'.format(attendee.get_full_name),
                                        reverse('brambling_event_attendee_housing',
                                                kwargs={'event_slug': self.event.slug})))
 
@@ -556,7 +556,7 @@ class Order(models.Model):
                 bought_items__count__gte=2
             )
             for attendee in attendees:
-                errors.append(('{} may not have more than one pass'.format(attendee.name),
+                errors.append(('{} may not have more than one pass'.format(attendee.get_full_name()),
                                reverse('brambling_event_attendee_items',
                                        kwargs={'event_slug': self.event.slug})))
 
@@ -729,7 +729,7 @@ class BoughtItem(models.Model):
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
-                                      self.order.person.name,
+                                      self.order.person.get_full_name,
                                       self.pk)
 
 
@@ -820,7 +820,7 @@ class Attendee(AbstractNamedModel):
     other_needs = models.TextField(blank=True)
 
     def __unicode__(self):
-        return self.name
+        return self.get_full_name()
 
     def get_groupable_items(self):
         return self.bought_items.order_by('item_option__item', 'item_option__order', '-added')

@@ -152,8 +152,10 @@ class DiscountChoiceForm(forms.Form):
 
 class AttendeeFilterSetForm(forms.Form):
     ORDERING_CHOICES = (
-        ("name", "Name"),
-        ("-name", "Name (descending)"),
+        ("surname", "Surname"),
+        ("-surname", "Surname (descending)"),
+        ("given_name", "Given Name"),
+        ("-given_name", "Given Name (descending)"),
     )
     HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES
 

@@ -2,12 +2,12 @@
 
 {% load floppyforms zenaida %}
 
-{% block title %}{% if attendee.pk %}Edit {{ attendee.name }}{% else %}Add an attendee{% endif %} – {{ block.super }}{% endblock %}
+{% block title %}{% if attendee.pk %}Edit {{ attendee.get_full_name }}{% else %}Add an attendee{% endif %} – {{ block.super }}{% endblock %}
 
 {% block main %}
 	{{ block.super }}
 
-	<h3>{% if attendee.pk %}Edit attendee: {{ attendee.name }}{% else %}Add an attendee{% endif %}</h3>
+	<h3>{% if attendee.pk %}Edit attendee: {{ attendee.get_full_name }}{% else %}Add an attendee{% endif %}</h3>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	<div class="row">
@@ -17,8 +17,25 @@
 				{% form form using %}
 					{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
+					<div class="row">
+						<div class="form-group col-md-6">
+							{% formrow form.given_name %}
+						</div>
+						<div class="form-group col-md-6">
+							<a href="#extraName" data-toggle="collapse" class="{% if masthead %}masthead-link {% endif %}pull-right"><small><i class="fa fa-plus"></i> More Name Options</small></a>
+							{% formrow form.surname %}
+						</div>
+					</div>
 
-					{% formrow form.name %}
+					<div class="row collapse" id="extraName">
+						<div class="form-group col-sm-6">
+							{% formrow form.middle_name %}
+						</div>
+						<div class="form-group col-sm-6">
+							{% formrow form.name_order %}
+						</div>
+					</div>
+
 					{% formrow form.nickname %}
 					{% formrow form.email %}
 					{% formrow form.phone %}
@@ -41,7 +58,7 @@
 				</header>
 				<div class='list-group'>
 					{% for attendee in attendees %}
-						<a class='list-group-item' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'>{{ attendee.name }}</a>
+						<a class='list-group-item' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'>{{ attendee.get_full_name }}</a>
 					{% endfor %}
 				</div>
 			</div>
