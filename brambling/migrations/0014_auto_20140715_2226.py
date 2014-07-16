@@ -11,23 +11,29 @@ def single_name_field_to_multiple(apps, schema_editor):
 
     """
     Person = apps.get_model("brambling", "Person")
-    for person in Person.objects.all():
+    Attendee = apps.get_model("brambling", "Attendee")
 
-        # Convert single to separated name:
+    def convert_object(obj):
+        "Convert an object with a single name to its multiple name fields."
         name_bits = person.name.split(" ")
         if len(name_bits) < 2:
-            person.given_name = name_bits[0]
-            person.surname = "NO SURNAME"
+            obj.given_name = name_bits[0]
+            obj.surname = "NO SURNAME"
         elif len(name_bits) == 2:
-            person.given_name = name_bits[0]
-            person.surname = name_bits[1]
+            obj.given_name = name_bits[0]
+            obj.surname = name_bits[1]
         elif len(name_bits) > 2:
-            person.given_name = name_bits[0]
-            person.middle_name = name_bits[1]
-            person.surname = " ".join(name_bits[2:])
+            obj.given_name = name_bits[0]
+            obj.middle_name = name_bits[1]
+            obj.surname = " ".join(name_bits[2:])
 
-        # Save
-        person.save()
+        obj.save()
+
+    for person in Person.objects.all():
+        convert_object(person)
+
+    for attendee in Attendee.objects.all():
+        convert_object(attendee)
 
 
 def multiple_name_to_single_field(apps, schema_editor):
@@ -37,10 +43,11 @@ def multiple_name_to_single_field(apps, schema_editor):
 
     """
     Person = apps.get_model("brambling", "Person")
-    for person in Person.objects.all():
+    Attendee = apps.get_model("brambling", "Attendee")
 
-        # Convert multiple names to a single name:
-        name_bits = [person.first_name]
+    def convert_object(obj):
+        "Convert an object with multiple names to its single name field."
+        name_bits = [person.given_name]
         if person.middle_name != "" and person.name_order in ("SGM", "GMS"):
             name_bits.append(person.middle_name)
         if person.surname != "NO SURNAME":
@@ -48,10 +55,15 @@ def multiple_name_to_single_field(apps, schema_editor):
                 name_bits.insert(0, person.surname)
             else:
                 name_bits.append(person.surname)
-        person.name = " ".join
+        person.name = " ".join()
 
-        # Save
         person.save()
+
+    for person in Person.objects.all():
+        convert_object(person)
+
+    for attendee in Attendee.objects.all():
+        convert_object(attendee)
 
 
 class Migration(migrations.Migration):
