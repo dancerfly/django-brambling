@@ -39,7 +39,7 @@ class AttendeeFilterSet(django_filters.FilterSet):
         model = Attendee
         fields = ['bought_items__item_option', 'housing_status',
                   'bought_items__discounts__discount']
-        order_by = ['surname', '-surname']
+        order_by = ['surname', '-surname', 'given_name', '-given_name']
 
 
 class OrderFilterSet(django_filters.FilterSet):
