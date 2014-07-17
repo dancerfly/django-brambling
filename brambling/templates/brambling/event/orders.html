@@ -34,7 +34,7 @@
                 <tbody>
                     {% for order in filter %}
                         <tr>
-                            <th><a href='{% url "brambling_event_order_detail" event_slug=event.slug pk=order.pk %}'>{{ order.person.get_full_name }}</a></th>
+                            <th><a href='{% url "brambling_event_order_detail" event_slug=event.slug code=order.code %}'>{{ order.person.get_full_name }}</a></th>
                             <td>{{ order.heard_through }}</td>
                         </tr>
                     {% empty %}

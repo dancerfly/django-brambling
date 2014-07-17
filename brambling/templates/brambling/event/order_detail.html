@@ -79,7 +79,7 @@
 						{% endwith %}
 						<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
 						<td></td>
-						<td><a href="{% url 'brambling_event_remove_discount' event_slug=event.slug pk=order.pk discount_pk=bought_item_discount.pk %}" class='removeDiscountLink'><span class='fa fa-times fa text-danger'></span></a></td>
+						<td><a href="{% url 'brambling_event_remove_discount' event_slug=event.slug code=order.code discount_pk=bought_item_discount.pk %}" class='removeDiscountLink'><span class='fa fa-times fa text-danger'></span></a></td>
 						<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
 					</tr>
 				{% endfor %}
@@ -147,7 +147,7 @@
 	</div>
 	<div class="tab-pane" id="discount">
 		<h3>Apply discount to order</h3>
-		<form id="applyDiscountForm" method='post' action='{% url "brambling_event_apply_discount" event_slug=event.slug pk=order.pk %}'>
+		<form id="applyDiscountForm" method='post' action='{% url "brambling_event_apply_discount" event_slug=event.slug code=order.code %}'>
 			{% csrf_token %}
 			{% form discount_form %}
 			<button type='submit' class='btn btn-primary'>Apply discount</button>

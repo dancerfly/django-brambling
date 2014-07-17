@@ -11,23 +11,53 @@ import floppyforms.__future__ as forms
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm)
-from brambling.models import (Item, BoughtItem, ItemOption, Payment,
+from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
-from brambling.views.utils import (get_event_or_404, get_event_nav,
-                                   get_event_admin_nav, ajax_required,
-                                   get_order, clear_expired_carts)
+from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
+                                   ajax_required, get_order,
+                                   clear_expired_carts)
 
 
-class AddToCartView(View):
+class OrderMixin(object):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.event = get_event_or_404(kwargs['event_slug'])
+        if 'code' in self.kwargs:
+            self.order = get_order(self.event, code=self.kwargs['code'])
+            if (not self.order.person == self.request.user and
+                    not self.is_admin_request):
+                raise Http404
+        else:
+            self.order = get_order(self.event, self.request.user)
+        return super(OrderMixin, self).dispatch(*args, **kwargs)
+
+    @property
+    def is_admin_request(self):
+        if not hasattr(self, '_is_admin_request'):
+            self._is_admin_request = self.event.editable_by(self.request.user)
+        return self._is_admin_request
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderMixin, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'order': self.order,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'is_admin_request': self.is_admin_request,
+        })
+        return context
+
+
+class AddToOrderView(OrderMixin, View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        event = get_event_or_404(kwargs['event_slug'])
-        clear_expired_carts(event)
+        clear_expired_carts(self.event)
+
         try:
             item_option = ItemOption.objects.annotate(taken=Count('boughtitem')
-                                           ).get(item__event=event,
+                                           ).get(item__event=self.event,
                                                  pk=kwargs['pk'])
         except ItemOption.DoesNotExist:
             raise Http404
@@ -35,57 +65,66 @@ class AddToCartView(View):
         if item_option.taken >= item_option.total_number:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
-        order = get_order(event, request.user)
-        if order.person.confirmed_email:
-            order.add_to_cart(item_option)
+        if self.order.person.confirmed_email or self.is_admin_request:
+            self.order.add_to_cart(item_option)
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})
 
 
-class RemoveFromCartView(View):
+class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        event = get_event_or_404(kwargs['event_slug'])
         try:
             bought_item = BoughtItem.objects.get(item_option__item__event=event,
                                                  pk=kwargs['pk'])
         except BoughtItem.DoesNotExist:
             pass
         else:
-            order = get_order(event, request.user)
-            order.remove_from_cart(bought_item)
+            self.order.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
 
 
-class UseDiscountView(View):
+class ApplyDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        event = get_event_or_404(kwargs['event_slug'])
-        now = timezone.now()
-        try:
-            discount = Discount.objects.filter(
-                code=kwargs['discount'],
-                event=event
-            ).filter(
-                (Q(available_start__lte=now) |
-                 Q(available_start__isnull=True)),
-                (Q(available_end__gte=now) |
-                 Q(available_end__isnull=True))
-            ).get()
-        except Discount.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'errors': {
-                    'discount': ("No discount with that code is currently "
-                                 "active for this event.")
-                },
-            })
 
-        order = get_order(event, request.user)
-        created = order.add_discount(discount)
+        discounts = Discount.objects.filter(
+            code=kwargs['discount'],
+            event=self.event
+        )
+        if self.is_admin_request:
+            try:
+                discount = discounts.get()
+            except Discount.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'errors': {
+                        'discount': ("No discount with that code exists "
+                                     "for this event.")
+                    },
+                })
+        else:
+            now = timezone.now()
+            try:
+                discounts = discounts.filter(
+                    (Q(available_start__lte=now) |
+                     Q(available_start__isnull=True)),
+                    (Q(available_end__gte=now) |
+                     Q(available_end__isnull=True))
+                ).get()
+            except Discount.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'errors': {
+                        'discount': ("No discount with that code is currently "
+                                     "active for this event.")
+                    },
+                })
+
+        created = order.add_discount(discount, force=self.is_admin_request)
         if created:
             return JsonResponse({
                 'success': True,
@@ -97,64 +136,45 @@ class UseDiscountView(View):
         })
 
 
-# Registration works like this:
-# 1. Shop. Choose things.
-# 2. Who are these for? <- part of shop?
-# 3. Any relevant Order fields <- Registration information. one page per pass.
-# 4. If housing is enabled, one page per pass that requests or offers housing.
-# 5. Checkout - unpaid items only. List any applicable credits without explanation.
+class RemoveDiscountView(OrderMixin, View):
+    @method_decorator(ajax_required)
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        if not self.is_admin_request:
+            raise Http404
+        try:
+            boughtitemdiscount = BoughtItemDiscount.objects.get(
+                bought_item__order=self.order,
+                pk=kwargs['discount_pk']
+            )
+        except BoughtItemDiscount.DoesNotExist:
+            pass
+        else:
+            boughtitemdiscount.delete()
+        return JsonResponse({'success': True})
 
 
-def _shared_shopping_context(request, order):
-    event = order.event
-    return {
-        'event': event,
-        'order': order,
-        'discounts': order.discounts.all(),
-        'event_nav': get_event_nav(event, request),
-        'event_admin_nav': get_event_admin_nav(event, request),
-    }
-
-
-class ShopView(TemplateView):
+class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/shop.html'
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(ShopView, self).dispatch(*args, **kwargs)
-
     def get_context_data(self, **kwargs):
-        context = super(ShopView, self).get_context_data(**kwargs)
-
-        event = get_event_or_404(self.kwargs['event_slug'])
-        clear_expired_carts(event)
+        context = super(ChooseItemsView, self).get_context_data(**kwargs)
+        clear_expired_carts(self.event)
         now = timezone.now()
         item_options = ItemOption.objects.filter(
             available_start__lte=now,
             available_end__gte=now,
-            item__event=event,
+            item__event=self.event,
         ).annotate(taken=Count('boughtitem')).filter(
             total_number__gt=F('taken')
         ).order_by('item')
 
-        context.update({
-            'item_options': item_options,
-        })
-        order = get_order(event, self.request.user)
-        order.event = event
-        context.update(_shared_shopping_context(self.request, order))
+        context['item_options'] = item_options
         return context
 
 
-class AttendeeItemView(TemplateView):
+class AttendeeItemView(OrderMixin, TemplateView):
     template_name = 'brambling/event/attendee_items.html'
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['event_slug'])
-        self.order = get_order(self.event, request.user)
-        self.errors = []
-        return super(AttendeeItemView, self).dispatch(request, *args, **kwargs)
 
     def get_forms(self):
         form_class = forms.models.modelform_factory(BoughtItem, fields=('attendee',))
@@ -172,10 +192,12 @@ class AttendeeItemView(TemplateView):
                 for item in bought_items]
 
     def get(self, request, *args, **kwargs):
+        self.errors = []
         self.forms = self.get_forms()
         return self.render_to_response(self.get_context_data())
 
     def post(self, request, *args, **kwargs):
+        self.errors = []
         self.forms = self.get_forms()
         all_valid = True
         for form in self.forms:
@@ -214,11 +236,10 @@ class AttendeeItemView(TemplateView):
             'attendees': self.attendees,
             'errors': self.errors,
         })
-        context.update(_shared_shopping_context(self.request, self.order))
         return context
 
 
-class AttendeeBasicDataView(UpdateView):
+class AttendeeBasicDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/attendee_basic_data.html'
     form_class = AttendeeBasicDataForm
 
@@ -228,12 +249,6 @@ class AttendeeBasicDataView(UpdateView):
         if self.event.collect_housing_data:
             fields += ('housing_status',)
         return forms.models.modelform_factory(Attendee, self.form_class, fields=fields)
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['event_slug'])
-        self.order = get_order(self.event, request.user)
-        return super(AttendeeBasicDataView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self):
         if self.kwargs.get('pk') is None:
@@ -271,39 +286,26 @@ class AttendeeBasicDataView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
-        context.update({
-            'attendees': self.order.attendees.all(),
-        })
-        context.update(_shared_shopping_context(self.request, self.order))
+        context['attendees'] = self.order.attendees.all()
         return context
 
 
-class RemoveAttendeeView(View):
+class RemoveAttendeeView(OrderMixin, View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        event = get_event_or_404(kwargs['event_slug'])
-        Attendee.objects.filter(order__event=event,
+        Attendee.objects.filter(order=self.order,
                                 pk=kwargs['pk']).delete()
 
         return JsonResponse({'success': True})
 
 
-class AttendeeHousingView(TemplateView):
+class AttendeeHousingView(OrderMixin, TemplateView):
     template_name = 'brambling/event/attendee_housing.html'
 
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['event_slug'])
-        self.order = get_order(self.event, request.user)
-        self.attendees = self.order.attendees.filter(housing_status=Attendee.NEED)
-        if not self.event.collect_housing_data or not self.attendees:
-            # Just skip ahead.
-            return HttpResponseRedirect(reverse('brambling_event_survey',
-                                        kwargs={'event_slug': self.event.slug}))
-        return super(AttendeeHousingView, self).dispatch(request, *args, **kwargs)
-
     def get(self, request, *args, **kwargs):
+        if not self.event.collect_housing_data:
+            raise Http404
         self.forms = self.get_forms()
         if not self.forms:
             return HttpResponseRedirect(self.get_success_url())
@@ -311,6 +313,8 @@ class AttendeeHousingView(TemplateView):
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
+        if not self.event.collect_housing_data:
+            raise Http404
         self.forms = self.get_forms()
         all_valid = True
         for form in self.forms:
@@ -335,10 +339,13 @@ class AttendeeHousingView(TemplateView):
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
 
+        attendees = self.order.attendees.filter(housing_status=Attendee.NEED)
+        if not attendees:
+            raise Http404
         return [AttendeeHousingDataForm(prefix='form-{}-'.format(attendee.pk),
                                         instance=attendee,
                                         **kwargs)
-                for attendee in self.attendees]
+                for attendee in attendees]
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeHousingView, self).get_context_data(**kwargs)
@@ -347,11 +354,10 @@ class AttendeeHousingView(TemplateView):
             'event': self.event,
             'forms': self.forms,
         })
-        context.update(_shared_shopping_context(self.request, self.order))
         return context
 
 
-class SurveyDataView(UpdateView):
+class SurveyDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/survey_data.html'
     context_object_name = 'order'
 
@@ -366,23 +372,13 @@ class SurveyDataView(UpdateView):
                        'send_flyers_state_or_province', 'send_flyers_country')
         return fields
 
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['event_slug'])
-        if not self.fields:
-            return HttpResponseRedirect(self.get_success_url())
-        return super(SurveyDataView, self).dispatch(request, *args, **kwargs)
-
     def get_form_class(self):
+        if not self.fields:
+            raise Http404
         return forms.models.modelform_factory(Order, fields=self.fields)
 
     def get_object(self):
-        return get_order(self.event, self.request.user)
-
-    def get_context_data(self, **kwargs):
-        context = super(SurveyDataView, self).get_context_data(**kwargs)
-        context.update(_shared_shopping_context(self.request, self.object))
-        return context
+        return self.order
 
     def form_valid(self, form):
         if self.event.collect_survey_data:
@@ -397,19 +393,13 @@ class SurveyDataView(UpdateView):
         return reverse('brambling_event_order_summary', kwargs=kwargs)
 
 
-class HostingView(UpdateView):
+class HostingView(OrderMixin, UpdateView):
     template_name = 'brambling/event/hosting.html'
     form_class = HostingForm
 
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['event_slug'])
-        if not self.event.collect_housing_data:
-            return HttpResponseRedirect(self.get_success_url())
-        self.order = get_order(self.event, request.user)
-        return super(HostingView, self).dispatch(request, *args, **kwargs)
-
     def get_object(self):
+        if not self.event.collect_housing_data:
+            raise Http404
         try:
             return EventHousing.objects.select_related('home').get(
                 event=self.event,
@@ -422,36 +412,25 @@ class HostingView(UpdateView):
                 home=self.order.person.home
             )
 
-    def get_context_data(self, **kwargs):
-        context = super(HostingView, self).get_context_data(**kwargs)
-
-        context.update(_shared_shopping_context(self.request, self.order))
-
-        return context
-
     def get_success_url(self):
         return reverse('brambling_event_order_summary',
                        kwargs={'event_slug': self.event.slug})
 
 
-class OrderSummaryView(TemplateView):
+class OrderDetailView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order_summary.html'
 
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.event = get_event_or_404(kwargs['event_slug'])
-        self.order = get_order(self.event, request.user)
+    def get(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()
         self.balance = self.summary_data['balance']
-        return super(OrderSummaryView, self).dispatch(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
         if self.balance > 0 or self.order.has_cart():
             self.get_forms()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
+        self.summary_data = self.order.get_summary_data()
+        self.balance = self.summary_data['balance']
         if self.balance == 0:
             self.order.mark_cart_paid()
         else:
@@ -486,9 +465,7 @@ class OrderSummaryView(TemplateView):
         self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(OrderSummaryView, self).get_context_data(**kwargs)
-
-        context.update(_shared_shopping_context(self.request, self.order))
+        context = super(OrderDetailView, self).get_context_data(**kwargs)
 
         context.update({
             'has_cards': self.order.person.cards.exists(),
@@ -499,5 +476,5 @@ class OrderSummaryView(TemplateView):
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
         })
-        context.update(self.order.get_summary_data())
+        context.update(self.summary_data)
         return context

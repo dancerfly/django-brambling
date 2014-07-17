@@ -33,9 +33,6 @@ def get_order(event, person=None, code=None):
         while Order.objects.filter(event=event, code=code).exists():
             code = get_random_string(8)
         order = Order.objects.create(event=event, person=person, code=code)
-    # Cache event / person instances.
-    order.event = event
-    order.person = person
     return order
 
 
