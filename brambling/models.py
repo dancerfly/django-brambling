@@ -478,7 +478,8 @@ class Order(models.Model):
     )
 
     event = models.ForeignKey(Event)
-    person = models.ForeignKey(Person)
+    person = models.ForeignKey(Person, blank=True, null=True)
+    code = models.CharField(max_length=8, db_index=True)
 
     cart_start_time = models.DateTimeField(blank=True, null=True)
 
@@ -497,6 +498,9 @@ class Order(models.Model):
     providing_housing = models.BooleanField(default=False)
 
     checked_out = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('event', 'code')
 
     def steps(self):
         """
