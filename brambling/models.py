@@ -479,7 +479,6 @@ class Order(models.Model):
     person = models.ForeignKey(Person)
 
     cart_start_time = models.DateTimeField(blank=True, null=True)
-    cart_owners_set = models.BooleanField(default=False)
 
     # "Survey" questions for Order
     survey_completed = models.BooleanField(default=False)
@@ -494,6 +493,8 @@ class Order(models.Model):
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
+
+    checked_out = models.BooleanField(default=False)
 
     @property
     def cart_errors(self):
