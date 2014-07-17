@@ -481,7 +481,6 @@ class Order(models.Model):
     person = models.ForeignKey(Person)
 
     cart_start_time = models.DateTimeField(blank=True, null=True)
-    cart_owners_set = models.BooleanField(default=False)
 
     # "Survey" questions for Order
     survey_completed = models.BooleanField(default=False)
@@ -496,6 +495,8 @@ class Order(models.Model):
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
+
+    checked_out = models.BooleanField(default=False)
 
     def steps(self):
         """
@@ -588,7 +589,6 @@ class Order(models.Model):
 
         self._steps = steps
         return self._steps
-
 
     @property
     def cart_errors(self):
@@ -723,7 +723,8 @@ class Order(models.Model):
         ).update(status=BoughtItem.PAID)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-            self.save()
+        self.checked_out = True
+        self.save()
 
     def cart_expire_time(self):
         if self.cart_start_time is None:
