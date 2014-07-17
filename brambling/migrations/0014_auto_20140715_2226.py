@@ -55,7 +55,7 @@ def multiple_name_to_single_field(apps, schema_editor):
                 name_bits.insert(0, person.surname)
             else:
                 name_bits.append(person.surname)
-        person.name = " ".join()
+        person.name = " ".join(name_bits)
 
         person.save()
 
