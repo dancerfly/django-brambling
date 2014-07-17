@@ -624,7 +624,8 @@ class Order(models.Model):
         ).update(status=BoughtItem.PAID)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-            self.save()
+        self.checked_out = True
+        self.save()
 
     def cart_expire_time(self):
         if self.cart_start_time is None:
