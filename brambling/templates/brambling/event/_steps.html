@@ -1,0 +1,25 @@
+{% if order %}
+	<div class="alert alert-info">
+		{% for step in order.steps %}
+
+			{% if step.accessible %}
+				<a href="{{ step.url }}" class="alert-link">
+			{% endif %}
+
+			{% if step.complete %}
+				<i class="fa fa-check"></i>
+			{% endif %}
+
+			{{ step.name }}
+
+			{% if step.accessible %}
+				</a>
+			{% endif %}
+
+			{% if not forloop.last %}
+				<i class="fa fa-chevron-right"></i>
+			{% endif %}
+
+		{% endfor %}
+	</div>
+{% endif %}

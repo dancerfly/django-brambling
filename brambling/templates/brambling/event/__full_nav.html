@@ -45,6 +45,7 @@
 {% endblock %}
 
 {% block main %}
+	{% include "brambling/event/_steps.html" %}
 	{% if order.has_cart %}
 		{% include "brambling/event/_expiry_countdown.html" with extra_classes="visible-sm visible-xs" expiry_time=order.cart_expire_time only %}
 		<div class="modal fade" id="countdownCompleteModal" role="dialog" aria-labelledby="timeUpModal" aria-hidden="true">

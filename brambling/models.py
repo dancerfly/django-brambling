@@ -468,6 +468,94 @@ class Order(models.Model):
 
     providing_housing = models.BooleanField(default=False)
 
+    def steps(self):
+        """
+        Returns a list of the steps necessary to the checkout process and their
+        current completion status.
+
+        Each step is a dict with the following attributes:
+
+        * name:       The human-readable name of the step.
+        * accessible: True if the step can be accessed and computerd by the
+                      user now. False otherwise.
+        * complete:   True is this step is complete and valid. False otherwise.
+        * url:        String url to access and complete this step.
+
+        """
+
+        steps = []
+        previous_complete = lambda x: x[len(x)-1]['complete']
+
+        # Step 1: Shop
+        steps.append({
+            'name': 'Shop',
+            # Shop should always be accessible:
+            'accessible': True,
+            # Complete if a cart exists:
+            'complete': self.has_cart(),
+            'url': reverse('brambling_event_shop',
+                           kwargs={'event_slug': self.event.slug})
+        })
+
+        # Step 2: All items must be assigned to an attendee.
+        steps.append({
+            'name': 'Attendees',
+            'accessible': self.has_cart(),
+            # Completed if all items have an attendee:
+            'complete': self.has_cart() and not self.bought_items.filter(attendee__isnull=True).exists(),
+            'url': reverse('brambling_event_attendee_items',
+                           kwargs={'event_slug': self.event.slug})
+        })
+
+        # Step 3: Housing
+        # Only display this step if the event is providing housing and the
+        # order says some attendees need housing.
+        if self.event.collect_housing_data:
+            need_housing = self.attendees.filter(housing_status=Attendee.NEED).exists()
+            if need_housing:
+                steps.append({
+                    'name': 'Housing',
+                    'accessible': steps[1]['complete'],
+                    'complete': steps[1]['complete'] and not self.attendees.filter(housing_status=Attendee.NEED, housing_completed=False).exists(),
+                    'url': reverse('brambling_event_attendee_housing',
+                                   kwargs={'event_slug': self.event.slug})
+                })
+
+        # Step 4: Survey
+        # Only display this step if the event is using the survey.
+        if self.event.collect_survey_data:
+            steps.append({
+                'name': 'Survey',
+                'accessible': previous_complete(steps),
+                'complete': previous_complete(steps) and self.survey_completed,
+                'url': reverse('brambling_event_survey',
+                       kwargs={'event_slug': self.event.slug})
+            })
+
+        # Step 5: Hosting
+        # Only display this step if the event is providing housing and the
+        # survey says the user can provide housing.
+        if self.event.collect_housing_data and self.providing_housing:
+            steps.append({
+                'name': 'Hosting',
+                'accessible': previous_complete(steps),
+                'complete': EventHousing.objects.filter(event=self.event, home__residents=self.person).exists(),
+                'url': reverse('brambling_event_hosting',
+                               kwargs={'event_slug': self.event.slug})
+            })
+
+        # Step 6: Payment
+        steps.append({
+            'name': 'Payment',
+            'accessible': previous_complete(steps),
+            'complete': False,
+            'url': reverse('brambling_event_order_summary',
+                           kwargs={'event_slug': self.event.slug})
+        })
+
+        return steps
+
+
     @property
     def cart_errors(self):
         if not hasattr(self, '_cart_errors'):
@@ -584,7 +672,7 @@ class Order(models.Model):
             self.save()
 
     def remove_from_cart(self, bought_item):
-        if bought_item.event_person_id == self.id:
+        if bought_item.order.id == self.id:
             bought_item.delete()
         if not self.has_cart():
             self.cart_start_time = None
