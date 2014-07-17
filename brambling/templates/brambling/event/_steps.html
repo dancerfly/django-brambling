@@ -1,24 +1,18 @@
 {% if order %}
-	<div class="alert alert-info">
+	<div class="stepbar stepbar-{{ order.steps|length }}-up">
 		{% for key, step in order.steps.items %}
 
-			{% if step.accessible %}
-				<a href="{{ step.url }}" class="alert-link">
-			{% endif %}
+			{# a or div, depending on if the step is accessible #}
+			<{% if step.accessible %}a href="{{ step.url }}"{% else %}div{% endif %} class="step {% if step.accessible and step.complete %}complete{% endif %}">
 
 			{% if step.accessible and step.complete %}
-				<i class="fa fa-check"></i>
+				<i class="fa fa-check fa-fw"></i>
 			{% endif %}
 
 			{{ step.name }}
 
-			{% if step.accessible %}
-				</a>
-			{% endif %}
-
-			{% if not forloop.last %}
-				<i class="fa fa-chevron-right"></i>
-			{% endif %}
+			{# a or div, depending on if the step is accessible #}
+			</{% if step.accessible %}a{% else %}div{% endif %}>
 
 		{% endfor %}
 	</div>

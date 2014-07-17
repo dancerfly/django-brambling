@@ -1,0 +1,43 @@
+@import compass/css3/border-radius
+
+.stepbar
+	@extend .clearfix
+	+border-radius($border-radius-base)
+	overflow: hidden
+	width: 100%
+
+.step
+	background: $whitesmoke
+	display: block
+	padding: #{$line-height-computed / 2}
+	color: darken($whitesmoke, 30%)
+	text-align: center
+	float: left
+	border-right: 1px solid #FFF
+	&.complete, &.current
+		background: $brand-primary
+		color: #FFF
+	&.current
+		background: darken($brand-primary, 7%)
+	.stepbar-1-up > &
+		width: 100%
+	.stepbar-2-up > &
+		width: 50%
+	.stepbar-4-up > &
+		width: 25%
+	.stepbar-5-up > &
+		width: 20%
+	.stepbar-6-up > &
+		width: 16.66%
+	.stepbar-7-up > &
+		width: 14.28%
+	.stepbar-8-up > &
+		width: 12.5%
+	&:last-child
+		border-right: 0
+		// we want to make it to the right edge, even if the pixel widths don't
+		// add up.
+		float: right
+
+a.step
+	color: $black

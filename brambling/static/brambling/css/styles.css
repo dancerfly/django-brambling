@@ -5467,11 +5467,11 @@ button.close {
     bottom: 20px;
   }
 }
-.clearfix:before, .clearfix:after {
+.clearfix:before, .stepbar:before, .clearfix:after, .stepbar:after {
   content: " ";
   display: table;
 }
-.clearfix:after {
+.clearfix:after, .stepbar:after {
   clear: both;
 }
 
@@ -5848,6 +5848,62 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .panel-title {
+  color: black;
+}
+
+.stepbar {
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  -ms-border-radius: 4px;
+  -o-border-radius: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.step {
+  background: #eeebe8;
+  display: block;
+  padding: 9.5px;
+  color: #ad9e90;
+  text-align: center;
+  float: left;
+  border-right: 1px solid white;
+}
+.step.complete, .step.current {
+  background: #e8a500;
+  color: white;
+}
+.step.current {
+  background: #c48c00;
+}
+.stepbar-1-up > .step {
+  width: 100%;
+}
+.stepbar-2-up > .step {
+  width: 50%;
+}
+.stepbar-4-up > .step {
+  width: 25%;
+}
+.stepbar-5-up > .step {
+  width: 20%;
+}
+.stepbar-6-up > .step {
+  width: 16.66%;
+}
+.stepbar-7-up > .step {
+  width: 14.28%;
+}
+.stepbar-8-up > .step {
+  width: 12.5%;
+}
+.step:last-child {
+  border-right: 0;
+  float: right;
+}
+
+a.step {
   color: black;
 }
 
