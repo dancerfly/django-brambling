@@ -5788,10 +5788,10 @@ h1, h2, h3, h4, h5, h6 {
   color: #fceed6;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
 }
-.masthead *:first-child {
+.masthead > :first-child {
   margin-top: 0;
 }
-.masthead *:last-child {
+.masthead > :last-child {
   margin-bottom: 0;
 }
 .masthead strong {

@@ -37,7 +37,7 @@
                 <tbody>
                     {% for attendee in filter %}
                         <tr>
-                            <th>{{ attendee.name }}</th>
+                            <th>{{ attendee.get_full_name }}</th>
                             {% if event.collect_housing_data %}
                                 <td>{{ attendee.get_housing_status_display }}</td>
                             {% endif %}
