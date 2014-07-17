@@ -51,7 +51,13 @@ class SignUpForm(BasePersonForm):
 
     class Meta:
         model = Person
-        fields = ('email', 'name',)
+        fields = (
+            'email',
+            'given_name',
+            'middle_name',
+            'surname',
+            'name_order'
+        )
 
     def clean_email(self):
         # Since Person.email is unique, this check is redundant,
@@ -90,8 +96,8 @@ class SignUpForm(BasePersonForm):
 class PersonForm(BasePersonForm):
     class Meta:
         model = Person
-        fields = ('email', 'name', 'nickname', 'phone', 'dance_styles',
-                  'dietary_restrictions', 'ef_cause',
+        fields = ('email', 'given_name', 'middle_name', 'surname', 'name_order',
+                  'phone', 'dance_styles', 'dietary_restrictions', 'ef_cause',
                   'ef_avoid', 'person_prefer', 'person_avoid',
                   'housing_prefer', 'other_needs')
 

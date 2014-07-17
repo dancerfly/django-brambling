@@ -79,7 +79,7 @@
 				<ul class='list-group'>
 					{% for attendee in attendees %}
 						<li class='list-group-item'>
-							{{ attendee.name }}
+							{{ attendee.get_full_name }}
 							<ul class='list-inline pull-right'>
 								<li><a href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'><span class='fa fa-pencil'></span></a></li>
 								<li><a target='{% url "brambling_event_attendee_delete" event_slug=event.slug pk=attendee.pk %}' href='javascript://' class='text-danger'><span class='fa fa-times'></span></a></li>

@@ -72,6 +72,43 @@ DEFAULT_HOUSING_CATEGORIES = (
 )
 
 
+class AbstractNamedModel(models.Model):
+    "A base model for any model which needs a human name."
+
+    NAME_ORDER_CHOICES = (
+        ('GMS', "Given Middle Surname"),
+        ('SGM', "Surname Given Middle"),
+        ('GS', "Given Surname"),
+        ('SG', "Surname Given"),
+    )
+
+    NAME_ORDER_PATTERNS = {
+        'GMS': "{given} {middle} {surname}",
+        'SGM': "{surname} {given} {middle}",
+        'GS': "{given} {surname}",
+        'SG': "{surname} {given}",
+    }
+
+    given_name = models.CharField(max_length=50)
+    middle_name = models.CharField(max_length=50, blank=True)
+    surname = models.CharField(max_length=50)
+    name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="GMS")
+
+    def get_full_name(self):
+        name_dict = {
+            'given': self.given_name,
+            'middle': self.middle_name,
+            'surname': self.surname,
+        }
+        return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+
+    def get_short_name(self):
+        return self.given_name
+
+    class Meta:
+        abstract = True
+
+
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
@@ -305,13 +342,9 @@ class PersonManager(BaseUserManager):
         return self._create_user(email, password, name, True, **extra_fields)
 
 
-class Person(AbstractBaseUser, PermissionsMixin):
+class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
-    name = models.CharField(max_length=100, verbose_name="Full name",
-                            validators=[RegexValidator(FULL_NAME_RE)],
-                            help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
-    nickname = models.CharField(max_length=50, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
@@ -377,13 +410,7 @@ class Person(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('people')
 
     def __unicode__(self):
-        return smart_text(self.name or self.email)
-
-    def get_full_name(self):
-        return self.name
-
-    def get_short_name(self):
-        return self.nickname or self.name
+        return self.get_full_name()
 
 
 class CreditCard(models.Model):
@@ -597,7 +624,7 @@ class Order(models.Model):
             # All attendees must have basic data filled out.
             missing_data = self.attendees.filter(basic_completed=False)
             for attendee in missing_data:
-                errors.append(('{} missing basic data'.format(attendee.name),
+                errors.append(('{} missing basic data'.format(attendee.get_full_name()),
                                reverse('brambling_event_attendee_edit',
                                        kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
 
@@ -608,7 +635,7 @@ class Order(models.Model):
                                                         housing_completed=False)
                 if missing_housing:
                     for attendee in missing_housing:
-                        errors.append(('{} missing housing data'.format(attendee.name),
+                        errors.append(('{} missing housing data'.format(attendee.get_full_name()),
                                        reverse('brambling_event_attendee_housing',
                                                kwargs={'event_slug': self.event.slug})))
 
@@ -629,7 +656,7 @@ class Order(models.Model):
                 bought_items__count__gte=2
             )
             for attendee in attendees:
-                errors.append(('{} may not have more than one pass'.format(attendee.name),
+                errors.append(('{} may not have more than one pass'.format(attendee.get_full_name()),
                                reverse('brambling_event_attendee_items',
                                        kwargs={'event_slug': self.event.slug})))
 
@@ -802,7 +829,7 @@ class BoughtItem(models.Model):
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
-                                      self.order.person.name,
+                                      self.order.person.get_full_name(),
                                       self.pk)
 
 
@@ -834,7 +861,7 @@ class BoughtItemDiscount(models.Model):
                    item_option.price)
 
 
-class Attendee(models.Model):
+class Attendee(AbstractNamedModel):
     """
     This model represents information attached to an event pass. It is
     by default copied from the pass buyer (if they don't already have a pass).
@@ -856,10 +883,6 @@ class Attendee(models.Model):
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
-    name = models.CharField(max_length=100, verbose_name="Full name",
-                            validators=[RegexValidator(FULL_NAME_RE)],
-                            help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
-    nickname = models.CharField(max_length=50, blank=True)
     email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=50, blank=True)
     liability_waiver = models.BooleanField(default=False)
@@ -897,7 +920,7 @@ class Attendee(models.Model):
     other_needs = models.TextField(blank=True)
 
     def __unicode__(self):
-        return self.name
+        return self.get_full_name()
 
     def get_groupable_items(self):
         return self.bought_items.order_by('item_option__item', 'item_option__order', '-added')

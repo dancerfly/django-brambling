@@ -1,8 +1,6 @@
 {% load floppyforms %}
 
-<div class="form-group col-md-6">
-    {% if field|id %}<label class="control-label" for="{{ field|id }}">{% endif %}
-    {{ field.label }}
-    {% if field|id %}</label>{% endif %}
-    {% formfield field %}
-</div>
+{% if field|id %}<label class="control-label" for="{{ field|id }}">{% endif %}
+{{ field.label }}
+{% if field|id %}</label>{% endif %}
+{% formfield field %}

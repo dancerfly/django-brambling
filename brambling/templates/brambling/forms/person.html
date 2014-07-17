@@ -6,8 +6,25 @@
 		<h4 class="panel-title">Profile Information</h4>
 	</header>
 	<div class="panel-body">
-		{% formrow form.name %}
-		{% formrow form.nickname %}
+		<div class="row">
+			<div class="col-sm-6">
+				{% formrow form.given_name %}
+			</div>
+			<div class="col-sm-6">
+				{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
+					<small><a href="#nameOptions" data-toggle="collapse" class="pull-right"><i class="fa fa-plus"></i> More Name Options</a></small>
+				{% endif %}
+				{% formrow form.surname %}
+			</div>
+		</div>
+
+		{# only display button if additional name options are still default #}
+
+		{# display automatically if any of the additional name settings are non-default #}
+		<div class="collapse {% if form.instance.name_order != "GMS" or form.instance.middle_name %}in{% endif %}" id="nameOptions">
+			{% formrow form.middle_name %}
+			{% formrow form.name_order %}
+		</div>
 		{% formrow form.email %}
 		{% formrow form.phone %}
 	</div>
