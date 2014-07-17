@@ -535,7 +535,7 @@ class Order(models.Model):
                                                         housing_completed=False)
                 if missing_housing:
                     for attendee in missing_housing:
-                        errors.append(('{} missing housing data'.format(attendee.get_full_name),
+                        errors.append(('{} missing housing data'.format(attendee.get_full_name()),
                                        reverse('brambling_event_attendee_housing',
                                                kwargs={'event_slug': self.event.slug})))
 
@@ -729,7 +729,7 @@ class BoughtItem(models.Model):
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
-                                      self.order.person.get_full_name,
+                                      self.order.person.get_full_name(),
                                       self.pk)
 
 
