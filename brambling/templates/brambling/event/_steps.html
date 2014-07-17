@@ -1,12 +1,12 @@
 {% if order %}
 	<div class="alert alert-info">
-		{% for step in order.steps %}
+		{% for key, step in order.steps.items %}
 
 			{% if step.accessible %}
 				<a href="{{ step.url }}" class="alert-link">
 			{% endif %}
 
-			{% if step.complete %}
+			{% if step.accessible and step.complete %}
 				<i class="fa fa-check"></i>
 			{% endif %}
 

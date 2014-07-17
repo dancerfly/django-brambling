@@ -1,4 +1,6 @@
 # encoding: utf8
+from collections import OrderedDict
+
 from datetime import timedelta
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
@@ -483,11 +485,15 @@ class Order(models.Model):
 
         """
 
-        steps = []
-        previous_complete = lambda x: x[len(x)-1]['complete']
+        # If steps are cached, return those.
+        if hasattr(self, '_steps'):
+            return self._steps
+
+        steps = OrderedDict()
+        previous_complete = lambda x: x.items()[len(x)-1][1]['complete']
 
         # Step 1: Shop
-        steps.append({
+        steps['shop'] = {
             'name': 'Shop',
             # Shop should always be accessible:
             'accessible': True,
@@ -495,17 +501,17 @@ class Order(models.Model):
             'complete': self.has_cart(),
             'url': reverse('brambling_event_shop',
                            kwargs={'event_slug': self.event.slug})
-        })
+        }
 
         # Step 2: All items must be assigned to an attendee.
-        steps.append({
+        steps['attendees'] = {
             'name': 'Attendees',
             'accessible': self.has_cart(),
             # Completed if all items have an attendee:
             'complete': self.has_cart() and not self.bought_items.filter(attendee__isnull=True).exists(),
             'url': reverse('brambling_event_attendee_items',
                            kwargs={'event_slug': self.event.slug})
-        })
+        }
 
         # Step 3: Housing
         # Only display this step if the event is providing housing and the
@@ -513,51 +519,57 @@ class Order(models.Model):
         if self.event.collect_housing_data:
             need_housing = self.attendees.filter(housing_status=Attendee.NEED).exists()
             if need_housing:
-                steps.append({
+                steps['housing'] = {
                     'name': 'Housing',
-                    'accessible': steps[1]['complete'],
-                    'complete': steps[1]['complete'] and not self.attendees.filter(housing_status=Attendee.NEED, housing_completed=False).exists(),
+                    'accessible': steps['attendees']['complete'],
+                    'complete': steps['attendees']['complete'] and not self.attendees.filter(housing_status=Attendee.NEED, housing_completed=False).exists(),
                     'url': reverse('brambling_event_attendee_housing',
                                    kwargs={'event_slug': self.event.slug})
-                })
+                }
 
         # Step 4: Survey
         # Only display this step if the event is using the survey.
         if self.event.collect_survey_data:
-            steps.append({
+            steps['survey'] = {
                 'name': 'Survey',
                 'accessible': previous_complete(steps),
                 'complete': previous_complete(steps) and self.survey_completed,
                 'url': reverse('brambling_event_survey',
                        kwargs={'event_slug': self.event.slug})
-            })
+            }
 
         # Step 5: Hosting
         # Only display this step if the event is providing housing and the
         # survey says the user can provide housing.
         if self.event.collect_housing_data and self.providing_housing:
-            steps.append({
+            steps['hosting'] = {
                 'name': 'Hosting',
                 'accessible': previous_complete(steps),
-                'complete': EventHousing.objects.filter(event=self.event, home__residents=self.person).exists(),
+                'complete': previous_complete(steps) and EventHousing.objects.filter(event=self.event, home__residents=self.person).exists(),
                 'url': reverse('brambling_event_hosting',
                                kwargs={'event_slug': self.event.slug})
-            })
+            }
 
         # Step 6: Payment
-        steps.append({
+        steps['payment'] = {
             'name': 'Payment',
             'accessible': previous_complete(steps),
             'complete': False,
             'url': reverse('brambling_event_order_summary',
                            kwargs={'event_slug': self.event.slug})
-        })
+        }
 
-        return steps
+        self._steps = steps
+        return self._steps
 
 
     @property
     def cart_errors(self):
+        "Returns a list of errors that must be fixed before payment."
+
+        # TO DO: It would be nice to somehow integrate this method with the
+        # `steps` method above.
+
         if not hasattr(self, '_cart_errors'):
             errors = []
 
