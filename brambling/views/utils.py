@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import timedelta
 from functools import wraps
 
@@ -115,12 +116,14 @@ class Workflow(object):
             raise ValueError("`steps` can't be passed as a kwarg value.")
         for k, v in kwargs.items():
             setattr(self, k, v)
-        self.steps = [step(self, index) for index, step in enumerate(args)]
+        self.steps = OrderedDict(((step.slug, step(self, index))
+                                  for index, step in enumerate(args)))
 
 
 class Step(object):
     name = None
     url = None
+    slug = None
 
     def __init__(self, workflow, index):
         self.workflow = workflow
@@ -130,13 +133,13 @@ class Step(object):
     def previous_step(self):
         if self.index == 0:
             return None
-        return self.workflow.steps[self.index - 1]
+        return self.workflow.steps.values()[self.index - 1]
 
     @property
     def next_step(self):
         if self.index == len(self.workflow.steps) - 1:
             return None
-        return self.workflow.steps[self.index + 1]
+        return self.workflow.steps.values()[self.index + 1]
 
     def is_accessible(self):
         if self.previous_step is None:

@@ -1,6 +1,4 @@
 # encoding: utf8
-from collections import OrderedDict
-
 from datetime import timedelta
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
@@ -10,7 +8,7 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import signals, Count
+from django.db.models import signals
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.encoding import smart_text

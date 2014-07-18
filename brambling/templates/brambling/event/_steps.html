@@ -1,6 +1,6 @@
 {% if workflow %}
 	<div class="stepbar stepbar-{{ workflow.steps|length }}-up">
-		{% for step in workflow.steps %}
+		{% for step in workflow.steps.values %}
 
 			{# a or div, depending on if the step is accessible #}
 			{% if step.is_completed %}

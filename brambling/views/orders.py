@@ -21,6 +21,7 @@ from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
 
 class ShopStep(Step):
     name = 'Shop'
+    slug = 'shop'
 
     @property
     def url(self):
@@ -33,6 +34,7 @@ class ShopStep(Step):
 
 class AttendeeStep(Step):
     name = 'Attendees'
+    slug = 'attendees'
 
     @property
     def url(self):
@@ -83,6 +85,7 @@ class AttendeeStep(Step):
 
 class HousingStep(Step):
     name = 'Housing'
+    slug = 'housing'
 
     @property
     def url(self):
@@ -108,6 +111,7 @@ class HousingStep(Step):
 
 class SurveyStep(Step):
     name = 'Survey'
+    slug = 'survey'
 
     @property
     def url(self):
@@ -120,6 +124,7 @@ class SurveyStep(Step):
 
 class HostingStep(Step):
     name = 'Hosting'
+    slug = 'hosting'
 
     @property
     def url(self):
@@ -135,6 +140,7 @@ class HostingStep(Step):
 
 class PaymentStep(Step):
     name = 'Payment'
+    slug = 'payment'
 
     @property
     def url(self):
@@ -380,12 +386,10 @@ class AttendeeItemView(OrderMixin, TemplateView):
             for form in self.forms:
                 form.save()
 
-            for step in self.workflow.steps:
-                if isinstance(step, AttendeeStep):
-                    self.errors = step.errors
-                    if not self.errors:
-                        return HttpResponseRedirect(step.next_step.url)
-                    break
+            step = self.workflow.steps['attendees']
+            self.errors = step.errors
+            if not self.errors:
+                return HttpResponseRedirect(step.next_step.url)
         return self.render_to_response(self.get_context_data())
 
     def get_context_data(self, **kwargs):
