@@ -7,14 +7,23 @@
 				<a href="{{ step.url }}" class="step complete">
 					<i class="fa fa-check fa-fw"></i>
 					{{ step.name }}
+					{% if step == current_step %}
+						<i class="fa fa-star fa-fw"></i>
+					{% endif %}
 				</a>
 			{% elif step.is_accessible %}
 				<a href="{{ step.url }}" class="step">
 					{{ step.name }}
+					{% if step == current_step %}
+						<i class="fa fa-star fa-fw"></i>
+					{% endif %}
 				</a>
 			{% else %}
 				<div class="step">
 					{{ step.name }}
+					{% if step == current_step %}
+						<i class="fa fa-star fa-fw"></i>
+					{% endif %}
 				</div>
 			{% endif %}
 		{% endfor %}

@@ -87,10 +87,18 @@ class HousingStep(Step):
     name = 'Housing'
     slug = 'housing'
 
+    @classmethod
+    def include_in(cls, workflow):
+        return workflow.event.collect_housing_data
+
     @property
     def url(self):
         return reverse('brambling_event_attendee_housing',
                        kwargs={'event_slug': self.workflow.event.slug})
+
+    def is_active(self):
+        return self.workflow.order.attendees.filter(
+            housing_status=Attendee.NEED).exists()
 
     def _is_completed(self):
         return not self.workflow.order.attendees.filter(
@@ -113,6 +121,11 @@ class SurveyStep(Step):
     name = 'Survey'
     slug = 'survey'
 
+    @classmethod
+    def include_in(cls, workflow):
+        return (workflow.event.collect_housing_data or
+                workflow.event.collect_survey_data)
+
     @property
     def url(self):
         return reverse('brambling_event_survey',
@@ -126,10 +139,17 @@ class HostingStep(Step):
     name = 'Hosting'
     slug = 'hosting'
 
+    @classmethod
+    def include_in(cls, workflow):
+        return workflow.event.collect_housing_data
+
     @property
     def url(self):
         return reverse('brambling_event_hosting',
                        kwargs={'event_slug': self.workflow.event.slug})
+
+    def is_active(self):
+        return self.workflow.order.providing_housing
 
     def _is_completed(self):
         return EventHousing.objects.filter(
@@ -151,7 +171,14 @@ class PaymentStep(Step):
         return False
 
 
+class RegistrationWorkflow(Workflow):
+    step_classes = [ShopStep, AttendeeStep, HousingStep, SurveyStep,
+                    HostingStep, PaymentStep]
+
+
 class OrderMixin(object):
+    current_step_slug = None
+
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
@@ -163,6 +190,14 @@ class OrderMixin(object):
         else:
             self.order = get_order(self.event, self.request.user)
         self.workflow = self.get_workflow()
+        if self.workflow is None or self.current_step_slug is None:
+            self.current_step = None
+        else:
+            self.current_step = self.workflow.steps[self.current_step_slug]
+            if not self.current_step.is_active() or not self.current_step.is_accessible():
+                for step in reversed(self.workflow.steps.values()):
+                    if step.is_accessible() and step.is_active():
+                        return HttpResponseRedirect(step.url)
         return super(OrderMixin, self).dispatch(*args, **kwargs)
 
     @property
@@ -171,31 +206,12 @@ class OrderMixin(object):
             self._is_admin_request = self.event.editable_by(self.request.user)
         return self._is_admin_request
 
-    def get_workflow_steps(self):
-        if self.order.checked_out:
-            return []
-        steps = [ShopStep, AttendeeStep]
-        if (self.event.collect_housing_data and
-                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
-            steps.append(HousingStep)
-        if self.event.collect_survey_data or self.event.collect_housing_data:
-            steps.append(SurveyStep)
-        if self.event.collect_housing_data and self.order.providing_housing:
-            steps.append(HostingStep)
-        steps.append(PaymentStep)
-        return steps
-
-    def get_workflow_kwargs(self):
-        return {
+    def get_workflow(self):
+        kwargs = {
             'event': self.event,
             'order': self.order
         }
-
-    def get_workflow(self):
-        steps = self.get_workflow_steps()
-        if not steps:
-            return None
-        return Workflow(*steps, **self.get_workflow_kwargs())
+        return RegistrationWorkflow(**kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(OrderMixin, self).get_context_data(**kwargs)
@@ -205,6 +221,7 @@ class OrderMixin(object):
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'is_admin_request': self.is_admin_request,
             'workflow': self.workflow,
+            'current_step': self.current_step
         })
         return context
 
@@ -230,6 +247,9 @@ class AddToOrderView(OrderMixin, View):
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})
 
+    def get_workflow(self):
+        return None
+
 
 class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
@@ -244,6 +264,9 @@ class RemoveFromOrderView(View):
             self.order.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
+
+    def get_workflow(self):
+        return None
 
 
 class ApplyDiscountView(OrderMixin, View):
@@ -295,6 +318,9 @@ class ApplyDiscountView(OrderMixin, View):
             'success': True,
         })
 
+    def get_workflow(self):
+        return None
+
 
 class RemoveDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
@@ -313,9 +339,13 @@ class RemoveDiscountView(OrderMixin, View):
             boughtitemdiscount.delete()
         return JsonResponse({'success': True})
 
+    def get_workflow(self):
+        return None
+
 
 class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/shop.html'
+    current_step_slug = 'shop'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:
@@ -345,6 +375,7 @@ class ChooseItemsView(OrderMixin, TemplateView):
 
 class AttendeeItemView(OrderMixin, TemplateView):
     template_name = 'brambling/event/attendee_items.html'
+    current_step_slug = 'attendees'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:
@@ -386,10 +417,9 @@ class AttendeeItemView(OrderMixin, TemplateView):
             for form in self.forms:
                 form.save()
 
-            step = self.workflow.steps['attendees']
-            self.errors = step.errors
+            self.errors = self.current_step.errors
             if not self.errors:
-                return HttpResponseRedirect(step.next_step.url)
+                return HttpResponseRedirect(self.current_step.next_step.url)
         return self.render_to_response(self.get_context_data())
 
     def get_context_data(self, **kwargs):
@@ -406,6 +436,7 @@ class AttendeeItemView(OrderMixin, TemplateView):
 class AttendeeBasicDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/attendee_basic_data.html'
     form_class = AttendeeBasicDataForm
+    current_step_slug = 'attendees'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:
@@ -476,6 +507,7 @@ class RemoveAttendeeView(OrderMixin, View):
 
 class AttendeeHousingView(OrderMixin, TemplateView):
     template_name = 'brambling/event/attendee_housing.html'
+    current_step_slug = 'housing'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:
@@ -544,6 +576,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
 class SurveyDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/survey_data.html'
     context_object_name = 'order'
+    current_step_slug = 'survey'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:
@@ -588,6 +621,7 @@ class SurveyDataView(OrderMixin, UpdateView):
 class HostingView(OrderMixin, UpdateView):
     template_name = 'brambling/event/hosting.html'
     form_class = HostingForm
+    current_step_slug = 'hosting'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:

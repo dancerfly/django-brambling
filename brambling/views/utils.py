@@ -111,13 +111,16 @@ def clear_expired_carts(event):
 
 
 class Workflow(object):
-    def __init__(self, *args, **kwargs):
+    step_classes = []
+
+    def __init__(self, **kwargs):
         if 'steps' in kwargs:
             raise ValueError("`steps` can't be passed as a kwarg value.")
         for k, v in kwargs.items():
             setattr(self, k, v)
-        self.steps = OrderedDict(((step.slug, step(self, index))
-                                  for index, step in enumerate(args)))
+        self.steps = OrderedDict(((cls.slug, cls(self, index))
+                                  for index, cls in enumerate(self.step_classes)
+                                  if cls.include_in(self)))
 
 
 class Step(object):
@@ -125,21 +128,31 @@ class Step(object):
     url = None
     slug = None
 
+    @classmethod
+    def include_in(cls, workflow):
+        return True
+
     def __init__(self, workflow, index):
         self.workflow = workflow
         self.index = index
 
     @property
     def previous_step(self):
-        if self.index == 0:
-            return None
-        return self.workflow.steps.values()[self.index - 1]
+        for step in reversed(self.workflow.steps.values()[:self.index]):
+            if step.is_active():
+                return step
+        return None
 
     @property
     def next_step(self):
-        if self.index == len(self.workflow.steps) - 1:
-            return None
-        return self.workflow.steps.values()[self.index + 1]
+        for step in self.workflow.steps.values()[self.index + 1:]:
+            if step.is_active():
+                return step
+        return None
+
+    def is_active(self):
+        """Return False to indicate that the step should be ignored."""
+        return True
 
     def is_accessible(self):
         if self.previous_step is None:
@@ -149,7 +162,9 @@ class Step(object):
     def is_completed(self):
         if not hasattr(self, '_completed'):
             self._completed = self._is_completed()
-        return self.is_accessible() and self._completed
+        return (self._completed and
+                (self.previous_step is None or
+                 self.previous_step.is_completed()))
 
     def _is_completed(self):
         raise NotImplementedError("_is_completed must be implemented by subclasses.")
