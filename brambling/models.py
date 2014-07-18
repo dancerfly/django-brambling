@@ -527,7 +527,7 @@ class Order(models.Model):
             return self._steps
 
         steps = OrderedDict()
-        previous_complete = lambda x: x.items()[len(x)-1][1]['complete']
+        previous_complete = lambda x: x.items()[len(x)-1][1]['complete'] and not x.items()[len(x)-1][1]['errors']
 
         # Step 1: Shop
         steps['shop'] = {
@@ -537,7 +537,8 @@ class Order(models.Model):
             # Complete if a cart exists:
             'complete': self.has_cart(),
             'url': reverse('brambling_event_shop',
-                           kwargs={'event_slug': self.event.slug})
+                           kwargs={'event_slug': self.event.slug}),
+            'errors': []
         }
 
         # Step 2: All items must be assigned to an attendee.
@@ -547,8 +548,40 @@ class Order(models.Model):
             # Completed if all items have an attendee:
             'complete': self.has_cart() and not self.bought_items.filter(attendee__isnull=True).exists(),
             'url': reverse('brambling_event_attendee_items',
-                           kwargs={'event_slug': self.event.slug})
+                           kwargs={'event_slug': self.event.slug}),
+            'errors': []
         }
+        # All attendees must have at least one class or pass
+        total_count = self.attendees.count()
+        with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).distinct().count()
+        if with_count != total_count:
+            steps['attendees']['errors'].append('All attendees must have at least one pass or class')
+
+        # Attendees may not have more than one pass.
+        attendees = self.attendees.filter(
+            bought_items__item_option__item__category=Item.PASS
+        ).distinct().annotate(
+            Count('bought_items')
+        ).filter(
+            bought_items__count__gte=2
+        )
+        if len(attendees) == 1:
+            error = '{} has too many passes (more than one).'.format(attendees[0])
+        else:
+            error = 'The following attendees have too many passes (more than one): ' + ", ".join(attendees)
+        steps['attendees']['errors'].append(error)
+
+        # All attendees must have basic data filled out.
+        missing_data = self.attendees.filter(basic_completed=False)
+        if len(missing_data) == 1:
+            error = '{} is missing basic data'.format(missing_data[0])
+        else:
+            error = 'The following attendees are missing basic data: ' + ", ".join(missing_data)
+        steps['attendees']['errors'].append(error)
+
+        # All items must be assigned to an attendee.
+        if self.bought_items.filter(attendee__isnull=True).exists():
+            steps['attendees']['errors'].append('All items in order must be assigned to an attendee.')
 
         # Step 3: Housing
         # Only display this step if the event is providing housing and the
@@ -561,8 +594,13 @@ class Order(models.Model):
                     'accessible': steps['attendees']['complete'],
                     'complete': steps['attendees']['complete'] and not self.attendees.filter(housing_status=Attendee.NEED, housing_completed=False).exists(),
                     'url': reverse('brambling_event_attendee_housing',
-                                   kwargs={'event_slug': self.event.slug})
+                                   kwargs={'event_slug': self.event.slug}),
+                    'errors': []
                 }
+                missing_housing = self.attendees.filter(housing_status=Attendee.NEED,
+                                                        housing_completed=False).exists()
+                if missing_housing:
+                    steps['housing']['errors'].append("Some attendees are missing housing data.")
 
         # Step 4: Survey
         # Only display this step if the event is using the survey.
@@ -572,7 +610,7 @@ class Order(models.Model):
                 'accessible': previous_complete(steps),
                 'complete': previous_complete(steps) and self.survey_completed,
                 'url': reverse('brambling_event_survey',
-                       kwargs={'event_slug': self.event.slug})
+                               kwargs={'event_slug': self.event.slug})
             }
 
         # Step 5: Hosting
@@ -598,79 +636,6 @@ class Order(models.Model):
 
         self._steps = steps
         return self._steps
-
-    @property
-    def cart_errors(self):
-        "Returns a list of errors that must be fixed before payment."
-
-        # TO DO: It would be nice to somehow integrate this method with the
-        # `steps` method above.
-
-        if not hasattr(self, '_cart_errors'):
-            errors = []
-
-            # Order *always* needs to touch the survey page before checkout,
-            # if the event is using the survey.
-            if self.event.collect_survey_data and not self.survey_completed:
-                errors.append(('Survey must be completed',
-                               reverse('brambling_event_survey',
-                                       kwargs={'event_slug': self.event.slug})))
-
-            # Hosting data only needs to be provided if event cares and
-            # Order says they're hosting.
-            if self.event.collect_housing_data and self.providing_housing:
-                if not EventHousing.objects.filter(event=self.event, home__residents=self.person).exists():
-                    errors.append(('Hosting information must be completed',
-                                   reverse('brambling_event_hosting',
-                                           kwargs={'event_slug': self.event.slug})))
-
-            # All items must be assigned to an attendee.
-            if self.bought_items.filter(attendee__isnull=True).exists():
-                errors.append(('All items in cart must be assigned to an attendee.',
-                               reverse('brambling_event_attendee_items',
-                                       kwargs={'event_slug': self.event.slug})))
-
-            # All attendees must have basic data filled out.
-            missing_data = self.attendees.filter(basic_completed=False)
-            for attendee in missing_data:
-                errors.append(('{} missing basic data'.format(attendee.get_full_name()),
-                               reverse('brambling_event_attendee_edit',
-                                       kwargs={'event_slug': self.event.slug, 'pk': attendee.pk})))
-
-            # If the event cares about housing, attendees that need housing
-            # also need to fill out housing data.
-            if self.event.collect_housing_data:
-                missing_housing = self.attendees.filter(housing_status=Attendee.NEED,
-                                                        housing_completed=False)
-                if missing_housing:
-                    for attendee in missing_housing:
-                        errors.append(('{} missing housing data'.format(attendee.get_full_name()),
-                                       reverse('brambling_event_attendee_housing',
-                                               kwargs={'event_slug': self.event.slug})))
-
-            # All attendees must have at least one class or pass.
-            total_count = self.attendees.count()
-            with_count = self.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).distinct().count()
-            if with_count != total_count:
-                errors.append(('All attendees must have at least one pass or class',
-                               reverse('brambling_event_attendee_items',
-                                       kwargs={'event_slug': self.event.slug})))
-
-            # Attendees may not have more than one pass.
-            attendees = self.attendees.filter(
-                bought_items__item_option__item__category=Item.PASS
-            ).distinct().annotate(
-                Count('bought_items')
-            ).filter(
-                bought_items__count__gte=2
-            )
-            for attendee in attendees:
-                errors.append(('{} may not have more than one pass'.format(attendee.get_full_name()),
-                               reverse('brambling_event_attendee_items',
-                                       kwargs={'event_slug': self.event.slug})))
-
-            self._cart_errors = errors
-        return self._cart_errors
 
     def cart_is_valid(self):
         """
