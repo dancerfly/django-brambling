@@ -206,25 +206,10 @@ class AttendeeItemView(OrderMixin, TemplateView):
             for form in self.forms:
                 form.save()
 
-            attendees = self.attendees.filter(
-                bought_items__item_option__item__category=Item.PASS
-            ).distinct().annotate(
-                Count('bought_items')
-            ).filter(
-                bought_items__count__gte=2
-            )
-            if attendees:
-                all_valid = False
-                for attendee in attendees:
-                    self.errors.append('{} may not have more than one pass'.format(attendee.get_full_name))
+            self.errors = self.order.steps()['attendees']['errors']
 
-        if all_valid:
-            if self.event.collect_housing_data:
-                url = reverse('brambling_event_attendee_housing',
-                              kwargs={'event_slug': self.event.slug})
-            else:
-                url = reverse('brambling_event_survey',
-                              kwargs={'event_slug': self.event.slug})
+        if all_valid and not self.errors:
+            url = self.order.steps().values()[2]['url']
             return HttpResponseRedirect(url)
         return self.render_to_response(self.get_context_data())
 

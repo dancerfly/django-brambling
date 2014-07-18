@@ -565,19 +565,21 @@ class Order(models.Model):
         ).filter(
             bought_items__count__gte=2
         )
-        if len(attendees) == 1:
-            error = '{} has too many passes (more than one).'.format(attendees[0])
-        else:
-            error = 'The following attendees have too many passes (more than one): ' + ", ".join(attendees)
-        steps['attendees']['errors'].append(error)
+        if len(attendees) > 0:
+            if len(attendees) == 1:
+                error = '{} has too many passes (more than one).'.format(attendees[0])
+            else:
+                error = 'The following attendees have too many passes (more than one): ' + ", ".join(attendees)
+            steps['attendees']['errors'].append(error)
 
         # All attendees must have basic data filled out.
         missing_data = self.attendees.filter(basic_completed=False)
-        if len(missing_data) == 1:
-            error = '{} is missing basic data'.format(missing_data[0])
-        else:
-            error = 'The following attendees are missing basic data: ' + ", ".join(missing_data)
-        steps['attendees']['errors'].append(error)
+        if len(missing_data) > 0:
+            if len(missing_data) == 1:
+                error = '{} is missing basic data'.format(missing_data[0])
+            else:
+                error = 'The following attendees are missing basic data: ' + ", ".join(missing_data)
+            steps['attendees']['errors'].append(error)
 
         # All items must be assigned to an attendee.
         if self.bought_items.filter(attendee__isnull=True).exists():
@@ -610,7 +612,8 @@ class Order(models.Model):
                 'accessible': previous_complete(steps),
                 'complete': previous_complete(steps) and self.survey_completed,
                 'url': reverse('brambling_event_survey',
-                               kwargs={'event_slug': self.event.slug})
+                               kwargs={'event_slug': self.event.slug}),
+                'errors': []
             }
 
         # Step 5: Hosting
@@ -622,7 +625,8 @@ class Order(models.Model):
                 'accessible': previous_complete(steps),
                 'complete': previous_complete(steps) and EventHousing.objects.filter(event=self.event, home__residents=self.person).exists(),
                 'url': reverse('brambling_event_hosting',
-                               kwargs={'event_slug': self.event.slug})
+                               kwargs={'event_slug': self.event.slug}),
+                'errors': []
             }
 
         # Step 6: Payment
@@ -631,7 +635,8 @@ class Order(models.Model):
             'accessible': previous_complete(steps),
             'complete': False,
             'url': reverse('brambling_event_order_summary',
-                           kwargs={'event_slug': self.event.slug})
+                           kwargs={'event_slug': self.event.slug}),
+            'errors': []
         }
 
         self._steps = steps
