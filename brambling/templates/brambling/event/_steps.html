@@ -1,19 +1,22 @@
-{% if order %}
-	<div class="stepbar stepbar-{{ order.steps|length }}-up">
-		{% for key, step in order.steps.items %}
+{% if workflow %}
+	<div class="stepbar stepbar-{{ workflow.steps|length }}-up">
+		{% for step in workflow.steps %}
 
 			{# a or div, depending on if the step is accessible #}
-			<{% if step.accessible %}a href="{{ step.url }}"{% else %}div{% endif %} class="step {% if step.accessible and step.complete %}complete{% endif %}">
-
-			{% if step.accessible and step.complete %}
-				<i class="fa fa-check fa-fw"></i>
+			{% if step.is_completed %}
+				<a href="{{ step.url }}" class="step complete">
+					<i class="fa fa-check fa-fw"></i>
+					{{ step.name }}
+				</a>
+			{% elif step.is_accessible %}
+				<a href="{{ step.url }}" class="step">
+					{{ step.name }}
+				</a>
+			{% else %}
+				<div class="step">
+					{{ step.name }}
+				</div>
 			{% endif %}
-
-			{{ step.name }}
-
-			{# a or div, depending on if the step is accessible #}
-			</{% if step.accessible %}a{% else %}div{% endif %}>
-
 		{% endfor %}
 	</div>
 {% endif %}

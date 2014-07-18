@@ -107,3 +107,58 @@ def clear_expired_carts(event):
         order__cart_start_time__isnull=False,
         order__cart_start_time__lte=expired_before
     ).delete()
+
+
+class Workflow(object):
+    def __init__(self, *args, **kwargs):
+        if 'steps' in kwargs:
+            raise ValueError("`steps` can't be passed as a kwarg value.")
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        self.steps = [step(self, index) for index, step in enumerate(args)]
+
+
+class Step(object):
+    name = None
+    url = None
+
+    def __init__(self, workflow, index):
+        self.workflow = workflow
+        self.index = index
+
+    @property
+    def previous_step(self):
+        if self.index == 0:
+            return None
+        return self.workflow.steps[self.index - 1]
+
+    @property
+    def next_step(self):
+        if self.index == len(self.workflow.steps) - 1:
+            return None
+        return self.workflow.steps[self.index + 1]
+
+    def is_accessible(self):
+        if self.previous_step is None:
+            return True
+        return self.previous_step.is_completed()
+
+    def is_completed(self):
+        if not hasattr(self, '_completed'):
+            self._completed = self._is_completed()
+        return self.is_accessible() and self._completed
+
+    def _is_completed(self):
+        raise NotImplementedError("_is_completed must be implemented by subclasses.")
+
+    def is_valid(self):
+        return bool(self.errors)
+
+    @property
+    def errors(self):
+        if not hasattr(self, '_errors'):
+            self._errors = self.get_errors()
+        return self._errors
+
+    def get_errors(self):
+        return []

@@ -16,7 +16,133 @@ from brambling.models import (Item, BoughtItem, ItemOption,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, get_order,
-                                   clear_expired_carts)
+                                   clear_expired_carts, Workflow, Step)
+
+
+class ShopStep(Step):
+    name = 'Shop'
+
+    @property
+    def url(self):
+        return reverse('brambling_event_shop',
+                       kwargs={'event_slug': self.workflow.event.slug})
+
+    def _is_completed(self):
+        return self.workflow.order.has_cart()
+
+
+class AttendeeStep(Step):
+    name = 'Attendees'
+
+    @property
+    def url(self):
+        return reverse('brambling_event_attendee_items',
+                       kwargs={'event_slug': self.workflow.event.slug})
+
+    def _is_completed(self):
+        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exists()
+
+    def get_errors(self):
+        errors = []
+        order = self.workflow.order
+        # All attendees must have at least one class or pass
+        total_count = order.attendees.count()
+        with_count = order.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).distinct().count()
+        if with_count != total_count:
+            errors.append('All attendees must have at least one pass or class')
+
+        # Attendees may not have more than one pass.
+        attendees = order.attendees.filter(
+            bought_items__item_option__item__category=Item.PASS
+        ).distinct().annotate(
+            Count('bought_items')
+        ).filter(
+            bought_items__count__gte=2
+        )
+        if len(attendees) > 0:
+            if len(attendees) == 1:
+                error = '{} has too many passes (more than one).'.format(attendees[0])
+            else:
+                error = 'The following attendees have too many passes (more than one): ' + ", ".join(attendees)
+            errors.append(error)
+
+        # All attendees must have basic data filled out.
+        missing_data = order.attendees.filter(basic_completed=False)
+        if len(missing_data) > 0:
+            if len(missing_data) == 1:
+                error = '{} is missing basic data'.format(missing_data[0])
+            else:
+                error = 'The following attendees are missing basic data: ' + ", ".join(missing_data)
+            errors.append(error)
+
+        # All items must be assigned to an attendee.
+        if order.bought_items.filter(attendee__isnull=True).exists():
+            errors.append('All items in order must be assigned to an attendee.')
+        return errors
+
+
+class HousingStep(Step):
+    name = 'Housing'
+
+    @property
+    def url(self):
+        return reverse('brambling_event_attendee_housing',
+                       kwargs={'event_slug': self.workflow.event.slug})
+
+    def _is_completed(self):
+        return not self.workflow.order.attendees.filter(
+            housing_status=Attendee.NEED,
+            housing_completed=False
+        ).exists()
+
+    def get_errors(self):
+        errors = []
+        order = self.workflow.order
+
+        missing_housing = order.attendees.filter(housing_status=Attendee.NEED,
+                                                 housing_completed=False).exists()
+        if missing_housing:
+            errors.append("Some attendees are missing housing data.")
+        return errors
+
+
+class SurveyStep(Step):
+    name = 'Survey'
+
+    @property
+    def url(self):
+        return reverse('brambling_event_survey',
+                       kwargs={'event_slug': self.workflow.event.slug})
+
+    def _is_completed(self):
+        return self.workflow.order.survey_completed
+
+
+class HostingStep(Step):
+    name = 'Hosting'
+
+    @property
+    def url(self):
+        return reverse('brambling_event_hosting',
+                       kwargs={'event_slug': self.workflow.event.slug})
+
+    def _is_completed(self):
+        return EventHousing.objects.filter(
+            event=self.workflow.event,
+            order=self.workflow.order
+        ).exists()
+
+
+class PaymentStep(Step):
+    name = 'Payment'
+
+    @property
+    def url(self):
+        return reverse('brambling_event_order_summary',
+                       kwargs={'event_slug': self.workflow.event.slug})
+
+    def _is_completed(self):
+        return False
 
 
 class OrderMixin(object):
@@ -38,6 +164,32 @@ class OrderMixin(object):
             self._is_admin_request = self.event.editable_by(self.request.user)
         return self._is_admin_request
 
+    def get_workflow_steps(self):
+        if self.order.checked_out:
+            return []
+        steps = [ShopStep, AttendeeStep]
+        if (self.event.collect_housing_data and
+                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
+            steps.append(HousingStep)
+        if self.event.collect_survey_data or self.event.collect_housing_data:
+            steps.append(SurveyStep)
+        if self.event.collect_housing_data and self.order.providing_housing:
+            steps.append(HostingStep)
+        steps.append(PaymentStep)
+        return steps
+
+    def get_workflow_kwargs(self):
+        return {
+            'event': self.event,
+            'order': self.order
+        }
+
+    def get_workflow(self):
+        steps = self.get_workflow_steps()
+        if not steps:
+            return None
+        return Workflow(*steps, **self.get_workflow_kwargs())
+
     def get_context_data(self, **kwargs):
         context = super(OrderMixin, self).get_context_data(**kwargs)
         context.update({
@@ -45,6 +197,7 @@ class OrderMixin(object):
             'order': self.order,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'is_admin_request': self.is_admin_request,
+            'workflow': self.get_workflow(),
         })
         return context
 
@@ -124,7 +277,7 @@ class ApplyDiscountView(OrderMixin, View):
                     },
                 })
 
-        created = order.add_discount(discount, force=self.is_admin_request)
+        created = self.order.add_discount(discount, force=self.is_admin_request)
         if created:
             return JsonResponse({
                 'success': True,
@@ -157,6 +310,16 @@ class RemoveDiscountView(OrderMixin, View):
 class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/shop.html'
 
+    def get_workflow_steps(self):
+        if not self.order.checked_out:
+            return super(ChooseItemsView, self).get_workflow_steps()
+        steps = [ShopStep, AttendeeStep]
+        if (self.event.collect_housing_data and
+                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
+            steps.append(HousingStep)
+        steps.append(PaymentStep)
+        return steps
+
     def get_context_data(self, **kwargs):
         context = super(ChooseItemsView, self).get_context_data(**kwargs)
         clear_expired_carts(self.event)
@@ -175,6 +338,16 @@ class ChooseItemsView(OrderMixin, TemplateView):
 
 class AttendeeItemView(OrderMixin, TemplateView):
     template_name = 'brambling/event/attendee_items.html'
+
+    def get_workflow_steps(self):
+        if not self.order.checked_out:
+            return super(AttendeeItemView, self).get_workflow_steps()
+        steps = [ShopStep, AttendeeStep]
+        if (self.event.collect_housing_data and
+                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
+            steps.append(HousingStep)
+        steps.append(PaymentStep)
+        return steps
 
     def get_forms(self):
         form_class = forms.models.modelform_factory(BoughtItem, fields=('attendee',))
@@ -206,11 +379,15 @@ class AttendeeItemView(OrderMixin, TemplateView):
             for form in self.forms:
                 form.save()
 
-            self.errors = self.order.steps()['attendees']['errors']
+        context_data = self.get_context_data()
 
-        if all_valid and not self.errors:
-            url = self.order.steps().values()[2]['url']
-            return HttpResponseRedirect(url)
+        if all_valid:
+            for step in context_data['workflow'].steps:
+                if isinstance(step, AttendeeStep):
+                    self.errors = step.errors
+                    if not self.errors:
+                        return HttpResponseRedirect(step.next_step.url)
+                    break
         return self.render_to_response(self.get_context_data())
 
     def get_context_data(self, **kwargs):
@@ -227,6 +404,16 @@ class AttendeeItemView(OrderMixin, TemplateView):
 class AttendeeBasicDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/attendee_basic_data.html'
     form_class = AttendeeBasicDataForm
+
+    def get_workflow_steps(self):
+        if not self.order.checked_out:
+            return super(AttendeeBasicDataView, self).get_workflow_steps()
+        steps = [ShopStep, AttendeeStep]
+        if (self.event.collect_housing_data and
+                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
+            steps.append(HousingStep)
+        steps.append(PaymentStep)
+        return steps
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
@@ -288,6 +475,16 @@ class RemoveAttendeeView(OrderMixin, View):
 class AttendeeHousingView(OrderMixin, TemplateView):
     template_name = 'brambling/event/attendee_housing.html'
 
+    def get_workflow_steps(self):
+        if not self.order.checked_out:
+            return super(AttendeeHousingView, self).get_workflow_steps()
+        steps = [ShopStep, AttendeeStep]
+        if (self.event.collect_housing_data and
+                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
+            steps.append(HousingStep)
+        steps.append(PaymentStep)
+        return steps
+
     def get(self, request, *args, **kwargs):
         if not self.event.collect_housing_data:
             raise Http404
@@ -346,6 +543,14 @@ class SurveyDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/survey_data.html'
     context_object_name = 'order'
 
+    def get_workflow_steps(self):
+        if not self.order.checked_out:
+            return super(SurveyDataView, self).get_workflow_steps()
+        steps = [SurveyStep]
+        if self.event.collect_housing_data and self.order.providing_housing:
+            steps.append(HostingStep)
+        return steps
+
     @property
     def fields(self):
         fields = ()
@@ -381,6 +586,12 @@ class SurveyDataView(OrderMixin, UpdateView):
 class HostingView(OrderMixin, UpdateView):
     template_name = 'brambling/event/hosting.html'
     form_class = HostingForm
+
+    def get_workflow_steps(self):
+        if not self.order.checked_out:
+            return super(HostingView, self).get_workflow_steps()
+        steps = [HostingStep]
+        return steps
 
     def get_object(self):
         if not self.event.collect_housing_data:
