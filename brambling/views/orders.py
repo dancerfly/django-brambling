@@ -156,6 +156,7 @@ class OrderMixin(object):
                 raise Http404
         else:
             self.order = get_order(self.event, self.request.user)
+        self.workflow = self.get_workflow()
         return super(OrderMixin, self).dispatch(*args, **kwargs)
 
     @property
@@ -197,7 +198,7 @@ class OrderMixin(object):
             'order': self.order,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'is_admin_request': self.is_admin_request,
-            'workflow': self.get_workflow(),
+            'workflow': self.workflow,
         })
         return context
 
@@ -379,10 +380,7 @@ class AttendeeItemView(OrderMixin, TemplateView):
             for form in self.forms:
                 form.save()
 
-        context_data = self.get_context_data()
-
-        if all_valid:
-            for step in context_data['workflow'].steps:
+            for step in self.workflow.steps:
                 if isinstance(step, AttendeeStep):
                     self.errors = step.errors
                     if not self.errors:
