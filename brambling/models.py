@@ -209,6 +209,11 @@ class Event(models.Model):
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
     has_classes = models.BooleanField(verbose_name="Is a class / Has class(es)", default=False)
+    liability_waiver = models.TextField(default=_("I hereby release <EVENT>, its officers, and its employees from all "
+                                                  "liability of injury, loss, or damage to personal property associated "
+                                                  "with this event. I acknowledge that I understand the content of this "
+                                                  "document. I am aware that it is legally binding and I accept it out "
+                                                  "of my own free will."))
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PRIVATE, help_text="Who can view this event.")
@@ -791,7 +796,7 @@ class Attendee(AbstractNamedModel):
     basic_completed = models.BooleanField(default=False)
     email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=50, blank=True)
-    liability_waiver = models.BooleanField(default=False)
+    liability_waiver = models.BooleanField(default=False, help_text="Must be checked by the attendee themselves")
     photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
     housing_status = models.CharField(max_length=4, choices=HOUSING_STATUS_CHOICES,
                                       default=HAVE, verbose_name='housing status')
