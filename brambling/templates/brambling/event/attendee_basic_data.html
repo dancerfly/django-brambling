@@ -39,7 +39,7 @@
 					{% formrow form.email %}
 					{% formrow form.phone %}
 
-					{% formrow form.liability_waiver %}
+					{% formrow form.liability_waiver with label=event.liability_waiver %}
 					{% formrow form.photo_consent %}
 
 					{% if form.housing_status %}

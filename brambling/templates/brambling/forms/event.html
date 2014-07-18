@@ -67,7 +67,8 @@
 	</header>
 	<div class="panel-body">
 		<div class="row">
-			<div class="col-sm-5">
+			<div class="col-sm-3">
+				{% formrow form.cart_timeout %}
 				<div class='form-group'>
 					{% with field=form.collect_housing_data %}
 						<div class='checkbox'>
@@ -82,13 +83,12 @@
 				</div>
 			</div>
 			<div class="col-sm-4">
-				{% formrow form.privacy %}
+				{% formrow form.liability_waiver %}
 			</div>
-			<div class="col-sm-3">
-				{% formrow form.cart_timeout %}
+			<div class="col-sm-5">
+				{% formrow form.privacy %}
+				{% formrow form.editors %}
 			</div>
 		</div>
-
-		{% formrow form.editors %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}

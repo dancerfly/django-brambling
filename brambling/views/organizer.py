@@ -9,6 +9,7 @@ from django.views.generic import (ListView, CreateView, UpdateView,
 from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
+import requests
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
@@ -40,7 +41,17 @@ class EventCreateView(CreateView):
 
     def get_initial(self):
         "Instantiate form with owner as current user."
-        return {'owner': self.request.user}
+        initial = {'owner': self.request.user}
+        try:
+            data = requests.get('http://api.hostip.info/get_json.php', timeout=.5).json()
+        except requests.exceptions.Timeout:
+            pass
+        else:
+            initial['country'] = data['country_code']
+            if ', ' in data['city']:
+                initial['city'], initial['state'] = data['city'].split(', ')
+
+        return initial
 
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class,
