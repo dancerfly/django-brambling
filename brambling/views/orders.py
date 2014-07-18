@@ -259,7 +259,7 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     def get_initial(self):
         initial = super(AttendeeBasicDataView, self).get_initial()
         person = self.request.user
-        if not self.order.attendees.filter(person=person).exists():
+        if self.kwargs.get('pk') is None and not self.order.attendees.filter(person=person).exists():
             initial.update({
                 'given_name': person.given_name,
                 'middle_name': person.middle_name,
