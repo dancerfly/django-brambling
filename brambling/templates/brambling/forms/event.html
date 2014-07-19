@@ -77,7 +77,7 @@
 					{% endwith %}
 					{% with field=form.collect_survey_data %}
 						<div class='checkbox'>
-							<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+							<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label> <a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-title="Survey Contents" data-content="Where did they hear about the event; would they like promotional materials to distribute; are they providing housing?"><i class="fa fa-question-circle"></i></a>
 						</div>
 					{% endwith %}
 				</div>
