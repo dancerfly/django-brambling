@@ -5954,7 +5954,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .navbar-default .navbar-nav > li > a, .navbar-default .navbar-brand {
   color: white;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+  top: 0.125em;
 }
 .navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:active, .navbar-default .navbar-nav > li > a:focus, .navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:active, .navbar-default .navbar-brand:focus {
   color: white;
