@@ -18,24 +18,24 @@
 					{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 					<div class="row">
-						<div class="form-group col-md-6">
+						<div class="col-md-6">
 							{% formrow form.given_name %}
 						</div>
-						<div class="form-group col-md-6">
-							<a href="#extraName" data-toggle="collapse" class="{% if masthead %}masthead-link {% endif %}pull-right"><small><i class="fa fa-plus"></i> More Name Options</small></a>
+						<div class="col-md-6">
 							{% formrow form.surname %}
 						</div>
 					</div>
 
 					<div class="row collapse" id="extraName">
-						<div class="form-group col-sm-6">
+						<div class="col-sm-6">
 							{% formrow form.middle_name %}
 						</div>
-						<div class="form-group col-sm-6">
+						<div class="col-sm-6">
 							{% formrow form.name_order %}
 						</div>
 					</div>
 
+					<a href="#extraName" data-toggle="collapse" class="{% if masthead %}masthead-link {% endif %}pull-right more-name-options"><small><i class="fa fa-plus"></i> More Name Options</small></a>
 					{% formrow form.email %}
 					{% formrow form.phone %}
 

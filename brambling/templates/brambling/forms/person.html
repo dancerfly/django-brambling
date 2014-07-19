@@ -11,9 +11,6 @@
 				{% formrow form.given_name %}
 			</div>
 			<div class="col-sm-6">
-				{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
-					<small><a href="#nameOptions" data-toggle="collapse" class="pull-right"><i class="fa fa-plus"></i> More Name Options</a></small>
-				{% endif %}
 				{% formrow form.surname %}
 			</div>
 		</div>
@@ -25,6 +22,9 @@
 			{% formrow form.middle_name %}
 			{% formrow form.name_order %}
 		</div>
+		{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
+			<small><a href="#nameOptions" data-toggle="collapse" class="pull-right more-name-options"><i class="fa fa-plus"></i> More Name Options</a></small>
+		{% endif %}
 		{% formrow form.email %}
 		{% formrow form.phone %}
 	</div>
