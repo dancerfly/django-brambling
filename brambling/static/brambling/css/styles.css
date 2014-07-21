@@ -5883,11 +5883,6 @@ html, body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  position: relative;
-  top: 0.125em;
-}
-
 .form-control, .form-control:focus {
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
@@ -5909,8 +5904,8 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 19px;
   margin-right: -6000px;
   padding: 19px 6000px;
-  background: #de8e0f;
-  color: #fceed6;
+  background: #b58100;
+  color: #fff1cf;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
 }
 .masthead.splash, .masthead > :first-child {
@@ -5924,7 +5919,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .masthead-link {
-  color: #f7cf8f;
+  color: #ffdb82;
   font-weight: bold;
 }
 .masthead-link:hover {
@@ -5944,6 +5939,18 @@ h1, h2, h3, h4, h5, h6 {
 
 .dropdown-menu > li > a {
   padding: 3px 9.5px;
+}
+
+.panel-title {
+  color: black;
+}
+
+.text-large {
+  font-size: 18px;
+}
+
+.text-jumbo {
+  font-size: 28px;
 }
 
 .navbar-default {
@@ -5974,14 +5981,16 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-.panel-title {
-  color: black;
+h1, h2, h3, h4, h5, h6 {
+  position: relative;
+  top: 0.125em;
 }
 
-.text-large {
-  font-size: 18px;
+.masthead {
+  background: #de8e0f;
+  color: #fceed6;
 }
 
-.text-jumbo {
-  font-size: 28px;
+.masthead-link {
+  color: #f7cf8f;
 }
