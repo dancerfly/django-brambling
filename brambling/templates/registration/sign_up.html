@@ -1,9 +1,9 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/layouts/12.html' %}
 
 {% load floppyforms %}
 
 {% block title %}Sign up – {{ block.super }}{% endblock %}
-{% block content %}
+{% block main %}
 	<h2>Sign up</h2>
 
 	<form action="{{ request.path }}" method="post">
