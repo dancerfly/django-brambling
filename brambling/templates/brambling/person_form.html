@@ -1,4 +1,4 @@
-{% extends 'brambling/layouts/9_3.html' %}
+{% extends 'brambling/layouts/12_sm.html' %}
 
 {% load floppyforms static %}
 
@@ -23,27 +23,30 @@
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using "brambling/forms/person.html" %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Cards</h4>
+			</header>
+			<div class="panel-body">
+				{% if cards %}
+					<p><a class='btn btn-link' href='{% url "brambling_user_card_add" %}'><span class='fa fa-plus'></span> Add another card</a></p>
+					{% for card in cards %}
+						<div class='clearfix'>
+							<h5>{{ card.brand }} <span class='pull-right'>&bull;&bull;&bull;&bull;{{ card.last4 }}</span></h5>
+							<p>
+								<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
+								<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='fa fa-times'></span></a>
+							</p>
+						</div>
+					{% endfor %}
+				{% else %}
+					<p>No credit cards on record.</p>
+					<p><a href='{% url "brambling_user_card_add" %}'>Add a card!</a></p>
+				{% endif %}
+			</div>
+		</div>
 		<button class="btn btn-primary" type="submit">Save changes</button>
 		<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
 	</form>
-{% endblock %}
 
-{% block side %}
-	<h3>Cards</h3>
-
-	{% if cards %}
-		<p><a class='btn btn-link' href='{% url "brambling_user_card_add" %}'><span class='fa fa-plus'></span> Add another card</a></p>
-		{% for card in cards %}
-			<div class='clearfix'>
-				<h5>{{ card.brand }} <span class='pull-right'>&bull;&bull;&bull;&bull;{{ card.last4 }}</span></h5>
-				<p>
-					<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
-					<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='fa fa-times'></span></a>
-				</p>
-			</div>
-		{% endfor %}
-	{% else %}
-		<p>No credit cards on record.</p>
-		<p><a href='{% url "brambling_user_card_add" %}'>Add a card!</a></p>
-	{% endif %}
 {% endblock %}

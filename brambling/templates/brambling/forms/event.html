@@ -10,22 +10,8 @@
 		{% formrow form.slug %}
 		{% formrow form.tagline %}
 		{% formrow form.dance_styles %}
-		<div class="row">
-			<div class="col-sm-6">
-				<div class='form-group'>
-					{% with field=form.has_dances %}
-						<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
-					{% endwith %}
-				</div>
-			</div>
-			<div class="col-sm-6">
-				<div class='form-group'>
-					{% with field=form.has_classes %}
-						<label class='checkbox-inline' for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
-					{% endwith %}
-				</div>
-			</div>
-		</div>{# /.row #}
+		{% formrow form.has_dances %}
+		{% formrow form.has_classes %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
 
@@ -34,17 +20,9 @@
 		<h4 class="panel-title">Details</h4>
 	</header>
 	<div class="panel-body">
-		<div class="row">
-			<div class="col-sm-5">
-				{% formrow form.start_date %}
-			</div>
-			<div class="col-sm-5">
-				{% formrow form.end_date %}
-			</div>
-			<div class="col-sm-2">
-				{% formrow form.timezone %}
-			</div>
-		</div>{# /.row #}
+		{% formrow form.start_date %}
+		{% formrow form.end_date %}
+
 		<div class="row">
 			<div class="col-sm-5">
 				{% formrow form.city %}
@@ -56,8 +34,12 @@
 				{% formrow form.country %}
 			</div>
 		</div>{# /.row #}
+
+		{% formrow form.timezone %}
+
 		<small><a href="https://support.stripe.com/questions/which-currencies-does-stripe-support" class="pull-right">Supported Currencies</a></small>
 		{% formrow form.currency %}
+
 		{% include "brambling/_stripe_note.html" %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
@@ -67,29 +49,21 @@
 		<h4 class="panel-title">Settings</h4>
 	</header>
 	<div class="panel-body">
-		<div class="row">
-			<div class="col-sm-3">
-				{% formrow form.cart_timeout %}
-				<div class='form-group'>
-					{% with field=form.collect_housing_data %}
-						<div class='checkbox'>
-							<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
-						</div>
-					{% endwith %}
-					{% with field=form.collect_survey_data %}
-						<div class='checkbox'>
-							<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label> <a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-title="Survey Contents" data-content="Where did they hear about the event; would they like promotional materials to distribute; are they providing housing?"><i class="fa fa-question-circle"></i></a>
-						</div>
-					{% endwith %}
+		{% formrow form.cart_timeout %}
+		<div class='form-group'>
+			{% with field=form.collect_housing_data %}
+				<div class='checkbox'>
+					<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
 				</div>
-			</div>
-			<div class="col-sm-4">
-				{% formrow form.liability_waiver %}
-			</div>
-			<div class="col-sm-5">
-				{% formrow form.privacy %}
-				{% formrow form.editors %}
-			</div>
+			{% endwith %}
+			{% with field=form.collect_survey_data %}
+				<div class='checkbox'>
+					<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label> <a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-title="Survey Contents" data-content="Where did they hear about the event; would they like promotional materials to distribute; are they providing housing?"><i class="fa fa-question-circle"></i></a>
+				</div>
+			{% endwith %}
 		</div>
+		{% formrow form.liability_waiver %}
+		{% formrow form.privacy %}
+		{% formrow form.editors %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
