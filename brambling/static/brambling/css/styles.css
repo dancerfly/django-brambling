@@ -5898,6 +5898,11 @@ html, body {
   margin-top: 0;
 }
 
+.container-small {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
 .masthead {
   margin-top: -19px;
   margin-left: -6000px;
