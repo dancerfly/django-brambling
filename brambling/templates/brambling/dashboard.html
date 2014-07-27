@@ -9,7 +9,6 @@
 	{% for event in upcoming_events|slice:"5" %}
 		<div class="row margin-leader-dbl event-listing">
 			<div class="col-sm-3 text-right">
-				{# <h5>{{ event.start_date|date }}<br> <em>to</em> {{ event.end_date|date }}</h5> #}
 				<h4>{{ event.start_date|date }}</h4>
 				<h5 class="text-muted">{{ event.city }}, {{ event.state_or_province }}</h5>
 				<h5 class="text-muted">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>

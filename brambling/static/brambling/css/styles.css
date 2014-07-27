@@ -5995,6 +5995,28 @@ html, body {
   content: "";
 }
 
+.btn-primary-light {
+  color: white;
+  background-color: #e8a500;
+  border-color: #c67f0d;
+}
+.btn-primary-light:hover, .btn-primary-light:focus, .btn-primary-light:active, .btn-primary-light.active, .open > .btn-primary-light.dropdown-toggle {
+  color: white;
+  background-color: #b58100;
+  border-color: #8d5a0a;
+}
+.btn-primary-light:active, .btn-primary-light.active, .open > .btn-primary-light.dropdown-toggle {
+  background-image: none;
+}
+.btn-primary-light.disabled, .btn-primary-light.disabled:hover, .btn-primary-light.disabled:focus, .btn-primary-light.disabled:active, .btn-primary-light.disabled.active, .btn-primary-light[disabled], .btn-primary-light[disabled]:hover, .btn-primary-light[disabled]:focus, .btn-primary-light[disabled]:active, .btn-primary-light[disabled].active, fieldset[disabled] .btn-primary-light, fieldset[disabled] .btn-primary-light:hover, fieldset[disabled] .btn-primary-light:focus, fieldset[disabled] .btn-primary-light:active, fieldset[disabled] .btn-primary-light.active {
+  background-color: #e8a500;
+  border-color: #c67f0d;
+}
+.btn-primary-light .badge {
+  color: #e8a500;
+  background-color: white;
+}
+
 .navbar-default {
   background: #de8e0f;
   border: 0;
