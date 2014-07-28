@@ -30,7 +30,7 @@
 		</div>
 	{% endif %}
 
-	<div class='panel panel-primary'>
+	<div class='panel panel-default'>
 		<header class='panel-heading'>
 			<div class='panel-title'><a href='#items-collapse' data-toggle='collapse'>Items {% if bought_items %}<span class='caret'></span>{% endif %}</a></div>
 		</header>
@@ -62,7 +62,7 @@
 			<li class='list-group-item{% if total_cost > 0 %} list-group-item-danger{% endif %}'><strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong></li>
 		</ul>
 	</div>
-	<div class='panel panel-primary'>
+	<div class='panel panel-default'>
 		<header class='panel-heading'>
 			<div class='row'>
 				<div class='panel-title col-xs-8'><a href='#discounts-collapse' data-toggle='collapse'>Discounts {% if discounts %}<span class='caret'></span>{% endif %}</a></div>
@@ -114,7 +114,7 @@
 			<li class='list-group-item{% if total_savings > 0 %} list-group-item-success{% endif %}'><strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong></li>
 		</ul>
 	</div>
-	<div class='panel panel-primary'>
+	<div class='panel panel-default'>
 		<header class='panel-heading'>
 			<div class='panel-title'><a href='#payments-collapse' data-toggle='collapse'>Payments {% if payments %}<span class='caret'></span>{% endif %}
 			</a></div>
@@ -144,7 +144,7 @@
 		</ul>
 	</div>
 
-	<div class='panel panel-primary'>
+	<div class='panel panel-default'>
 		<table class='table'>
 			<tbody>
 				<tr{% if balance < 0 %} class='success text-success'{% elif balance > 0 %} class='danger text-danger'{% endif %}>
