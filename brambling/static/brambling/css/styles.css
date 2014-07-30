@@ -5887,10 +5887,21 @@ html, body {
   overflow-x: hidden;
 }
 
-.form-control, .form-control:focus {
-  -webkit-box-shadow: none;
-  -moz-box-shadow: none;
-  box-shadow: none;
+.form-control:focus {
+  -webkit-box-shadow: 0 0 0 1px #e8a500 inset;
+  -moz-box-shadow: 0 0 0 1px #e8a500 inset;
+  box-shadow: 0 0 0 1px #e8a500 inset;
+}
+
+.chosen-container-active.chosen-container-multi .chosen-choices, .chosen-container-active.chosen-container-single .chosen-single {
+  -webkit-box-shadow: 0 0 0 1px #e8a500 inset;
+  -moz-box-shadow: 0 0 0 1px #e8a500 inset;
+  box-shadow: 0 0 0 1px #e8a500 inset;
+}
+
+.chosen-container-single .chosen-drop {
+  border: 2px solid #e8a500;
+  border-top: none;
 }
 
 .more-name-options {
