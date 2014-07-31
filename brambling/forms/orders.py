@@ -225,7 +225,7 @@ class AddCardForm(forms.Form):
         if not user.stripe_customer_id:
             customer = stripe.Customer.create(
                 email=user.email,
-                description=user.name,
+                description=user.get_full_name(),
                 metadata={
                     'brambling_id': user.id
                 },
