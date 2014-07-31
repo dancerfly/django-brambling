@@ -1,21 +1,17 @@
-{% extends 'brambling/__base.html' %}
+{% extends 'brambling/layouts/12_xs.html' %}
 
 {% load floppyforms %}
 
 {% block title %}Log in – {{ block.super }}{% endblock %}
 
-{% block content %}
-	<div class='row'>
-		<div class='col-md-6 col-md-offset-3'>
-			<h2>Log in</h2>
+{% block main %}
+	<h2>Log in</h2>
 
-			<form action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
-				{% csrf_token %}
-				{% form form %}
-				<button class="btn btn-primary" type="submit">Log in</button>
-				<a class='btn btn-link' href="{% url 'brambling_signup' %}">Sign up</a>
-				<a class='btn btn-link' href="{% url 'password_reset' %}">Forgot your password?</a>
-			</form>
-		</div>
-	</div>
+	<form action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
+		{% csrf_token %}
+		{% form form %}
+		<button class="btn btn-primary" type="submit">Log in</button>
+		<a class='btn btn-link' href="{% url 'brambling_signup' %}">Sign up</a>
+		<a class='btn btn-link' href="{% url 'password_reset' %}">Forgot your password?</a>
+	</form>
 {% endblock %}

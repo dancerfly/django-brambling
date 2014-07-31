@@ -8,10 +8,10 @@
 	<div class="panel-body">
 		{% formrow form.address %}
 		<div class="row">
-			<div class="col-sm-6">
+			<div class="col-sm-5">
 				{% formrow form.city %}
 			</div>
-			<div class="col-sm-2">
+			<div class="col-sm-3">
 				{% formrow form.state_or_province %}
 			</div>
 			<div class="col-sm-4">
@@ -22,27 +22,21 @@
 		{% formrow form.public_transit_access %}
 	</div>
 </div>{# /.panel #}
-<div class="row">
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Environmental factors</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.ef_present %}
-				{% formrow form.ef_avoid %}
-			</div>
-		</div>
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Environmental factors</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.ef_present %}
+		{% formrow form.ef_avoid %}
 	</div>
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">People</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.person_prefer %}
-				{% formrow form.person_avoid %}
-			</div>
-		</div>
-	</div>{# /.col-md-8 #}
+</div>
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">People</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.person_prefer %}
+		{% formrow form.person_avoid %}
+	</div>
 </div>

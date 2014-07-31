@@ -1,16 +1,24 @@
-{% extends "brambling/layouts/75_25.html" %}
+{% extends "brambling/layouts/9_3.html" %}
 
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
 {% block main %}
 	<div class="page-header">
-		<h1>Upcoming Events <small>You Might Be Interested In</small></h1>
+		<h1>Upcoming Events</h1>
 	</div>
 	{% for event in upcoming_events|slice:"5" %}
-		<a href="{{ event.get_absolute_url }}" class="link-unstyled">
-			<h3>{{ event.name }}</h3>
-			<h4 class="text-muted">{{ event.start_date|date }} – {{ event.end_date|date }}</h4>
-		</a>
+		<div class="row margin-leader-dbl event-listing">
+			<div class="col-sm-3 text-right">
+				<h4>{{ event.start_date|date }}</h4>
+				<h5 class="text-muted">{{ event.city }}, {{ event.state_or_province }}</h5>
+				<h5 class="text-muted">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
+			</div>
+			<div class="col-sm-9">
+				<h3>{{ event.name }}</h3>
+				<h4 class="text-muted">{{ event.tagline }}</h4>
+				<a href="{{ event.get_absolute_url }}" class="btn btn-primary">Register</a>
+			</div>
+		</div>
 	{% endfor %}
 {% endblock %}
 

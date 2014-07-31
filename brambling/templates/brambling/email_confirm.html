@@ -1,4 +1,4 @@
-{% extends "brambling/__base.html" %}
+{% extends "brambling/layouts/12.html" %}
 
 {% block title %}Email confirmed – {{ block.super }}{% endblock %}
 
@@ -7,7 +7,7 @@
     <meta http-equiv="refresh" content="3; url={% url 'brambling_dashboard' %}">
 {% endblock %}
 
-{% block content %}
+{% block main %}
     <div class="alert alert-success">
         Your email address has been confirmed! You will be redirected to <a href="{% url 'brambling_dashboard' %}">your dashboard</a> in a few seconds.
     </div>

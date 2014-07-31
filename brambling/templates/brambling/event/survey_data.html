@@ -20,14 +20,21 @@
 		{% form form using %}
 			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
+
 			{% formrow form.heard_through %}
 			{% formrow form.heard_through_other %}
 
-			{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
-			{% formrow form.send_flyers_address %}
-			{% formrow form.send_flyers_city %}
-			{% formrow form.send_flyers_state_or_province %}
-			{% formrow form.send_flyers_country %}
+			<div data-target="#promotionalCollapse" data-toggle="collapse">
+				{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
+			</div>
+			<div id="promotionalCollapse" class="collapse">
+				<div class="row">
+					<div class="col-md-6">{% formrow form.send_flyers_address %}</div>
+					<div class="col-md-6">{% formrow form.send_flyers_city %}</div>
+					<div class="col-md-6">{% formrow form.send_flyers_state_or_province %}</div>
+					<div class="col-md-6">{% formrow form.send_flyers_country %}</div>
+				</div>
+			</div>
 
 			{% formrow form.providing_housing %}
 		{% endform %}

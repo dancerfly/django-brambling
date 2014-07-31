@@ -1,5 +1,16 @@
 .text-large
-    font-size: $font-size-large
+	font-size: $font-size-large
 
 .text-jumbo
-    font-size: $font-size-base * 2
+	font-size: $font-size-base * 2
+
+.list-comma
+	display: inline
+	margin-right: 0
+	&::after
+		content: ", "
+	&:last-child::after
+		content: ""
+
+.btn-primary-light
+	+button-variant($btn-primary-color, $yellow-light, $btn-primary-border)

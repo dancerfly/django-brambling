@@ -1,4 +1,4 @@
-{% extends 'brambling/layouts/75_25.html' %}
+{% extends 'brambling/layouts/9_3.html' %}
 
 {% load staticfiles %}
 
@@ -16,7 +16,7 @@
 		{% for item in event_nav %}
 			<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">
 				{% if item.icon %}
-					<i class="fa {{ item.icon }}"></i>
+					<i class="fa {{ item.icon }} fa-fw"></i>
 				{% endif %}
 				{{ item.label }}
 			</a>
@@ -34,7 +34,7 @@
 				{% for item in event_admin_nav %}
 					<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">
 						{% if item.icon %}
-							<i class="fa {{ item.icon }}"></i>
+							<i class="fa {{ item.icon }} fa-fw"></i>
 						{% endif %}
 						{{ item.label }}
 					</a>
