@@ -17,7 +17,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount)
-from brambling.views.utils import (get_event_or_404, get_event_nav,
+from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
 
@@ -104,7 +104,6 @@ class EventSummaryView(TemplateView):
         context.update({
             'event': self.event,
             'order': get_order(self.event, self.request.user),
-            'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
             'attendee_count': Attendee.objects.filter(order__event=self.event).count(),
@@ -143,7 +142,6 @@ class EventUpdateView(UpdateView):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
         context.update({
             'cart': None,
-            'event_nav': get_event_nav(self.object, self.request),
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
         })
         return context
@@ -178,7 +176,6 @@ def item_form(request, *args, **kwargs):
         'item_form': form,
         'itemoption_formset': formset,
         'cart': None,
-        'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
     return render_to_response('brambling/event/item_form.html',
@@ -204,7 +201,6 @@ class ItemListView(ListView):
         context.update({
             'event': self.event,
             'cart': None,
-            'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
@@ -232,7 +228,6 @@ def discount_form(request, *args, **kwargs):
         'discount': form.instance,
         'discount_form': form,
         'cart': None,
-        'event_nav': get_event_nav(event, request),
         'event_admin_nav': get_event_admin_nav(event, request),
     }
     return render_to_response('brambling/event/discount_form.html',
@@ -257,7 +252,6 @@ class DiscountListView(ListView):
         context.update({
             'event': self.event,
             'cart': None,
-            'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
@@ -284,7 +278,6 @@ class AttendeeFilterView(FilterView):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
@@ -306,7 +299,6 @@ class OrderFilterView(FilterView):
         context = super(OrderFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'event_nav': get_event_nav(self.event, self.request),
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context

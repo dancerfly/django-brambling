@@ -66,16 +66,6 @@ class NavItem(object):
         return self.request.path.startswith(self.url)
 
 
-def get_event_nav(event, request):
-    items = (
-        ('brambling_event_shop', 'Shop', 'fa-shopping-cart'),
-        ('brambling_event_order_summary', 'Order Summary', 'fa-list-alt'),
-    )
-    return [NavItem(request=request, label=label, icon=icon,
-                    url=reverse(view_name, kwargs={'event_slug': event.slug}))
-            for view_name, label, icon in items]
-
-
 def get_event_admin_nav(event, request):
     if not event.editable_by(request.user):
         return []

@@ -344,7 +344,7 @@ class RemoveDiscountView(OrderMixin, View):
 
 
 class ChooseItemsView(OrderMixin, TemplateView):
-    template_name = 'brambling/event/shop.html'
+    template_name = 'brambling/event/order/shop.html'
     current_step_slug = 'shop'
 
     def get_workflow_steps(self):
@@ -374,7 +374,7 @@ class ChooseItemsView(OrderMixin, TemplateView):
 
 
 class AttendeeItemView(OrderMixin, TemplateView):
-    template_name = 'brambling/event/attendee_items.html'
+    template_name = 'brambling/event/order/attendee_items.html'
     current_step_slug = 'attendees'
 
     def get_workflow_steps(self):
@@ -434,7 +434,7 @@ class AttendeeItemView(OrderMixin, TemplateView):
 
 
 class AttendeeBasicDataView(OrderMixin, UpdateView):
-    template_name = 'brambling/event/attendee_basic_data.html'
+    template_name = 'brambling/event/order/attendee_basic_data.html'
     form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
 
@@ -506,7 +506,7 @@ class RemoveAttendeeView(OrderMixin, View):
 
 
 class AttendeeHousingView(OrderMixin, TemplateView):
-    template_name = 'brambling/event/attendee_housing.html'
+    template_name = 'brambling/event/order/attendee_housing.html'
     current_step_slug = 'housing'
 
     def get_workflow_steps(self):
@@ -574,7 +574,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
 
 
 class SurveyDataView(OrderMixin, UpdateView):
-    template_name = 'brambling/event/survey_data.html'
+    template_name = 'brambling/event/order/survey.html'
     context_object_name = 'order'
     current_step_slug = 'survey'
 
@@ -619,7 +619,7 @@ class SurveyDataView(OrderMixin, UpdateView):
 
 
 class HostingView(OrderMixin, UpdateView):
-    template_name = 'brambling/event/hosting.html'
+    template_name = 'brambling/event/order/hosting.html'
     form_class = HostingForm
     current_step_slug = 'hosting'
 
@@ -650,7 +650,7 @@ class HostingView(OrderMixin, UpdateView):
 
 
 class OrderDetailView(OrderMixin, TemplateView):
-    template_name = 'brambling/event/order_summary.html'
+    template_name = 'brambling/event/order/summary.html'
 
     def get(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()

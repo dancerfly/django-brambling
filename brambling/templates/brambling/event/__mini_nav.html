@@ -3,18 +3,10 @@
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
 {% block before %}
-	<div class="masthead">
-		<h1 class="masthead-bold">{{ event.name }}</h1>
-		<h3>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h3>
-	</div>
+	{% include "brambling/event/_masthead.html" %}
 {% endblock %}
 
 {% block side %}
-	<div class='list-group'>
-		{% for item in event_nav %}
-			{% include "brambling/event/_mini_nav_item.html" with item=item only %}
-		{% endfor %}
-	</div>
 	{% if event_admin_nav %}
 		<div class="list-group">
 			{% for item in event_admin_nav %}
@@ -25,7 +17,6 @@
 {% endblock %}
 
 {% block main %}
-	{% include "brambling/event/_steps.html" %}
 	{% if order.has_cart %}
 		{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
 	{% endif %}
