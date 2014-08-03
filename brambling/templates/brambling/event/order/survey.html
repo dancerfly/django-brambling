@@ -13,8 +13,6 @@
 {% block main %}
 	{{ block.super }}
 
-	<h3>Step 4: Survey</h3>
-
 	<form action="" method="post" novalidate>
 		{% csrf_token %}
 		{% form form using %}

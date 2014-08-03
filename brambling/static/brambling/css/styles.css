@@ -6107,6 +6107,13 @@ a.step.complete:hover {
   background-color: white;
 }
 
+.uncolored-link {
+  color: inherit;
+}
+.uncolored-link:hover, .uncolored-link:active, .uncolored-link:focus {
+  color: inherit;
+}
+
 .navbar-default {
   background: #de8e0f;
   border: 0;

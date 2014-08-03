@@ -1,6 +1,6 @@
 <div class="masthead">
 	<h1 class="masthead-bold">
-		{{ event.name }}
+		<a class="uncolored-link" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
 		{% if event_admin_nav %}
 			<div class="pull-right">
 				<button class="btn btn-primary-light dropdown-toggle" type="button" id="manageEventMenu" data-toggle="dropdown">
