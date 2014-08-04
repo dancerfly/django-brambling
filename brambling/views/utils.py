@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import timedelta
 from functools import wraps
 
@@ -33,9 +34,6 @@ def get_order(event, person=None, code=None):
         while Order.objects.filter(event=event, code=code).exists():
             code = get_random_string(8)
         order = Order.objects.create(event=event, person=person, code=code)
-    # Cache event / person instances.
-    order.event = event
-    order.person = person
     return order
 
 
@@ -66,16 +64,6 @@ class NavItem(object):
 
     def is_active(self):
         return self.request.path.startswith(self.url)
-
-
-def get_event_nav(event, request):
-    items = (
-        ('brambling_event_shop', 'Shop', 'fa-shopping-cart'),
-        ('brambling_event_order_summary', 'Order Summary', 'fa-list-alt'),
-    )
-    return [NavItem(request=request, label=label, icon=icon,
-                    url=reverse(view_name, kwargs={'event_slug': event.slug}))
-            for view_name, label, icon in items]
 
 
 def get_event_admin_nav(event, request):
@@ -110,3 +98,75 @@ def clear_expired_carts(event):
         order__cart_start_time__isnull=False,
         order__cart_start_time__lte=expired_before
     ).delete()
+
+
+class Workflow(object):
+    step_classes = []
+
+    def __init__(self, **kwargs):
+        if 'steps' in kwargs:
+            raise ValueError("`steps` can't be passed as a kwarg value.")
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        self.steps = OrderedDict(((cls.slug, cls(self, index))
+                                  for index, cls in enumerate(self.step_classes)
+                                  if cls.include_in(self)))
+
+
+class Step(object):
+    name = None
+    url = None
+    slug = None
+
+    @classmethod
+    def include_in(cls, workflow):
+        return True
+
+    def __init__(self, workflow, index):
+        self.workflow = workflow
+        self.index = index
+
+    @property
+    def previous_step(self):
+        for step in reversed(self.workflow.steps.values()[:self.index]):
+            if step.is_active():
+                return step
+        return None
+
+    @property
+    def next_step(self):
+        for step in self.workflow.steps.values()[self.index + 1:]:
+            if step.is_active():
+                return step
+        return None
+
+    def is_active(self):
+        """Return False to indicate that the step should be ignored."""
+        return True
+
+    def is_accessible(self):
+        if self.previous_step is None:
+            return True
+        return self.previous_step.is_completed()
+
+    def is_completed(self):
+        if not hasattr(self, '_completed'):
+            self._completed = self._is_completed()
+        return (self._completed and
+                (self.previous_step is None or
+                 self.previous_step.is_completed()))
+
+    def _is_completed(self):
+        raise NotImplementedError("_is_completed must be implemented by subclasses.")
+
+    def is_valid(self):
+        return bool(self.errors)
+
+    @property
+    def errors(self):
+        if not hasattr(self, '_errors'):
+            self._errors = self.get_errors()
+        return self._errors
+
+    def get_errors(self):
+        return []

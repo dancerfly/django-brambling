@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__mini_nav.html' %}
+{% extends 'brambling/event/order/__base.html' %}
 
 {% load floppyforms %}
 
@@ -12,7 +12,6 @@
 
 {% block main %}
 	{{ block.super }}
-	<h3>Step 3: Provide housing data for attendees</h3>
 
 	<form action="" method="post" novalidate>
 		{% csrf_token %}
@@ -22,7 +21,7 @@
 			<div class='panel panel-default'>
 				<header class='panel-heading'>
 					<div class='panel-title'>
-						{{ form.instance.name }}
+						{{ form.instance.get_full_name }}
 					</div>
 				</header>
 				<div class='panel-body'>

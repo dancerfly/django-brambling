@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__full_nav.html' %}
+{% extends 'brambling/event/order/__base.html' %}
 
 {% load floppyforms zenaida %}
 
@@ -35,7 +35,6 @@
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
 	{% if item_options %}
-		<h3>Step 1: Shop</h3>
 		{% regroup item_options by item as option_list %}
 		<div class="row" id="items-list">
 			<div class="col-md-7">

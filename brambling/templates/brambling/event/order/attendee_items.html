@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__full_nav.html' %}
+{% extends 'brambling/event/order/__base.html' %}
 
 {% load floppyforms zenaida %}
 
@@ -24,8 +24,6 @@
 
 {% block main %}
 	{{ block.super }}
-
-	<h3>Step 2: Assign items to attendees</h3>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	<div class="row">

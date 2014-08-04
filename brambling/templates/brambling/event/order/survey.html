@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__full_nav.html' %}
+{% extends 'brambling/event/order/__base.html' %}
 
 {% load floppyforms %}
 
@@ -12,8 +12,6 @@
 
 {% block main %}
 	{{ block.super }}
-
-	<h3>Step 4: Survey</h3>
 
 	<form action="" method="post" novalidate>
 		{% csrf_token %}

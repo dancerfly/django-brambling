@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__mini_nav.html' %}
+{% extends 'brambling/event/order/__base.html' %}
 
 {% load floppyforms %}
 
@@ -12,8 +12,6 @@
 
 {% block main %}
 	{{ block.super }}
-
-	<h3>Step 5: Provide hosting data</h3>
 
 	<form action="" method="post" novalidate>
 		{% csrf_token %}
