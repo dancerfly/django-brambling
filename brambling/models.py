@@ -209,11 +209,11 @@ class Event(models.Model):
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
     has_classes = models.BooleanField(verbose_name="Is a class / Has class(es)", default=False)
-    liability_waiver = models.TextField(default=_("I hereby release <EVENT>, its officers, and its employees from all "
+    liability_waiver = models.TextField(default=_("I hereby release {event}, its officers, and its employees from all "
                                                   "liability of injury, loss, or damage to personal property associated "
                                                   "with this event. I acknowledge that I understand the content of this "
                                                   "document. I am aware that it is legally binding and I accept it out "
-                                                  "of my own free will."))
+                                                  "of my own free will."), help_text=_("'{event}' will be automatically replaced with your event name when users are presented with the waiver."))
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PRIVATE, help_text="Who can view this event.")
@@ -238,6 +238,9 @@ class Event(models.Model):
 
     def get_absolute_url(self):
         return reverse('brambling_event_root', kwargs={'slug': self.slug})
+
+    def get_liability_waiver(self):
+        return self.liability_waiver.format(event=self.name)
 
     def editable_by(self, user):
         return (user.is_authenticated() and user.is_active and

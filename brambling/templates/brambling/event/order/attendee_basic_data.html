@@ -46,8 +46,8 @@
 					{% endif %}
 
 					<div class="well">
-						{{ event.liability_waiver }}
-						{% formrow form.liability_waiver with label="I have read and agree to the waiver above." help_text="" %}
+						{{ event.get_liability_waiver }}
+						{% formrow form.liability_waiver with label="I have read and agree to the waiver above." %}
 					</div>
 
 				{% endform %}
