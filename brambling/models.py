@@ -745,10 +745,12 @@ class Attendee(AbstractNamedModel):
                                       verbose_name="I can't/don't want to be around")
 
     person_prefer = models.TextField(blank=True,
-                                     verbose_name="I need to be placed with")
+                                     verbose_name="I need to be placed with these people",
+                                     help_text="Provide a list of names, separated by line breaks.")
 
     person_avoid = models.TextField(blank=True,
-                                    verbose_name="I do not want to be around")
+                                    verbose_name="I do not want to be around these people",
+                                    help_text="Provide a list of names, separated by line breaks.")
 
     housing_prefer = models.ManyToManyField(HousingCategory,
                                             related_name='event_preferred_by',
