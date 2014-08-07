@@ -721,7 +721,7 @@ class Attendee(AbstractNamedModel):
     basic_completed = models.BooleanField(default=False)
     email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=50, blank=True)
-    liability_waiver = models.BooleanField(default=False, help_text="Must be checked by the attendee themselves")
+    liability_waiver = models.BooleanField(default=False, help_text="Must be agreed to by the attendee themselves.")
     photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
     housing_status = models.CharField(max_length=4, choices=HOUSING_STATUS_CHOICES,
                                       default=HAVE, verbose_name='housing status')

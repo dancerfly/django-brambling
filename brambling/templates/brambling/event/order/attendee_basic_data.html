@@ -39,12 +39,17 @@
 					{% formrow form.email %}
 					{% formrow form.phone %}
 
-					{% formrow form.liability_waiver with label=event.liability_waiver %}
 					{% formrow form.photo_consent %}
 
 					{% if form.housing_status %}
 						{% formrow form.housing_status %}
 					{% endif %}
+
+					<div class="well">
+						{{ event.liability_waiver }}
+						{% formrow form.liability_waiver with label="I have read and agree to the waiver above." help_text="" %}
+					</div>
+
 				{% endform %}
 				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Add attendee{% endif %}</button>
 				{% if attendee.pk %}<a href="../">Cancel</a>{% endif %}
