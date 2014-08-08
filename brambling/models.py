@@ -237,7 +237,7 @@ class Event(models.Model):
         return smart_text(self.name)
 
     def get_absolute_url(self):
-        return reverse('brambling_event_root', kwargs={'slug': self.slug})
+        return reverse('brambling_event_root', kwargs={'event_slug': self.slug})
 
     def get_liability_waiver(self):
         return self.liability_waiver.format(event=self.name)

@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url, include
+from django.views.generic.base import RedirectView
 
 from brambling.forms.user import (
     FloppyAuthenticationForm,
@@ -93,11 +94,8 @@ urlpatterns = patterns('',
         HomeView.as_view(),
         name="brambling_home"),
 
-    url(r'^(?P<slug>[\w-]+)/$',
-        route_view(lambda r, *a, **k: get_event_or_404(k['slug']
-                                                       ).editable_by(r.user),
-                   'summary/',
-                   'order/shop/'),
+    url(r'^(?P<event_slug>[\w-]+)/$',
+        RedirectView.as_view(pattern_name="brambling_event_shop", permanent=False),
         name="brambling_event_root"),
     url(r'^(?P<event_slug>[\w-]+)/order/shop/$',
         ChooseItemsView.as_view(),
