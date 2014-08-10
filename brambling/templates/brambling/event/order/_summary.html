@@ -5,7 +5,9 @@
 		<header class='panel-heading'>
 			<div class='panel-title'>
 				{{ attendee.attendee.get_full_name }}
-				<a class='pull-right' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.attendee.event_pass.pk %}'><i class='fa fa-pencil'></i></a>
+				{% block attendee_actions %}
+				<a class='pull-right' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.attendee.event_pass.pk %}'><i class='fa fa-pencil fa-fw'></i></a>
+				{% endblock %}
 			</div>
 		</header>
 		<table class='table'>
