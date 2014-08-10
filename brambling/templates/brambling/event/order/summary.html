@@ -18,7 +18,7 @@
 {% block main %}
 	{{ block.super }}
 
-	{% if order.person.confirmed_email and not order.cart_is_valid %}
+	{% if order.person.confirmed_email and order.errors %}
 		<div class='alert alert-danger'>
 			<h4>Please correct the following issues with your registration:</h4>
 
