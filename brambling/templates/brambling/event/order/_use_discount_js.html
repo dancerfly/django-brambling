@@ -1,0 +1,31 @@
+<script>
+    $(function(){
+        $('#discountCodeButton').on('click', function(e){
+            e.preventDefault();
+            var discountCodeButton = $(this),
+                discountCode = $('#discountCode'),
+                code = discountCode.val(),
+                url = '/' + discountCodeButton.data('slug') + '/discount/use/' + code + '/';
+            discountCodeButton.attr('disabled', 'disabled');
+            discountCode.parent().removeClass('has-error');
+            $('#discounts').find('.help-block').remove();
+            $.post(url, function(data){
+                if (data.success) {
+                    if (typeof(discountReload) !== "undefined" && discountReload) location.reload();
+                    if (data.name) {
+                        $('#discounts ul').prepend('<li class="list-group-item">' + data.name + ' <em class="text-muted">' + data.code + "</em></li>");
+                    } else {
+                        discountCode.parent().after('<p class="help-block"><span class="text-warning">You have already applied that code</span></p>')
+                        discountCode.parent().addClass('has-warning');
+                    }
+                    discountCode.val('');
+                    $('#discounts').removeClass('hidden');
+                } else {
+                    discountCode.parent().after('<p class="help-block"><span class="text-danger">' + data.errors['discount'] + '</span></p>');
+                    discountCode.parent().addClass('has-error');
+                }
+                discountCodeButton.attr('disabled', null);
+            })
+        });
+    });
+</script>
