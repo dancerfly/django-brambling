@@ -15,7 +15,7 @@
 		{% if next_step %}
 			<div class='row'>
 				<div class='col-md-6'>
-					{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
+					{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
 				</div>
 				<div class='col-md-6'>
 					{% block next_step_button %}
@@ -24,7 +24,7 @@
 				</div>
 			</div>
 		{% else %}
-			{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
+			{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
 		{% endif %}
 		<div class="modal fade" id="countdownCompleteModal" role="dialog" aria-labelledby="timeUpModal" aria-hidden="true">
 			<div class="modal-dialog modal-sm">

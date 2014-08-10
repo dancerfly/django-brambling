@@ -50,13 +50,15 @@ $(function() {
                 "alert-danger"
             ];
         // Give different colors at < 3 and > 0 minutes left.
-        if (data.minutes < 3 && data.minutes > 0) {
-            alert = $(this).closest(".alert");
-            if (alert.hasClass(alert_levels[0])) alert.removeClass(alert_levels[0]).addClass(alert_levels[1]);
-        } else if (data.minutes < 1 && data.seconds > 0) {
-            alert = $(this).closest(".alert");
-            if (alert.hasClass(alert_levels[0])) alert.removeClass(alert_levels[0]).addClass(alert_levels[2]);
-            if (alert.hasClass(alert_levels[1])) alert.removeClass(alert_levels[1]).addClass(alert_levels[2]);
+        if (data.days == 0 && data.hours == 0) {
+            if (data.minutes < 3 && data.minutes > 0) {
+                alert = $(this).closest(".alert");
+                if (alert.hasClass(alert_levels[0])) alert.removeClass(alert_levels[0]).addClass(alert_levels[1]);
+            } else if (data.minutes < 1 && data.seconds > 0) {
+                alert = $(this).closest(".alert");
+                if (alert.hasClass(alert_levels[0])) alert.removeClass(alert_levels[0]).addClass(alert_levels[2]);
+                if (alert.hasClass(alert_levels[1])) alert.removeClass(alert_levels[1]).addClass(alert_levels[2]);
+            }
         }
     });
     // Upon countdown completion, display a modal which cannot be dismissed.
