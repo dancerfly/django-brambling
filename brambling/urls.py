@@ -94,7 +94,7 @@ urlpatterns = patterns('',
         name="brambling_home"),
 
     url(r'^(?P<event_slug>[\w-]+)/$',
-        RedirectView.as_view(pattern_name="brambling_event_shop", permanent=False),
+        RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
         name="brambling_event_root"),
     url(r'^(?P<event_slug>[\w-]+)/order/shop/$',
         ChooseItemsView.as_view(),
