@@ -15,9 +15,3 @@
 		</div>
 	{% endif %}
 {% endblock %}
-
-{% block main %}
-	{% if order.has_cart %}
-		{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
-	{% endif %}
-{% endblock %}
