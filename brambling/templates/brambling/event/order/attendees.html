@@ -1,0 +1,81 @@
+{% extends 'brambling/event/order/__base.html' %}
+
+{% load floppyforms zenaida %}
+
+{% block title %}Assign items to attendees – {{ block.super }}{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include 'brambling/event/_use_discount_js.html' %}
+
+	<script>
+		$(function(){
+			$('a[target]').on('click', function(e){
+				e.preventDefault();
+				$.post($(this).attr('target'), function(){
+					// For now, just reload the page.
+					location.reload();
+				});
+			})
+		});
+	</script>
+{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	{% if errors %}
+		<ul class='text-danger'>
+			{% for error in errors %}
+				<li>{{ error }}</li>
+			{% endfor %}
+		</ul>
+	{% endif %}
+
+
+	{% if unassigned_items %}
+		<div class="row">
+			<div class="col-md-8">
+	{% endif %}
+				<div class="row">
+					{% for attendee in attendees %}
+						<div class='{% if unassigned_items %}col-md-6{% else %}col-md-4{% endif %}'>
+							<div class='panel panel-primary'>
+								<div class='panel-heading'>
+									<div class='panel-title'><a href='{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug %}'>
+										{{ attendee.get_full_name }}
+										<i class='fa fa-pencil'></i>
+									</a></div>
+								</div>
+								{% with items=attendee.bought_items.all %}
+									{% if items %}
+										<ul class='list-group'>
+											{% for item in items %}
+												<li class='list-group-item'>{{ item.item_option.name }} ({{ item.item_option.item.name }})</li>
+											{% endfor %}
+										</ul>
+									{% endif %}
+								{% endwith %}
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+	{% if unassigned_items %}
+			</div>
+			<div class='col-md-4'>
+				<div class='panel panel-default'>
+					<ul class='list-group'>
+						{% regroup unassigned_items by item_option.item as item_list %}
+						{% for item in item_list %}
+							<li class='list-group-item'><strong>{{ item.grouper }}</strong></li>
+							{% for bought_item in item.list %}
+								<li class='list-group-item'>{{ bought_item.item_option.name }}</li>
+							{% endfor %}
+						{% endfor %}
+					</ul>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

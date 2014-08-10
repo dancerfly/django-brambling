@@ -662,7 +662,6 @@ class BoughtItem(models.Model):
     # more than one BoughtItem. Basic example: Attendee can
     # have more than one class. Or, hypothetically, merch bought
     # by a single person could be assigned to multiple attendees.
-    # However, merch doesn't *need* an attendee.
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
 
@@ -719,6 +718,7 @@ class Attendee(AbstractNamedModel):
     order = models.ForeignKey(Order, related_name='attendees')
     person = models.ForeignKey(Person, blank=True, null=True)
     person_confirmed = models.BooleanField(default=False)
+    event_pass = models.OneToOneField(BoughtItem, related_name='event_pass_for')
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)

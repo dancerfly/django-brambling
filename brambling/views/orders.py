@@ -38,7 +38,7 @@ class AttendeeStep(Step):
 
     @property
     def url(self):
-        return reverse('brambling_event_attendee_items',
+        return reverse('brambling_event_attendee_list',
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def _is_completed(self):
@@ -49,9 +49,9 @@ class AttendeeStep(Step):
         order = self.workflow.order
         # All attendees must have at least one class or pass
         total_count = order.attendees.count()
-        with_count = order.attendees.filter(bought_items__item_option__item__category__in=(Item.CLASS, Item.PASS)).distinct().count()
+        with_count = order.attendees.filter(bought_items__item_option__item__category=Item.PASS).count()
         if with_count != total_count:
-            errors.append('All attendees must have at least one pass or class')
+            errors.append('All attendees must have exactly one pass')
 
         # Attendees may not have more than one pass.
         attendees = order.attendees.filter(
@@ -221,7 +221,8 @@ class OrderMixin(object):
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'is_admin_request': self.is_admin_request,
             'workflow': self.workflow,
-            'current_step': self.current_step
+            'current_step': self.current_step,
+            'next_step': self.current_step.next_step if self.current_step else None,
         })
         return context
 
@@ -373,13 +374,13 @@ class ChooseItemsView(OrderMixin, TemplateView):
         return context
 
 
-class AttendeeItemView(OrderMixin, TemplateView):
-    template_name = 'brambling/event/order/attendee_items.html'
+class AttendeesView(OrderMixin, TemplateView):
+    template_name = 'brambling/event/order/attendees.html'
     current_step_slug = 'attendees'
 
     def get_workflow_steps(self):
         if not self.order.checked_out:
-            return super(AttendeeItemView, self).get_workflow_steps()
+            return super(AttendeesView, self).get_workflow_steps()
         steps = [ShopStep, AttendeeStep]
         if (self.event.collect_housing_data and
                 self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
@@ -387,48 +388,26 @@ class AttendeeItemView(OrderMixin, TemplateView):
         steps.append(PaymentStep)
         return steps
 
-    def get_forms(self):
-        form_class = forms.models.modelform_factory(BoughtItem, fields=('attendee',))
-        form_class.base_fields['attendee'].queryset = self.order.attendees.all()
-        form_class.base_fields['attendee'].required = True
-        bought_items = self.order.bought_items.order_by('item_option__item', 'item_option')
-        kwargs = {}
-        if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-        self.attendees = self.order.attendees.all()
-        if len(self.attendees) == 1:
-            kwargs['initial'] = {'attendee': self.attendees[0]}
-        return [form_class(prefix='form-{}-'.format(item.pk),
-                           instance=item, **kwargs)
-                for item in bought_items]
-
     def get(self, request, *args, **kwargs):
-        self.errors = []
-        self.forms = self.get_forms()
-        return self.render_to_response(self.get_context_data())
-
-    def post(self, request, *args, **kwargs):
-        self.errors = []
-        self.forms = self.get_forms()
-        all_valid = True
-        for form in self.forms:
-            all_valid = all_valid and form.is_valid()
-        if all_valid:
-            for form in self.forms:
-                form.save()
-
-            self.errors = self.current_step.errors
-            if not self.errors:
-                return HttpResponseRedirect(self.current_step.next_step.url)
-        return self.render_to_response(self.get_context_data())
+        try:
+            unassigned_pass = self.order.bought_items.filter(
+                item_option__item__category=Item.PASS,
+                attendee__isnull=True
+            ).order_by('added')[:1][0]
+        except IndexError:
+            return self.render_to_response(self.get_context_data())
+        else:
+            return HttpResponseRedirect(reverse('brambling_event_attendee_edit',
+                                                kwargs={'event_slug': self.event.slug,
+                                                        'pk': unassigned_pass.pk}))
 
     def get_context_data(self, **kwargs):
-        context = super(AttendeeItemView, self).get_context_data(**kwargs)
+        context = super(AttendeesView, self).get_context_data(**kwargs)
 
         context.update({
-            'forms': self.forms,
-            'attendees': self.attendees,
-            'errors': self.errors,
+            'errors': self.current_step.errors,
+            'attendees': self.order.attendees.all(),
+            'unassigned_items': self.order.bought_items.filter(attendee__isnull=True).order_by('item_option__item', 'item_option'),
         })
         return context
 
@@ -456,15 +435,21 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
         return forms.models.modelform_factory(Attendee, self.form_class, fields=fields)
 
     def get_object(self):
-        if self.kwargs.get('pk') is None:
-            return None
-        else:
-            return self.order.attendees.get(pk=self.kwargs['pk'])
+        try:
+            self.event_pass = self.order.bought_items.select_related('attendee').get(
+                pk=self.kwargs['pk'],
+                item_option__item__category=Item.PASS
+            )
+        except BoughtItem.DoesNotExist:
+            raise Http404
+        self.event_pass.order = self.order
+        return self.event_pass.attendee
 
     def get_initial(self):
         initial = super(AttendeeBasicDataView, self).get_initial()
-        person = self.request.user
-        if self.kwargs.get('pk') is None and not self.order.attendees.filter(person=person).exists():
+        pass_count = self.order.bought_items.filter(item_option__item__category=Item.PASS).count()
+        if pass_count == 1:
+            person = self.request.user
             initial.update({
                 'given_name': person.given_name,
                 'middle_name': person.middle_name,
@@ -475,34 +460,28 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
             })
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super(AttendeeBasicDataView, self).get_form_kwargs()
+        kwargs['event_pass'] = self.event_pass
+        return kwargs
+
     def form_valid(self, form):
         if form.instance.email == self.request.user.email:
             form.instance.person = self.request.user
             form.instance.person_confirmed = True
 
-        form.instance.order = self.order
-        form.instance.basic_completed = True
         self.object = form.save()
         return super(AttendeeBasicDataView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('brambling_event_attendee_items',
-                       kwargs={'event_slug': self.event.slug})
+        if self.current_step.errors:
+            return self.current_step.url
+        return self.current_step.next_step.url
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
-        context['attendees'] = self.order.attendees.all()
+        context['event_pass'] = self.event_pass
         return context
-
-
-class RemoveAttendeeView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    @method_decorator(login_required)
-    def post(self, request, *args, **kwargs):
-        Attendee.objects.filter(order=self.order,
-                                pk=kwargs['pk']).delete()
-
-        return JsonResponse({'success': True})
 
 
 class AttendeeHousingView(OrderMixin, TemplateView):
@@ -651,6 +630,7 @@ class HostingView(OrderMixin, UpdateView):
 
 class OrderDetailView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/summary.html'
+    current_step_slug = 'payment'
 
     def get(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()

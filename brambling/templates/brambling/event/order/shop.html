@@ -60,14 +60,6 @@
 			</div>
 			<div class="col-md-5">
 				{% with has_cart=order.has_cart %}
-					<div class='form-group'>
-						{% if order.attendees.exists %}
-							{% url 'brambling_event_attendee_items' event_slug=event.slug as next_url %}
-						{% else %}
-							{% url 'brambling_event_attendee_add' event_slug=event.slug as next_url %}
-						{% endif %}
-						<a class='btn btn-success btn-lg btn-block{% if not has_cart %} disabled{% endif %}' href="{{ next_url }}">Next step <span class='fa fa-chevron-right'></span></a>
-					</div>
 					{% if has_cart %}
 						<div class='panel panel-default'>
 							<header class='panel-heading'>

@@ -5,19 +5,44 @@ from zenaida.forms import MemoModelForm
 
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
-                              Attendee, HousingSlot)
+                              Attendee, HousingSlot, BoughtItem, Item)
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
 
 class AttendeeBasicDataForm(forms.ModelForm):
+    additional_items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
+
     class Meta:
         model = Attendee
+        exclude = ()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, event_pass, *args, **kwargs):
         super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
         self.fields['liability_waiver'].required = True
+        self.event_pass = event_pass
+        self.order = event_pass.order
+        additional_items = self.order.bought_items.filter(
+            attendee__isnull=True
+        ).exclude(item_option__item__category=Item.PASS)
+        if additional_items:
+            self.fields['additional_items'].queryset = additional_items
+            if not self.instance.pk:
+                self.fields['additional_items'].initial = additional_items
+        else:
+            del self.fields['additional_items']
+
+    def save(self):
+        self.instance.order = self.order
+        self.instance.event_pass = self.event_pass
+        self.instance.basic_completed = True
+        instance = super(AttendeeBasicDataForm, self).save()
+        if self.cleaned_data.get('additional_items'):
+            self.cleaned_data['additional_items'].update(attendee=instance)
+        self.event_pass.attendee = instance
+        self.event_pass.save()
+        return instance
 
 
 class AttendeeHousingDataForm(MemoModelForm):

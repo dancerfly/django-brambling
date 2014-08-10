@@ -7,11 +7,11 @@
 {% block main %}
 	{{ block.super }}
 
-	<h3>{% if attendee.pk %}Edit attendee: {{ attendee.get_full_name }}{% else %}Add an attendee{% endif %}</h3>
-
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	<div class="row">
-		<div class="col-md-8">
+		<div class="col-md-8 col-md-offset-2">
+			<h3>{{ event_pass.item_option.name }} ({{ event_pass.item_option.item.name }})</h3>
+
 			<form action="{{ request.path }}" method="post" novalidate>
 				{% csrf_token %}
 				{% form form using %}
@@ -39,11 +39,13 @@
 					{% formrow form.email %}
 					{% formrow form.phone %}
 
-					{% formrow form.photo_consent %}
+					{% formrow form.additional_items %}
 
 					{% if form.housing_status %}
 						{% formrow form.housing_status %}
 					{% endif %}
+
+					{% formrow form.photo_consent %}
 
 					<div class="well">
 						{{ event.get_liability_waiver }}
@@ -51,21 +53,9 @@
 					</div>
 
 				{% endform %}
-				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Add attendee{% endif %}</button>
+				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Save and continue{% endif %}</button>
 				{% if attendee.pk %}<a href="../">Cancel</a>{% endif %}
 			</form>
-		</div>
-		<div class='col-md-4'>
-			<div class='panel panel-default'>
-				<header class='panel-heading'>
-					<h3 class='panel-title'>Attendees <a href="{% url 'brambling_event_attendee_add' event_slug=event.slug %}"><span class='fa fa-plus'></span></a></h3>
-				</header>
-				<div class='list-group'>
-					{% for attendee in attendees %}
-						<a class='list-group-item' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.pk %}'>{{ attendee.get_full_name }}</a>
-					{% endfor %}
-				</div>
-			</div>
 		</div>
 	</div>
 {% endblock %}

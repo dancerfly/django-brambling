@@ -12,7 +12,18 @@
 	{% endif %}
 
 	{% if order.has_cart %}
-		{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
+		{% if next_step %}
+			<div class='row'>
+				<div class='col-md-6'>
+					{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
+				</div>
+				<div class='col-md-6'>
+					<a class='btn btn-success btn-block btn-lg' href='{{ next_step.url }}'{% if not next_step.is_accessible %} disabled{% endif %}> Next step <i class='fa fa-chevron-right'></i></a>
+				</div>
+			</div>
+		{% else %}
+			{% include "brambling/event/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
+		{% endif %}
 		<div class="modal fade" id="countdownCompleteModal" role="dialog" aria-labelledby="timeUpModal" aria-hidden="true">
 			<div class="modal-dialog modal-sm">
 				<div class="modal-content">
