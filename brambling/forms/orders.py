@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Q
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
@@ -24,11 +25,15 @@ class AttendeeBasicDataForm(forms.ModelForm):
         self.event_pass = event_pass
         self.order = event_pass.order
         additional_items = self.order.bought_items.filter(
-            attendee__isnull=True
+            Q(attendee__isnull=True) | Q(attendee=event_pass.attendee_id)
         ).exclude(item_option__item__category=Item.PASS)
         if additional_items:
             self.fields['additional_items'].queryset = additional_items
-            if not self.instance.pk:
+            if self.instance.pk:
+                self.fields['additional_items'].initial = self.order.bought_items.filter(
+                    attendee=event_pass.attendee_id
+                ).exclude(item_option__item__category=Item.PASS)
+            else:
                 self.fields['additional_items'].initial = additional_items
         else:
             del self.fields['additional_items']
