@@ -10,10 +10,14 @@
 	{% include 'brambling/event/_use_discount_js.html' %}
 {% endblock %}
 
-{% block main %}
-	{{ block.super }}
+{% block next_step_button %}
+	<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='fa fa-chevron-right'></span></button>
+{% endblock %}
 
+{% block main %}
 	<form action="" method="post" novalidate>
+		{{ block.super }}
+
 		{% csrf_token %}
 		{% form form using %}
 			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
@@ -25,7 +29,7 @@
 			<div data-target="#promotionalCollapse" data-toggle="collapse">
 				{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
 			</div>
-			<div id="promotionalCollapse" class="collapse">
+			<div id="promotionalCollapse" class="collapse{% if form.instance.send_flyers %} in{% endif %}">
 				<div class="row">
 					<div class="col-md-6">{% formrow form.send_flyers_address %}</div>
 					<div class="col-md-6">{% formrow form.send_flyers_city %}</div>
@@ -36,7 +40,5 @@
 
 			{% formrow form.providing_housing %}
 		{% endform %}
-
-		<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='fa fa-chevron-right'></span></button>
 	</form>
 {% endblock %}
