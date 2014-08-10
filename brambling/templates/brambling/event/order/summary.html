@@ -15,145 +15,24 @@
 	{% include "brambling/_stripe_js.html" %}
 {% endblock %}
 
+{% block next_step_button %}
+	<form class=''>
+		<div class='input-group input-group-lg'>
+			<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
+			<span class='input-group-btn'>
+				<button id='discountCodeButton' class='btn btn-success' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
+			</span>
+		</div>
+	</form>
+{% endblock %}
+
 {% block main %}
-	{{ block.super }}
+	{% with next_step=1 %}
+		{{ block.super }}
+	{% endwith %}
 
-	{% if order.person.confirmed_email and order.errors %}
-		<div class='alert alert-danger'>
-			<h4>Please correct the following issues with your registration:</h4>
+	{% include "brambling/event/order/_summary.html" %}
 
-			<ul>
-				{% for error, url in order.cart_errors %}
-					<li><a class='alert-link' href="{{ url }}">{{ error }}</a></li>
-				{% endfor %}
-			</ul>
-		</div>
-	{% endif %}
-
-	<div class='panel panel-default'>
-		<header class='panel-heading'>
-			<div class='panel-title'><a href='#items-collapse' data-toggle='collapse'>Items {% if bought_items %}<span class='caret'></span>{% endif %}</a></div>
-		</header>
-		<div class='collapse table-collapse-wrapper' id='items-collapse'>
-			<table class='table table-striped'>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Timestamp</th>
-						<th>Status</th>
-						<th class='text-right'>Amount ({{ event.currency }})</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for item in bought_items %}
-						<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
-							<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-							<td>{{ item.item_option.item.get_category_display }}</td>
-							<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
-							<td>{{ item.get_status_display }}</td>
-							<td class='text-right'>{{ item.item_option.price }}</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-		<ul class='list-group'>
-			<li class='list-group-item{% if total_cost > 0 %} list-group-item-danger{% endif %}'><strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong></li>
-		</ul>
-	</div>
-	<div class='panel panel-default'>
-		<header class='panel-heading'>
-			<div class='row'>
-				<div class='panel-title col-xs-8'><a href='#discounts-collapse' data-toggle='collapse'>Discounts {% if discounts %}<span class='caret'></span>{% endif %}</a></div>
-				<div class='panel-heading-form col-xs-4'>
-					<div class='input-group'>
-						<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
-						<span class='input-group-btn'>
-							<button id='discountCodeButton' class='btn btn-default' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
-						</span>
-					</div>
-				</form>
-			</div>
-		</header>
-		<div class='collapse table-collapse-wrapper' id='discounts-collapse'>
-			<table class='table'>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Code</th>
-						<th></th>
-						<th class='text-right'>Amount ({{ event.currency }})</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% regroup discounts by discount as discount_list %}
-					{% for discount in discount_list %}
-						{% cycle 0 1 as stripe silent %}
-						<tr{% if stripe %} class='active'{% endif %}>
-							<th>{{ discount.grouper.name }}</th>
-							<td>{{ discount.grouper.code }}</td>
-							<td></td>
-							<td></td>
-						</tr>
-						{% for bought_item_discount in discount.list %}
-							<tr{% if stripe %} class='active'{% endif %}>
-								<th>{% if forloop.first %}Applied to:{% endif %}</th>
-								{% with item_option=bought_item_discount.bought_item.item_option %}
-									<td>{{ item_option.item.name }} ({{ item_option.name }})</td>
-								{% endwith %}
-								<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-								<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
-							</tr>
-						{% endfor %}
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-		<ul class='list-group'>
-			<li class='list-group-item{% if total_savings > 0 %} list-group-item-success{% endif %}'><strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong></li>
-		</ul>
-	</div>
-	<div class='panel panel-default'>
-		<header class='panel-heading'>
-			<div class='panel-title'><a href='#payments-collapse' data-toggle='collapse'>Payments {% if payments %}<span class='caret'></span>{% endif %}
-			</a></div>
-		</header>
-		<div class='collapse table-collapse-wrapper' id='payments-collapse'>
-			<table class='table table-striped'>
-				<thead>
-					<tr>
-						<th>Timestamp</th>
-						<th>Method</th>
-						<th class='text-right'>Amount ({{ event.currency }})</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for payment in payments %}
-						<tr>
-							<td>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-							<td>{{ payment.card }}</td>
-							<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-		<ul class='list-group'>
-			<li class='list-group-item{% if total_payments > 0 %} list-group-item-success{% endif %}'><strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong></li>
-		</ul>
-	</div>
-
-	<div class='panel panel-default'>
-		<table class='table'>
-			<tbody>
-				<tr{% if balance < 0 %} class='success text-success'{% elif balance > 0 %} class='danger text-danger'{% endif %}>
-					<th>Balance</th>
-					<td class='text-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owe {% endif %}<strong>{{ balance|absolute_value|format_money:event.currency }}</strong></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
 	{% if balance > 0 %}
 		{% if has_cards %}
 			<div class="panel-group" id="accordion">

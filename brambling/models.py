@@ -1,5 +1,7 @@
 # encoding: utf8
 from datetime import timedelta
+import itertools
+import operator
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
@@ -592,29 +594,30 @@ class Order(models.Model):
 
     def get_summary_data(self):
         payments = self.payments.order_by('timestamp')
-        bought_items = list(self.bought_items.select_related('item_option').order_by('added'))
-        discounts = BoughtItemDiscount.objects.filter(bought_item__in=bought_items).select_related('discount').order_by('discount', 'timestamp')
-
-        bought_item_map = {bought_item.id: bought_item
-                           for bought_item in bought_items}
-        savings = 0
-        for discount in discounts:
-            try:
-                bought_item = bought_item_map[discount.bought_item_id]
-            except KeyError:
-                continue
-            discount.bought_item = bought_item
-            savings += discount.savings()
+        bought_items = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
+        attendees = []
+        total_savings = 0
+        for k, g in itertools.groupby(bought_items, operator.attrgetter('attendee')):
+            items = list(g)
+            discounts = []
+            for item in items:
+                discounts.extend(item.discounts.all())
+            savings = sum((discount.savings() for discount in discounts))
+            total_savings += savings
+            attendees.append({
+                'attendee': k,
+                'bought_items': items,
+                'total_cost': sum((item.item_option.price for item in items)),
+                'total_savings': savings,
+            })
 
         total_cost = sum((item.item_option.price
                           for item in bought_items))
-        total_savings = min(savings, total_cost)
         total_payments = sum((payment.amount
                               for payment in payments))
         balance = total_cost - total_savings - total_payments
         return {
-            'bought_items': bought_items,
-            'discounts': discounts,
+            'attendees': attendees,
             'payments': payments,
             'total_cost': total_cost,
             'total_savings': total_savings,

@@ -2,7 +2,7 @@
 
 {% load floppyforms zenaida staticfiles %}
 
-{% block title %}Order {{ order.pk }} – {{ block.super }}{% endblock %}
+{% block title %}Order {{ order.code }} – {{ block.super }}{% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
@@ -39,79 +39,7 @@
 {% block main %}
 	{{ block.super }}
 
-	<table class='table'>
-		<thead>
-			<tr>
-				<th>Items</th>
-				<th>Type</th>
-				<th>Timestamp</th>
-				<th>Status</th>
-				<th></th>
-				<th class='text-right'>Amount ({{ event.currency }})</th>
-			</tr>
-		</thead>
-		<tbody>
-			{% for item in bought_items %}
-				<tr{% if item.status == item.UNPAID %} class='danger'{% endif %}>
-					<td>{{ item.item_option.item.name }} ({{ item.item_option.name }})</td>
-					<td>{{ item.item_option.item.get_category_display }}</td>
-					<td class='text-muted'>{{ item.added|date:"n/j/Y H:i:s" }}</td>
-					<td>{{ item.get_status_display }}</td>
-					<td>Edit item / attendee! Remove item from order!</td>
-					<td class='text-right'>{{ item.item_option.price|format_money:event.currency }}</td>
-				</tr>
-			{% endfor %}
-			<tr class='active'>
-				<td colspan=6>
-					<strong>Total cost</strong><strong class='pull-right'>{{ total_cost|format_money:event.currency }}</strong>
-				</td>
-			</tr>
-			<tr>
-				<th colspan=6>Discounts</th>
-			</tr>
-			{% regroup discounts by discount as discount_list %}
-			{% for discount in discount_list %}
-				{% for bought_item_discount in discount.list %}
-					<tr>
-						<td>{% if forloop.first%}{{ discount.grouper.name }}{% endif %}</td>
-						{% with item_option=bought_item_discount.bought_item.item_option %}
-							<td>{{ item_option.item.name }} ({{ item_option.name }})</td>
-						{% endwith %}
-						<td class='text-muted'>{{ bought_item_discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-						<td></td>
-						<td><a href="{% url 'brambling_event_remove_discount' event_slug=event.slug code=order.code discount_pk=bought_item_discount.pk %}" class='removeDiscountLink'><span class='fa fa-times fa text-danger'></span></a></td>
-						<td class='text-right'>{{ bought_item_discount.savings|format_money:event.currency }}</td>
-					</tr>
-				{% endfor %}
-			{% endfor %}
-			<tr class='active'>
-				<td colspan=6>
-					<strong>Total savings</strong><strong class='pull-right'>{{ total_savings|format_money:event.currency }}</strong>
-				</td>
-			</tr>
-			<tr>
-				<th colspan=6>Payments</th>
-			</tr>
-			{% for payment in payments %}
-				<tr>
-					<td>{{ payment.card }}</td>
-					<td>{{ payment.get_method_display }}</td>
-					<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-					<td></td>
-					<td>Refund!</td>
-					<td class='text-right'>{{ payment.amount|format_money:event.currency }}</td>
-				</tr>
-			{% endfor %}
-			<tr class='active'>
-				<td colspan=6>
-					<strong>Total payments</strong><strong class='pull-right'>{{ total_payments|format_money:event.currency }}</strong>
-				</td>
-			</tr>
-			<tr>
-				<td colspan=6><strong>Balance</strong><strong class='pull-right'>{% if balance < 0 %}Owed {% elif balance > 0 %}Owes {% endif %}{{ balance|absolute_value|format_money:event.currency }}</strong></td>
-			</tr>
-		</tbody>
-	</table>
+	{% include "brambling/event/_admin_order_summary.html" %}
 
 <!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">

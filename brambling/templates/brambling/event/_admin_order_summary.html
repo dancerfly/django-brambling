@@ -1,0 +1,13 @@
+{% extends "brambling/event/order/_summary.html" %}
+
+{% block item_actions %}
+	Remove item from order!
+{% endblock %}
+
+{% block discount_actions %}
+	<a href="{% url 'brambling_event_remove_discount' event_slug=event.slug code=order.code discount_pk=discount.pk %}" class='removeDiscountLink'><span class='fa fa-times fa-fw text-danger'></span></a>
+{% endblock %}
+
+{% block payment_actions %}
+	Refund!
+{% endblock %}
