@@ -6035,6 +6035,9 @@ html, body {
 .stepbar-2-up > .step {
   width: 50%;
 }
+.stepbar-3-up > .step {
+  width: 33.33%;
+}
 .stepbar-4-up > .step {
   width: 25%;
 }
