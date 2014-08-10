@@ -348,16 +348,6 @@ class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/shop.html'
     current_step_slug = 'shop'
 
-    def get_workflow_steps(self):
-        if not self.order.checked_out:
-            return super(ChooseItemsView, self).get_workflow_steps()
-        steps = [ShopStep, AttendeeStep]
-        if (self.event.collect_housing_data and
-                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
-            steps.append(HousingStep)
-        steps.append(PaymentStep)
-        return steps
-
     def get_context_data(self, **kwargs):
         context = super(ChooseItemsView, self).get_context_data(**kwargs)
         clear_expired_carts(self.event)
@@ -377,16 +367,6 @@ class ChooseItemsView(OrderMixin, TemplateView):
 class AttendeesView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/attendees.html'
     current_step_slug = 'attendees'
-
-    def get_workflow_steps(self):
-        if not self.order.checked_out:
-            return super(AttendeesView, self).get_workflow_steps()
-        steps = [ShopStep, AttendeeStep]
-        if (self.event.collect_housing_data and
-                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
-            steps.append(HousingStep)
-        steps.append(PaymentStep)
-        return steps
 
     def get(self, request, *args, **kwargs):
         try:
@@ -416,16 +396,6 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/order/attendee_basic_data.html'
     form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
-
-    def get_workflow_steps(self):
-        if not self.order.checked_out:
-            return super(AttendeeBasicDataView, self).get_workflow_steps()
-        steps = [ShopStep, AttendeeStep]
-        if (self.event.collect_housing_data and
-                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
-            steps.append(HousingStep)
-        steps.append(PaymentStep)
-        return steps
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
@@ -488,16 +458,6 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/attendee_housing.html'
     current_step_slug = 'housing'
 
-    def get_workflow_steps(self):
-        if not self.order.checked_out:
-            return super(AttendeeHousingView, self).get_workflow_steps()
-        steps = [ShopStep, AttendeeStep]
-        if (self.event.collect_housing_data and
-                self.order.attendees.filter(housing_status=Attendee.NEED).exists()):
-            steps.append(HousingStep)
-        steps.append(PaymentStep)
-        return steps
-
     def get(self, request, *args, **kwargs):
         if not self.event.collect_housing_data:
             raise Http404
@@ -557,14 +517,6 @@ class SurveyDataView(OrderMixin, UpdateView):
     context_object_name = 'order'
     current_step_slug = 'survey'
 
-    def get_workflow_steps(self):
-        if not self.order.checked_out:
-            return super(SurveyDataView, self).get_workflow_steps()
-        steps = [SurveyStep]
-        if self.event.collect_housing_data and self.order.providing_housing:
-            steps.append(HostingStep)
-        return steps
-
     @property
     def fields(self):
         fields = ()
@@ -601,12 +553,6 @@ class HostingView(OrderMixin, UpdateView):
     template_name = 'brambling/event/order/hosting.html'
     form_class = HostingForm
     current_step_slug = 'hosting'
-
-    def get_workflow_steps(self):
-        if not self.order.checked_out:
-            return super(HostingView, self).get_workflow_steps()
-        steps = [HostingStep]
-        return steps
 
     def get_object(self):
         if not self.event.collect_housing_data:
