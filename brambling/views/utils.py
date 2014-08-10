@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from datetime import timedelta
 from functools import wraps
+from itertools import ifilter
 
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Min
@@ -108,9 +109,9 @@ class Workflow(object):
             raise ValueError("`steps` can't be passed as a kwarg value.")
         for k, v in kwargs.items():
             setattr(self, k, v)
+        cls_iter = ifilter(lambda cls: cls.include_in(self), self.step_classes)
         self.steps = OrderedDict(((cls.slug, cls(self, index))
-                                  for index, cls in enumerate(self.step_classes)
-                                  if cls.include_in(self)))
+                                  for index, cls in enumerate(cls_iter)))
 
 
 class Step(object):
