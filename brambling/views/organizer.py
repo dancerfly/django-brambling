@@ -1,22 +1,25 @@
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.views.generic import (ListView, CreateView, UpdateView,
-                                  TemplateView, DetailView)
+                                  TemplateView, DetailView, View)
 
 from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 import requests
+import stripe
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, DiscountChoiceForm)
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
-                              BoughtItemDiscount)
+                              BoughtItemDiscount, BoughtItem,
+                              Refund, SubRefund)
 from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
@@ -281,6 +284,74 @@ class AttendeeFilterView(FilterView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
+
+
+class RefundView(View):
+    form_class = None
+
+    def get_object(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        try:
+            self.order = Order.objects.get(event=self.event,
+                                           code=self.kwargs['code'])
+        except Order.DoesNotExist:
+            raise Http404
+        return BoughtItem.objects.get(order=self.order,
+                                      pk=self.kwargs['item_pk'])
+
+    def get_context_data(self, **kwargs):
+        context = super(AttendeeFilterView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+        })
+        return context
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        payments = self.object.subpayments.annotate(refunded=Sum('refunds__amount'))
+        if not payments:
+            self.object.delete()
+        else:
+            total_payments = sum((payment.amount for payment in payments))
+            total_refunds = sum((payment.refunded or 0 for payment in payments))
+            refundable = total_payments - total_refunds
+            if refundable > 0:
+                refund = Refund.objects.create(
+                    order=self.order,
+                    issuer=request.user,
+                    bought_item=self.object,
+                    amount=refundable,
+                )
+
+                stripe.api_key = settings.STRIPE_SECRET_KEY
+                for payment in payments:
+                    if payment.amount - (payment.refunded or 0) <= 0:
+                        continue
+                    stripe_charge = stripe.Charge.retrieve(payment.payment.remote_id)
+                    amount = payment.amount - (payment.refunded or 0)
+                    stripe_refund = stripe_charge.refund(
+                        amount=amount * 100,
+                    )
+                    SubRefund.objects.create(
+                        refund=refund,
+                        subpayment=payment,
+                        amount=amount,
+                        method=payment.payment.method,
+                        remote_id=stripe_refund.id
+                    )
+                self.object.status = BoughtItem.REFUNDED
+                if self.object.attendee.event_pass == self.object:
+                    self.object.attendee.delete()
+                else:
+                    self.object.attendee = None
+                self.object.save()
+        url = reverse('brambling_event_order_detail',
+                      kwargs={'event_slug': self.event.slug,
+                              'code': self.order.code})
+        return HttpResponseRedirect(url)
 
 
 class OrderFilterView(FilterView):

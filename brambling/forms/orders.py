@@ -6,7 +6,8 @@ from zenaida.forms import MemoModelForm
 
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
-                              Attendee, HousingSlot, BoughtItem, Item)
+                              Attendee, HousingSlot, BoughtItem, Item,
+                              SubPayment)
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
@@ -289,10 +290,13 @@ class AddCardForm(forms.Form):
 
 
 class BasePaymentForm(forms.Form):
-    def __init__(self, order, amount, *args, **kwargs):
+    def __init__(self, order, bought_items, *args, **kwargs):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         self.order = order
-        self.amount = amount
+        # bought_items is a list of summary dicts.
+        self.bought_items = [item for item in bought_items
+                             if item['balance'] > 0]
+        self.amount = sum((item['balance'] for item in self.bought_items))
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
     def charge(self, card_or_token, customer=None):
@@ -312,19 +316,17 @@ class BasePaymentForm(forms.Form):
                                          method=Payment.STRIPE,
                                          remote_id=charge.id,
                                          card=creditcard)
+        SubPayment.objects.bulk_create((
+            SubPayment(payment=payment,
+                       bought_item=item['bought_item'],
+                       amount=item['balance'])
+            for item in self.bought_items
+        ))
         return payment
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
     save_card = forms.BooleanField(required=False)
-
-    def __init__(self, order, amount, user, *args, **kwargs):
-        super(OneTimePaymentForm, self).__init__(
-            order=order,
-            amount=amount,
-            user=user,
-            *args, **kwargs
-        )
 
     def _post_clean(self):
         try:

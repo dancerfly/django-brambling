@@ -29,7 +29,7 @@ class ShopStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def _is_completed(self):
-        return self.workflow.order.has_cart()
+        return self.workflow.order.has_cart() or self.workflow.order.checked_out
 
 
 class AttendeeStep(Step):
@@ -619,16 +619,16 @@ class OrderDetailView(OrderMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()
-        self.balance = self.summary_data['balance']
-        if self.balance > 0 or self.order.has_cart():
+        self.net_balance = self.summary_data['net_balance']
+        if self.net_balance > 0 or self.order.has_cart():
             self.get_forms()
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()
-        self.balance = self.summary_data['balance']
-        if self.balance == 0:
+        self.net_balance = self.summary_data['net_balance']
+        if self.net_balance == 0:
             self.order.mark_cart_paid()
         else:
             self.get_forms()
@@ -649,7 +649,7 @@ class OrderDetailView(OrderMixin, TemplateView):
     def get_forms(self):
         kwargs = {
             'order': self.order,
-            'amount': self.balance,
+            'bought_items': self.summary_data['bought_items'],
         }
         choose_data = None
         new_data = None
@@ -668,7 +668,7 @@ class OrderDetailView(OrderMixin, TemplateView):
             'has_cards': self.order.person.cards.exists(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
-            'balance': self.balance,
+            'net_balance': self.net_balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
