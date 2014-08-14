@@ -186,7 +186,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='attendee',
             name='ef_cause',
-            field=models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People around me will be exposed to', blank=True),
+            field=models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People around me may be exposed to', blank=True),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -198,7 +198,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='person',
             name='ef_cause',
-            field=models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People around me will be exposed to', blank=True),
+            field=models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People around me may be exposed to', blank=True),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -260,7 +260,7 @@ class Migration(migrations.Migration):
                 ('person_avoid', models.TextField(help_text=b'Include resident preferences', verbose_name=b"I/We don't want to host", blank=True)),
                 ('housing_categories_confirm', models.BooleanField(default=False, error_messages={b'blank': b'Must be marked correct.'})),
                 ('ef_avoid', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b"I/We don't want in my/our home", blank=True)),
-                ('ef_present', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People in the home will be exposed to', blank=True)),
+                ('ef_present', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People in the home may be exposed to', blank=True)),
                 ('event', models.ForeignKey(to='brambling.Event', to_field='id')),
             ],
             options={
@@ -319,7 +319,7 @@ class Migration(migrations.Migration):
                 ('person_prefer', models.TextField(help_text=b'Include resident preferences', verbose_name=b'I/We would love to host', blank=True)),
                 ('person_avoid', models.TextField(help_text=b'Include resident preferences', verbose_name=b"I/We don't want to host", blank=True)),
                 ('ef_avoid', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b"I/We don't want in my/our home", blank=True)),
-                ('ef_present', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People in my/our home will be exposed to', blank=True)),
+                ('ef_present', models.ManyToManyField(to='brambling.EnvironmentalFactor', null=True, verbose_name=b'People in my/our home may be exposed to', blank=True)),
             ],
             options={
             },

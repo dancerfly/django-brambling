@@ -380,7 +380,7 @@ class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
                                       related_name='person_cause',
                                       blank=True,
                                       null=True,
-                                      verbose_name="People around me will be exposed to")
+                                      verbose_name="People around me may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='person_avoid',
@@ -739,7 +739,7 @@ class Attendee(AbstractNamedModel):
                                       related_name='attendee_cause',
                                       blank=True,
                                       null=True,
-                                      verbose_name="People around me will be exposed to")
+                                      verbose_name="People around me may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='attendee_avoid',
@@ -782,7 +782,7 @@ class Home(models.Model):
                                         related_name='home_present',
                                         blank=True,
                                         null=True,
-                                        verbose_name="People in my/our home will be exposed to")
+                                        verbose_name="People in my/our home may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='home_avoid',
@@ -827,7 +827,7 @@ class EventHousing(models.Model):
                                         related_name='eventhousing_present',
                                         blank=True,
                                         null=True,
-                                        verbose_name="People in the home will be exposed to")
+                                        verbose_name="People in the home may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='eventhousing_avoid',
