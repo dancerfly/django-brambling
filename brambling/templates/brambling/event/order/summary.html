@@ -33,7 +33,7 @@
 
 	{% include "brambling/event/order/_summary.html" %}
 
-	{% if balance > 0 %}
+	{% if net_balance > 0 %}
 		{% if has_cards %}
 			<div class="panel-group" id="accordion">
 				<div class="panel panel-default">
@@ -57,7 +57,7 @@
 									</div>
 								{% endfor %}
 
-								<button type="submit" class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+								<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
 							</form>
 						</div>
 					</div>
@@ -87,7 +87,7 @@
 				</div>
 			{% endfor %}
 
-			<button type="submit" id='card-submit' class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Pay now ({{ balance|format_money:event.currency }})</button>
+			<button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
 		</form>
 
 		{% if has_cards %}
@@ -100,7 +100,7 @@
 	{% elif order.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}
-			<button type="submit" class="btn btn-primary"{% if not order.cart_is_valid %} disabled{% endif %}>Confirm cart purchases</button>
+			<button type="submit" class="btn btn-primary">Confirm cart purchases</button>
 		</form>
 	{% endif %}
 {% endblock %}

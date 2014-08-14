@@ -594,35 +594,53 @@ class Order(models.Model):
 
     def get_summary_data(self):
         payments = self.payments.order_by('timestamp')
-        bought_items = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
+        bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
-        total_savings = 0
-        for k, g in itertools.groupby(bought_items, operator.attrgetter('attendee')):
-            items = list(g)
-            discounts = []
-            for item in items:
-                discounts.extend(item.discounts.all())
-            savings = sum((discount.savings() for discount in discounts))
-            total_savings += savings
+        bought_items = []
+        for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
+            items = [item.get_summary_data() for item in g]
+            bought_items.extend(items)
+
+            gross_cost = sum((item['gross_cost'] for item in items))
+            gross_payments = sum((item['gross_payments'] for item in items))
+            total_savings = sum((item['total_savings'] for item in items))
+            total_refunds = sum((item['total_refunds'] for item in items))
+            net_cost = gross_cost - total_refunds - total_savings
+            net_payments = gross_payments - total_refunds
+            net_balance = net_cost - net_payments
             attendees.append({
                 'attendee': k,
                 'bought_items': items,
-                'total_cost': sum((item.item_option.price for item in items)),
-                'total_savings': savings,
+                'gross_cost': gross_cost,
+                'gross_payments': gross_payments,
+                'total_savings': total_savings,
+                'total_refunds': total_refunds,
+                'net_cost': net_cost,
+                'net_payments': net_payments,
+                'net_balance': net_balance,
             })
 
-        total_cost = sum((item.item_option.price
-                          for item in bought_items))
-        total_payments = sum((payment.amount
-                              for payment in payments))
-        balance = total_cost - total_savings - total_payments
+        gross_cost = sum((item.item_option.price for item in bought_items_qs))
+        gross_payments = sum((payment.amount for payment in payments))
+        total_savings = sum((attendee['total_savings']
+                             for attendee in attendees))
+        total_refunds = sum((attendee['total_refunds']
+                             for attendee in attendees))
+        net_cost = gross_cost - total_refunds - total_savings
+        net_payments = gross_payments - total_refunds
+        net_balance = net_cost - net_payments
         return {
             'attendees': attendees,
+            'bought_items': bought_items,
             'payments': payments,
-            'total_cost': total_cost,
+            'refunds': self.refunds.order_by('timestamp'),
+            'gross_cost': gross_cost,
+            'gross_payments': gross_payments,
             'total_savings': total_savings,
-            'total_payments': total_payments,
-            'balance': balance
+            'total_refunds': total_refunds,
+            'net_cost': net_cost,
+            'net_payments': net_payments,
+            'net_balance': net_balance,
         }
 
 
@@ -637,6 +655,18 @@ class Payment(models.Model):
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
+
+
+class SubPayment(models.Model):
+    """
+    Represents a portion of a payment assigned to a particular bought item.
+    """
+    payment = models.ForeignKey(Payment, related_name='subpayments')
+    bought_item = models.ForeignKey('BoughtItem', related_name='subpayments')
+    amount = models.DecimalField(max_digits=5, decimal_places=2)
+
+    class Meta:
+        unique_together = ('payment', 'bought_item')
 
 
 class BoughtItem(models.Model):
@@ -667,11 +697,38 @@ class BoughtItem(models.Model):
     # by a single person could be assigned to multiple attendees.
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
+    payments = models.ManyToManyField(Payment, through=SubPayment)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
                                       self.order.person.get_full_name(),
                                       self.pk)
+
+    def get_summary_data(self):
+        gross_cost = self.item_option.price
+        payments = self.subpayments.order_by('payment__timestamp')
+        discounts = self.discounts.order_by('timestamp')
+        refunds = self.refunds.order_by('timestamp')
+        total_savings = sum((discount.savings() for discount in discounts))
+        gross_payments = sum((payment.amount for payment in payments))
+        total_refunds = sum((refund.amount for refund in refunds))
+        net_cost = gross_cost - total_refunds - total_savings
+        net_payments = gross_payments - total_refunds
+        net_balance = net_cost - net_payments
+
+        return {
+            'bought_item': self,
+            'payments': payments,
+            'discounts': discounts,
+            'refunds': refunds,
+            'gross_cost': gross_cost,
+            'gross_payments': gross_payments,
+            'total_savings': total_savings,
+            'total_refunds': total_refunds,
+            'net_cost': net_cost,
+            'net_payments': net_payments,
+            'net_balance': net_balance,
+        }
 
 
 class OrderDiscount(models.Model):
@@ -700,6 +757,25 @@ class BoughtItemDiscount(models.Model):
                    if discount.discount_type == Discount.FLAT
                    else discount.amount / 100 * item_option.price,
                    item_option.price)
+
+
+class Refund(models.Model):
+    order = models.ForeignKey('Order', related_name='refunds')
+    issuer = models.ForeignKey('Person')
+    bought_item = models.ForeignKey(BoughtItem, related_name='refunds')
+    timestamp = models.DateTimeField(default=timezone.now)
+    amount = models.DecimalField(max_digits=5, decimal_places=2)
+
+
+class SubRefund(models.Model):
+    STRIPE = Payment.STRIPE
+    METHOD_CHOICES = Payment.METHOD_CHOICES
+
+    refund = models.ForeignKey(Refund)
+    subpayment = models.ForeignKey(SubPayment, related_name='refunds')
+    amount = models.DecimalField(max_digits=5, decimal_places=2)
+    method = models.CharField(max_length=6, choices=METHOD_CHOICES)
+    remote_id = models.CharField(max_length=40, blank=True)
 
 
 class Attendee(AbstractNamedModel):
