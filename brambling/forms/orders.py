@@ -295,8 +295,8 @@ class BasePaymentForm(forms.Form):
         self.order = order
         # bought_items is a list of summary dicts.
         self.bought_items = [item for item in bought_items
-                             if item['balance'] > 0]
-        self.amount = sum((item['balance'] for item in self.bought_items))
+                             if item['net_balance'] > 0]
+        self.amount = sum((item['net_balance'] for item in self.bought_items))
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
     def charge(self, card_or_token, customer=None):
@@ -319,7 +319,7 @@ class BasePaymentForm(forms.Form):
         SubPayment.objects.bulk_create((
             SubPayment(payment=payment,
                        bought_item=item['bought_item'],
-                       amount=item['balance'])
+                       amount=item['net_balance'])
             for item in self.bought_items
         ))
         return payment
