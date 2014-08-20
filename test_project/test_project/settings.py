@@ -111,8 +111,13 @@ LOGIN_URL = reverse_lazy('login')
 
 AUTH_USER_MODEL = 'brambling.Person'
 
-STRIPE_PUBLISHABLE_KEY = 'PK_YOUR_TEST_KEY'
-STRIPE_SECRET_KEY = 'SK_YOUR_TEST_KEY'
+# These IDs are used for Stripe Connect and Dwolla facilitation
+# respectively.
+STRIPE_APPLICATION_ID = ''
+STRIPE_SECRET_KEY = ''
+STRIPE_PUBLISHABLE_KEY = ''
+
+DWOLLA_APPLICATION_ID = None
 
 
 from django.contrib.messages import constants as messages

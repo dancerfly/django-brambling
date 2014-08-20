@@ -12,7 +12,7 @@
 	</script>
 	{% include 'brambling/event/order/_use_discount_js.html' %}
 	{% include 'brambling/event/_confirmation_screen.html' %}
-	{% include "brambling/_stripe_js.html" %}
+	{% if event.uses_stripe %}{% include "brambling/_stripe_js.html" %}{% endif %}
 {% endblock %}
 
 {% block next_step_button %}
@@ -34,69 +34,71 @@
 	{% include "brambling/event/order/_summary.html" %}
 
 	{% if net_balance > 0 %}
-		{% if has_cards %}
-			<div class="panel-group" id="accordion">
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-								Pay with a saved card
-							</a>
-						</h4>
+		{% if event.uses_stripe %}
+			{% if has_cards %}
+				<div class="panel-group" id="accordion">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+								<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+									Pay with a saved card
+								</a>
+							</h4>
+						</div>
+						<div id="collapseOne" class="panel-collapse collapse{% if not request.POST.new_card %} in{% endif %}">
+							<div class="panel-body">
+								<form novalidate action="" method="post">
+									{% csrf_token %}
+									<input name='choose_card' value='1' type='hidden'>
+									{% formrow choose_card_form.card %}
+
+									{% for error in choose_card_form.non_field_errors %}
+										<div class='alert alert-danger'>
+											{{ error }}
+										</div>
+									{% endfor %}
+
+									<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+								</form>
+							</div>
+						</div>
 					</div>
-					<div id="collapseOne" class="panel-collapse collapse{% if not request.POST.new_card %} in{% endif %}">
-						<div class="panel-body">
-							<form novalidate action="" method="post">
-								{% csrf_token %}
-								<input name='choose_card' value='1' type='hidden'>
-								{% formrow choose_card_form.card %}
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">
+								<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
+									Pay with a new card
+								</a>
+							</h4>
+						</div>
+						<div id="collapseTwo" class="panel-collapse collapse{% if request.POST.new_card %} in{% endif %}">
+							<div class="panel-body">
+			{% endif %}
 
-								{% for error in choose_card_form.non_field_errors %}
-									<div class='alert alert-danger'>
-										{{ error }}
-									</div>
-								{% endfor %}
+			{% include 'brambling/_stripe_form.html' %}
+			<form novalidate action="" method="post" id='card-form'>
+				{% csrf_token %}
+				<input name='new_card' value='1' type='hidden'>
 
-								<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-							</form>
+				{% formrow new_card_form.save_card %}
+
+				{% for error in new_card_form.non_field_errors %}
+					<div class='alert alert-danger'>
+						{{ error }}
+					</div>
+				{% endfor %}
+
+				<button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+			</form>
+
+			{% if has_cards %}
+							</div>
 						</div>
 					</div>
 				</div>
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
-								Pay with a new card
-							</a>
-						</h4>
-					</div>
-					<div id="collapseTwo" class="panel-collapse collapse{% if request.POST.new_card %} in{% endif %}">
-						<div class="panel-body">
+			{% endif %}
+			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
-
-		{% include 'brambling/_stripe_form.html' %}
-		<form novalidate action="" method="post" id='card-form'>
-			{% csrf_token %}
-			<input name='new_card' value='1' type='hidden'>
-
-			{% formrow new_card_form.save_card %}
-
-			{% for error in new_card_form.non_field_errors %}
-				<div class='alert alert-danger'>
-					{{ error }}
-				</div>
-			{% endfor %}
-
-			<button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-		</form>
-
-		{% if has_cards %}
-						</div>
-					</div>
-				</div>
-			</div>
-		{% endif %}
-		{% include 'brambling/_stripe_note.html' %}
 	{% elif order.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}

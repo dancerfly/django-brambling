@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect
@@ -141,6 +142,10 @@ class EventUpdateView(UpdateView):
             raise Http404
         return obj
 
+    def get_success_url(self):
+        return reverse('brambling_event_update',
+                       kwargs={'slug': self.object.slug})
+
     def get_context_data(self, **kwargs):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
         context.update({
@@ -148,6 +153,38 @@ class EventUpdateView(UpdateView):
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
         })
         return context
+
+
+class StripeConnectView(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            event = Event.objects.get(slug=request.GET.get('state'))
+        except Event.DoesNotExist:
+            raise Http404
+        user = request.user
+        if not event.editable_by(user):
+            raise Http404
+        if 'code' in request.GET:
+            data = {
+                'client_secret': settings.STRIPE_SECRET_KEY,
+                'code': request.GET['code'],
+                'grant_type': 'authorization_code',
+            }
+            r = requests.post("https://connect.stripe.com/oauth/token",
+                              data=data)
+            data = r.json()
+            if 'access_token' in data:
+                event.stripe_publishable_key = data['stripe_publishable_key']
+                event.stripe_user_id = data['stripe_user_id']
+                event.stripe_refresh_token = data['refresh_token']
+                event.stripe_access_token = data['access_token']
+                event.save()
+                messages.success(request, 'Stripe account connected!')
+            else:
+                messages.error(request, 'Something went wrong. Please try again.')
+
+        return HttpResponseRedirect(reverse('brambling_event_update',
+                                            kwargs={'slug': event.slug}))
 
 
 def item_form(request, *args, **kwargs):

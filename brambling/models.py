@@ -235,6 +235,14 @@ class Event(models.Model):
     cart_timeout = models.PositiveSmallIntegerField(default=15,
                                                     help_text="Minutes before a user's cart expires.")
 
+    # These are obtained with Stripe Connect via Oauth.
+    stripe_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_refresh_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    dwolla_recipient = models.CharField(max_length=255, help_text="Dwolla identifier, phone number, or email address", blank=True, default='')
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -248,6 +256,12 @@ class Event(models.Model):
         return (user.is_authenticated() and user.is_active and
                 (user.is_superuser or user.pk == self.owner_id or
                  self.editors.filter(pk=user.pk).exists()))
+
+    def uses_stripe(self):
+        return bool(self.stripe_user_id)
+
+    def uses_dwolla(self):
+        return bool(self.dwolla_recipient)
 
 
 class Item(models.Model):

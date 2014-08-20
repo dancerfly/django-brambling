@@ -67,3 +67,28 @@
 		{% formrow form.editors %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
+
+{% if form.instance.pk %}
+	<div class='panel panel-default'>
+		<header class="panel-heading">
+			<h4 class="panel-title">Payment Options</h4>
+		</header>
+		<div class='panel-body'>
+			{% if form.STRIPE_APPLICATION_ID %}
+				<h3>Stripe</h3>
+
+				{% if form.instance.uses_stripe %}
+					<p>Connected account: {{ form.instance.stripe_user_id }}</p>
+					{% formrow form.disconnect_stripe with label="Disconnect" %}
+				{% else %}
+					<a href='https://connect.stripe.com/oauth/authorize?client_id={{ form.STRIPE_APPLICATION_ID }}&response_type=code&scope=read_write&state={{ form.instance.slug }}' class='btn btn-primary'>Connect to Stripe <i class='fa fa-external-link'></i></a>
+				{% endif %}
+
+				<hr />
+			{% endif %}
+
+			<h3>Dwolla</h3>
+			{% formrow form.dwolla_recipient %}
+		</div>
+	</div>
+{% endif %}

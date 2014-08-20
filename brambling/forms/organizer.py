@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
@@ -13,10 +14,13 @@ from zenaida.forms import (GroupedModelMultipleChoiceField,
 class EventForm(forms.ModelForm):
     start_date = forms.DateField()
     end_date = forms.DateField()
+    disconnect_stripe = forms.BooleanField(required=False)
 
     class Meta:
         model = Event
-        exclude = ('dates', 'housing_dates', 'owner')
+        exclude = ('dates', 'housing_dates', 'owner',
+                   'stripe_user_id', 'stripe_refresh_token',
+                   'stripe_access_token', 'stripe_publishable_key')
         widgets = {
             'country': forms.Select
         }
@@ -29,6 +33,9 @@ class EventForm(forms.ModelForm):
         self.fields['end_date'].initial = getattr(self.instance,
                                                   'end_date',
                                                   datetime.date.today)
+        self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
+        if not self.instance.uses_stripe():
+            del self.fields['disconnect_stripe']
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
@@ -39,6 +46,11 @@ class EventForm(forms.ModelForm):
 
     def save(self):
         created = self.instance.pk is None
+        if self.cleaned_data.get('disconnect_stripe'):
+            self.instance.stripe_user_id = ''
+            self.instance.stripe_access_token = ''
+            self.instance.stripe_refresh_token = ''
+            self.instance.stripe_publishable_key = ''
         instance = super(EventForm, self).save()
         if {'start_date', 'end_date'} & set(self.changed_data) or created:
             cd = self.cleaned_data

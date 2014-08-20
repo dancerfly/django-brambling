@@ -303,8 +303,15 @@ class BasePaymentForm(forms.Form):
         if self.amount <= 0:
             return None
         # Amount is number of smallest currency units.
+        amount = int(self.amount * 100)
+        if customer is not None:
+            card_or_token = stripe.Token.create(
+                customer=customer,
+                card=card_or_token,
+                api_key=self.order.event.stripe_access_token,
+            )
         return stripe.Charge.create(
-            amount=int(self.amount * 100),
+            amount=amount,
             currency=self.order.event.currency,
             customer=customer,
             card=card_or_token,
