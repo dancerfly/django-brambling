@@ -25,23 +25,34 @@
 		{% form form using "brambling/forms/person.html" %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
-				<h4 class="panel-title">Cards</h4>
+				<h4 class="panel-title">Payment</h4>
 			</header>
 			<div class="panel-body">
-				{% if cards %}
-					<p><a class='btn btn-link' href='{% url "brambling_user_card_add" %}'><span class='fa fa-plus'></span> Add another card</a></p>
-					{% for card in cards %}
-						<div class='clearfix'>
-							<h5>{{ card.brand }} <span class='pull-right'>&bull;&bull;&bull;&bull;{{ card.last4 }}</span></h5>
-							<p>
-								<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
-								<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='fa fa-times'></span></a>
-							</p>
-						</div>
-					{% endfor %}
-				{% else %}
-					<p>No credit cards on record.</p>
-					<p><a href='{% url "brambling_user_card_add" %}'>Add a card!</a></p>
+				{% if form.STRIPE_APPLICATION_ID %}
+					<h3>Stripe <small><a class='btn btn-link' href='{% url "brambling_user_card_add" %}'><span class='fa fa-plus'></span> Add another card</a></small></h3>
+					{% if cards %}
+						{% for card in cards %}
+							<div class='clearfix'>
+								<h5>{{ card.brand }} <span class='pull-right'>&bull;&bull;&bull;&bull;{{ card.last4 }}</span></h5>
+								<p>
+									<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
+									<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='fa fa-times'></span></a>
+								</p>
+							</div>
+						{% endfor %}
+					{% else %}
+						<p>No credit cards on record.</p>
+					{% endif %}
+				{% endif %}
+
+				{% if form.DWOLLA_APPLICATION_KEY %}
+					<h3>Dwolla</h3>
+					{% if form.instance.dwolla_user_id %}
+						<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
+						{% formrow form.disconnect_dwolla with label="Disconnect" %}
+					{% else %}
+						<a href='https://uat.dwolla.com/oauth/v2/authenticate?client_id={{ form.DWOLLA_APPLICATION_KEY }}&response_type=code&redirect_uri=http://{{ request.get_host }}{% url "brambling_user_dwolla_connect" %}&scope=Send|AccountInfoFull' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
+					{% endif %}
 				{% endif %}
 			</div>
 		</div>

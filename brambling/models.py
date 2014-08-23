@@ -423,6 +423,9 @@ class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     default_card = models.OneToOneField('CreditCard', blank=True, null=True,
                                         related_name='default_for',
                                         on_delete=models.SET_NULL)
+    # Token obtained via OAuth.
+    dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
+    dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
 
     # Internal tracking
     modified_directly = models.BooleanField(default=False)

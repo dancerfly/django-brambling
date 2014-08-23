@@ -5,6 +5,7 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View)
+import requests
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
@@ -135,6 +136,26 @@ class CreditCardDeleteView(View):
 
     def post(self, *args, **kwargs):
         return self.delete(*args, **kwargs)
+
+
+class DwollaConnectView(View):
+    def get(self, request, *args, **kwargs):
+        url = 'https://uat.dwolla.com/oauth/v2/token?client_id={client_id}&client_secret={client_secret}&grant_type=authorization_code&code={code}'
+        url = url.format(client_id=settings.DWOLLA_APPLICATION_KEY,
+                         client_secret=settings.DWOLLA_APPLICATION_SECRET,
+                         code=request.GET['code'])
+        r = requests.get(url)
+        data = r.json()
+        user = request.user
+        user.dwolla_access_token = data['access_token']
+
+        # Now get account info.
+        url = 'https://uat.dwolla.com/oauth/rest/users/?oauth_token=' + user.dwolla_access_token
+        r = requests.get(url)
+        data = r.json()
+        user.dwolla_user_id = data['Response']['Id']
+        user.save()
+        return HttpResponseRedirect(reverse('brambling_user_profile'))
 
 
 class HomeView(UpdateView):

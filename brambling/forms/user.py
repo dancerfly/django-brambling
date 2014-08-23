@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import (AuthenticationForm, PasswordResetForm,
                                        SetPasswordForm)
@@ -94,12 +95,21 @@ class SignUpForm(BasePersonForm):
 
 
 class PersonForm(BasePersonForm):
+    disconnect_dwolla = forms.BooleanField(required=False)
+
     class Meta:
         model = Person
         fields = ('email', 'given_name', 'middle_name', 'surname', 'name_order',
                   'phone', 'dance_styles', 'dietary_restrictions', 'ef_cause',
                   'ef_avoid', 'person_prefer', 'person_avoid',
                   'housing_prefer', 'other_needs')
+
+    def __init__(self, *args, **kwargs):
+        super(PersonForm, self).__init__(*args, **kwargs)
+        self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
+        self.DWOLLA_APPLICATION_KEY = getattr(settings, 'DWOLLA_APPLICATION_KEY', None)
+        if not self.instance.dwolla_user_id:
+            del self.fields['disconnect_dwolla']
 
     def save(self, commit=True):
         self.instance.modified_directly = True

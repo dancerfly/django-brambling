@@ -45,6 +45,7 @@ from brambling.views.user import (
     send_confirmation_email_view,
     CreditCardAddView,
     CreditCardDeleteView,
+    DwollaConnectView,
 )
 from brambling.views.utils import split_view, route_view, get_event_or_404
 
@@ -94,6 +95,9 @@ urlpatterns = patterns('',
     url(r'^profile/card/delete/(?P<pk>\d+)/$',
         CreditCardDeleteView.as_view(),
         name="brambling_user_card_delete"),
+    url(r'^profile/dwolla_connect/$',
+        DwollaConnectView.as_view(),
+        name="brambling_user_dwolla_connect"),
     url(r'^home/$',
         HomeView.as_view(),
         name="brambling_home"),

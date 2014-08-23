@@ -113,11 +113,12 @@ AUTH_USER_MODEL = 'brambling.Person'
 
 # These IDs are used for Stripe Connect and Dwolla facilitation
 # respectively.
-STRIPE_APPLICATION_ID = ''
-STRIPE_SECRET_KEY = ''
-STRIPE_PUBLISHABLE_KEY = ''
+STRIPE_APPLICATION_ID = None
+STRIPE_SECRET_KEY = None
+STRIPE_PUBLISHABLE_KEY = None
 
-DWOLLA_APPLICATION_ID = None
+DWOLLA_APPLICATION_KEY = None
+DWOLLA_APPLICATION_SECRET = None
 
 
 from django.contrib.messages import constants as messages
