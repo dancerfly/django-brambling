@@ -1,0 +1,27 @@
+/**
+ * @license
+ * MyFonts Webfont Build ID 2866029, 2014-08-19T22:47:41-0400
+ *
+ * The fonts listed in this notice are subject to the End User License
+ * Agreement(s) entered into by the website owner. All other parties are
+ * explicitly restricted from using the Licensed Webfonts(s).
+ *
+ * You may obtain a valid license at the URLs below.
+ *
+ * Webfont: St Ryde Bold by Stereotypes
+ * URL: http://www.myfonts.com/fonts/stereotypes/st-ryde/bold/
+ * Copyright: Copyright (c) 2010 by Stereotypes.de. All rights reserved.
+ * Licensed pageviews: 10,000
+ *
+ *
+ * License: http://www.myfonts.com/viewlicense?type=web&buildid=2866029
+ *
+ * © 2014 MyFonts Inc
+*/
+
+
+/* @import must be at top of file, otherwise CSS will not work */
+@import url("//hello.myfonts.net/count/2bbb6d");
+
+
+@font-face {font-family: 'St Ryde'; font-weight: bold;src: url('stryde-bold/2BBB6D_0_0.eot');src: url('stryde-bold/2BBB6D_0_0.eot?#iefix') format('embedded-opentype'),url('stryde-bold/2BBB6D_0_0.woff') format('woff'),url('stryde-bold/2BBB6D_0_0.ttf') format('truetype');}
