@@ -51,6 +51,8 @@ from brambling.views.utils import split_view, route_view, get_event_or_404
 
 
 urlpatterns = patterns('',
+    url(r'^favicon\.ico$', RedirectView.as_view(url='/static/brambling/favicon.ico')),
+
     url(r'^$',
         split_view(lambda r, *a, **k: r.user.is_authenticated(),
                    UserDashboardView.as_view(),
