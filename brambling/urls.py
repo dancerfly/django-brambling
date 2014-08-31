@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url, include
+from django.templatetags.static import static
 from django.views.generic.base import RedirectView
 
 from brambling.forms.user import (
@@ -51,7 +52,7 @@ from brambling.views.utils import split_view, route_view, get_event_or_404
 
 
 urlpatterns = patterns('',
-    url(r'^favicon\.ico$', RedirectView.as_view(url='/static/brambling/favicon.ico')),
+    url(r'^favicon\.ico$', RedirectView.as_view(url=static('brambling/favicon.ico'))),
 
     url(r'^$',
         split_view(lambda r, *a, **k: r.user.is_authenticated(),
