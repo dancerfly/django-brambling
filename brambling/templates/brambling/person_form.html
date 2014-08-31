@@ -45,13 +45,13 @@
 					{% endif %}
 				{% endif %}
 
-				{% if form.DWOLLA_APPLICATION_KEY %}
+				{% if form.instance.dwolla_user_id or dwolla_oauth_url %}
 					<h3>Dwolla</h3>
 					{% if form.instance.dwolla_user_id %}
 						<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
 						{% formrow form.disconnect_dwolla with label="Disconnect" %}
 					{% else %}
-						<a href='https://uat.dwolla.com/oauth/v2/authenticate?client_id={{ form.DWOLLA_APPLICATION_KEY }}&response_type=code&redirect_uri=http://{{ request.get_host }}{% url "brambling_user_dwolla_connect" %}&scope=Send|AccountInfoFull' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
+						<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
 					{% endif %}
 				{% endif %}
 			</div>
