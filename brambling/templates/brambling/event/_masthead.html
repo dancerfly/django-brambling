@@ -1,3 +1,4 @@
+{% load zenaida %}
 <div class="masthead">
 	<h1 class="masthead-bold">
 		<a class="uncolored-link" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
@@ -28,5 +29,31 @@
 			</div>
 		{% endif %}
 	</h1>
-	<h3>{% if event.start_date == event.end_date %}{{ event.start_date }}{% else %}{{ event.start_date }} &#8211; {{ event.end_date }}{% endif %} <em>in</em> {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}</h3>
+	<div class="text-large">
+		<i class="fa fa-clock-o fa-fw"></i>
+		{% td_to_dict event.start_date|td_timeuntil as time_until_event %}
+
+		{# start date #}
+		{% if time_until_event.days == 0 %}
+			Today
+		{% elif time_until_event.days == 1 %}
+			Tomorrow
+		{% else %}
+			{{ event.start_date }}
+		{% endif %}
+
+		{# end date #}
+		{% if event.start_date != event.end_date %}
+			&#8211; {{ event.end_date }}
+		{% endif %}
+
+		{# days left#}
+		{% if time_until_event.days > 1%}
+			(Event starts in {{ time_until_event.days }} day{{ time_until_event|pluralize }})
+		{% endif %}
+	</div>
+	<div class="text-large">
+		<i class="fa fa-map-marker fa-fw"></i>
+		{{ event.city }}, {{ event.state_or_province }}, {{ event.country }}
+	</div>
 </div>
