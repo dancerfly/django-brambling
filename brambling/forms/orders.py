@@ -392,9 +392,15 @@ class DwollaPaymentForm(BasePaymentForm):
                     self._charge = None
                 else:
                     dwolla_user = dwolla.DwollaUser(self.user.dwolla_access_token)
-                    self._charge = dwolla_user.send_funds(float(self.amount),
-                                                          self.order.event.dwolla_user_id,
-                                                          self.cleaned_data['dwolla_pin'])
+                    charge_id = dwolla_user.send_funds(float(self.amount),
+                                                       self.order.event.dwolla_user_id,
+                                                       self.cleaned_data['dwolla_pin'])
+                    # Charge id returned by send_funds is the transaction ID
+                    # for the user; the event has a different transaction ID.
+                    # But we can use this one to get that one.
+                    event_user = dwolla.DwollaUser(self.order.event.dwolla_access_token)
+                    self._charge = event_user.get_transaction(charge_id)['Id']
+
             except dwolla.DwollaAPIError, e:
                 self.add_error(None, e.message)
 

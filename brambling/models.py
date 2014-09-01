@@ -749,6 +749,8 @@ class BoughtItem(models.Model):
             'net_cost': net_cost,
             'net_payments': net_payments,
             'net_balance': net_balance,
+            'uses_dwolla': any((payment.payment.method == Payment.DWOLLA
+                                for payment in payments)),
         }
 
 

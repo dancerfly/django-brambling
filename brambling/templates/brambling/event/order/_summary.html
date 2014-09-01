@@ -4,10 +4,14 @@
 	<div class='panel panel-primary'>
 		<header class='panel-heading'>
 			<div class='panel-title'>
-				{{ attendee.attendee.get_full_name }}
-				{% block attendee_actions %}
-				<a class='pull-right' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.attendee.event_pass.pk %}'><i class='fa fa-pencil fa-fw'></i></a>
-				{% endblock %}
+				{% if attendee.attendee %}
+					{{ attendee.attendee.get_full_name }}
+					{% block attendee_actions %}
+					<a class='pull-right' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.attendee.event_pass.pk %}'><i class='fa fa-pencil fa-fw'></i></a>
+					{% endblock %}
+				{% else %}
+					Unattached items
+				{% endif %}
 			</div>
 		</header>
 		<table class='table'>

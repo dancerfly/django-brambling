@@ -4,17 +4,28 @@
 
 {% block item_actions %}
 	{% url 'brambling_event_refund' event_slug=event.slug code=order.code item_pk=item.bought_item.pk as url %}
+	<form action='{{ url }}' method='post' class='form-inline'>{% csrf_token %}
 	{% if item.payments %}
 		{% if item.net_payments > 0 %}
-			<a href="{{ url }}" class='text-success tipped' data-placement="top" data-container="body" title="Refund {{ item.net_payments|format_money:event.currency }}">
+			{% if item.uses_dwolla %}
+				<div class="input-group">
+					<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required>
+					<span class="input-group-btn">
+			{% endif %}
+			<button type='submit' class='btn btn-success tipped' data-placement="top" data-container="body" title="Refund {{ item.net_payments|format_money:event.currency }}">
 				<span class='fa fa-fw fa-rotate-left fa-rotate-90'></span>
-			</a>
+			</button>
+			{% if item.uses_dwolla %}
+					</span>
+				</div>
+			{% endif %}
 		{% endif %}
 	{% else %}
-		<a href="{{ url }}" class='text-danger tipped' data-placement="top" data-container="body" title="Remove">
+		<button type='submit' class='btn btn-danger tipped' data-placement="top" data-container="body" title="Remove">
 			<span class='fa fa-fw fa-times'></span>
-		</a>
+		</button>
 	{% endif %}
+	</form>
 {% endblock %}
 
 {% block discount_actions %}
