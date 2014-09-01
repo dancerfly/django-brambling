@@ -9,7 +9,7 @@
 		{% if item.net_payments > 0 %}
 			{% if item.uses_dwolla %}
 				<div class="input-group">
-					<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required>
+					<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
 					<span class="input-group-btn">
 			{% endif %}
 			<button type='submit' class='btn btn-success tipped' data-placement="top" data-container="body" title="Refund {{ item.net_payments|format_money:event.currency }}">
