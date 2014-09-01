@@ -21,7 +21,8 @@ class EventForm(forms.ModelForm):
         model = Event
         exclude = ('dates', 'housing_dates', 'owner',
                    'stripe_user_id', 'stripe_refresh_token',
-                   'stripe_access_token', 'stripe_publishable_key')
+                   'stripe_access_token', 'stripe_publishable_key',
+                   'dwolla_user_id', 'dwolla_access_token')
         widgets = {
             'country': forms.Select
         }
