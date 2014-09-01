@@ -10,13 +10,14 @@ import floppyforms.__future__ as forms
 
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
-                                    AttendeeHousingDataForm)
+                                    AttendeeHousingDataForm, DwollaPaymentForm)
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, get_order,
-                                   clear_expired_carts, Workflow, Step)
+                                   clear_expired_carts, Workflow, Step,
+                                   get_dwolla)
 
 
 class ShopStep(Step):
@@ -639,6 +640,8 @@ class OrderDetailView(OrderMixin, TemplateView):
             if 'new_card' in request.POST:
                 # Get a new form.
                 form = self.new_card_form
+            if 'dwolla' in request.POST:
+                form = self.dwolla_form
             if form and form.is_valid():
                 form.save()
                 self.order.mark_cart_paid()
@@ -653,13 +656,17 @@ class OrderDetailView(OrderMixin, TemplateView):
         }
         choose_data = None
         new_data = None
+        dwolla_data = None
         if self.request.method == 'POST':
             if 'choose_card' in self.request.POST:
                 choose_data = self.request.POST
             elif 'new_card' in self.request.POST:
                 new_data = self.request.POST
+            elif 'dwolla' in self.request.POST:
+                dwolla_data = self.request.POST
         self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
         self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
+        self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
@@ -668,10 +675,19 @@ class OrderDetailView(OrderMixin, TemplateView):
             'has_cards': self.order.person.cards.exists(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
+            'dwolla_form': getattr(self, 'dwolla_form', None),
             'net_balance': self.net_balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
         })
+        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.request.user.dwolla_user_id:
+            dwolla = get_dwolla()
+            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
+                                            settings.DWOLLA_APPLICATION_SECRET)
+            next_url = reverse('brambling_event_order_summary', kwargs={'event_slug': self.event.slug})
+            redirect_url = reverse('brambling_user_dwolla_connect') + "?next_url=" + next_url
+            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
+                                                                "Send|AccountInfoFull")
         context.update(self.summary_data)
         return context

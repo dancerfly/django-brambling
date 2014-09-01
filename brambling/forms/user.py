@@ -112,6 +112,9 @@ class PersonForm(BasePersonForm):
 
     def save(self, commit=True):
         self.instance.modified_directly = True
+        if self.cleaned_data.get('disconnect_dwolla'):
+            self.instance.dwolla_user_id = ''
+            self.instance.dwolla_access_token = ''
         person = super(PersonForm, self).save(commit)
         if commit:
             self.email_confirmation()

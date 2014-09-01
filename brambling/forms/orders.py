@@ -373,3 +373,40 @@ class SavedCardPaymentForm(BasePaymentForm):
 
     def save(self):
         return self.save_payment(self._charge, self.card)
+
+
+class DwollaPaymentForm(BasePaymentForm):
+    dwolla_pin = forms.RegexField(min_length=4, max_length=4, regex="\d+")
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super(DwollaPaymentForm, self).__init__(*args, **kwargs)
+
+    def _post_clean(self):
+        if 'dwolla_pin' in self.cleaned_data:
+            from brambling.views.utils import get_dwolla
+            dwolla = get_dwolla()
+
+            try:
+                if self.amount <= 0:
+                    self._charge = None
+                else:
+                    dwolla_user = dwolla.DwollaUser(self.user.dwolla_access_token)
+                    self._charge = dwolla_user.send_funds(float(self.amount),
+                                                          self.order.event.dwolla_user_id,
+                                                          self.cleaned_data['dwolla_pin'])
+            except dwolla.DwollaAPIError, e:
+                self.add_error(None, e.message)
+
+    def save(self):
+        payment = Payment.objects.create(order=self.order,
+                                         amount=self.amount,
+                                         method=Payment.DWOLLA,
+                                         remote_id=self._charge)
+        SubPayment.objects.bulk_create((
+            SubPayment(payment=payment,
+                       bought_item=item['bought_item'],
+                       amount=item['net_balance'])
+            for item in self.bought_items
+        ))
+        return payment

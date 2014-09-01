@@ -97,8 +97,16 @@
 				<hr />
 			{% endif %}
 
-			<h3>Dwolla</h3>
-			{% formrow form.dwolla_recipient %}
+			{% if form.instance.uses_dwolla or dwolla_oauth_url %}
+				<h3>Dwolla</h3>
+
+				{% if form.instance.uses_dwolla %}
+					<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
+					{% formrow form.disconnect_dwolla with label="Disconnect" %}
+				{% else %}
+					<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
+				{% endif %}
+			{% endif %}
 		</div>
 	</div>
 {% endif %}
