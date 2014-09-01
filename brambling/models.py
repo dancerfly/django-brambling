@@ -205,6 +205,8 @@ class Event(models.Model):
     currency = models.CharField(max_length=10, default='USD')
 
     dates = models.ManyToManyField(Date, related_name='event_dates')
+    start_time = models.TimeField(blank=True, null=True)
+    end_time = models.TimeField(blank=True, null=True)
     housing_dates = models.ManyToManyField(Date, blank=True, null=True,
                                            related_name='event_housing_dates')
 

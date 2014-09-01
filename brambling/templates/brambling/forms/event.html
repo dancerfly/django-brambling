@@ -20,8 +20,26 @@
 		<h4 class="panel-title">Details</h4>
 	</header>
 	<div class="panel-body">
-		{% formrow form.start_date %}
-		{% formrow form.end_date %}
+		<div class='row'>
+			<div class='col-sm-4'>
+				{% formrow form.start_date %}
+			</div>
+			<div class='col-sm-4'>
+				{% formrow form.end_date %}
+			</div>
+			<div class='col-sm-4'>
+				<label for='startEnd'>Add start / end times</label><br />
+				<input type='checkbox' id='startEnd'{% if form.instance.start_time or form.instance.end_time %} checked{% endif %}>
+			</div>
+		</div>
+		<div class='row' id='startEndRow'{% if not form.instance.start_time and not form.instance.end_time %} style="display:none;"{% endif %}>
+			<div class='col-sm-4'>
+				{% formrow form.start_time %}
+			</div>
+			<div class='col-sm-4'>
+				{% formrow form.end_time %}
+			</div>
+		</div>
 
 		<div class="row">
 			<div class="col-sm-5">
