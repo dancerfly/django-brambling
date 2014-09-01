@@ -7,7 +7,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
-                              SubPayment)
+                              SubPayment, Order)
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
@@ -115,6 +115,25 @@ class AttendeeHousingDataForm(MemoModelForm):
         return instance
 
 
+class SurveyDataForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = (
+            'heard_through', 'heard_through_other', 'send_flyers',
+            'send_flyers_address', 'send_flyers_city',
+            'send_flyers_state_or_province', 'send_flyers_country'
+        )
+
+    def clean_send_flyers(self):
+        send_flyers = self.cleaned_data['send_flyers']
+        if send_flyers:
+            self.fields['send_flyers_address'].required = True
+            self.fields['send_flyers_city'].required = True
+            self.fields['send_flyers_state_or_province'].required = True
+            self.fields['send_flyers_country'].required = True
+        return send_flyers
+
+
 class HousingSlotForm(forms.ModelForm):
     class Meta:
         model = HousingSlot
@@ -122,6 +141,7 @@ class HousingSlotForm(forms.ModelForm):
 
 
 class HostingForm(MemoModelForm):
+    providing_housing = forms.BooleanField(initial=False, required=False)
     save_as_defaults = forms.BooleanField(initial=True, required=False)
 
     class Meta:
@@ -130,6 +150,10 @@ class HostingForm(MemoModelForm):
 
     def __init__(self, *args, **kwargs):
         super(HostingForm, self).__init__({}, *args, **kwargs)
+
+        self.initial.update({
+            'providing_housing': self.instance.order.providing_housing
+        })
 
         if self.instance.pk is None:
             person = self.instance.order.person
@@ -198,6 +222,8 @@ class HostingForm(MemoModelForm):
 
     def is_valid(self):
         valid = super(HostingForm, self).is_valid()
+        if not self.cleaned_data['providing_housing']:
+            return True
         if valid:
             for form in self.slot_forms:
                 if not form.is_valid():
@@ -206,32 +232,42 @@ class HostingForm(MemoModelForm):
         return valid
 
     def save(self):
-        self.instance.is_completed = True
-        instance = super(HostingForm, self).save()
-        for form in self.slot_forms:
-            form.instance.eventhousing = instance
-            form.save()
-        if self.cleaned_data['save_as_defaults']:
-            home = instance.home or Home()
-            new_home = home.pk is None
-            home.address = instance.address
-            home.city = instance.city
-            home.state_or_province = instance.state_or_province
-            home.country = instance.country
-            home.public_transit_access = instance.public_transit_access
-            home.save()
-            home.ef_present = instance.ef_present.all()
-            home.ef_avoid = instance.ef_avoid.all()
-            home.person_prefer = instance.person_prefer
-            home.person_avoid = instance.person_avoid
-            home.housing_categories = instance.housing_categories.all()
-            if new_home:
-                instance.home = home
-                instance.save()
-                person = instance.order.person
-                person.home = home
-                person.save()
-        return instance
+        if self.cleaned_data['providing_housing']:
+            self.instance.order.providing_housing = True
+            self.instance.order.save()
+
+            self.instance.is_completed = True
+            instance = super(HostingForm, self).save()
+            for form in self.slot_forms:
+                form.instance.eventhousing = instance
+                form.save()
+            if self.cleaned_data['save_as_defaults']:
+                home = instance.home or Home()
+                new_home = home.pk is None
+                home.address = instance.address
+                home.city = instance.city
+                home.state_or_province = instance.state_or_province
+                home.country = instance.country
+                home.public_transit_access = instance.public_transit_access
+                home.save()
+                home.ef_present = instance.ef_present.all()
+                home.ef_avoid = instance.ef_avoid.all()
+                home.person_prefer = instance.person_prefer
+                home.person_avoid = instance.person_avoid
+                home.housing_categories = instance.housing_categories.all()
+                if new_home:
+                    instance.home = home
+                    instance.save()
+                    person = instance.order.person
+                    person.home = home
+                    person.save()
+            return instance
+        else:
+            self.instance.order.providing_housing = False
+            self.instance.order.save()
+            if self.instance.pk:
+                self.instance.delete()
+            return self.instance
 
 
 class AddCardForm(forms.Form):

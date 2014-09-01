@@ -10,7 +10,8 @@ import floppyforms.__future__ as forms
 
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
-                                    AttendeeHousingDataForm, DwollaPaymentForm)
+                                    AttendeeHousingDataForm, DwollaPaymentForm,
+                                    SurveyDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
@@ -124,8 +125,7 @@ class SurveyStep(Step):
 
     @classmethod
     def include_in(cls, workflow):
-        return (workflow.event.collect_housing_data or
-                workflow.event.collect_survey_data)
+        return workflow.event.collect_survey_data
 
     @property
     def url(self):
@@ -150,10 +150,10 @@ class HostingStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
-        return self.workflow.order.providing_housing
+        return self.workflow.event.collect_housing_data
 
     def _is_completed(self):
-        return EventHousing.objects.filter(
+        return (not self.workflow.order.providing_housing) or EventHousing.objects.filter(
             event=self.workflow.event,
             order=self.workflow.order
         ).exists()
@@ -548,41 +548,23 @@ class SurveyDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/order/survey.html'
     context_object_name = 'order'
     current_step_slug = 'survey'
-
-    @property
-    def fields(self):
-        fields = ()
-        if self.event.collect_housing_data:
-            fields += ('providing_housing',)
-        if self.event.collect_survey_data:
-            fields += ('heard_through', 'heard_through_other', 'send_flyers',
-                       'send_flyers_address', 'send_flyers_city',
-                       'send_flyers_state_or_province', 'send_flyers_country')
-        return fields
+    form_class = SurveyDataForm
 
     def get_workflow_class(self):
         return (SurveyWorkflow if self.order.checked_out
                 else RegistrationWorkflow)
 
-    def get_form_class(self):
-        if not self.fields:
-            raise Http404
-        return forms.models.modelform_factory(Order, fields=self.fields)
-
     def get_object(self):
         return self.order
 
     def form_valid(self, form):
-        if self.event.collect_survey_data:
-            self.object.survey_completed = True
+        self.object.survey_completed = True
         form.save()
         return super(SurveyDataView, self).form_valid(form)
 
     def get_success_url(self):
-        kwargs = {'event_slug': self.event.slug}
-        if self.event.collect_housing_data and self.object.providing_housing:
-            return reverse('brambling_event_hosting', kwargs=kwargs)
-        return reverse('brambling_event_order_summary', kwargs=kwargs)
+        return reverse('brambling_event_order_summary',
+                       kwargs={'event_slug': self.event.slug})
 
 
 class HostingView(OrderMixin, UpdateView):

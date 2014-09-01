@@ -8,6 +8,19 @@
 	{{ block.super }}
 
 	{% include 'brambling/event/order/_use_discount_js.html' %}
+
+	<script>
+		$(function(){
+			$('#id_providing_housing').on('change', function() {
+				if (this.checked) {
+					$('#hostingFields').slideDown();
+				} else {
+					$('#hostingFields').slideUp();
+				}
+			});
+			$('#id_providing_housing').trigger('change');
+		});
+	</script>
 {% endblock %}
 
 {% block main %}
@@ -16,17 +29,21 @@
 	<form action="" method="post" novalidate>
 		{% csrf_token %}
 
-		{% form form using "brambling/forms/hosting.html" %}
+		{% formrow form.providing_housing with label="I want to house visiting dancers" %}
 
-		{% for form in form.slot_forms %}
-			<h5>Spaces for {{ form.instance.night }}</h5>
-			{% form form using %}
-				<div class='row'>
-					<div class='col-xs-6'>{% formrow form.spaces with label="Comfy" %}</div>
-					<div class='col-xs-6'>{% formrow form.spaces_max with label="Max" %}</div>
-				</div>
-			{% endform %}
-		{% endfor %}
+		<div id='hostingFields'>
+			{% form form using "brambling/forms/hosting.html" %}
+
+			{% for form in form.slot_forms %}
+				<h5>Spaces for {{ form.instance.night }}</h5>
+				{% form form using %}
+					<div class='row'>
+						<div class='col-xs-6'>{% formrow form.spaces with label="Comfy" %}</div>
+						<div class='col-xs-6'>{% formrow form.spaces_max with label="Max" %}</div>
+					</div>
+				{% endform %}
+			{% endfor %}
+		</div>
 
 		<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
 	</form>
