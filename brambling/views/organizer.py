@@ -1,8 +1,11 @@
+import csv
+import io
+
 from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.views.generic import (ListView, CreateView, UpdateView,
@@ -321,6 +324,53 @@ class AttendeeFilterView(FilterView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
+
+    def get_display_fields(self):
+        """
+        Returns a list of fields to display.
+        TODO: This list should be customizable with get variables or similar.
+
+        """
+        return (
+            # ("Verbose Name", "method_or_attribute_name"),
+            ("Name", "get_full_name"),
+            ("Given Name", "given_name"),
+            ("Surname", "surname"),
+            ("Middle Name", "middle_name"),
+        )
+
+    def csv_to_reponse(self, context):
+        object_list = context['object_list']
+        csv_string = io.BytesIO()
+        writer = csv.writer(csv_string)
+        fields = self.get_display_fields()
+
+        # Write Headers
+        writer.writerow([x[0] for x in fields])
+
+        for obj in object_list:
+            row = []
+            for field in fields:
+                val = getattr(obj, field[1])
+                if callable(val):
+                    val = val()
+                if type(val) == unicode:
+                    val = val.encode("utf-8")
+                row.append(val)
+            writer.writerow(row)
+
+        return HttpResponse(csv_string.getvalue(), content_type='text/csv')
+
+    def render_to_response(self, context, *args, **kwargs):
+        "Return a response in the requested format."
+
+        format_ = self.request.GET.get('format', default='html')
+
+        if format_ == 'csv':
+            return self.csv_to_reponse(context)
+        else: # Default to the template.
+            # TODO: The html response should be able to display fields according to get_display_fields
+            return super(AttendeeFilterView, self).render_to_response(context, *args, **kwargs)
 
 
 class RefundView(View):
