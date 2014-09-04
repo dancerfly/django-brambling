@@ -292,6 +292,12 @@ class Item(models.Model):
         return smart_text(self.name)
 
 
+class ItemImage(models.Model):
+    item = models.ForeignKey(Item)
+    order = models.PositiveSmallIntegerField()
+    image = models.ImageField()
+
+
 class ItemOption(models.Model):
     item = models.ForeignKey(Item, related_name='options')
     name = models.CharField(max_length=30)

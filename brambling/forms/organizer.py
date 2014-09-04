@@ -5,7 +5,8 @@ from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
-from brambling.models import Attendee, Event, Item, ItemOption, Discount, Date
+from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
+                              Date, ItemImage)
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
@@ -120,13 +121,22 @@ class BaseItemOptionFormSet(forms.BaseInlineFormSet):
         return form
 
 
-ItemOptionFormSet = forms.inlineformset_factory(Item,
-                                                ItemOption,
-                                                form=ItemOptionForm,
-                                                formset=BaseItemOptionFormSet,
-                                                extra=0,
-                                                min_num=1,
-                                                validate_min=True)
+ItemOptionFormSet = forms.inlineformset_factory(
+    Item,
+    ItemOption,
+    form=ItemOptionForm,
+    formset=BaseItemOptionFormSet,
+    extra=0,
+    min_num=1,
+    validate_min=True,
+)
+
+
+ItemImageFormSet = forms.inlineformset_factory(
+    Item,
+    ItemImage,
+    extra=0,
+)
 
 
 class DiscountForm(forms.ModelForm):

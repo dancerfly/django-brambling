@@ -16,7 +16,8 @@ import stripe
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
-                                       DiscountForm, DiscountChoiceForm)
+                                       DiscountForm, DiscountChoiceForm,
+                                       ItemImageFormSet)
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -228,23 +229,28 @@ def item_form(request, *args, **kwargs):
         item = Item()
     if request.method == 'POST':
         form = ItemForm(event, request.POST, instance=item)
+        image_formset = ItemImageFormSet(request.POST, instance=item)
         formset = ItemOptionFormSet(event, request.POST, instance=item)
-        # Always run both.
+        # Always run all.
         form.is_valid()
+        image_formset.is_valid()
         formset.is_valid()
-        if form.is_valid() and formset.is_valid():
+        if form.is_valid() and image_formset.is_valid() and formset.is_valid():
             form.save()
+            image_formset.save()
             formset.save()
             url = reverse('brambling_item_list',
                           kwargs={'event_slug': event.slug})
             return HttpResponseRedirect(url)
     else:
         form = ItemForm(event, instance=item)
+        image_formset = ItemImageFormSet(instance=item)
         formset = ItemOptionFormSet(event, instance=item)
     context = {
         'event': event,
         'item': item,
         'item_form': form,
+        'itemimage_formset': image_formset,
         'itemoption_formset': formset,
         'cart': None,
         'event_admin_nav': get_event_admin_nav(event, request),
