@@ -27,6 +27,7 @@ from brambling.models import (Event, Item, Discount, Payment,
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
+from brambling.utils.data_exporters import AttendeeCSVExporter
 
 
 class EventCreateView(CreateView):
@@ -356,41 +357,9 @@ class AttendeeFilterView(FilterView):
         })
         return context
 
-    def get_display_fields(self):
-        """
-        Returns a list of fields to display.
-        TODO: This list should be customizable with get variables or similar.
-
-        """
-        return (
-            # ("Verbose Name", "method_or_attribute_name"),
-            ("Name", "get_full_name"),
-            ("Given Name", "given_name"),
-            ("Surname", "surname"),
-            ("Middle Name", "middle_name"),
-        )
-
     def csv_to_reponse(self, context):
-        object_list = context['object_list']
-        csv_string = io.BytesIO()
-        writer = csv.writer(csv_string)
-        fields = self.get_display_fields()
-
-        # Write Headers
-        writer.writerow([x[0] for x in fields])
-
-        for obj in object_list:
-            row = []
-            for field in fields:
-                val = getattr(obj, field[1])
-                if callable(val):
-                    val = val()
-                if type(val) == unicode:
-                    val = val.encode("utf-8")
-                row.append(val)
-            writer.writerow(row)
-
-        return HttpResponse(csv_string.getvalue(), content_type='text/csv')
+        exporter = AttendeeCSVExporter(context['object_list'])
+        return HttpResponse(exporter.render(), content_type='text/plain')
 
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
