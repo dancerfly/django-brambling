@@ -24,7 +24,7 @@ from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
                               Refund, SubRefund)
-from brambling.views.utils import (get_event_or_404,
+from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
 
@@ -155,6 +155,13 @@ class EventUpdateView(UpdateView):
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
         })
+        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.uses_dwolla():
+            dwolla = get_dwolla()
+            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
+                                            settings.DWOLLA_APPLICATION_SECRET)
+            redirect_url = reverse('brambling_dwolla_connect') + "?state=" + self.object.slug
+            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
+                                                                "Send|AccountInfoFull|Transactions")
         return context
 
 
@@ -185,6 +192,30 @@ class StripeConnectView(View):
                 messages.success(request, 'Stripe account connected!')
             else:
                 messages.error(request, 'Something went wrong. Please try again.')
+
+        return HttpResponseRedirect(reverse('brambling_event_update',
+                                            kwargs={'slug': event.slug}))
+
+
+class DwollaConnectView(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            event = Event.objects.get(slug=request.GET.get('state'))
+        except Event.DoesNotExist:
+            raise Http404
+        dwolla = get_dwolla()
+        client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
+                                        settings.DWOLLA_APPLICATION_SECRET)
+        redirect_url = reverse('brambling_dwolla_connect') + "?state=" + request.GET['state']
+        token = client.get_oauth_token(request.GET['code'],
+                                       redirect_uri=request.build_absolute_uri(redirect_url))
+
+        event.dwolla_access_token = token
+
+        # Now get account info.
+        dwolla_user = dwolla.DwollaUser(token)
+        event.dwolla_user_id = dwolla_user.get_account_info()['Id']
+        event.save()
 
         return HttpResponseRedirect(reverse('brambling_event_update',
                                             kwargs={'slug': event.slug}))
@@ -374,8 +405,6 @@ class AttendeeFilterView(FilterView):
 
 
 class RefundView(View):
-    form_class = None
-
     def get_object(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(self.request.user):
@@ -396,14 +425,14 @@ class RefundView(View):
         })
         return context
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        payments = self.object.subpayments.annotate(refunded=Sum('refunds__amount'))
-        if not payments:
+        subpayments = self.object.subpayments.annotate(refunded=Sum('refunds__amount'))
+        if not subpayments:
             self.object.delete()
         else:
-            total_payments = sum((payment.amount for payment in payments))
-            total_refunds = sum((payment.refunded or 0 for payment in payments))
+            total_payments = sum((subpayment.amount for subpayment in subpayments))
+            total_refunds = sum((subpayment.refunded or 0 for subpayment in subpayments))
             refundable = total_payments - total_refunds
             if refundable > 0:
                 refund = Refund.objects.create(
@@ -414,27 +443,42 @@ class RefundView(View):
                 )
 
                 stripe.api_key = settings.STRIPE_SECRET_KEY
-                for payment in payments:
-                    if payment.amount - (payment.refunded or 0) <= 0:
-                        continue
-                    stripe_charge = stripe.Charge.retrieve(payment.payment.remote_id)
-                    amount = payment.amount - (payment.refunded or 0)
-                    stripe_refund = stripe_charge.refund(
-                        amount=amount * 100,
-                    )
-                    SubRefund.objects.create(
-                        refund=refund,
-                        subpayment=payment,
-                        amount=amount,
-                        method=payment.payment.method,
-                        remote_id=stripe_refund.id
-                    )
-                self.object.status = BoughtItem.REFUNDED
-                if self.object.attendee.event_pass == self.object:
-                    self.object.attendee.delete()
+                dwolla = get_dwolla()
+                try:
+                    for subpayment in subpayments:
+                        amount = subpayment.amount - (subpayment.refunded or 0)
+                        if amount <= 0:
+                            continue
+                        if subpayment.payment.method == Payment.STRIPE:
+                            stripe_charge = stripe.Charge.retrieve(subpayment.payment.remote_id)
+                            stripe_refund = stripe_charge.refund(
+                                amount=amount * 100,
+                            )
+                            remote_id = stripe_refund.id
+                        elif subpayment.payment.method == Payment.DWOLLA:
+                            dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
+                            dwolla_refund = dwolla_user.refund(int(subpayment.payment.remote_id),
+                                                               "%.2f" % amount,
+                                                               int(request.POST.get('dwolla_pin')))
+                            remote_id = dwolla_refund['TransactionId']
+
+                        SubRefund.objects.create(
+                            refund=refund,
+                            subpayment=subpayment,
+                            amount=amount,
+                            method=subpayment.payment.method,
+                            remote_id=remote_id
+                        )
+                except dwolla.DwollaAPIError, e:
+                    refund.delete()
+                    messages.error(request, e.message)
                 else:
-                    self.object.attendee = None
-                self.object.save()
+                    self.object.status = BoughtItem.REFUNDED
+                    if self.object.attendee.event_pass == self.object:
+                        self.object.attendee.delete()
+                    else:
+                        self.object.attendee = None
+                    self.object.save()
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
                               'code': self.order.code})

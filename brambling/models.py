@@ -205,6 +205,8 @@ class Event(models.Model):
     currency = models.CharField(max_length=10, default='USD')
 
     dates = models.ManyToManyField(Date, related_name='event_dates')
+    start_time = models.TimeField(blank=True, null=True)
+    end_time = models.TimeField(blank=True, null=True)
     housing_dates = models.ManyToManyField(Date, blank=True, null=True,
                                            related_name='event_housing_dates')
 
@@ -241,7 +243,9 @@ class Event(models.Model):
     stripe_refresh_token = models.CharField(max_length=32, blank=True, default='')
     stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
 
-    dwolla_recipient = models.CharField(max_length=255, help_text="Dwolla identifier, phone number, or email address", blank=True, default='')
+    # Token obtained via OAuth.
+    dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
+    dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -261,7 +265,7 @@ class Event(models.Model):
         return bool(self.stripe_user_id)
 
     def uses_dwolla(self):
-        return bool(self.dwolla_recipient)
+        return bool(self.dwolla_user_id)
 
 
 class Item(models.Model):
@@ -663,8 +667,10 @@ class Order(models.Model):
 
 class Payment(models.Model):
     STRIPE = 'stripe'
+    DWOLLA = 'dwolla'
     METHOD_CHOICES = (
         (STRIPE, 'Stripe'),
+        (DWOLLA, 'Dwolla'),
     )
     order = models.ForeignKey('Order', related_name='payments')
     amount = models.DecimalField(max_digits=5, decimal_places=2)
@@ -745,6 +751,8 @@ class BoughtItem(models.Model):
             'net_cost': net_cost,
             'net_payments': net_payments,
             'net_balance': net_balance,
+            'uses_dwolla': any((payment.payment.method == Payment.DWOLLA
+                                for payment in payments)),
         }
 
 
@@ -786,6 +794,7 @@ class Refund(models.Model):
 
 class SubRefund(models.Model):
     STRIPE = Payment.STRIPE
+    DWOLLA = Payment.DWOLLA
     METHOD_CHOICES = Payment.METHOD_CHOICES
 
     refund = models.ForeignKey(Refund)

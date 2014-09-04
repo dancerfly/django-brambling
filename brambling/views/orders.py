@@ -10,13 +10,15 @@ import floppyforms.__future__ as forms
 
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
-                                    AttendeeHousingDataForm)
+                                    AttendeeHousingDataForm, DwollaPaymentForm,
+                                    SurveyDataForm)
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, get_order,
-                                   clear_expired_carts, Workflow, Step)
+                                   clear_expired_carts, Workflow, Step,
+                                   get_dwolla)
 
 
 class ShopStep(Step):
@@ -123,8 +125,7 @@ class SurveyStep(Step):
 
     @classmethod
     def include_in(cls, workflow):
-        return (workflow.event.collect_housing_data or
-                workflow.event.collect_survey_data)
+        return workflow.event.collect_survey_data
 
     @property
     def url(self):
@@ -149,10 +150,10 @@ class HostingStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
-        return self.workflow.order.providing_housing
+        return self.workflow.event.collect_housing_data
 
     def _is_completed(self):
-        return EventHousing.objects.filter(
+        return (not self.workflow.order.providing_housing) or EventHousing.objects.filter(
             event=self.workflow.event,
             order=self.workflow.order
         ).exists()
@@ -547,41 +548,23 @@ class SurveyDataView(OrderMixin, UpdateView):
     template_name = 'brambling/event/order/survey.html'
     context_object_name = 'order'
     current_step_slug = 'survey'
-
-    @property
-    def fields(self):
-        fields = ()
-        if self.event.collect_housing_data:
-            fields += ('providing_housing',)
-        if self.event.collect_survey_data:
-            fields += ('heard_through', 'heard_through_other', 'send_flyers',
-                       'send_flyers_address', 'send_flyers_city',
-                       'send_flyers_state_or_province', 'send_flyers_country')
-        return fields
+    form_class = SurveyDataForm
 
     def get_workflow_class(self):
         return (SurveyWorkflow if self.order.checked_out
                 else RegistrationWorkflow)
 
-    def get_form_class(self):
-        if not self.fields:
-            raise Http404
-        return forms.models.modelform_factory(Order, fields=self.fields)
-
     def get_object(self):
         return self.order
 
     def form_valid(self, form):
-        if self.event.collect_survey_data:
-            self.object.survey_completed = True
+        self.object.survey_completed = True
         form.save()
         return super(SurveyDataView, self).form_valid(form)
 
     def get_success_url(self):
-        kwargs = {'event_slug': self.event.slug}
-        if self.event.collect_housing_data and self.object.providing_housing:
-            return reverse('brambling_event_hosting', kwargs=kwargs)
-        return reverse('brambling_event_order_summary', kwargs=kwargs)
+        return reverse('brambling_event_order_summary',
+                       kwargs={'event_slug': self.event.slug})
 
 
 class HostingView(OrderMixin, UpdateView):
@@ -639,6 +622,8 @@ class OrderDetailView(OrderMixin, TemplateView):
             if 'new_card' in request.POST:
                 # Get a new form.
                 form = self.new_card_form
+            if 'dwolla' in request.POST:
+                form = self.dwolla_form
             if form and form.is_valid():
                 form.save()
                 self.order.mark_cart_paid()
@@ -653,13 +638,17 @@ class OrderDetailView(OrderMixin, TemplateView):
         }
         choose_data = None
         new_data = None
+        dwolla_data = None
         if self.request.method == 'POST':
             if 'choose_card' in self.request.POST:
                 choose_data = self.request.POST
             elif 'new_card' in self.request.POST:
                 new_data = self.request.POST
+            elif 'dwolla' in self.request.POST:
+                dwolla_data = self.request.POST
         self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
         self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
+        self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
@@ -668,10 +657,19 @@ class OrderDetailView(OrderMixin, TemplateView):
             'has_cards': self.order.person.cards.exists(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
+            'dwolla_form': getattr(self, 'dwolla_form', None),
             'net_balance': self.net_balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
         })
+        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.request.user.dwolla_user_id:
+            dwolla = get_dwolla()
+            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
+                                            settings.DWOLLA_APPLICATION_SECRET)
+            next_url = reverse('brambling_event_order_summary', kwargs={'event_slug': self.event.slug})
+            redirect_url = reverse('brambling_user_dwolla_connect') + "?next_url=" + next_url
+            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
+                                                                "Send|AccountInfoFull")
         context.update(self.summary_data)
         return context

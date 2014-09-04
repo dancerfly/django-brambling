@@ -99,6 +99,35 @@
 			{% endif %}
 			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
+		{% if event.uses_dwolla %}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						Pay with Dwolla
+					</h4>
+				</div>
+				<div class="panel-body">
+					{% if user.dwolla_user_id %}
+						<form novalidate action="" method="post">
+							{% csrf_token %}
+							<input name='dwolla' value='1' type='hidden'>
+
+							{% formrow dwolla_form.dwolla_pin with autocomplete="off" %}
+
+							{% for error in dwolla_form.non_field_errors %}
+								<div class='alert alert-danger'>
+									{{ error }}
+								</div>
+							{% endfor %}
+
+							<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+						</form>
+					{% else %}
+						<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
+					{% endif %}
+				</div>
+			</div>
+		{% endif %}
 	{% elif order.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}

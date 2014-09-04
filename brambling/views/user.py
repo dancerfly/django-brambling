@@ -5,13 +5,13 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View)
-import requests
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
 from brambling.utils import send_confirmation_email
+from brambling.views.utils import get_dwolla
 
 
 class SignUpView(CreateView):
@@ -79,6 +79,13 @@ class PersonView(UpdateView):
         context.update({
             'cards': self.request.user.cards.order_by('-added'),
         })
+        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.dwolla_user_id:
+            dwolla = get_dwolla()
+            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
+                                            settings.DWOLLA_APPLICATION_SECRET)
+            redirect_url = reverse('brambling_user_dwolla_connect')
+            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
+                                                                "Send|AccountInfoFull")
         return context
 
 
@@ -138,24 +145,31 @@ class CreditCardDeleteView(View):
         return self.delete(*args, **kwargs)
 
 
-class DwollaConnectView(View):
+class UserDwollaConnectView(View):
     def get(self, request, *args, **kwargs):
-        url = 'https://uat.dwolla.com/oauth/v2/token?client_id={client_id}&client_secret={client_secret}&grant_type=authorization_code&code={code}'
-        url = url.format(client_id=settings.DWOLLA_APPLICATION_KEY,
-                         client_secret=settings.DWOLLA_APPLICATION_SECRET,
-                         code=request.GET['code'])
-        r = requests.get(url)
-        data = r.json()
+        dwolla = get_dwolla()
+        client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
+                                        settings.DWOLLA_APPLICATION_SECRET)
+        redirect_url = reverse('brambling_user_dwolla_connect')
+        if 'next_url' in self.request.GET:
+            redirect_url += '?next_url=' + self.request.GET['next_url']
+        token = client.get_oauth_token(request.GET['code'],
+                                       redirect_uri=request.build_absolute_uri(redirect_url))
+
         user = request.user
-        user.dwolla_access_token = data['access_token']
+        user.dwolla_access_token = token
 
         # Now get account info.
-        url = 'https://uat.dwolla.com/oauth/rest/users/?oauth_token=' + user.dwolla_access_token
-        r = requests.get(url)
-        data = r.json()
-        user.dwolla_user_id = data['Response']['Id']
+        dwolla_user = dwolla.DwollaUser(token)
+        user.dwolla_user_id = dwolla_user.get_account_info()['Id']
         user.save()
-        return HttpResponseRedirect(reverse('brambling_user_profile'))
+        if ('next_url' in request.GET and
+                is_safe_url(url=request.GET['next_url'],
+                            host=request.get_host())):
+            next_url = request.GET['next_url']
+        else:
+            next_url = reverse('brambling_user_profile')
+        return HttpResponseRedirect(next_url)
 
 
 class HomeView(UpdateView):

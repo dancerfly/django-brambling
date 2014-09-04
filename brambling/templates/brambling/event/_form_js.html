@@ -1,0 +1,14 @@
+<script>
+	$(function() {
+		$('#startEnd').on('change', function() {
+			if (this.checked) {
+				$('#startEndRow').slideDown();
+			} else {
+				$('#startEndRow').slideUp();
+				$('#startEndRow input').val(function(){
+					return this.defaultValue;
+				});
+			}
+		})
+	});
+</script>

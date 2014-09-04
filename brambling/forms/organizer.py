@@ -15,12 +15,14 @@ class EventForm(forms.ModelForm):
     start_date = forms.DateField()
     end_date = forms.DateField()
     disconnect_stripe = forms.BooleanField(required=False)
+    disconnect_dwolla = forms.BooleanField(required=False)
 
     class Meta:
         model = Event
         exclude = ('dates', 'housing_dates', 'owner',
                    'stripe_user_id', 'stripe_refresh_token',
-                   'stripe_access_token', 'stripe_publishable_key')
+                   'stripe_access_token', 'stripe_publishable_key',
+                   'dwolla_user_id', 'dwolla_access_token')
         widgets = {
             'country': forms.Select
         }
@@ -36,6 +38,8 @@ class EventForm(forms.ModelForm):
         self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
         if not self.instance.uses_stripe():
             del self.fields['disconnect_stripe']
+        if not self.instance.uses_dwolla():
+            del self.fields['disconnect_dwolla']
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
@@ -51,6 +55,9 @@ class EventForm(forms.ModelForm):
             self.instance.stripe_access_token = ''
             self.instance.stripe_refresh_token = ''
             self.instance.stripe_publishable_key = ''
+        if self.cleaned_data.get('disconnect_dwolla'):
+            self.instance.dwolla_user_id = ''
+            self.instance.dwolla_access_token = ''
         instance = super(EventForm, self).save()
         if {'start_date', 'end_date'} & set(self.changed_data) or created:
             cd = self.cleaned_data

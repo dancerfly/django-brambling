@@ -5,3 +5,9 @@
 	
 	{% include "brambling/event/_form.html" %}
 {% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include "brambling/event/_form_js.html" %}
+{% endblock %}

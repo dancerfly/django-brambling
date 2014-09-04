@@ -14,3 +14,4 @@ django-floppyforms==1.2.0
 https://github.com/littleweaver/django-zenaida/tarball/master
 stripe==1.14.0
 requests==2.2.1
+dwolla==1.6.4

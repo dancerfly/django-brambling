@@ -1,6 +1,13 @@
+{% extends "floppyforms/rows/bootstrap.html" %}
+
 {% load floppyforms %}
 
-{% if field|id %}<label class="control-label" for="{{ field|id }}">{% endif %}
-{{ field.label }}
-{% if field|id %}</label>{% endif %}
-{% formfield field %}
+{% block field_classes %}{% if field.errors %} has-error{% endif %}{% endblock %}
+
+{% block label %}
+	{% if field|id %}<label class="control-label" for="{{ field|id }}">{% endif %}
+	{{ label }}
+	{% if field|id %}</label>{% endif %}
+{% endblock %}
+
+{% block help_text %}{% endblock %}
