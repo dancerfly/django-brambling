@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.views.generic import (ListView, CreateView, UpdateView,
@@ -25,7 +25,7 @@ from brambling.models import (Event, Item, Discount, Payment,
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
-from brambling.utils.data_exporters import AttendeeCSVExporter
+from brambling.utils.model_tables import AttendeeTable
 
 
 class EventCreateView(CreateView):
@@ -352,25 +352,20 @@ class AttendeeFilterView(FilterView):
             order__event=self.event).distinct()
         return qs
 
-    def get_csv_exporter(self):
+    def get_table(self, queryset):
         if self.request.GET:
-            return AttendeeCSVExporter(self.object_list, data=self.request.GET, form_prefix="csv")
+            return AttendeeTable(queryset, data=self.request.GET, form_prefix="csv")
         else:
-            return AttendeeCSVExporter(self.object_list, form_prefix="csv")
+            return AttendeeTable(queryset, form_prefix="csv")
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
-        exporter = self.get_csv_exporter()
         context.update({
-            'csv_form': exporter.form,
+            'table': self.get_table(self.object_list),
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
-
-    def csv_to_reponse(self, context):
-        exporter = self.get_csv_exporter()
-        return HttpResponse(exporter.render(), content_type='text/csv')
 
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
@@ -378,9 +373,10 @@ class AttendeeFilterView(FilterView):
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            return self.csv_to_reponse(context)
-        else: # Default to the template.
-            # TODO: The html response should be able to display fields according to get_display_fields
+            table = self.get_table(self.get_queryset())
+            return table.render_csv_response()
+        else:
+            # Default to the template.
             return super(AttendeeFilterView, self).render_to_response(context, *args, **kwargs)
 
 
