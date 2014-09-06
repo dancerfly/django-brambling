@@ -1,6 +1,8 @@
 import csv
 import io
 
+from django import forms
+
 __all__ = ('BaseModelCSVExporter', 'AttendeeCSVExporter')
 
 
@@ -19,9 +21,17 @@ class BaseModelCSVExporter(object):
 
     """
 
-    def __init__(self, queryset, fields=None):
+    FIELD_OPTIONS = ()
+
+    def __init__(self, queryset, data=None, fields=None, form_prefix=None):
+        # Simple assignment:
+        self.data = data or {}
         self.queryset = queryset
-        self.fields = fields
+        self.fields = self.FIELD_OPTIONS
+        self.form_prefix = form_prefix
+
+        # More complex properties:
+        self.is_bound = data is not None
 
     def get_display_fields(self):
         """
@@ -29,6 +39,15 @@ class BaseModelCSVExporter(object):
         ("Field Verbose Name", "field_name").
 
         """
+        valid = self.is_bound and self.form.is_valid()
+        if valid:
+            cleaned_data = self.form.cleaned_data
+            # Include fields which are marked True in the form:
+            fields = [field
+                      for field in self.fields
+                      if cleaned_data[field[1]] == True]
+            return fields
+        # Default to all fields:
         return self.fields
 
     def get_queryset(self):
@@ -55,6 +74,22 @@ class BaseModelCSVExporter(object):
 
         return val
 
+    def get_form_class(self):
+        return forms.Form
+
+    @property
+    def form(self):
+        if not hasattr(self, '_form'):
+            fields = {
+                name[1]: forms.BooleanField(label=name[0], required=False)
+                for name in self.FIELD_OPTIONS}
+            Form = type(str('{}Form'.format(self.__class__.__name__)), (self.get_form_class(),), fields)
+            if self.is_bound:
+                self._form = Form(self.data, prefix=self.form_prefix)
+            else:
+                self._form = Form(prefix=self.form_prefix)
+        return self._form
+
     def render(self):
         # TODO: rewrite this as a generator?
 
@@ -78,7 +113,7 @@ class BaseModelCSVExporter(object):
 class AttendeeCSVExporter(BaseModelCSVExporter):
 
     #: A list of all possible fields
-    COMPLETE_FIELDS = (
+    FIELD_OPTIONS = (
         ("ID", "pk"),
         ("Name", "get_full_name"),
         ("Given Name", "given_name"),
@@ -88,11 +123,7 @@ class AttendeeCSVExporter(BaseModelCSVExporter):
         ("Pass Status", "pass_status"),
     )
 
-    def __init__(self, *args, **kwargs):
-        super(AttendeeCSVExporter, self).__init__(*args, **kwargs)
-        if self.fields is None:
-            self.fields = self.COMPLETE_FIELDS
-
+    # Methods to be used as fields
     def pass_type(self, obj):
         return "{}: {}".format(
             obj.event_pass.item_option.item.name,

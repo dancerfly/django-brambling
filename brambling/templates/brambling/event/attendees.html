@@ -75,8 +75,10 @@
                             <h4 class="modal-title">Export CSV</h4>
                         </div>
                         <div class="modal-body">
-                            {% csrf_token %}
+                            <p>Limit attendees in data:</p>
                             {% form filter.form %}
+                            <p>Include these fields in data:</p>
+                            {% form csv_form %}
                             <input type="hidden" name="format" id="id_format" value="csv" />{# TODO: maybe this should be part of the form class? #}
                         </div>
                         <div class="modal-footer">
