@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import csv
 import itertools
 
@@ -34,6 +35,27 @@ def comma_separated_manager(attr_name):
     return inner
 
 
+class Cell(object):
+    def __init__(self, field, value):
+        self.field = field
+        self.value = value
+
+    def __unicode__(self):
+        return unicode(self.value)
+
+
+class Row(object):
+    def __init__(self, data):
+        self.data = OrderedDict(data)
+
+    def __getitem__(self, key):
+        return Cell(key, self.data[key])
+
+    def __iter__(self):
+        for key, value in self.data.items():
+            yield Cell(key, value)
+
+
 class ModelTable(object):
     """
     A class that is responsible for taking a queryset and building a table
@@ -68,12 +90,12 @@ class ModelTable(object):
     def __iter__(self):
         object_list = self.get_queryset()
         for obj in object_list:
-            yield [self.get_field_val(obj, field[1])
-                   for field in self.get_included_fields()]
+            yield Row((field[1], self.get_field_val(obj, field[1]))
+                      for field in self.get_included_fields())
 
-    def headers(self):
-        for field in self.get_included_fields():
-            yield field[0]
+    def header_row(self):
+        return Row((field[1], field[0])
+                   for field in self.get_included_fields())
 
     def get_included_fields(self):
         """
@@ -154,7 +176,7 @@ class ModelTable(object):
         pseudo_buffer = Echo()
         writer = csv.writer(pseudo_buffer)
         response = StreamingHttpResponse((writer.writerow(row)
-                                          for row in itertools.chain((list(self.headers()),), self)),
+                                          for row in itertools.chain((self.header_row(),), self)),
                                          content_type="text/csv")
         response['Content-Disposition'] = 'attachment; filename="export.csv"'
         return response
