@@ -367,7 +367,7 @@ class AttendeeFilterView(FilterView):
 
     def csv_to_reponse(self, context):
         exporter = self.get_csv_exporter()
-        return HttpResponse(exporter.render(), content_type='text/plain')
+        return HttpResponse(exporter.render(), content_type='text/csv')
 
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
