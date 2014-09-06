@@ -4,7 +4,8 @@ import itertools
 
 from django import forms
 
-__all__ = ('BaseModelCSVExporter', 'AttendeeCSVExporter')
+__all__ = ('comma_separated_manager', 'BaseModelCSVExporter',
+           'AttendeeCSVExporter')
 
 
 def comma_separated_manager(attr_name):
