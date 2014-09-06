@@ -354,9 +354,9 @@ class AttendeeFilterView(FilterView):
 
     def get_table(self, queryset):
         if self.request.GET:
-            return AttendeeTable(queryset, data=self.request.GET, form_prefix="csv")
+            return AttendeeTable(queryset, data=self.request.GET, form_prefix="filter")
         else:
-            return AttendeeTable(queryset, form_prefix="csv")
+            return AttendeeTable(queryset, form_prefix="filter")
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
