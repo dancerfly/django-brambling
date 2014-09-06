@@ -1,6 +1,6 @@
 {% extends 'brambling/event/__manage.html' %}
 
-{% load floppyforms zenaida %}
+{% load floppyforms zenaida static %}
 
 {% block title %}Attendees – {{ block.super }}{% endblock %}
 
@@ -24,6 +24,10 @@
             </div>
         </div>
         <div class="col-md-9 col-md-pull-3">
+            <button class="btn btn-default pull-right" data-toggle="modal" data-target="#exporterModal">
+                <i class="fa fa-download"></i>
+                Export to CSV
+            </button>
             <table class="table">
                 <thead>
                     <tr>
@@ -61,4 +65,33 @@
             </table>
         </div>
     </div>
+
+        <div class="modal fade" id="exporterModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="" method="get">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                            <div class="modal-title">Export CSV</div>
+                        </div>
+                        <div class="modal-body">
+                            <p>Limit attendees in data:</p>
+                            {% form filter.form %}
+                            <p>Include these fields in data:</p>
+                            {% form csv_form %}
+                            <input type="hidden" name="format" id="id_format" value="csv" />{# TODO: maybe this should be part of the form class? #}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Download CSV</button>
+                        </div>
+                    </form>
+                </div>{# /.modal-content #}
+            </div>{# /.modal-dialog #}
+        </div>{# /.modal #}
+{% endblock %}
+
+{% block javascripts %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
 {% endblock %}
