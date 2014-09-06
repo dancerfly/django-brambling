@@ -1,8 +1,17 @@
-{% extends 'brambling/layouts/12.html' %}
+{% extends 'brambling/layouts/11_1.html' %}
 
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
-{% block main %}
+{% block before %}
 	{% include "brambling/event/_masthead.html" %}
-	{{ block.super }}
+{% endblock %}
+
+{% block side %}
+	{% if event_admin_nav %}
+		<div class="list-group">
+			{% for item in event_admin_nav %}
+				{% include "brambling/event/_mini_nav_item.html" with item=item only %}
+			{% endfor %}
+		</div>
+	{% endif %}
 {% endblock %}
