@@ -377,7 +377,8 @@ class ChooseItemsView(OrderMixin, TemplateView):
             available_end__gte=now,
             item__event=self.event,
         ).annotate(taken=Count('boughtitem')).filter(
-            total_number__gt=F('taken')
+            # Display items which are still in stock OR which don't have a limited stock.
+            Q(total_number__gt=F('taken')) | Q(total_number=None)
         ).order_by('item')
 
         context['item_options'] = item_options
