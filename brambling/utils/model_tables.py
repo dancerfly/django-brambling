@@ -3,6 +3,8 @@ import csv
 import itertools
 
 from django import forms
+from django.contrib.admin.utils import lookup_field
+from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.http import StreamingHttpResponse
 
 
@@ -42,6 +44,9 @@ class Cell(object):
 
     def __unicode__(self):
         return unicode(self.value)
+
+    def is_boolean(self):
+        return isinstance(self.value, bool)
 
 
 class Row(object):
@@ -124,30 +129,27 @@ class ModelTable(object):
 
     def get_field_val(self, obj, key):
         """
-        First look for values as attributes on the object, next check for a
-        method on self (the table) and call it with the obj as the
-        first argument.
+        Follows the same rules as ModelAdmin dynamic lookups:
 
-        If the returned value is callable, call it and return that.
+        1. Model field
+        2. Callable
+        3. Method on table
+        4. Method on model
+        5. Other attribute on model
+
+        Returns a value which will be passed to the template.
         """
-        if hasattr(obj, key):
-            val = getattr(obj, key)
-        elif hasattr(self, key):
-            meth = getattr(self, key)
-            val = meth(obj)
-        else:
-            error_dict = {
-                'attr': key,
-                'model': obj.__class__.__name__,
-                'table': self.__class__.__name__,
-            }
-            error_string = "{attr} does not exist as an attribute of {model} or {table}".format(**error_dict)
-            raise AttributeError(error_string)
+        # Compare:
+        # * django.contrib.admin.utils:display_for_field
+        # * django.contrib.admin.utils:display_for_value
+        field, attr, value = lookup_field(key, obj, self)
 
-        if callable(val):
-            val = val()
+        if field is not None:
+            if field.flatchoices:
+                # EMPTY_CHANGELIST_VALUE is "(None)"
+                return dict(field.flatchoices).get(value, EMPTY_CHANGELIST_VALUE)
 
-        return val
+        return value
 
     def get_form_class(self):
         return forms.Form
@@ -258,7 +260,7 @@ class AttendeeTable(ModelTable):
             obj.event_pass.item_option.name)
 
     def pass_status(self, obj):
-        return obj.event_pass.status
+        return obj.event_pass.get_status_display()
 
     housing_nights = comma_separated_manager("nights")
     housing_preferences = comma_separated_manager("housing_prefer")

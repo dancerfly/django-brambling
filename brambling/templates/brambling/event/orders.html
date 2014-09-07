@@ -7,12 +7,6 @@
 {% block cell %}
     {% if cell.field == 'code' %}
         <a href='{% url "brambling_event_order_detail" event_slug=event.slug code=row.obj.code %}'>{{ cell }}</a>
-    {% elif cell.field == 'send_flyers' %}
-        {% if cell.value %}
-            <i class='text-success fa fa-check'></i>
-        {% else %}
-            <i class='text-danger fa fa-times'></i>
-        {% endif %}
     {% else %}
         {{ block.super }}
     {% endif %}

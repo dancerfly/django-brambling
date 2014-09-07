@@ -60,7 +60,17 @@
                             {% else %}
                                 <td>
                             {% endif %}
-                            {% block cell %}{{ cell }}{% endblock %}
+                            {% block cell %}
+                                {% if cell.is_boolean %}
+                                    {% if cell.value %}
+                                        <i class='text-success fa fa-check'></i>
+                                    {% else %}
+                                        <i class='text-danger fa fa-times'></i>
+                                    {% endif %}
+                                {% else %}
+                                    {{ cell }}
+                                {% endif %}
+                            {% endblock %}
                             {% if not forloop.first %}
                                 </td>
                             {% else %}
