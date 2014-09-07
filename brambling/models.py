@@ -302,7 +302,7 @@ class ItemOption(models.Model):
     item = models.ForeignKey(Item, related_name='options')
     name = models.CharField(max_length=30)
     price = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)])
-    total_number = models.PositiveSmallIntegerField(blank=True, null=True)
+    total_number = models.PositiveSmallIntegerField(blank=True, null=True, help_text="Leave blank for unlimited.")
     available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
     order = models.PositiveSmallIntegerField()
