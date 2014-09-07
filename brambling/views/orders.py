@@ -256,7 +256,8 @@ class AddToOrderView(OrderMixin, View):
         except ItemOption.DoesNotExist:
             raise Http404
 
-        if item_option.taken >= item_option.total_number:
+        # If a total number is set and has been reached, the item is sold out.
+        if item_option.total_number is not None and item_option.taken >= item_option.total_number:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
         if self.order.person.confirmed_email or self.is_admin_request:
@@ -377,7 +378,8 @@ class ChooseItemsView(OrderMixin, TemplateView):
             available_end__gte=now,
             item__event=self.event,
         ).annotate(taken=Count('boughtitem')).filter(
-            total_number__gt=F('taken')
+            # Display items which are still in stock OR which don't have a limited stock.
+            Q(total_number__gt=F('taken')) | Q(total_number=None)
         ).order_by('item')
 
         context['item_options'] = item_options
