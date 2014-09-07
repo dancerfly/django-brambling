@@ -1,11 +1,25 @@
+from collections import OrderedDict
 import csv
-import io
 import itertools
 
 from django import forms
+from django.http import StreamingHttpResponse
 
-__all__ = ('comma_separated_manager', 'BaseModelCSVExporter',
-           'AttendeeCSVExporter')
+
+__all__ = ('comma_separated_manager', 'ModelTable',
+           'AttendeeTable')
+
+
+class Echo(object):
+    """
+    An object that implements just the write method of the file-like
+    interface.
+
+    See https://docs.djangoproject.com/en/dev/howto/outputting-csv/#streaming-csv-files
+    """
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
 
 
 def comma_separated_manager(attr_name):
@@ -21,24 +35,50 @@ def comma_separated_manager(attr_name):
     return inner
 
 
-class BaseModelCSVExporter(object):
+class Cell(object):
+    def __init__(self, field, value):
+        self.field = field
+        self.value = value
+
+    def __unicode__(self):
+        return unicode(self.value)
+
+
+class Row(object):
+    def __init__(self, data):
+        self.data = OrderedDict(data)
+
+    def __getitem__(self, key):
+        return Cell(key, self.data[key])
+
+    def __iter__(self):
+        for key, value in self.data.items():
+            yield Cell(key, value)
+
+
+class ModelTable(object):
     """
-    A class that is responsible for taking a queryset and returning
-    it as a CSV formatted string with the render method.
+    A class that is responsible for taking a queryset and building a table
+    out of it, useful for allowing the customization of which columns of data
+    to display. This table can be used in a template context or rendered
+    directly as a CSV document.
 
-    It takes two arguments:
+    It takes three arguments:
 
-    1. The queryset to be exported.
-    2. The fields as a list of 3-tuples of the format
-       ("Field Verbose Name", "field_name", default), where default is True
-       or False. `field_name` can be the name of an attribute on the model
-       or an attribute on the Exporter subclass.
+    1. The queryset to be displayed
+    2. Data
+    3. A form prefix
 
     """
 
+    #: The fields as a list of 2-tuples of the format
+    #: ("Field Verbose Name", "field_name"), where default is True
+    #: or False (indicating whether the field should be included by default).
+    #: `field_name` can be the name of an attribute on the model
+    #: or an attribute on the ModelTable subclass.
     FIELD_OPTIONS = ()
 
-    def __init__(self, queryset, data=None, fields=None, form_prefix=None):
+    def __init__(self, queryset, data=None, form_prefix=None):
         # Simple assignment:
         self.data = data or {}
         self.queryset = queryset
@@ -48,7 +88,17 @@ class BaseModelCSVExporter(object):
         # More complex properties:
         self.is_bound = data is not None
 
-    def get_display_fields(self):
+    def __iter__(self):
+        object_list = self.get_queryset()
+        for obj in object_list:
+            yield Row((field[1], self.get_field_val(obj, field[1]))
+                      for field in self.get_included_fields())
+
+    def header_row(self):
+        return Row((field[1], field[0])
+                   for field in self.get_included_fields())
+
+    def get_included_fields(self):
         """
         Returns a tuple of 2-tuples in the form of
         ("Field Verbose Name", "field_name").
@@ -59,13 +109,13 @@ class BaseModelCSVExporter(object):
             cleaned_data = self.form.cleaned_data
             # Include fields which are marked True in the form:
             fields = [field
-                      for field in self.fields
-                      if cleaned_data[field[1]] == True]
+                      for field in self.FIELD_OPTIONS
+                      if cleaned_data[field[1]] is True]
             # Only return a list of fields if it isn't empty:
             if not fields == []:
                 return fields
         # Otherwise default to all fields:
-        return self.fields
+        return self.FIELD_OPTIONS
 
     def get_queryset(self):
         return self.queryset
@@ -73,7 +123,7 @@ class BaseModelCSVExporter(object):
     def get_field_val(self, obj, key):
         """
         First look for values as attributes on the object, next check for a
-        method on self (the exporter) and call it with the obj as the
+        method on self (the table) and call it with the obj as the
         first argument.
 
         If the returned value is callable, call it and return that.
@@ -87,9 +137,9 @@ class BaseModelCSVExporter(object):
             error_dict = {
                 'attr': key,
                 'model': obj.__class__.__name__,
-                'exporter': self.__class__.__name__,
+                'table': self.__class__.__name__,
             }
-            error_string = "{attr} does not exist as an attribute of {model} or {exporter}".format(**error_dict)
+            error_string = "{attr} does not exist as an attribute of {model} or {table}".format(**error_dict)
             raise AttributeError(error_string)
 
         if callable(val):
@@ -123,27 +173,17 @@ class BaseModelCSVExporter(object):
 
         return self._form
 
-    def render(self):
-        # TODO: rewrite this as a generator?
-
-        object_list = self.get_queryset()
-        csv_string = io.BytesIO()
-        writer = csv.writer(csv_string)
-        fields = self.get_display_fields()
-
-        # Write Headers
-        writer.writerow([x[0] for x in fields])
-
-        for obj in object_list:
-            row = []
-            for field in fields:
-                row.append(self.get_field_val(obj, field[1]))
-            writer.writerow(row)
-
-        return csv_string.getvalue()
+    def render_csv_response(self):
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        response = StreamingHttpResponse((writer.writerow(row)
+                                          for row in itertools.chain((self.header_row(),), self)),
+                                         content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="export.csv"'
+        return response
 
 
-class AttendeeCSVExporter(BaseModelCSVExporter):
+class AttendeeTable(ModelTable):
 
     #: A list of ID related fields.
     IDENTIFICATION_FIELD_OPTIONS = (

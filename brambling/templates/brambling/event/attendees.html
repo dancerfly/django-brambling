@@ -9,86 +9,69 @@
 
     {% include "brambling/event/_empty_shop_alert.html" %}
 
-    <div class="row">
-        <div class="col-md-3 col-md-push-9">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">Filters</h4>
-                </div>
-                <div class="panel-body">
-                    <form action="" method="get">
-                        {% form filter.form %}
-                        <button class="btn btn-primary btn-block">Filter</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-9 col-md-pull-3">
-            <button class="btn btn-default pull-right" data-toggle="modal" data-target="#exporterModal">
-                <i class="fa fa-download"></i>
-                Export to CSV
+    <form action="" method="get">
+        <div class='text-right form-inline'>
+            <button class="btn btn-default" data-toggle="modal" data-target="#filterModal" type='button'>
+                <i class="fa fa-filter"></i>
+                Change fields and filters
             </button>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        {% if event.collect_housing_data %}
-                            <th>Housing status</th>
-                        {% endif %}
-                        <th>Items</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for attendee in filter %}
-                        <tr>
-                            <th>{{ attendee.get_full_name }}</th>
-                            {% if event.collect_housing_data %}
-                                <td>{{ attendee.get_housing_status_display }}</td>
-                            {% endif %}
-                            <td>
-                                {% regroup attendee.get_groupable_items by item_option.item as item_list %}
-
-                                {% for options in item_list %}
-                                    <div class='row'>
-                                        <div class='col-sm-3'><strong>{{ options.grouper }}</strong></div>
-                                        <div class='col-sm-9'>{% for item in options.list %}{{ item.item_option.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
-                                    </div>
-                                {% endfor %}
-                            <td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="2">No items match the filter criteria.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <button type="submit" class="btn btn-primary" name="format" value="csv"><i class="fa fa-download"></i> Download CSV</button>
         </div>
-    </div>
-
-        <div class="modal fade" id="exporterModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form action="" method="get">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                            <div class="modal-title">Export CSV</div>
-                        </div>
-                        <div class="modal-body">
-                            <p>Limit attendees in data:</p>
-                            {% form filter.form %}
-                            <p>Include these fields in data:</p>
-                            {% form csv_form %}
-                            <input type="hidden" name="format" id="id_format" value="csv" />{# TODO: maybe this should be part of the form class? #}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Download CSV</button>
-                        </div>
-                    </form>
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <div class="modal-title">Filters</div>
+                    </div>
+                    <div class="modal-body">
+                        <p>Limit attendees in data:</p>
+                        {% form filter.form %}
+                        <p>Include these fields in data:</p>
+                        {% form table.form %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Apply filters</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>
                 </div>{# /.modal-content #}
             </div>{# /.modal-dialog #}
         </div>{# /.modal #}
+    </form>
+    <div class="pre-scrollable">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    {% for header in table.header_row %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in table %}
+                    <tr>
+                        {% for field in row %}
+                            {% if forloop.first %}
+                                <th>
+                            {% else %}
+                                <td>
+                            {% endif %}
+                            {{ field }}
+                            {% if not forloop.first %}
+                                </td>
+                            {% else %}
+                                </th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2">No items match the filter criteria.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% block javascripts %}
