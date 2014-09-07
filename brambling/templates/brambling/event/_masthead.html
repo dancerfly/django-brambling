@@ -29,7 +29,7 @@
 			</div>
 		{% endif %}
 	</h1>
-	<div class="text-large">
+	<p class="text-large">
 		<i class="fa fa-clock-o fa-fw"></i>
 		{% td_to_dict event.start_date|td_timeuntil as time_until_event %}
 
@@ -48,12 +48,10 @@
 		{% endif %}
 
 		{# days left#}
-		{% if time_until_event.days > 1%}
-			(Event starts in {{ time_until_event.days }} day{{ time_until_event|pluralize }})
+		{% if time_until_event.days > 1 and time_until_event.days < 15 %}
+			(in {{ time_until_event.days }} day{{ time_until_event|pluralize }})
 		{% endif %}
-	</div>
-	<div class="text-large">
 		<i class="fa fa-map-marker fa-fw"></i>
 		{{ event.city }}, {{ event.state_or_province }}, {{ event.country }}
-	</div>
+	</p>
 </div>
