@@ -256,7 +256,8 @@ class AddToOrderView(OrderMixin, View):
         except ItemOption.DoesNotExist:
             raise Http404
 
-        if item_option.taken >= item_option.total_number:
+        # If a total number is set and has been reached, the item is sold out.
+        if item_option.total_number is not None and item_option.taken >= item_option.total_number:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
         if self.order.person.confirmed_email or self.is_admin_request:
