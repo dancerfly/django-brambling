@@ -48,7 +48,7 @@
 								<a target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
 									<div class='row'>
 										<div class='col-xs-5'>{{ option.name }}</div>
-										<div class='col-xs-3 text-right'>{{ option.remaining }} / {{ option.total_number }} left</div>
+										<div class='col-xs-3 text-right'>{% if option.total_number %}{{ option.remaining }} / {{ option.total_number }} left{% else %}&nbsp;{% endif %}</div>
 										<div class='col-xs-3 text-right'>{{ option.price|format_money:event.currency }}</div>
 										<div class='col-xs-1 text-right'><span class='fa fa-plus'></span></div>
 									</div>
