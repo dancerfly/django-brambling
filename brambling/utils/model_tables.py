@@ -59,7 +59,8 @@ class Row(object):
 class ModelTable(object):
     """
     A class that is responsible for taking a queryset and building a table
-    out of it. This table can be used in a template context or rendered
+    out of it, useful for allowing the customization of which columns of data
+    to display. This table can be used in a template context or rendered
     directly as a CSV document.
 
     It takes three arguments:
