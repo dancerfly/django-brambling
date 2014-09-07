@@ -1,6 +1,6 @@
 {% extends 'brambling/event/order/__base.html' %}
 
-{% load floppyforms zenaida %}
+{% load staticfiles floppyforms zenaida %}
 
 {% block title %}Shop – {{ block.super }}{% endblock %}
 
@@ -27,6 +27,7 @@
 		});
 	</script>
 	{% include "brambling/event/_confirmation_screen.html" %}
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
 {% endblock %}
 
 {% block main %}
@@ -40,8 +41,50 @@
 			<div class="col-md-7">
 				{% for options in option_list %}
 					<div class='panel panel-default'>
-						<header class='panel-heading'>
+						<header class='panel-heading clearfix'>
+							{# if image #}
+								<img src="http://placehold.it/100x100" class="img-responsive pull-left item-img" data-toggle="modal" data-target="#imageModal"> 
+							{# endif #}
 							<div class='panel-title'>{{ options.grouper.name }}</div>
+							<p>I am an optional short description of the item yes I am</p>
+							<a href="" data-toggle="modal" data-target="#imageModal">3 photos</a>
+							<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+								<div class="modal-dialog">
+									<div class="modal-content">
+										<div class="modal-header">
+											<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+											<h4 id="myLargeModalLabel">{{ options.grouper.name }}</h4>
+										</div>
+										<div id="item-carousel" class="carousel slide" data-ride="carousel" data-interval="false">
+										<!-- Indicators -->
+										<ol class="carousel-indicators">
+											<li data-target="#item-carousel" data-slide-to="0" class="active"></li>
+											<li data-target="#item-carousel" data-slide-to="1"></li>
+											<li data-target="#item-carousel" data-slide-to="2"></li>
+										</ol>
+										<!-- Wrapper for slides -->
+										<div class="carousel-inner">
+											<div class="item active">
+												<img src="http://placehold.it/598x449">
+											</div>
+											<div class="item">
+												<img src="http://placehold.it/598x449">
+											</div>
+											<div class="item">
+												<img src="http://placehold.it/598x449">
+											</div>
+										</div>
+										<!-- Controls -->
+										<a class="left carousel-control" href="#item-carousel" role="button" data-slide="prev">
+											<span class="icon-prev fa fa-2x fa-chevron-left"></span>
+										</a>
+										<a class="right carousel-control" href="#item-carousel" role="button" data-slide="next">
+											<span class="icon-next fa fa-2x fa-chevron-right"></span>
+										</a>
+									</div>
+									</div>
+								</div>
+							</div>
 						</header>
 						<div class='list-group'>
 							{% for option in options.list %}
