@@ -5863,6 +5863,10 @@ a.step.complete:hover {
   color: inherit;
 }
 
+.scroll-x {
+  overflow: scroll;
+}
+
 .navbar-default {
   background: #de8e0f;
   border: 0;
