@@ -25,7 +25,7 @@ from brambling.models import (Event, Item, Discount, Payment,
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
-from brambling.utils.model_tables import AttendeeTable
+from brambling.utils.model_tables import AttendeeTable, OrderTable
 
 
 class EventCreateView(CreateView):
@@ -473,9 +473,16 @@ class OrderFilterView(FilterView):
         qs = Order.objects.filter(event=self.event)
         return qs
 
+    def get_table(self, queryset):
+        if self.request.GET:
+            return OrderTable(queryset, data=self.request.GET, form_prefix="column")
+        else:
+            return OrderTable(queryset, form_prefix="column")
+
     def get_context_data(self, **kwargs):
         context = super(OrderFilterView, self).get_context_data(**kwargs)
         context.update({
+            'table': self.get_table(self.object_list),
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })

@@ -45,8 +45,9 @@ class Cell(object):
 
 
 class Row(object):
-    def __init__(self, data):
+    def __init__(self, data, obj=None):
         self.data = OrderedDict(data)
+        self.obj = obj
 
     def __getitem__(self, key):
         return Cell(key, self.data[key])
@@ -91,8 +92,9 @@ class ModelTable(object):
     def __iter__(self):
         object_list = self.get_queryset()
         for obj in object_list:
-            yield Row((field[1], self.get_field_val(obj, field[1]))
-                      for field in self.get_included_fields())
+            yield Row(((field[1], self.get_field_val(obj, field[1]))
+                       for field in self.get_included_fields()),
+                      obj=obj)
 
     def header_row(self):
         return Row((field[1], field[0])
@@ -220,7 +222,7 @@ class AttendeeTable(ModelTable):
 
     #: A list of order related fields.
     ORDER_FIELD_OPTIONS = (
-        ("Order ID", "order_id", True),
+        ("Order Code", "order_code", True),
         ("Order Placed By", "order_placed_by", True),
     )
 
@@ -243,8 +245,8 @@ class AttendeeTable(ModelTable):
     FIELD_OPTIONS = reduce(tuple.__add__, FIELD_OPTIONS_BY_CATEGORY)
 
     # Methods to be used as fields
-    def order_id(self, obj):
-        return obj.order.pk
+    def order_code(self, obj):
+        return obj.order.code
 
     def order_placed_by(self, obj):
         person = obj.order.person
@@ -262,3 +264,11 @@ class AttendeeTable(ModelTable):
     housing_preferences = comma_separated_manager("housing_prefer")
     environment_avoid = comma_separated_manager("ef_avoid")
     environment_cause = comma_separated_manager("ef_cause")
+
+
+class OrderTable(ModelTable):
+    FIELD_OPTIONS = (
+        ("Code", "code", True),
+        ("Person", "person", True),
+        ("Send flyers", "send_flyers", True),
+    )

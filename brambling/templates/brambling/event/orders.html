@@ -1,49 +1,19 @@
-{% extends 'brambling/event/__manage.html' %}
+{% extends 'brambling/event/__table.html' %}
 
 {% load floppyforms zenaida %}
 
 {% block title %}Orders – {{ block.super }}{% endblock %}
 
-{% block main %}
-    {{ block.super }}
-
-    {% include "brambling/event/_empty_shop_alert.html" %}
-
-    <div class="row">
-        <div class="col-md-3 col-md-push-9">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">Filters</h4>
-                </div>
-                <div class="panel-body">
-                    <form action="" method="get">
-                        {% form filter.form %}
-                        <button class="btn btn-primary btn-block">Filter</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-9 col-md-pull-3">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Heard through</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in filter %}
-                        <tr>
-                            <th><a href='{% url "brambling_event_order_detail" event_slug=event.slug code=order.code %}'>{{ order.person.get_full_name }}</a></th>
-                            <td>{{ order.heard_through }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="2">No orders match the filter criteria.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+{% block cell %}
+    {% if cell.field == 'code' %}
+        <a href='{% url "brambling_event_order_detail" event_slug=event.slug code=row.obj.code %}'>{{ cell }}</a>
+    {% elif cell.field == 'send_flyers' %}
+        {% if cell.value %}
+            <i class='text-success fa fa-check'></i>
+        {% else %}
+            <i class='text-danger fa fa-times'></i>
+        {% endif %}
+    {% else %}
+        {{ block.super }}
+    {% endif %}
 {% endblock %}

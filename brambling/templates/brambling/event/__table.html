@@ -54,13 +54,13 @@
             <tbody>
                 {% for row in table %}
                     <tr>
-                        {% for field in row %}
+                        {% for cell in row %}
                             {% if forloop.first %}
                                 <th>
                             {% else %}
                                 <td>
                             {% endif %}
-                            {{ field }}
+                            {% block cell %}{{ cell }}{% endblock %}
                             {% if not forloop.first %}
                                 </td>
                             {% else %}
@@ -70,7 +70,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="2">No items match the filter criteria.</td>
+                        <td colspan="2">Nothing matches the filter criteria.</td>
                     </tr>
                 {% endfor %}
             </tbody>
