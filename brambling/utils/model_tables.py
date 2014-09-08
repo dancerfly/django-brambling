@@ -2,14 +2,17 @@ from collections import OrderedDict
 import csv
 import itertools
 
-from django import forms
 from django.contrib.admin.utils import lookup_field
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.http import StreamingHttpResponse
+import floppyforms as forms
 
 
 __all__ = ('comma_separated_manager', 'ModelTable',
            'AttendeeTable')
+
+
+TABLE_COLUMN_FIELD = 'columns'
 
 
 class Echo(object):
@@ -105,6 +108,9 @@ class ModelTable(object):
                    for field in self.get_included_fields())
 
     def get_fields(self):
+        """
+        Returns a full list of fields that users can select from.
+        """
         return self.fields
 
     def get_included_fields(self):
@@ -119,7 +125,7 @@ class ModelTable(object):
             # Include fields which are marked True in the form:
             fields = [field
                       for field in self.get_fields()
-                      if cleaned_data[field[1]] is True]
+                      if field[1] in cleaned_data.get(TABLE_COLUMN_FIELD, ())]
             # Only return a list of fields if it isn't empty:
             if not fields == []:
                 return fields
@@ -165,10 +171,17 @@ class ModelTable(object):
         """
 
         if not hasattr(self, '_form'):
-            fields = {}
-            for field in self.get_fields():
-                boolean_field = forms.BooleanField(label=field[0], required=False, initial=field[2])
-                fields.update({field[1]: boolean_field})
+            choices = [(field[1], field[0]) for field in self.get_fields()]
+            initial = [field[1] for field in self.get_fields() if field[2]]
+            field = forms.MultipleChoiceField(
+                choices=choices,
+                initial=initial,
+                widget=forms.CheckboxSelectMultiple,
+                required=False,
+            )
+            fields = {
+                TABLE_COLUMN_FIELD: field,
+            }
 
             Form = type(str('{}Form'.format(self.__class__.__name__)), (self.get_form_class(),), fields)
 
