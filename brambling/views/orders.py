@@ -12,7 +12,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
                                     SurveyDataForm)
-from brambling.models import (Item, BoughtItem, ItemOption,
+from brambling.models import (Event, Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
@@ -273,18 +273,14 @@ class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        try:
-            bought_item = BoughtItem.objects.get(item_option__item__event=event,
-                                                 pk=kwargs['pk'])
-        except BoughtItem.DoesNotExist:
-            pass
-        else:
-            self.order.remove_from_cart(bought_item)
+        bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+
+        if not bought_item.order.person == request.user:
+            return JsonResponse({'error': "You do not own that item."}, status=403)
+
+        bought_item.order.remove_from_cart(bought_item)
 
         return JsonResponse({'success': True})
-
-    def get_workflow(self):
-        return None
 
 
 class ApplyDiscountView(OrderMixin, View):
