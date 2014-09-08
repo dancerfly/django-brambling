@@ -6,7 +6,7 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage)
+                              Date, ItemImage, Payment)
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
@@ -171,14 +171,6 @@ class DiscountForm(forms.ModelForm):
             self._update_errors(e)
 
 
-class DiscountChoiceForm(forms.Form):
-    discount = forms.ModelChoiceField(Discount)
-
-    def __init__(self, event, *args, **kwargs):
-        super(DiscountChoiceForm, self).__init__(*args, **kwargs)
-        self.fields['discount'].queryset = Discount.objects.filter(event=event)
-
-
 class AttendeeFilterSetForm(forms.Form):
     ORDERING_CHOICES = (
         ("surname", "Surname"),
@@ -203,3 +195,27 @@ class AttendeeFilterSetForm(forms.Form):
     o = forms.ChoiceField(label="Sort by",
                           choices=ORDERING_CHOICES,
                           required=False)
+
+
+class ManualPaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ('amount', 'method')
+
+    def __init__(self, order, *args, **kwargs):
+        super(ManualPaymentForm, self).__init__(*args, **kwargs)
+        self.fields['method'].choices = Payment.METHOD_CHOICES[2:]
+        self.order = order
+        self.instance.order = order
+
+
+class ManualDiscountForm(forms.Form):
+    discount = forms.ModelChoiceField(Discount)
+
+    def __init__(self, order, *args, **kwargs):
+        super(ManualDiscountForm, self).__init__(*args, **kwargs)
+        self.fields['discount'].queryset = Discount.objects.filter(event=order.event)
+        self.order = order
+
+    def save(self):
+        self.order.add_discount(self.cleaned_data['discount'], force=True)

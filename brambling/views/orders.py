@@ -287,41 +287,28 @@ class ApplyDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-
         discounts = Discount.objects.filter(
             code=kwargs['discount'],
             event=self.event
         )
-        if self.is_admin_request:
-            try:
-                discount = discounts.get()
-            except Discount.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'errors': {
-                        'discount': ("No discount with that code exists "
-                                     "for this event.")
-                    },
-                })
-        else:
-            now = timezone.now()
-            try:
-                discounts = discounts.filter(
-                    (Q(available_start__lte=now) |
-                     Q(available_start__isnull=True)),
-                    (Q(available_end__gte=now) |
-                     Q(available_end__isnull=True))
-                ).get()
-            except Discount.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'errors': {
-                        'discount': ("No discount with that code is currently "
-                                     "active for this event.")
-                    },
-                })
+        now = timezone.now()
+        try:
+            discount = discounts.filter(
+                (Q(available_start__lte=now) |
+                 Q(available_start__isnull=True)),
+                (Q(available_end__gte=now) |
+                 Q(available_end__isnull=True))
+            ).get()
+        except Discount.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'errors': {
+                    'discount': ("No discount with that code is currently "
+                                 "active for this event.")
+                },
+            })
 
-        created = self.order.add_discount(discount, force=self.is_admin_request)
+        created = self.order.add_discount(discount, force=False)
         if created:
             return JsonResponse({
                 'success': True,
@@ -594,7 +581,7 @@ class HostingView(OrderMixin, UpdateView):
                        kwargs={'event_slug': self.event.slug})
 
 
-class OrderDetailView(OrderMixin, TemplateView):
+class SummaryView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/summary.html'
     current_step_slug = 'payment'
 
@@ -649,7 +636,7 @@ class OrderDetailView(OrderMixin, TemplateView):
         self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(OrderDetailView, self).get_context_data(**kwargs)
+        context = super(SummaryView, self).get_context_data(**kwargs)
 
         context.update({
             'has_cards': self.order.person.cards.exists(),

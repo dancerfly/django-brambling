@@ -16,8 +16,8 @@ import stripe
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
-                                       DiscountForm, DiscountChoiceForm,
-                                       ItemImageFormSet)
+                                       DiscountForm, ItemImageFormSet,
+                                       ManualPaymentForm, ManualDiscountForm)
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -487,3 +487,51 @@ class OrderFilterView(FilterView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
+
+
+class OrderDetailView(DetailView):
+    template_name = 'brambling/event/order_detail.html'
+
+    def get_object(self):
+        return self.order
+
+    def get_forms(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        self.order = get_order(self.event, code=self.kwargs['code'])
+        self.payment_form = ManualPaymentForm(order=self.order)
+        self.discount_form = ManualDiscountForm(order=self.order)
+        if self.request.method == 'POST':
+            if 'is_payment_form' in self.request.POST:
+                self.payment_form = ManualPaymentForm(order=self.order,
+                                                      data=self.request.POST)
+            elif 'is_discount_form' in self.request.POST:
+                self.discount_form = ManualDiscountForm(order=self.order,
+                                                        data=self.request.POST)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderDetailView, self).get_context_data(**kwargs)
+        context.update({
+            'payment_form': self.payment_form,
+            'discount_form': self.discount_form,
+            'order': self.order,
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        context.update(self.order.get_summary_data())
+        return context
+
+    def get(self, request, *args, **kwargs):
+        self.get_forms()
+        return super(OrderDetailView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.get_forms()
+        if self.payment_form.is_bound and self.payment_form.is_valid():
+            self.payment_form.save()
+            return HttpResponseRedirect(request.path)
+        if self.discount_form.is_bound and self.discount_form.is_valid():
+            self.discount_form.save()
+            return HttpResponseRedirect(request.path)
+        return super(OrderDetailView, self).get(request, *args, **kwargs)

@@ -7,7 +7,6 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	{% include "brambling/_stripe_js.html" %}
 	<script src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
 	<script>
 		$('[data-toggle=tab]').click(function (e) {
@@ -20,69 +19,50 @@
 				location.reload();
 			});
 		});
-		$('#applyDiscountForm button').on('click', function(e){
-			e.preventDefault();
-			var url = $('#applyDiscountForm').attr('action');
-			$.post(url, $('#applyDiscountForm').serialize(), function(data) {
-				if (data.success) {
-					location.reload();
-				} else {
-					var select = $('applyDiscountForm select');
-					select.after('<p class="help-block">' + data.errors.discount + '</p>');
-					select.parent().addClass('has-error');
-				}
-			});
-		});
 	</script>
 {% endblock %}
 
 {% block main %}
 	{{ block.super }}
 
-	{% include "brambling/event/_admin_order_summary.html" %}
+	<!-- Nav tabs -->
+	<ul class="nav nav-tabs" role="tablist">
+	  <li{% if not payment_form.is_bound and not discount_form.is_bound %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
+	  <li{% if payment_form.is_bound %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
+	  <li{% if discount_form.is_bound %} class="active"{% endif %}><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
+	</ul>
 
-<!-- Nav tabs -->
-<ul class="nav nav-tabs" role="tablist">
-  <li class="active"><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
-  <li><a href="#item" role="tab" data-toggle="tab">Add Item</a></li>
-  <li><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
-  <li><a href="#refund" role="tab" data-toggle="tab">Settings</a></li>
-</ul>
-
-<!-- Tab panes -->
-<div class="tab-content">
-	<div class="tab-pane active" id="payment">
-		<h3>Record payment - either process credit card payment or enter cash/check payment</h3>
-		{% include 'brambling/_stripe_form.html' %}
-		<form novalidate action="" method="post" id='card-form'>
-			{% csrf_token %}
-			<input name='new_card' value='1' type='hidden'>
-
-			{% formrow new_card_form.save_card %}
-
-			{% for error in new_card_form.non_field_errors %}
-				<div class='alert alert-danger'>
-					{{ error }}
+	<!-- Tab panes -->
+	<div class="tab-content">
+		<div class="tab-pane{% if not payment_form.is_bound and not discount_form.is_bound %} active{% endif %}" id="summary">
+			{% include "brambling/event/_admin_order_summary.html" %}
+		</div>
+		<div class="tab-pane{% if payment_form.is_bound %} active{% endif %}" id="payment">
+			<div class='row'>
+				<div class='col-sm-6 col-sm-offset-3'>
+					<form method='post' action=''>
+						{% csrf_token %}
+						<input type='hidden' name='is_payment_form' value='1'>
+						{% form payment_form using %}
+							{% formrow payment_form.method with using="floppyforms/radio.html" inline=1 %}
+							{% formrow payment_form.amount with append=event.currency %}
+						{% endform %}
+						<button type='submit' class='btn btn-primary'>Record payment</button>
+					</form>
 				</div>
-			{% endfor %}
-
-			<button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-		</form>
-		{% include 'brambling/_stripe_note.html' %}
+			</div>
+		</div>
+		<div class="tab-pane{% if discount_form.is_bound %} active{% endif %}" id="discount">
+			<div class='row'>
+				<div class='col-sm-6 col-sm-offset-3'>
+					<form method='post' action=''>
+						<input type='hidden' name='is_discount_form' value='1'>
+						{% csrf_token %}
+						{% form discount_form %}
+						<button type='submit' class='btn btn-primary'>Apply discount</button>
+					</form>
+				</div>
+			</div>
+		</div>
 	</div>
-	<div class="tab-pane" id="item">
-		<h3>Add item to order</h3>
-	</div>
-	<div class="tab-pane" id="discount">
-		<h3>Apply discount to order</h3>
-		<form id="applyDiscountForm" method='post' action='{% url "brambling_event_apply_discount" event_slug=event.slug code=order.code %}'>
-			{% csrf_token %}
-			{% form discount_form %}
-			<button type='submit' class='btn btn-primary'>Apply discount</button>
-		</form>
-	</div>
-	<div class="tab-pane" id="refund">
-		<h3>Issue refund</h3>
-	</div>
-</div>
 {% endblock %}

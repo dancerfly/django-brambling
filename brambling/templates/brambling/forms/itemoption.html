@@ -9,18 +9,7 @@
 	</div>
 	<div class='row'>
 		<div class='col-md-3 col-xs-6'>
-			{% with field=form.price %}
-				<div class='form-group{% if field.errors %} has-error{% endif %}'>
-					<label class="control-label" for="{{ field|id }}">{{ field.label }} {% if field.field.required %} <span class="required">*</span>{% endif %}</label>
-					<div class="input-group">
-						{% formfield field %}
-						<div class='input-group-addon'>
-							{{ event.currency }}
-						</div>
-					</div>
-					{% if field.errors %}{% include "floppyforms/errors.html" with errors=field.errors %}{% endif %}
-				</div>
-			{% endwith %}
+			{% formrow form.price with append=event.currency %}
 		</div>
 		<div class='col-md-3 col-xs-6'>{% formrow form.total_number %}</div>
 		<div class='col-md-3 col-xs-6'>{% formrow form.available_start %}</div>

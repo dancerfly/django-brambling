@@ -548,7 +548,7 @@ class Order(models.Model):
             bought_items = BoughtItem.objects.filter(
                 order=self,
                 item_option__discount=discount,
-            )
+            ).exclude(status=BoughtItem.REFUNDED)
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount,
                                    bought_item=bought_item)
@@ -674,12 +674,19 @@ class Order(models.Model):
 class Payment(models.Model):
     STRIPE = 'stripe'
     DWOLLA = 'dwolla'
+    CASH = 'cash'
+    CHECK = 'check'
+    FAKE = 'fake'
+
     METHOD_CHOICES = (
         (STRIPE, 'Stripe'),
         (DWOLLA, 'Dwolla'),
+        (CASH, 'Cash'),
+        (CHECK, 'Check'),
+        (FAKE, 'Fake')
     )
     order = models.ForeignKey('Order', related_name='payments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
+    amount = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0.01)])
     timestamp = models.DateTimeField(default=timezone.now)
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)
