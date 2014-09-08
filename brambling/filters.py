@@ -1,7 +1,27 @@
+import copy
+
+from django.db import models
 import django_filters
+import floppyforms.__future__ as forms
+from floppyforms.__future__.models import FORMFIELD_OVERRIDES
 
 from brambling.forms.organizer import AttendeeFilterSetForm
 from brambling.models import Attendee, ItemOption, Discount, Order
+
+
+FILTER_FIELD_OVERRIDES = copy.deepcopy(FORMFIELD_OVERRIDES)
+FILTER_FIELD_OVERRIDES[models.BooleanField] = {'form_class': forms.NullBooleanField}
+
+
+class FloppyFilterSet(django_filters.FilterSet):
+    class Meta:
+        form = forms.Form
+
+    @classmethod
+    def filter_for_field(cls, f, name):
+        filter_ = super(FloppyFilterSet, cls).filter_for_field(f, name)
+        filter_.field_class = FILTER_FIELD_OVERRIDES[f.__class__]['form_class']
+        return filter_
 
 
 class AttendeeFilterSet(django_filters.FilterSet):
@@ -42,7 +62,8 @@ class AttendeeFilterSet(django_filters.FilterSet):
         order_by = ['surname', '-surname', 'given_name', '-given_name']
 
 
-class OrderFilterSet(django_filters.FilterSet):
+class OrderFilterSet(FloppyFilterSet):
     class Meta:
         model = Order
         fields = ['providing_housing', 'send_flyers']
+        form = forms.Form
