@@ -39,7 +39,7 @@ $(function() {
     $('.tipped').tooltip();
 
     // Add popovers to elements with class "popover-dismiss".
-    $('.popped').popover();
+    $('.popped').popover({trigger: "focus"});
 
     // Bind some brambling-specific events to the countdown timer.
     $('[data-countdown="timer"]').on("updated.countdown", function (e, data) {
