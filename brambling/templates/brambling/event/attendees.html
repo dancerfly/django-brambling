@@ -3,3 +3,11 @@
 {% load floppyforms zenaida static %}
 
 {% block title %}Attendees – {{ block.super }}{% endblock %}
+
+{% block cell %}
+    {% if cell.field == 'order_code' %}
+        <a href='{% url "brambling_event_order_detail" event_slug=event.slug code=cell.value %}'>{{ cell }}</a>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
