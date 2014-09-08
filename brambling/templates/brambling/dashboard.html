@@ -8,15 +8,17 @@
 	</div>
 	{% for event in upcoming_events|slice:"5" %}
 		<div class="row margin-leader-dbl event-listing">
-			<div class="col-sm-4 relative">
-				<div class="datecard datecard-inset">
-					<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
-					<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
-				</div>
-				<img src="http://placehold.it/600x400" class="img-responsive">
+			<div class="col-sm-3 relative">
+				<a href="{{ event.get_absolute_url }}" class="a-inherit">
+					<div class="datecard datecard-inset">
+						<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
+						<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
+					</div>
+					<img src="http://placehold.it/400x400" class="img-responsive">
+				</a>
 			</div>
-			<div class="col-sm-8">
-				<h3>{{ event.name }}</h3>
+			<div class="col-sm-9">
+				<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
 				<h4 class="text-muted">{{ event.tagline }}</h4>
 				<h5>
 					{% include "brambling/event/_when_where.html" %}

@@ -5880,8 +5880,8 @@ a.step.complete:hover {
   overflow: scroll;
 }
 
-.event-tags {
-  margin-top: 0;
+.a-inherit {
+  color: inherit;
 }
 
 .navbar-default {
