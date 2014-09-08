@@ -82,13 +82,12 @@ class ModelTable(object):
     #: or False (indicating whether the field should be included by default).
     #: `field_name` can be the name of an attribute on the model
     #: or an attribute on the ModelTable subclass.
-    FIELD_OPTIONS = ()
+    fields = ()
 
     def __init__(self, queryset, data=None, form_prefix=None):
         # Simple assignment:
         self.data = data or {}
         self.queryset = queryset
-        self.fields = self.FIELD_OPTIONS
         self.form_prefix = form_prefix
 
         # More complex properties:
@@ -105,6 +104,9 @@ class ModelTable(object):
         return Row((field[1], field[0])
                    for field in self.get_included_fields())
 
+    def get_fields(self):
+        return self.fields
+
     def get_included_fields(self):
         """
         Returns a tuple of 2-tuples in the form of
@@ -116,13 +118,13 @@ class ModelTable(object):
             cleaned_data = self.form.cleaned_data
             # Include fields which are marked True in the form:
             fields = [field
-                      for field in self.FIELD_OPTIONS
+                      for field in self.get_fields()
                       if cleaned_data[field[1]] is True]
             # Only return a list of fields if it isn't empty:
             if not fields == []:
                 return fields
         # Otherwise default to all fields:
-        return self.FIELD_OPTIONS
+        return self.get_fields()
 
     def get_queryset(self):
         return self.queryset
@@ -157,14 +159,14 @@ class ModelTable(object):
     @property
     def form(self):
         """
-        Returns a form of booleans for each field in FIELD_OPTIONS,
+        Returns a form of booleans for each field in fields,
         bound with self.data if is not None.
 
         """
 
         if not hasattr(self, '_form'):
             fields = {}
-            for field in self.FIELD_OPTIONS:
+            for field in self.get_fields():
                 boolean_field = forms.BooleanField(label=field[0], required=False, initial=field[2])
                 fields.update({field[1]: boolean_field})
 
@@ -234,17 +236,25 @@ class AttendeeTable(ModelTable):
         ("Consent to be Photographed", "photo_consent", True),
     )
 
-    FIELD_OPTIONS_BY_CATEGORY = (
-        IDENTIFICATION_FIELD_OPTIONS,
-        CONTACT_FIELD_OPTIONS,
-        PASS_FIELD_OPTIONS,
-        HOUSING_FIELD_OPTIONS,
-        ORDER_FIELD_OPTIONS,
-        MISCELLANEOUS_FIELD_OPTIONS,
-    )
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(AttendeeTable, self).__init__(*args, **kwargs)
 
-    #: A list of all possible display fields.
-    FIELD_OPTIONS = reduce(tuple.__add__, FIELD_OPTIONS_BY_CATEGORY)
+    def get_fields(self):
+        fields = (
+            self.IDENTIFICATION_FIELD_OPTIONS,
+            self.CONTACT_FIELD_OPTIONS,
+            self.PASS_FIELD_OPTIONS,
+        )
+        if self.event.collect_housing_data:
+            fields += (
+                self.HOUSING_FIELD_OPTIONS,
+            )
+        fields += (
+            self.ORDER_FIELD_OPTIONS,
+            self.MISCELLANEOUS_FIELD_OPTIONS,
+        )
+        return reduce(tuple.__add__, fields)
 
     # Methods to be used as fields
     def order_code(self, obj):
@@ -269,8 +279,21 @@ class AttendeeTable(ModelTable):
 
 
 class OrderTable(ModelTable):
-    FIELD_OPTIONS = (
+    BASE_FIELDS = (
         ("Code", "code", True),
         ("Person", "person", True),
+    )
+
+    SURVEY_FIELDS = (
         ("Send flyers", "send_flyers", True),
     )
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(OrderTable, self).__init__(*args, **kwargs)
+
+    def get_fields(self):
+        fields = self.BASE_FIELDS
+        if self.event.collect_survey_data:
+            fields += self.SURVEY_FIELDS
+        return fields

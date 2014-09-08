@@ -354,9 +354,9 @@ class AttendeeFilterView(FilterView):
 
     def get_table(self, queryset):
         if self.request.GET:
-            return AttendeeTable(queryset, data=self.request.GET, form_prefix="column")
+            return AttendeeTable(self.event, queryset, data=self.request.GET, form_prefix="column")
         else:
-            return AttendeeTable(queryset, form_prefix="column")
+            return AttendeeTable(self.event, queryset, form_prefix="column")
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
@@ -475,9 +475,9 @@ class OrderFilterView(FilterView):
 
     def get_table(self, queryset):
         if self.request.GET:
-            return OrderTable(queryset, data=self.request.GET, form_prefix="column")
+            return OrderTable(self.event, queryset, data=self.request.GET, form_prefix="column")
         else:
-            return OrderTable(queryset, form_prefix="column")
+            return OrderTable(self.event, queryset, form_prefix="column")
 
     def get_context_data(self, **kwargs):
         context = super(OrderFilterView, self).get_context_data(**kwargs)
