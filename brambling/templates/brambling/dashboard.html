@@ -39,15 +39,8 @@
 			<div class="list-group">
 				{% for event in admin_events|slice:"5" %}
 					<a class="list-group-item" href="{{ event.get_absolute_url }}">
-						<div class="media">
-							<div class="pull-left">
-								<i class="fa fa-calendar-o fa-fw text-muted"></i>
-							</div>
-							<div class="media-body">
-								{{ event.name }}<br />
-								<small class="text-muted">{{ event.start_date|date }} — {{ event.end_date|date }}</small>
-							</div>
-						</div>{# /.media #}
+						{{ event.name }}<br />
+						<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
 					</a>
 				{% endfor %}
 				<a class="list-group-item" href="{% url 'brambling_event_create' %}">
@@ -66,15 +59,8 @@
 			<div class="list-group">
 					{% for event in registered_events|slice:"5" %}
 				<a class="list-group-item" href="{{ event.get_absolute_url }}">
-					<div class="media">
-						<div class="pull-left">
-							<i class="fa fa-calendar-o fa-fw text-muted"></i>
-						</div>
-						<div class="media-body">
-							{{ event.name }}<br />
-							<small class="text-muted">{{ event.start_date|date }} — {{ event.end_date|date }}</small>
-						</div>
-					</div>{# /.media #}
+					{{ event.name }}<br />
+					<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
 				</a>
 			{% endfor %}
 			</div>
