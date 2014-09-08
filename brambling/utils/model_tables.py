@@ -77,8 +77,8 @@ class ModelTable(object):
 
     """
 
-    #: The fields as a list of 2-tuples of the format
-    #: ("Field Verbose Name", "field_name"), where default is True
+    #: The fields as a list of 3-tuples of the format
+    #: ("Field Verbose Name", "field_name", default), where default is True
     #: or False (indicating whether the field should be included by default).
     #: `field_name` can be the name of an attribute on the model
     #: or an attribute on the ModelTable subclass.
