@@ -5633,6 +5633,30 @@ html, body {
   overflow-x: hidden;
 }
 
+.datecard {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 5px 0;
+  text-align: center;
+}
+
+.datecard-inset {
+  position: absolute;
+  top: 0;
+  left: 15px;
+  width: 42px;
+}
+
+.datecard-month {
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.datecard-day {
+  font-size: 24px;
+  line-height: 1em;
+  margin: 0;
+}
+
 .form-control:focus {
   -webkit-box-shadow: 0 0 0 1px #e8a500 inset;
   -moz-box-shadow: 0 0 0 1px #e8a500 inset;
@@ -5684,6 +5708,10 @@ html, body {
 
 .margin-trailer-dbl {
   margin-bottom: 40px;
+}
+
+.relative {
+  position: relative;
 }
 
 .masthead {
@@ -5865,6 +5893,10 @@ a.step.complete:hover {
 
 .scroll-x {
   overflow: scroll;
+}
+
+.event-tags {
+  margin-top: 0;
 }
 
 .navbar-default {
