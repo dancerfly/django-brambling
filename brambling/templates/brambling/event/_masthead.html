@@ -1,4 +1,4 @@
-{% load zenaida %}
+{% load zenaida daguerre %}
 <div class="masthead">
 	<h1 class="masthead-bold">
 		<a class="uncolored-link" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
@@ -33,3 +33,6 @@
 		{% include "brambling/event/_when_where.html" %}
 	</p>
 </div>
+	{% if event.banner_image %}
+		<img src="{% adjust event.banner_image 'fill' width=940 height=200 %}" width="940" height="200" class="img-responsive">
+	{% endif %}
