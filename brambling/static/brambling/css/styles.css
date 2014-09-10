@@ -5633,28 +5633,64 @@ html, body {
   overflow-x: hidden;
 }
 
-.datecard {
-  background-color: rgba(255, 255, 255, 0.7);
-  padding: 5px 0;
+.datecard-no-img, .datecard-inset {
   text-align: center;
+  background-color: rgba(222, 142, 15, 0.7);
+  color: white;
+}
+
+.datecard-month {
+  margin: 0;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.datecard-day {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1em;
+}
+
+.datecard-img {
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  border-radius: 3px;
+}
+
+.datecard-no-img {
+  width: 100px;
+  height: 100px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  border-radius: 3px;
+  border: 1px solid #de8e0f;
+}
+.datecard-no-img .datecard-month {
+  font-size: 28px;
+  font-weight: 400;
+  margin-top: 13px;
+}
+.datecard-no-img .datecard-day {
+  font-size: 42px;
 }
 
 .datecard-inset {
   position: absolute;
   top: 0;
-  left: 15px;
-  width: 42px;
-}
-
-.datecard-month {
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.datecard-day {
-  font-size: 24px;
-  line-height: 1em;
-  margin: 0;
+  left: 0;
+  width: 35px;
+  padding: 5px 0;
+  -moz-border-radius-topleft: 3px;
+  -webkit-border-top-left-radius: 3px;
+  border-top-left-radius: 3px;
+  -moz-border-radius-bottomright: 3px;
+  -webkit-border-bottom-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border: 1px solid #de8e0f;
 }
 
 .form-control:focus {
@@ -5702,6 +5738,10 @@ html, body {
   max-width: 480px;
 }
 
+.margin-leader-tiny {
+  margin-top: 4px;
+}
+
 .margin-leader-dbl {
   margin-top: 40px;
 }
@@ -5712,6 +5752,10 @@ html, body {
 
 .relative {
   position: relative;
+}
+
+.media > .pull-left {
+  margin-right: 20px;
 }
 
 .masthead {
@@ -5898,8 +5942,12 @@ a.step.complete:hover {
   overflow: scroll;
 }
 
-.a-inherit {
+.a-inherit, .a-secret {
   color: inherit;
+}
+
+.a-secret:hover {
+  text-decoration: none;
 }
 
 .navbar-default {
