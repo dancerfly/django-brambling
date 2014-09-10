@@ -5758,7 +5758,10 @@ html, body {
 }
 
 .panel-title {
-  color: black;
+  font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.25px;
 }
 
 .stepbar {
