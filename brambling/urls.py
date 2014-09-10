@@ -110,6 +110,8 @@ urlpatterns = patterns('',
         HomeView.as_view(),
         name="brambling_home"),
 
+    url(r'^daguerre/', include('daguerre.urls')),
+
     url(r'^(?P<event_slug>[\w-]+)/$',
         RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
         name="brambling_event_root"),

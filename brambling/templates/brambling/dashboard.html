@@ -1,5 +1,7 @@
 {% extends "brambling/layouts/9_3.html" %}
 
+{% load daguerre %}
+
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
 {% block main %}
@@ -11,11 +13,11 @@
 			{# Currently using if event.start_date == event.end_date instead of something like if event.image. Just so we can have examples of both. #}
 			<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
 				<div class="media-object relative margin-leader-tiny">
-					<div class="{% if event.start_date == event.end_date %}datecard-inset{% else %}datecard-no-img{% endif %}">
+					<div class="{% if event.logo_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
 						<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
 						<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
 					</div>
-					{% if event.start_date == event.end_date %}<img src="http://placekitten.com/152/152" width="100" height="100" class="datecard-img">{% endif %}
+					{% if event.logo_image %}<img src="{% adjust event.logo_image 'fit' width=100 height=100 %}" width="100" height="100" class="datecard-img">{% endif %}
 				</div>
 			</a>
 			<div class="media-body">
@@ -26,6 +28,9 @@
 				</p>
 				<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 				<a href="{{ event.get_absolute_url }}" class="btn btn-primary">Register</a>
+				{% if event.website_url %}
+					<a href="{{ event.website_url }}" class="btn btn-primary">Event</a>
+				{% endif %}
 			</div>
 		</div>
 	{% endfor %}

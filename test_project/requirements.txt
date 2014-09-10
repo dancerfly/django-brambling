@@ -7,6 +7,7 @@ django-debug-toolbar==1.2
 django-debug-toolbar-template-timings==0.6.1
 django-filter==0.7
 Pillow==2.5.3
+django-daguerre==2.1.2
 django-floppyforms==1.2.0
 stripe==1.14.0
 requests==2.2.1
