@@ -32,4 +32,7 @@
 	<p class="text-large">
 		{% include "brambling/event/_when_where.html" %}
 	</p>
+	{% if event.banner_image %}
+		<img src="{% adjust event.banner_image 'fill' width=940 height=75 %}" width="940" height="75" class="datecard-img">{% endif %}
+	{% endif %}
 </div>
