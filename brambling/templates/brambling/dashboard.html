@@ -10,7 +10,6 @@
 	</div>
 	{% for event in upcoming_events|slice:"5" %}
 		<div class="media margin-leader-dbl event-listing">
-			{# Currently using if event.start_date == event.end_date instead of something like if event.image. Just so we can have examples of both. #}
 			<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
 				<div class="media-object relative margin-leader-tiny">
 					<div class="{% if event.logo_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
