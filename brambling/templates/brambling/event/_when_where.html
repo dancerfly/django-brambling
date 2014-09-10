@@ -12,6 +12,10 @@
 	{{ event.start_date }}
 {% endif %}
 
+{% if event.start_time %}
+	at {{ event.start_time }}
+{% endif %}
+
 {# end date #}
 {% if event.start_date != event.end_date %}
 	&#8211; {{ event.end_date }}
