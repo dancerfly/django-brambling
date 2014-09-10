@@ -1,3 +1,7 @@
+.event-listing .media-object
+	height: 100px
+	width:  100px
+
 %dashboard-datecard
 	text-align: center
 	background-color: rgba($yellow-dark,.7)
@@ -14,6 +18,12 @@
 	line-height: 1em
 
 .datecard-img
+	position: absolute
+	top: 0
+	right: 0
+	bottom: 0
+	left: 0
+	margin: auto
 	+border-radius($border-radius-small)
 
 .datecard-no-img
@@ -32,6 +42,7 @@
 .datecard-inset
 	@extend %dashboard-datecard
 	position: absolute
+	z-index: 2
 	top: 0
 	left: 0
 	width: 35px

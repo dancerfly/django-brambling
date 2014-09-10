@@ -5633,6 +5633,11 @@ html, body {
   overflow-x: hidden;
 }
 
+.event-listing .media-object {
+  height: 100px;
+  width: 100px;
+}
+
 .datecard-no-img, .datecard-inset {
   text-align: center;
   background-color: rgba(222, 142, 15, 0.7);
@@ -5652,6 +5657,12 @@ html, body {
 }
 
 .datecard-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   -ms-border-radius: 3px;
@@ -5680,6 +5691,7 @@ html, body {
 
 .datecard-inset {
   position: absolute;
+  z-index: 2;
   top: 0;
   left: 0;
   width: 35px;
