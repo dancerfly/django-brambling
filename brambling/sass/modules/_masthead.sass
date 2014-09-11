@@ -1,4 +1,7 @@
+$masthead-logo-size: 75px
+
 .masthead
+    position: relative
     margin:
         top: -$line-height-computed // to brush up against the navbar
         left: -6000px
@@ -14,6 +17,20 @@
         margin-bottom: 0
     strong
         color: #FFF
+
+.masthead-logo
+    position: relative
+    float: left
+    height: $masthead-logo-size
+    width: $masthead-logo-size
+    > img
+        +absolute-center
+
+.masthead-inner
+    position: absolute
+    left: 6000px +$masthead-logo-size + $line-height-computed
+    right: 6000px
+    top: 0
 
 .masthead-link
     color: lighten($brand-primary, 30%)

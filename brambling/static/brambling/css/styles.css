@@ -5771,6 +5771,7 @@ html, body {
 }
 
 .masthead {
+  position: relative;
   margin-top: -20px;
   margin-left: -6000px;
   margin-bottom: 20px;
@@ -5788,6 +5789,28 @@ html, body {
 }
 .masthead strong {
   color: white;
+}
+
+.masthead-logo {
+  position: relative;
+  float: left;
+  height: 75px;
+  width: 75px;
+}
+.masthead-logo > img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+}
+
+.masthead-inner {
+  position: absolute;
+  left: 6095px;
+  right: 6000px;
+  top: 0;
 }
 
 .masthead-link {
