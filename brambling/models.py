@@ -845,7 +845,7 @@ class Attendee(AbstractNamedModel):
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
     email = models.EmailField(max_length=254)
-    phone = models.CharField(max_length=50, blank=True)
+    phone = models.CharField(max_length=50, blank=True, help_text="Required if requesting housing")
     liability_waiver = models.BooleanField(default=False, help_text="Must be agreed to by the attendee themselves.")
     photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
     housing_status = models.CharField(max_length=4, choices=HOUSING_STATUS_CHOICES,
@@ -932,7 +932,7 @@ class EventHousing(models.Model):
                                     validators=[RegexValidator(FULL_NAME_RE)],
                                     help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
     contact_email = models.EmailField(blank=True)
-    contact_phone = models.CharField(max_length=50, blank=True)
+    contact_phone = models.CharField(max_length=50)
 
     # Duplicated data from Home, plus confirm fields.
     address = models.CharField(max_length=200)

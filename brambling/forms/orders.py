@@ -39,6 +39,12 @@ class AttendeeBasicDataForm(forms.ModelForm):
         else:
             del self.fields['additional_items']
 
+    def clean_housing_status(self):
+        housing_status = self.cleaned_data['housing_status']
+        if housing_status == Attendee.NEED and not self.cleaned_data['phone']:
+            self.add_error('phone', 'Phone number is required to request housing.')
+        return housing_status
+
     def save(self):
         self.instance.order = self.order
         self.instance.event_pass = self.event_pass
