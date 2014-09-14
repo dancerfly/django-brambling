@@ -1,0 +1,46 @@
+{% extends "brambling/layouts/9_3.html" %}
+
+{% load daguerre %}
+
+{% block title %}Your events – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<div class="page-header">
+		<h1>Events You Registered For</h1>
+	</div>
+	{% if registered_events %}
+		{% for event in registered_events|slice:"5" %}
+			{% include "brambling/_event_list_item.html" with registered="true" %}
+		{% endfor %}
+	{% endif %}
+
+	<div class="page-header margin-leader-dbl">
+		<h1>Upcoming Events</h1>
+	</div>
+	{% for event in upcoming_events|slice:"5" %}
+		{% include "brambling/_event_list_item.html" %}
+	{% endfor %}
+{% endblock %}
+
+{% block side %}
+	{% if admin_events %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Events You Manage</h4>
+			</header>
+			<div class="list-group">
+				{% for event in admin_events|slice:"5" %}
+					<a class="list-group-item" href="{% url 'brambling_event_summary' event.slug %}">
+						{{ event.name }}<br />
+						<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
+					</a>
+				{% endfor %}
+				<a class="list-group-item" href="{% url 'brambling_event_create' %}">
+					<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
+				</a>
+			</div>
+		</div>
+	{% else %}
+		<p><a href="{% url 'brambling_event_create' %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
+	{% endif %}
+{% endblock %}
