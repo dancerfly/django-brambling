@@ -3,14 +3,14 @@
 {% block content %}
 	{% block before %}{% endblock %}
 	<div class="row">
-		<div class="col-md-9">
+		<div class="col-md-3 col-md-push-9">{% block side %}{% endblock %}</div>
+		<div class="col-md-9 col-md-pull-3">
 			{% block messages %}
 				{% include "brambling/layouts/_messages.html" %}
 			{% endblock %}
 
 			{% block main %}{% endblock %}
 		</div>
-		<div class="col-md-3">{% block side %}{% endblock %}</div>
 	</div>
 	{% block after %}{% endblock %}
 {% endblock %}

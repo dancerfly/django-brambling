@@ -2,12 +2,17 @@ from collections import OrderedDict
 import csv
 import itertools
 
-from django import forms
+from django.contrib.admin.utils import lookup_field
+from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.http import StreamingHttpResponse
+import floppyforms as forms
 
 
 __all__ = ('comma_separated_manager', 'ModelTable',
            'AttendeeTable')
+
+
+TABLE_COLUMN_FIELD = 'columns'
 
 
 class Echo(object):
@@ -43,10 +48,14 @@ class Cell(object):
     def __unicode__(self):
         return unicode(self.value)
 
+    def is_boolean(self):
+        return isinstance(self.value, bool)
+
 
 class Row(object):
-    def __init__(self, data):
+    def __init__(self, data, obj=None):
         self.data = OrderedDict(data)
+        self.obj = obj
 
     def __getitem__(self, key):
         return Cell(key, self.data[key])
@@ -71,18 +80,17 @@ class ModelTable(object):
 
     """
 
-    #: The fields as a list of 2-tuples of the format
-    #: ("Field Verbose Name", "field_name"), where default is True
+    #: The fields as a list of 3-tuples of the format
+    #: ("Field Verbose Name", "field_name", default), where default is True
     #: or False (indicating whether the field should be included by default).
     #: `field_name` can be the name of an attribute on the model
     #: or an attribute on the ModelTable subclass.
-    FIELD_OPTIONS = ()
+    fields = ()
 
     def __init__(self, queryset, data=None, form_prefix=None):
         # Simple assignment:
         self.data = data or {}
         self.queryset = queryset
-        self.fields = self.FIELD_OPTIONS
         self.form_prefix = form_prefix
 
         # More complex properties:
@@ -91,12 +99,19 @@ class ModelTable(object):
     def __iter__(self):
         object_list = self.get_queryset()
         for obj in object_list:
-            yield Row((field[1], self.get_field_val(obj, field[1]))
-                      for field in self.get_included_fields())
+            yield Row(((field[1], self.get_field_val(obj, field[1]))
+                       for field in self.get_included_fields()),
+                      obj=obj)
 
     def header_row(self):
         return Row((field[1], field[0])
                    for field in self.get_included_fields())
+
+    def get_fields(self):
+        """
+        Returns a full list of fields that users can select from.
+        """
+        return self.fields
 
     def get_included_fields(self):
         """
@@ -109,43 +124,40 @@ class ModelTable(object):
             cleaned_data = self.form.cleaned_data
             # Include fields which are marked True in the form:
             fields = [field
-                      for field in self.FIELD_OPTIONS
-                      if cleaned_data[field[1]] is True]
+                      for field in self.get_fields()
+                      if field[1] in cleaned_data.get(TABLE_COLUMN_FIELD, ())]
             # Only return a list of fields if it isn't empty:
             if not fields == []:
                 return fields
         # Otherwise default to all fields:
-        return self.FIELD_OPTIONS
+        return self.get_fields()
 
     def get_queryset(self):
         return self.queryset
 
     def get_field_val(self, obj, key):
         """
-        First look for values as attributes on the object, next check for a
-        method on self (the table) and call it with the obj as the
-        first argument.
+        Follows the same rules as ModelAdmin dynamic lookups:
 
-        If the returned value is callable, call it and return that.
+        1. Model field
+        2. Callable
+        3. Method on table
+        4. Method on model
+        5. Other attribute on model
+
+        Returns a value which will be passed to the template.
         """
-        if hasattr(obj, key):
-            val = getattr(obj, key)
-        elif hasattr(self, key):
-            meth = getattr(self, key)
-            val = meth(obj)
-        else:
-            error_dict = {
-                'attr': key,
-                'model': obj.__class__.__name__,
-                'table': self.__class__.__name__,
-            }
-            error_string = "{attr} does not exist as an attribute of {model} or {table}".format(**error_dict)
-            raise AttributeError(error_string)
+        # Compare:
+        # * django.contrib.admin.utils:display_for_field
+        # * django.contrib.admin.utils:display_for_value
+        field, attr, value = lookup_field(key, obj, self)
 
-        if callable(val):
-            val = val()
+        if field is not None:
+            if field.flatchoices:
+                # EMPTY_CHANGELIST_VALUE is "(None)"
+                return dict(field.flatchoices).get(value, EMPTY_CHANGELIST_VALUE)
 
-        return val
+        return value
 
     def get_form_class(self):
         return forms.Form
@@ -153,16 +165,23 @@ class ModelTable(object):
     @property
     def form(self):
         """
-        Returns a form of booleans for each field in FIELD_OPTIONS,
+        Returns a form of booleans for each field in fields,
         bound with self.data if is not None.
 
         """
 
         if not hasattr(self, '_form'):
-            fields = {}
-            for field in self.FIELD_OPTIONS:
-                boolean_field = forms.BooleanField(label=field[0], required=False, initial=field[2])
-                fields.update({field[1]: boolean_field})
+            choices = [(field[1], field[0]) for field in self.get_fields()]
+            initial = [field[1] for field in self.get_fields() if field[2]]
+            field = forms.MultipleChoiceField(
+                choices=choices,
+                initial=initial,
+                widget=forms.CheckboxSelectMultiple,
+                required=False,
+            )
+            fields = {
+                TABLE_COLUMN_FIELD: field,
+            }
 
             Form = type(str('{}Form'.format(self.__class__.__name__)), (self.get_form_class(),), fields)
 
@@ -220,7 +239,7 @@ class AttendeeTable(ModelTable):
 
     #: A list of order related fields.
     ORDER_FIELD_OPTIONS = (
-        ("Order ID", "order_id", True),
+        ("Order Code", "order_code", True),
         ("Order Placed By", "order_placed_by", True),
     )
 
@@ -230,21 +249,29 @@ class AttendeeTable(ModelTable):
         ("Consent to be Photographed", "photo_consent", True),
     )
 
-    FIELD_OPTIONS_BY_CATEGORY = (
-        IDENTIFICATION_FIELD_OPTIONS,
-        CONTACT_FIELD_OPTIONS,
-        PASS_FIELD_OPTIONS,
-        HOUSING_FIELD_OPTIONS,
-        ORDER_FIELD_OPTIONS,
-        MISCELLANEOUS_FIELD_OPTIONS,
-    )
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(AttendeeTable, self).__init__(*args, **kwargs)
 
-    #: A list of all possible display fields.
-    FIELD_OPTIONS = reduce(tuple.__add__, FIELD_OPTIONS_BY_CATEGORY)
+    def get_fields(self):
+        fields = (
+            self.IDENTIFICATION_FIELD_OPTIONS,
+            self.CONTACT_FIELD_OPTIONS,
+            self.PASS_FIELD_OPTIONS,
+        )
+        if self.event.collect_housing_data:
+            fields += (
+                self.HOUSING_FIELD_OPTIONS,
+            )
+        fields += (
+            self.ORDER_FIELD_OPTIONS,
+            self.MISCELLANEOUS_FIELD_OPTIONS,
+        )
+        return reduce(tuple.__add__, fields)
 
     # Methods to be used as fields
-    def order_id(self, obj):
-        return obj.order.pk
+    def order_code(self, obj):
+        return obj.order.code
 
     def order_placed_by(self, obj):
         person = obj.order.person
@@ -256,9 +283,30 @@ class AttendeeTable(ModelTable):
             obj.event_pass.item_option.name)
 
     def pass_status(self, obj):
-        return obj.event_pass.status
+        return obj.event_pass.get_status_display()
 
     housing_nights = comma_separated_manager("nights")
     housing_preferences = comma_separated_manager("housing_prefer")
     environment_avoid = comma_separated_manager("ef_avoid")
     environment_cause = comma_separated_manager("ef_cause")
+
+
+class OrderTable(ModelTable):
+    BASE_FIELDS = (
+        ("Code", "code", True),
+        ("Person", "person", True),
+    )
+
+    SURVEY_FIELDS = (
+        ("Send flyers", "send_flyers", True),
+    )
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(OrderTable, self).__init__(*args, **kwargs)
+
+    def get_fields(self):
+        fields = self.BASE_FIELDS
+        if self.event.collect_survey_data:
+            fields += self.SURVEY_FIELDS
+        return fields

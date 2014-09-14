@@ -9,6 +9,16 @@
 		{% formrow form.name %}
 		{% formrow form.slug %}
 		{% formrow form.tagline %}
+		{% formrow form.website_url %}
+		{% formrow form.short_description with using="floppyforms/textarea.html" %}
+		<div class='row'>
+			<div class='col-sm-6'>
+				{% formrow form.logo_image %}
+			</div>
+			<div class='col-sm-6'>
+				{% formrow form.banner_image %}
+			</div>
+		</div>
 		{% formrow form.dance_styles %}
 		{% formrow form.has_dances %}
 		{% formrow form.has_classes %}
@@ -86,7 +96,7 @@
 								<li>Can you provide housing for event attendees?</li>
 							</ul>
 						{% endfilter %}
-					">What is the survey?</a></small>
+					" tabindex="-1">What is the survey?</a></small>
 				</div>
 			{% endwith %}
 		</div>

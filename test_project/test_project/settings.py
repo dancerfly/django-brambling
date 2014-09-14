@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     'zenaida',
     'floppyforms',
     'django_filters',
+    'daguerre',
 )
 
 MIDDLEWARE_CLASSES = (

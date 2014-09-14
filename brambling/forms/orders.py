@@ -39,6 +39,12 @@ class AttendeeBasicDataForm(forms.ModelForm):
         else:
             del self.fields['additional_items']
 
+    def clean_housing_status(self):
+        housing_status = self.cleaned_data['housing_status']
+        if housing_status == Attendee.NEED and not self.cleaned_data['phone']:
+            self.add_error('phone', 'Phone number is required to request housing.')
+        return housing_status
+
     def save(self):
         self.instance.order = self.order
         self.instance.event_pass = self.event_pass
@@ -91,6 +97,7 @@ class AttendeeHousingDataForm(MemoModelForm):
 
         self.fields['nights'].required = True
         self.set_choices('nights', Date, event_housing_dates=self.instance.order.event)
+        self.initial['nights'] = self.fields['nights'].queryset
         self.set_choices('ef_cause',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
@@ -123,6 +130,9 @@ class SurveyDataForm(forms.ModelForm):
             'send_flyers_address', 'send_flyers_city',
             'send_flyers_state_or_province', 'send_flyers_country'
         )
+        widgets = {
+            'send_flyers_country': forms.Select
+        }
 
     def clean_send_flyers(self):
         send_flyers = self.cleaned_data['send_flyers']
@@ -147,6 +157,9 @@ class HostingForm(MemoModelForm):
     class Meta:
         model = EventHousing
         exclude = ('event', 'home', 'order')
+        widgets = {
+            'country': forms.Select
+        }
 
     def __init__(self, *args, **kwargs):
         super(HostingForm, self).__init__({}, *args, **kwargs)

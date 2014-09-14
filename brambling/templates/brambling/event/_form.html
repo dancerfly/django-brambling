@@ -1,5 +1,5 @@
 {% load floppyforms %}
-<form action="{{ request.path }}" method="post" novalidate>
+<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
 	{% csrf_token %}
 	
 	{% form form using "brambling/forms/event.html" %}

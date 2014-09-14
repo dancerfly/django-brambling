@@ -1,80 +1,13 @@
-{% extends 'brambling/event/__manage.html' %}
+{% extends 'brambling/event/__table.html' %}
 
 {% load floppyforms zenaida static %}
 
 {% block title %}Attendees – {{ block.super }}{% endblock %}
 
-{% block main %}
-    {{ block.super }}
-
-    {% include "brambling/event/_empty_shop_alert.html" %}
-
-    <form action="" method="get">
-        <div class='text-right form-inline'>
-            <button class="btn btn-default" data-toggle="modal" data-target="#filterModal" type='button'>
-                <i class="fa fa-filter"></i>
-                Change fields and filters
-            </button>
-            <button type="submit" class="btn btn-primary" name="format" value="csv"><i class="fa fa-download"></i> Download CSV</button>
-        </div>
-        <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                        <div class="modal-title">Filters</div>
-                    </div>
-                    <div class="modal-body">
-                        <p>Limit attendees in data:</p>
-                        {% form filter.form %}
-                        <p>Include these fields in data:</p>
-                        {% form table.form %}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Apply filters</button>
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    </div>
-                </div>{# /.modal-content #}
-            </div>{# /.modal-dialog #}
-        </div>{# /.modal #}
-    </form>
-    <div class="pre-scrollable">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    {% for header in table.header_row %}
-                        <th>{{ header }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in table %}
-                    <tr>
-                        {% for field in row %}
-                            {% if forloop.first %}
-                                <th>
-                            {% else %}
-                                <td>
-                            {% endif %}
-                            {{ field }}
-                            {% if not forloop.first %}
-                                </td>
-                            {% else %}
-                                </th>
-                            {% endif %}
-                        {% endfor %}
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="2">No items match the filter criteria.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ block.super }}
-    <script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
+{% block cell %}
+    {% if cell.field == 'order_code' %}
+        <a href='{% url "brambling_event_order_detail" event_slug=event.slug code=cell.value %}'>{{ cell }}</a>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
 {% endblock %}

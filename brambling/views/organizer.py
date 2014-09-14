@@ -16,8 +16,8 @@ import stripe
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
-                                       DiscountForm, DiscountChoiceForm,
-                                       ItemImageFormSet)
+                                       DiscountForm, ItemImageFormSet,
+                                       ManualPaymentForm, ManualDiscountForm)
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -25,7 +25,7 @@ from brambling.models import (Event, Item, Discount, Payment,
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
-from brambling.utils.model_tables import AttendeeTable
+from brambling.utils.model_tables import AttendeeTable, OrderTable
 
 
 class EventCreateView(CreateView):
@@ -354,9 +354,9 @@ class AttendeeFilterView(FilterView):
 
     def get_table(self, queryset):
         if self.request.GET:
-            return AttendeeTable(queryset, data=self.request.GET, form_prefix="column")
+            return AttendeeTable(self.event, queryset, data=self.request.GET, form_prefix="column")
         else:
-            return AttendeeTable(queryset, form_prefix="column")
+            return AttendeeTable(self.event, queryset, form_prefix="column")
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
@@ -473,10 +473,65 @@ class OrderFilterView(FilterView):
         qs = Order.objects.filter(event=self.event)
         return qs
 
+    def get_table(self, queryset):
+        if self.request.GET:
+            return OrderTable(self.event, queryset, data=self.request.GET, form_prefix="column")
+        else:
+            return OrderTable(self.event, queryset, form_prefix="column")
+
     def get_context_data(self, **kwargs):
         context = super(OrderFilterView, self).get_context_data(**kwargs)
         context.update({
+            'table': self.get_table(self.object_list),
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
+
+
+class OrderDetailView(DetailView):
+    template_name = 'brambling/event/order_detail.html'
+
+    def get_object(self):
+        return self.order
+
+    def get_forms(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        self.order = get_order(self.event, code=self.kwargs['code'])
+        self.payment_form = ManualPaymentForm(order=self.order)
+        self.discount_form = ManualDiscountForm(order=self.order)
+        if self.request.method == 'POST':
+            if 'is_payment_form' in self.request.POST:
+                self.payment_form = ManualPaymentForm(order=self.order,
+                                                      data=self.request.POST)
+            elif 'is_discount_form' in self.request.POST:
+                self.discount_form = ManualDiscountForm(order=self.order,
+                                                        data=self.request.POST)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderDetailView, self).get_context_data(**kwargs)
+        context.update({
+            'payment_form': self.payment_form,
+            'discount_form': self.discount_form,
+            'order': self.order,
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        context.update(self.order.get_summary_data())
+        return context
+
+    def get(self, request, *args, **kwargs):
+        self.get_forms()
+        return super(OrderDetailView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.get_forms()
+        if self.payment_form.is_bound and self.payment_form.is_valid():
+            self.payment_form.save()
+            return HttpResponseRedirect(request.path)
+        if self.discount_form.is_bound and self.discount_form.is_valid():
+            self.discount_form.save()
+            return HttpResponseRedirect(request.path)
+        return super(OrderDetailView, self).get(request, *args, **kwargs)

@@ -59,6 +59,11 @@
 								{% endwith %}
 							</div>
 						</div>
+						{% if unassigned_items %}
+							{% cycle "" '<div class="clearfix visible-md-block visible-lg-block"></div>' %}
+						{% else %}
+							{% cycle "" "" '<div class="clearfix visible-md-block visible-lg-block"></div>' %}
+						{% endif %}
 					{% endfor %}
 				</div>
 	{% if unassigned_items %}

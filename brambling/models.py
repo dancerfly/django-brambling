@@ -18,9 +18,6 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 
 
-FULL_NAME_RE = r"^\w+( \w+)+"
-
-
 DEFAULT_DANCE_STYLES = (
     "Alt Blues",
     "Trad Blues",
@@ -198,6 +195,10 @@ class Event(models.Model):
                                       " Dashes, 0-9, and lower-case a-z only.",
                             unique=True)
     tagline = models.CharField(max_length=75, blank=True)
+    short_description = models.CharField(max_length=140, blank=True)
+    website_url = models.URLField(blank=True)
+    logo_image = models.ImageField(blank=True)
+    banner_image = models.ImageField(blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
     country = CountryField()
@@ -548,7 +549,7 @@ class Order(models.Model):
             bought_items = BoughtItem.objects.filter(
                 order=self,
                 item_option__discount=discount,
-            )
+            ).exclude(status=BoughtItem.REFUNDED)
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount,
                                    bought_item=bought_item)
@@ -674,12 +675,19 @@ class Order(models.Model):
 class Payment(models.Model):
     STRIPE = 'stripe'
     DWOLLA = 'dwolla'
+    CASH = 'cash'
+    CHECK = 'check'
+    FAKE = 'fake'
+
     METHOD_CHOICES = (
         (STRIPE, 'Stripe'),
         (DWOLLA, 'Dwolla'),
+        (CASH, 'Cash'),
+        (CHECK, 'Check'),
+        (FAKE, 'Fake')
     )
     order = models.ForeignKey('Order', related_name='payments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
+    amount = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0.01)])
     timestamp = models.DateTimeField(default=timezone.now)
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)
@@ -834,7 +842,7 @@ class Attendee(AbstractNamedModel):
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
     email = models.EmailField(max_length=254)
-    phone = models.CharField(max_length=50, blank=True)
+    phone = models.CharField(max_length=50, blank=True, help_text="Required if requesting housing")
     liability_waiver = models.BooleanField(default=False, help_text="Must be agreed to by the attendee themselves.")
     photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
     housing_status = models.CharField(max_length=4, choices=HOUSING_STATUS_CHOICES,
@@ -917,11 +925,9 @@ class EventHousing(models.Model):
     order = models.ForeignKey(Order)
 
     # Eventually add a contact_person field.
-    contact_name = models.CharField(max_length=100,
-                                    validators=[RegexValidator(FULL_NAME_RE)],
-                                    help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
+    contact_name = models.CharField(max_length=100)
     contact_email = models.EmailField(blank=True)
-    contact_phone = models.CharField(max_length=50, blank=True)
+    contact_phone = models.CharField(max_length=50)
 
     # Duplicated data from Home, plus confirm fields.
     address = models.CharField(max_length=200)

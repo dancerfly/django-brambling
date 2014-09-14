@@ -154,7 +154,7 @@ class Step(object):
     def is_completed(self):
         if not hasattr(self, '_completed'):
             self._completed = self._is_completed()
-        return (self._completed and
+        return (self._completed and self.is_valid() and
                 (self.previous_step is None or
                  self.previous_step.is_completed()))
 
@@ -162,7 +162,7 @@ class Step(object):
         raise NotImplementedError("_is_completed must be implemented by subclasses.")
 
     def is_valid(self):
-        return bool(self.errors)
+        return not bool(self.errors)
 
     @property
     def errors(self):
