@@ -18,9 +18,6 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 
 
-FULL_NAME_RE = r"^\w+( \w+)+"
-
-
 DEFAULT_DANCE_STYLES = (
     "Alt Blues",
     "Trad Blues",
@@ -928,9 +925,7 @@ class EventHousing(models.Model):
     order = models.ForeignKey(Order)
 
     # Eventually add a contact_person field.
-    contact_name = models.CharField(max_length=100,
-                                    validators=[RegexValidator(FULL_NAME_RE)],
-                                    help_text=u"First Last. Must contain only letters and spaces, with a minimum of 1 space.")
+    contact_name = models.CharField(max_length=100)
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=50)
 
