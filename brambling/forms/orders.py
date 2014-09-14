@@ -91,6 +91,7 @@ class AttendeeHousingDataForm(MemoModelForm):
 
         self.fields['nights'].required = True
         self.set_choices('nights', Date, event_housing_dates=self.instance.order.event)
+        self.initial['nights'] = self.fields['nights'].queryset
         self.set_choices('ef_cause',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
