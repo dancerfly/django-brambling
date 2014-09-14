@@ -5,16 +5,16 @@
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<div class="page-header">
-		<h1>Events You Registered For</h1>
-	</div>
 	{% if registered_events %}
+		<div class="page-header">
+			<h1>Events You Registered For</h1>
+		</div>
 		{% for event in registered_events|slice:"5" %}
 			{% include "brambling/_event_list_item.html" with registered="true" %}
-		{% endfor %}
+		{% endfor %}		
 	{% endif %}
-
-	<div class="page-header margin-leader-dbl">
+	
+	<div class="page-header{% if registered_events %} margin-leader-dbl{% endif %}">
 		<h1>Upcoming Events</h1>
 	</div>
 	{% for event in upcoming_events|slice:"5" %}
