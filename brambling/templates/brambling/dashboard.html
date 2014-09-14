@@ -9,7 +9,7 @@
 		<div class="page-header">
 			<h1>Events You Registered For</h1>
 		</div>
-		{% for event in registered_events|slice:"5" %}
+		{% for event in registered_events %}
 			{% include "brambling/_event_list_item.html" with registered="true" %}
 		{% endfor %}		
 	{% endif %}
@@ -29,7 +29,7 @@
 				<h4 class="panel-title">Events You Manage</h4>
 			</header>
 			<div class="list-group">
-				{% for event in admin_events|slice:"5" %}
+				{% for event in admin_events %}
 					<a class="list-group-item" href="{% url 'brambling_event_summary' event.slug %}">
 						{{ event.name }}<br />
 						<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
