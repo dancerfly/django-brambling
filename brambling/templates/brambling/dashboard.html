@@ -32,13 +32,14 @@
 				<p>
 					{% include "brambling/event/_when_where.html" %}
 				</p>
-				<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
+				<p>
 				{% if event.short_description %}
 					<p>{{ event.short_description }}</p>
 				{% endif %}
+				<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 				<a href="{{ event.get_absolute_url }}" class="btn btn-primary">Register</a>
 				{% if event.website_url %}
-					<a href="{{ event.website_url }}" class="btn btn-primary" target="_blank">Event website <i class='fa fa-external-link'></i></a>
+					<a href="{{ event.website_url }}" class="btn btn-default-dark" target="_blank">Event Website <i class='fa fa-fw fa-external-link'></i></a>
 				{% endif %}
 			</div>
 		</div>
