@@ -7,9 +7,17 @@
 
 
 {% formrow form.address %}
-{% formrow form.city %}
-{% formrow form.state_or_province %}
-{% formrow form.country %}
+<div class="row">
+	<div class="col-sm-5">
+		{% formrow form.city %}
+	</div>
+	<div class="col-sm-3">
+		{% formrow form.state_or_province %}
+	</div>
+	<div class="col-sm-4">
+		{% formrow form.country %}
+	</div>
+</div>{# /.row #}
 
 {% formrow form.public_transit_access %}
 
