@@ -25,7 +25,7 @@
 		</p>
 		<p>
 		{% if event.description %}
-			<p>{{ event.description }}</p>
+			<p>{{ event.description|linebreaks }}</p>
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 		<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
