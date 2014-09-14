@@ -5843,6 +5843,17 @@ html, body {
   letter-spacing: 0.25px;
 }
 
+.banner-stepbar {
+  margin-bottom: 20px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  -ms-border-radius: 4px;
+  -o-border-radius: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
 .stepbar {
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
@@ -5852,6 +5863,17 @@ html, body {
   overflow: hidden;
   width: 100%;
   margin-bottom: 20px;
+}
+.banner-stepbar > .stepbar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  -ms-border-radius: 0;
+  -o-border-radius: 0;
+  border-radius: 0;
+  margin-bottom: 0;
 }
 
 .step {
@@ -5863,12 +5885,20 @@ html, body {
   float: left;
   border-right: 1px solid white;
 }
-.step.complete, .step.current {
+.banner-stepbar .step {
+  background: rgba(245, 245, 245, 0.7);
+  color: #8f8f8f;
+}
+.step.complete {
   background: #e89410;
   color: white;
 }
+.banner-stepbar .step.complete {
+  background: rgba(232, 148, 16, 0.7);
+}
 .step.current {
   background: #de8e0f;
+  color: white;
   position: relative;
 }
 .step.current:after {

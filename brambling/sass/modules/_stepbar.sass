@@ -1,11 +1,24 @@
 @import compass/css3/border-radius
 
+.banner-stepbar
+	margin-bottom: $line-height-computed
+	+border-radius($border-radius-base)
+	overflow: hidden
+	position: relative
+
 .stepbar
 	@extend .clearfix
 	+border-radius($border-radius-base)
 	overflow: hidden
 	width: 100%
 	margin-bottom: $line-height-computed
+	.banner-stepbar > &
+		position: absolute
+		left: 0
+		bottom: 0
+		+border-radius(0)
+		margin-bottom: 0
+
 
 .step
 	background: whitesmoke
@@ -14,12 +27,18 @@
 	color: darken(whitesmoke, 30%)
 	text-align: center
 	float: left
-	border-right: 1px solid white
-	&.complete, &.current
+	border-right: 1px solid $body-bg
+	.banner-stepbar &
+		background: rgba(whitesmoke,.7)
+		color: darken(whitesmoke, 40%)
+	&.complete
 		background: lighten($brand-primary,2%)
 		color: #FFF
+		.banner-stepbar &
+			background: rgba(lighten($brand-primary,2%),.7)
 	&.current
 		background: $yellow-dark
+		color: #FFF
 		position: relative
 		&:after
 			content: " "
