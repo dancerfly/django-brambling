@@ -10,7 +10,10 @@
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	<div class="row">
 		<div class="col-md-8 col-md-offset-2">
-			<h3>{{ event_pass.item_option.name }} ({{ event_pass.item_option.item.name }})</h3>
+			<h3>
+				<span class="text-muted">Attendee information for</span><br>
+				{{ event_pass.item_option.name }} ({{ event_pass.item_option.item.name }})
+			</h3>
 
 			<form action="{{ request.path }}" method="post" novalidate>
 				{% csrf_token %}
