@@ -24,8 +24,8 @@
 			{% include "brambling/event/_when_where.html" %}
 		</p>
 		<p>
-		{% if event.short_description %}
-			<p>{{ event.short_description }}</p>
+		{% if event.description %}
+			<p>{{ event.description }}</p>
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 		<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
