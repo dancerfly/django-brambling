@@ -124,6 +124,9 @@ class SurveyDataForm(forms.ModelForm):
             'send_flyers_address', 'send_flyers_city',
             'send_flyers_state_or_province', 'send_flyers_country'
         )
+        widgets = {
+            'send_flyers_country': forms.Select
+        }
 
     def clean_send_flyers(self):
         send_flyers = self.cleaned_data['send_flyers']
@@ -148,6 +151,9 @@ class HostingForm(MemoModelForm):
     class Meta:
         model = EventHousing
         exclude = ('event', 'home', 'order')
+        widgets = {
+            'country': forms.Select
+        }
 
     def __init__(self, *args, **kwargs):
         super(HostingForm, self).__init__({}, *args, **kwargs)
