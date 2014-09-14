@@ -18,6 +18,9 @@ class UserDashboardView(TemplateView):
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             dance_styles__person=user,
+        ).exclude(
+            order__person=user,
+            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
