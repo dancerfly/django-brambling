@@ -58,7 +58,7 @@
 					<header class='panel-heading'>
 						<div class='panel-title'>
 							<a href="#{{ form.prefix }}-collapse" title="click to expand" data-toggle="collapse">
-								<i class="fa fa-chevron-down"></i> Option <span class="count">{{ forloop.counter }}</span>
+								<i class="fa fa-fw fa-chevron-down"></i> Option <span class="count">{{ forloop.counter }}</span>
 							</a>
 							<div class="actions pull-right"></div>
 						</div>{# /.panel-title #}
@@ -72,10 +72,15 @@
 			{% endfor %}
 		</div>
 
-		<div class="well"></div>
+		<div class='panel panel-default'>
+			<header class='panel-heading'>
+				<div class='panel-title js-formset-add'>
+				</div>{# /.panel-title #}
+			</header>
+		</div>
 
 		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
-		{% if item.pk %}<a href="../">Cancel</a>{% endif %}
+		{% if item.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
 	</form>
 {% endblock %}
 
@@ -96,7 +101,8 @@
 				prefix: '{{ itemoption_formset.prefix }}',
 				deleteTrigger: '<a href="#"><i class="fa fa-times"></i></a>',
 				deleteWrapper: '.actions',
-				addWrapper: '#itemForm .well',
+				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add Another</a>',
+				addWrapper: '.js-formset-add',
 				formTemplate: '.item-option-template',
 				sortableHandle: '.panel-heading',
 				sortableField: 'order'
