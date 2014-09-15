@@ -17,9 +17,17 @@
 	<div class="page-header{% if registered_events %} margin-leader-dbl{% endif %}">
 		<h1>Upcoming Events</h1>
 	</div>
-	{% for event in upcoming_events|slice:"5" %}
-		{% include "brambling/_event_list_item.html" %}
-	{% endfor %}
+	{% if upcoming_events_interest %}
+		{% for event in upcoming_events_interest|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% elif upcoming_events %}
+		{% for event in upcoming_events|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% else %}
+		<p>No upcoming events</p>
+	{% endif %}
 {% endblock %}
 
 {% block side %}
