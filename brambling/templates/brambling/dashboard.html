@@ -30,10 +30,7 @@
 			</header>
 			<div class="list-group">
 				{% for event in admin_events %}
-					<a class="list-group-item" href="{% url 'brambling_event_summary' event.slug %}">
-						{{ event.name }}<br />
-						<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
-					</a>
+					{% include "brambling/_event_list-group-item.html" %}
 				{% endfor %}
 				<a class="list-group-item" href="{% url 'brambling_event_create' %}">
 					<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
@@ -42,6 +39,18 @@
 		</div>
 	{% else %}
 		<p><a href="{% url 'brambling_event_create' %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
+	{% endif %}
+	{% if past_events %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Past Events You Registered For</h4>
+			</header>
+			<div class="list-group">
+				{% for event in past_events %}
+					{% include "brambling/_event_list-group-item.html" %}
+				{% endfor %}
+			</div>
+		</div>
 	{% endif %}
 {% endblock %}
 

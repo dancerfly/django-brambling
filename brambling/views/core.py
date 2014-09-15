@@ -34,10 +34,18 @@ class UserDashboardView(TemplateView):
             order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('-start_date')
+
+        past_events = Event.objects.filter(
+            order__person=user,
+            order__bought_items__status=BoughtItem.PAID,
+        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
+                   ).filter(start_date__lt=today).order_by('-start_date')
+
         return {
             'upcoming_events': upcoming_events,
             'admin_events': admin_events,
             'registered_events': registered_events,
+            'past_events': past_events,
         }
 
     @method_decorator(login_required)
