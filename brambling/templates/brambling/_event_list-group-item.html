@@ -1,0 +1,4 @@
+<a class="list-group-item" href="{% url 'brambling_event_summary' event.slug %}">
+	{{ event.name }}<br />
+	<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
+</a>

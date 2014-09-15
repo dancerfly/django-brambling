@@ -195,7 +195,7 @@ class Event(models.Model):
                                       " Dashes, 0-9, and lower-case a-z only.",
                             unique=True)
     tagline = models.CharField(max_length=75, blank=True)
-    short_description = models.CharField(max_length=140, blank=True)
+    description = models.TextField(blank=True)
     website_url = models.URLField(blank=True)
     logo_image = models.ImageField(blank=True)
     banner_image = models.ImageField(blank=True)

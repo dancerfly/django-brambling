@@ -1,48 +1,33 @@
 {% extends "brambling/layouts/9_3.html" %}
 
-{% load daguerre %}
+{% load staticfiles %}
 
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<div class="page-header">
+	{% if registered_events %}
+		<div class="page-header">
+			<h1>Events You Registered For</h1>
+		</div>
+		{% for event in registered_events %}
+			{% include "brambling/_event_list_item.html" with registered="true" %}
+		{% endfor %}		
+	{% endif %}
+	
+	<div class="page-header{% if registered_events %} margin-leader-dbl{% endif %}">
 		<h1>Upcoming Events</h1>
 	</div>
-	{% for event in upcoming_events|slice:"5" %}
-		<div class="media margin-leader-dbl event-listing">
-			<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
-				<div class="media-object relative margin-leader-tiny">
-					<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
-						<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
-						<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
-					</div>
-					{% if event.logo_image %}
-						{% adjust event.logo_image 'fit' width=100 height=100 as image %}
-					{% elif event.banner_image %}
-						{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-					{% endif %}
-					{% if event.logo_image or event.banner_image %}
-						<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
-					{% endif %}
-				</div>
-			</a>
-			<div class="media-body">
-				<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
-				<h4 class="text-muted">{{ event.tagline }}</h4>
-				<p>
-					{% include "brambling/event/_when_where.html" %}
-				</p>
-				<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
-				{% if event.short_description %}
-					<p>{{ event.short_description }}</p>
-				{% endif %}
-				<a href="{{ event.get_absolute_url }}" class="btn btn-primary">Register</a>
-				{% if event.website_url %}
-					<a href="{{ event.website_url }}" class="btn btn-primary" target="_blank">Event website <i class='fa fa-external-link'></i></a>
-				{% endif %}
-			</div>
-		</div>
-	{% endfor %}
+	{% if upcoming_events_interest %}
+		{% for event in upcoming_events_interest|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% elif upcoming_events %}
+		{% for event in upcoming_events|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% else %}
+		<p>No upcoming events</p>
+	{% endif %}
 {% endblock %}
 
 {% block side %}
@@ -52,11 +37,8 @@
 				<h4 class="panel-title">Events You Manage</h4>
 			</header>
 			<div class="list-group">
-				{% for event in admin_events|slice:"5" %}
-					<a class="list-group-item" href="{% url 'brambling_event_summary' event.slug %}">
-						{{ event.name }}<br />
-						<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
-					</a>
+				{% for event in admin_events %}
+					{% include "brambling/_event_list-group-item.html" %}
 				{% endfor %}
 				<a class="list-group-item" href="{% url 'brambling_event_create' %}">
 					<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
@@ -66,19 +48,22 @@
 	{% else %}
 		<p><a href="{% url 'brambling_event_create' %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
 	{% endif %}
-	{% if registered_events %}
+	{% if past_events %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
-				<h4 class="panel-title">Events You Registered For</h4>
+				<h4 class="panel-title">Past Events You Registered For</h4>
 			</header>
 			<div class="list-group">
-					{% for event in registered_events|slice:"5" %}
-				<a class="list-group-item" href="{{ event.get_absolute_url }}">
-					{{ event.name }}<br />
-					<small class="text-muted">{{ event.start_date|date }}{% if event.start_date != event.end_date %} — {{ event.end_date|date }}{% endif %}</small>
-				</a>
-			{% endfor %}
+				{% for event in past_events %}
+					{% include "brambling/_event_list-group-item.html" %}
+				{% endfor %}
 			</div>
 		</div>
 	{% endif %}
 {% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/transitions.js" %}"></script>
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/collapse.js" %}"></script>
+{% endblock javascripts %}

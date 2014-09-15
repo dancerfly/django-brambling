@@ -6,7 +6,6 @@
 
 .list-comma
 	display: inline
-	margin-right: 0
 	&::after
 		content: ", "
 	&:last-child::after
@@ -14,6 +13,9 @@
 
 .btn-primary-light
 	+button-variant($btn-primary-color, $yellow-light, $btn-primary-border)
+
+.btn-default-dark
+	+button-variant($btn-default-color, darken($btn-default-bg,10%), $btn-default-border)
 
 .uncolored-link
 	color: inherit
@@ -30,3 +32,10 @@
 	@extend .a-inherit
 	&:hover
 		text-decoration: none
+
+.collapser:before
+	content: "▼ More "
+	.collapse.in + &
+		content: "▲ Less "
+
+	

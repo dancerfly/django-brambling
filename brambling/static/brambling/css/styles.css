@@ -1,3 +1,4 @@
+@charset "UTF-8";
 @import url(../fonts/stryde.css);
 @import url(../fonts/stryde-bold.css);
 /*! normalize.css v3.0.1 | MIT License | git.io/normalize */
@@ -6141,7 +6142,6 @@ a.step.complete:hover {
 
 .list-comma {
   display: inline;
-  margin-right: 0;
 }
 .list-comma::after {
   content: ", ";
@@ -6172,6 +6172,28 @@ a.step.complete:hover {
   background-color: white;
 }
 
+.btn-default-dark {
+  color: #333333;
+  background-color: #e6e6e6;
+  border-color: #cccccc;
+}
+.btn-default-dark:hover, .btn-default-dark:focus, .btn-default-dark:active, .btn-default-dark.active, .open > .btn-default-dark.dropdown-toggle {
+  color: #333333;
+  background-color: #cccccc;
+  border-color: #adadad;
+}
+.btn-default-dark:active, .btn-default-dark.active, .open > .btn-default-dark.dropdown-toggle {
+  background-image: none;
+}
+.btn-default-dark.disabled, .btn-default-dark.disabled:hover, .btn-default-dark.disabled:focus, .btn-default-dark.disabled:active, .btn-default-dark.disabled.active, .btn-default-dark[disabled], .btn-default-dark[disabled]:hover, .btn-default-dark[disabled]:focus, .btn-default-dark[disabled]:active, .btn-default-dark[disabled].active, fieldset[disabled] .btn-default-dark, fieldset[disabled] .btn-default-dark:hover, fieldset[disabled] .btn-default-dark:focus, fieldset[disabled] .btn-default-dark:active, fieldset[disabled] .btn-default-dark.active {
+  background-color: #e6e6e6;
+  border-color: #cccccc;
+}
+.btn-default-dark .badge {
+  color: #e6e6e6;
+  background-color: #333333;
+}
+
 .uncolored-link {
   color: inherit;
 }
@@ -6189,6 +6211,13 @@ a.step.complete:hover {
 
 .a-secret:hover {
   text-decoration: none;
+}
+
+.collapser:before {
+  content: "▼ More ";
+}
+.collapse.in + .collapser:before {
+  content: "▲ Less ";
 }
 
 .navbar-default {
@@ -6223,13 +6252,12 @@ a.step.complete:hover {
   margin-bottom: 20px;
 }
 
-h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6,
-.h6 {
+h1, h2, h3, h4, h5, h6 {
   position: relative;
   top: 0.125em;
 }
 
-h1, .h1, h2, .h2, h3, .h3 {
+h1, h2, .h2, h3, .h3 {
   font-weight: 700;
 }
 

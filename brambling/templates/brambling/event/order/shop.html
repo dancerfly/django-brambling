@@ -107,7 +107,7 @@
 						<div class='panel panel-default'>
 							<header class='panel-heading'>
 								<div class='panel-title'>
-									Cart
+									<i class="fa fa-fw fa-shopping-cart"></i> Cart
 								</div>
 							</header>
 							{% regroup order.get_groupable_cart by item_option.item as cart_list %}
@@ -127,7 +127,9 @@
 
 				<div class='panel panel-default' id='discounts'>
 					<header class='panel-heading'>
-						<div class='panel-title'>Discounts</div>
+						<div class='panel-title'>
+							<i class="fa fa-fw fa-gift"></i> Discounts
+						</div>
 					</header>
 					<ul class='list-group'>
 						{% for discount in discounts %}

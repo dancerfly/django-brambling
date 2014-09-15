@@ -17,7 +17,18 @@ class UserDashboardView(TemplateView):
 
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
+        ).exclude(
+            order__person=user,
+            order__bought_items__status=BoughtItem.PAID,
+        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
+                   ).filter(start_date__gte=today).order_by('start_date')
+
+        upcoming_events_interest = Event.objects.filter(
+            privacy=Event.PUBLIC,
             dance_styles__person=user,
+        ).exclude(
+            order__person=user,
+            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
@@ -31,10 +42,19 @@ class UserDashboardView(TemplateView):
             order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('-start_date')
+
+        past_events = Event.objects.filter(
+            order__person=user,
+            order__bought_items__status=BoughtItem.PAID,
+        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
+                   ).filter(start_date__lt=today).order_by('-start_date')
+
         return {
             'upcoming_events': upcoming_events,
+            'upcoming_events_interest': upcoming_events_interest,
             'admin_events': admin_events,
             'registered_events': registered_events,
+            'past_events': past_events,
         }
 
     @method_decorator(login_required)

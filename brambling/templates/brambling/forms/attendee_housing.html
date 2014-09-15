@@ -2,8 +2,10 @@
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 <div class='row'>
-	<div class='col-md-6'>{% formrow form.nights %}</div>
-	<div class='col-md-6'>{% formrow form.housing_prefer %}</div>
+	<div class='col-md-6'>
+		{% formrow form.nights %}
+		{% formrow form.housing_prefer %}
+	</div>
 </div>
 
 <div class='row'>
