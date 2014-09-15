@@ -51,6 +51,9 @@
 									<div class='col-md-6'>{% formrow form.order %}</div>
 									<div class='col-md-6'>{% formrow form.DELETE %}</div>
 								</div>
+								{% for field in form.hidden_fields %}
+									{% formfield field %}
+								{% endfor %}
 							{% endform %}
 						{% endwith %}
 					</div>
@@ -77,6 +80,9 @@
 									<div class='col-md-6'>{% formrow form.order %}</div>
 									<div class='col-md-6'>{% formrow form.DELETE %}</div>
 								</div>
+								{% for field in form.hidden_fields %}
+									{% formfield field %}
+								{% endfor %}
 							{% endform %}
 						</div>
 					</div>
