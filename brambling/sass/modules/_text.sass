@@ -32,3 +32,10 @@
 	@extend .a-inherit
 	&:hover
 		text-decoration: none
+
+.collapser:before
+	content: "▼ More "
+	.collapse.in + &
+		content: "▲ Less "
+
+	

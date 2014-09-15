@@ -1,6 +1,6 @@
 {% extends "brambling/layouts/9_3.html" %}
 
-{% load daguerre %}
+{% load staticfiles %}
 
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
@@ -44,3 +44,9 @@
 		<p><a href="{% url 'brambling_event_create' %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
 	{% endif %}
 {% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/transitions.js" %}"></script>
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/collapse.js" %}"></script>
+{% endblock javascripts %}
