@@ -1,6 +1,6 @@
 {% extends "brambling/layouts/12.html" %}
 
-{% load floppyforms daguerre %}
+{% load floppyforms daguerre staticfiles %}
 
 {% block top %}
 {% endblock top %}
@@ -15,12 +15,24 @@
 				<p class="text-jumbo">Sign up now to start <strong>organizing</strong> and <strong>attending</strong> dance events.</p>
 			</div>
 			<div class="col-sm-6">
-				<p class="text-jumbo"><strong>Sign Up</strong> or <a href="{% url "login" %}" class="masthead-link">Log In</a></p>
-				<form action="{% url "brambling_signup" %}" class="masthead-form" method="post">
-					{% csrf_token %}
-					{% form signup_form using "brambling/forms/signup.html" with masthead="True" only %}
-					<button class="btn btn-primary-light">Sign Up</button>
-				</form>
+				<ul class="nav nav-pills masthead-pills text-jumbo" role="tablist">
+					<li class="active"><a href="#signup" class="masthead-link" role="tab" data-toggle="tab">Sign Up</a></li>
+					<li>or</li>
+					<li><a href="#login" class="masthead-link" role="tab" data-toggle="tab">Log In</a></li>
+				</ul>
+				<div class="tab-content">
+					<form id="signup" class="masthead-form tab-pane fade in active" action="{% url "brambling_signup" %}" method="post">
+						{% csrf_token %}
+						{% form signup_form using "brambling/forms/signup.html" with masthead="True" only %}
+						<button class="btn btn-primary-light">Sign Up</button>
+					</form>
+					<form id="login" class="masthead-form tab-pane fade" action="{% url 'login' %}" method="post">
+						{% csrf_token %}
+						{% form login_form %}
+						<button class="btn btn-primary-light" type="submit">Log in</button>
+						<a class='btn btn-link masthead-link' href="{% url 'password_reset' %}">Forgot your password?</a>
+					</form>
+				</div>
 			</div>
 		</div>{# /.row #}
 	</div>
@@ -68,3 +80,9 @@
 		</div>
 	</div>
 {% endblock %}
+
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tab.js" %}"></script>
+{% endblock javascripts %}

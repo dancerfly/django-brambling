@@ -6028,6 +6028,16 @@ html, body {
   color: white;
 }
 
+.masthead-pills {
+  margin: 0 -15px;
+}
+.masthead-pills > li > a {
+  display: inline;
+}
+.masthead-pills > li > a:hover {
+  background: none;
+}
+
 .masthead-form input, .masthead-form .chosen-container-multi .chosen-choices, .masthead-form .chosen-container-single .chosen-single, .masthead-form .chosen-container-active.chosen-container-multi .chosen-choices, .masthead-form .chosen-container-active.chosen-container-single .chosen-single, .masthead-form .chosen-container-single .chosen-drop {
   background-color: white;
   border: 0;
