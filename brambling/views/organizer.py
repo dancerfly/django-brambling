@@ -30,7 +30,7 @@ from brambling.utils.model_tables import AttendeeTable, OrderTable
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/event/create.html'
+    template_name = 'brambling/event/organizer/create.html'
     context_object_name = 'event'
     form_class = EventForm
 
@@ -66,7 +66,7 @@ class EventCreateView(CreateView):
 
 
 class EventSummaryView(TemplateView):
-    template_name = 'brambling/event/summary.html'
+    template_name = 'brambling/event/organizer/summary.html'
 
     def get(self, request, *args, **kwargs):
         self.event = get_event_or_404(self.kwargs['slug'])
@@ -133,7 +133,7 @@ class EventSummaryView(TemplateView):
 
 class EventUpdateView(UpdateView):
     model = Event
-    template_name = 'brambling/event/update.html'
+    template_name = 'brambling/event/organizer/update.html'
     context_object_name = 'event'
     form_class = EventForm
 
@@ -256,7 +256,7 @@ def item_form(request, *args, **kwargs):
         'cart': None,
         'event_admin_nav': get_event_admin_nav(event, request),
     }
-    return render_to_response('brambling/event/item_form.html',
+    return render_to_response('brambling/event/organizer/item_form.html',
                               context,
                               context_instance=RequestContext(request))
 
@@ -264,7 +264,7 @@ def item_form(request, *args, **kwargs):
 class ItemListView(ListView):
     model = Item
     context_object_name = 'items'
-    template_name = 'brambling/event/item_list.html'
+    template_name = 'brambling/event/organizer/item_list.html'
 
     def get_queryset(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
@@ -308,7 +308,7 @@ def discount_form(request, *args, **kwargs):
         'cart': None,
         'event_admin_nav': get_event_admin_nav(event, request),
     }
-    return render_to_response('brambling/event/discount_form.html',
+    return render_to_response('brambling/event/organizer/discount_form.html',
                               context,
                               context_instance=RequestContext(request))
 
@@ -316,7 +316,7 @@ def discount_form(request, *args, **kwargs):
 class DiscountListView(ListView):
     model = Discount
     context_object_name = 'discounts'
-    template_name = 'brambling/event/discount_list.html'
+    template_name = 'brambling/event/organizer/discount_list.html'
 
     def get_queryset(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
@@ -337,7 +337,7 @@ class DiscountListView(ListView):
 
 class AttendeeFilterView(FilterView):
     filterset_class = AttendeeFilterSet
-    template_name = 'brambling/event/attendees.html'
+    template_name = 'brambling/event/organizer/attendees.html'
     context_object_name = 'attendees'
 
     def get_filterset(self, filterset_class):
@@ -463,7 +463,7 @@ class RefundView(View):
 
 class OrderFilterView(FilterView):
     filterset_class = OrderFilterSet
-    template_name = 'brambling/event/orders.html'
+    template_name = 'brambling/event/organizer/orders.html'
     context_object_name = 'orders'
 
     def get_queryset(self):
@@ -490,7 +490,7 @@ class OrderFilterView(FilterView):
 
 
 class OrderDetailView(DetailView):
-    template_name = 'brambling/event/order_detail.html'
+    template_name = 'brambling/event/organizer/order_detail.html'
 
     def get_object(self):
         return self.order

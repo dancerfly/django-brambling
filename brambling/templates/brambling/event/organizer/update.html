@@ -1,0 +1,13 @@
+{% extends 'brambling/event/organizer/__base.html' %}
+
+{% block main %}
+	{{ block.super }}
+
+	{% include "brambling/event/organizer/_form.html" %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	{% include "brambling/event/organizer/_form_js.html" %}
+{% endblock %}
