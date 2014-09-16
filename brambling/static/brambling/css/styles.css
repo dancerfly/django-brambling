@@ -5943,6 +5943,11 @@ html, body {
 }
 .item-img:hover {
   opacity: 0.7;
+  cursor: pointer;
+}
+
+.carousel-inner > .item > img {
+  margin: 0 auto;
 }
 
 .container, .container-sm, .container-xs {

@@ -57,12 +57,12 @@
 													<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
 													<h4 id="myLargeModalLabel">{{ options.grouper.name }}</h4>
 												</div>
-												<div id="item-carousel" class="carousel slide" data-ride="carousel" data-interval="false">
+												<div id="item-carousel{{ forloop.counter }}" class="carousel slide" data-ride="carousel" data-interval="false">
 												{% if images|length > 1 %}
 													<!-- Indicators -->
 													<ol class="carousel-indicators">
 														{% for image in images %}
-															<li data-target="#item-carousel" data-slide-to="{{ forloop.counter0 }}"{% if forloop.first %} class="active"{% endif %}></li>
+															<li data-target="#item-carousel{{ forloop.counter }}" data-slide-to="{{ forloop.counter0 }}"{% if forloop.first %} class="active"{% endif %}></li>
 														{% endfor %}
 													</ol>
 												{% endif %}
@@ -76,10 +76,10 @@
 												</div>
 												{% if images|length > 1 %}
 													<!-- Controls -->
-													<a class="left carousel-control" href="#item-carousel" role="button" data-slide="prev">
+													<a class="left carousel-control" href="#item-carousel{{ forloop.counter }}" role="button" data-slide="prev">
 														<span class="icon-prev fa fa-2x fa-chevron-left"></span>
 													</a>
-													<a class="right carousel-control" href="#item-carousel" role="button" data-slide="next">
+													<a class="right carousel-control" href="#item-carousel{{ forloop.counter }}" role="button" data-slide="next">
 														<span class="icon-next fa fa-2x fa-chevron-right"></span>
 													</a>
 												{% endif %}
