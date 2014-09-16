@@ -131,7 +131,7 @@
 						<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
 						{% if event.owner == request.user %}
 							<td>
-								<i class='text-danger fa fa-fw fa-times'></i>
+								<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
 							</td>
 						{% endif %}
 					</tr>

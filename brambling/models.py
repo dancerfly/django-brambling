@@ -933,7 +933,7 @@ class Home(models.Model):
 
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
-    home = models.ForeignKey(Home, blank=True, null=True)
+    home = models.ForeignKey(Home, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order)
 
     # Eventually add a contact_person field.

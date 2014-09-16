@@ -194,3 +194,24 @@ class HomeView(UpdateView):
 
     def get_success_url(self):
         return reverse('brambling_home')
+
+
+class RemoveResidentView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+        try:
+            home = Home.objects.get(residents=self.request.user)
+        except Home.DoesNotExist:
+            pass
+        else:
+            try:
+                person = Person.objects.get(pk=kwargs['pk'])
+            except Person.DoesNotExist:
+                pass
+            else:
+                home.residents.remove(person)
+                if not home.residents.exists():
+                    home.delete()
+            messages.success(request, 'Removed resident successfully.')
+        return HttpResponseRedirect(reverse('brambling_home'))
