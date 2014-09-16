@@ -64,6 +64,11 @@ class EventCreateView(CreateView):
                                  exclude=('owner', 'editors', 'dates',
                                           'housing_dates'))
 
+    def get_form_kwargs(self):
+        kwargs = super(EventCreateView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
 
 class EventSummaryView(TemplateView):
     template_name = 'brambling/event/summary.html'
@@ -143,6 +148,11 @@ class EventUpdateView(UpdateView):
         if not obj.editable_by(user):
             raise Http404
         return obj
+
+    def get_form_kwargs(self):
+        kwargs = super(EventUpdateView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
 
     def get_success_url(self):
         return reverse('brambling_event_update',

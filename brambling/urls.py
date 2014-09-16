@@ -24,6 +24,7 @@ from brambling.views.orders import (
 from brambling.views.core import (
     UserDashboardView,
     SplashView,
+    InviteAcceptView,
 )
 from brambling.views.organizer import (
     EventCreateView,
@@ -93,6 +94,9 @@ urlpatterns = patterns('',
     url(r'^email_confirm/(?P<pkb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})$',
         EmailConfirmView.as_view(),
         name="brambling_email_confirm"),
+    url(r'^invite/(?P<code>[a-zA-Z0-9~-]{20})/$',
+        InviteAcceptView.as_view(),
+        name="brambling_invite_accept"),
 
     url(r'^profile/$',
         PersonView.as_view(),

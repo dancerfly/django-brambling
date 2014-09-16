@@ -1,12 +1,14 @@
 import datetime
 
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage, Payment)
+                              Date, ItemImage, Payment, Invite)
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
@@ -17,18 +19,20 @@ class EventForm(forms.ModelForm):
     end_date = forms.DateField()
     disconnect_stripe = forms.BooleanField(required=False)
     disconnect_dwolla = forms.BooleanField(required=False)
+    editors = forms.CharField(help_text='Comma-separated email addresses',
+                              widget=forms.Textarea)
 
     class Meta:
         model = Event
         exclude = ('dates', 'housing_dates', 'owner',
                    'stripe_user_id', 'stripe_refresh_token',
                    'stripe_access_token', 'stripe_publishable_key',
-                   'dwolla_user_id', 'dwolla_access_token')
+                   'dwolla_user_id', 'dwolla_access_token', 'editors')
         widgets = {
             'country': forms.Select
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         self.fields['start_date'].initial = getattr(self.instance,
                                                     'start_date',
@@ -41,6 +45,20 @@ class EventForm(forms.ModelForm):
             del self.fields['disconnect_stripe']
         if not self.instance.uses_dwolla():
             del self.fields['disconnect_dwolla']
+        self.request = request
+        if not request.user == self.instance.owner:
+            del self.fields['editors']
+
+    def clean_editors(self):
+        editors = self.cleaned_data['editors']
+        if not editors:
+            return []
+
+        validator = EmailValidator()
+        editors = editors.split(',')
+        for editor in editors:
+            validator(editor)
+        return editors
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
@@ -73,6 +91,19 @@ class EventForm(forms.ModelForm):
             instance.housing_dates = Date.objects.filter(date__in=date_set)
             date_set.remove(cd['start_date'] - datetime.timedelta(1))
             instance.dates = Date.objects.filter(date__in=date_set)
+        if self.request.user == instance.owner and self.cleaned_data['editors']:
+            for editor in self.cleaned_data['editors']:
+                invite = Invite.objects.create_invite(
+                    email=editor,
+                    user=self.request.user,
+                    kind=Invite.EDITOR,
+                    content_id=instance.pk
+                )
+                invite.send(
+                    content=instance,
+                    secure=self.request.is_secure(),
+                    site=get_current_site(self.request),
+                )
         return instance
 
 

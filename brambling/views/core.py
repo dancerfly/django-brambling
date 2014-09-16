@@ -75,3 +75,7 @@ class SplashView(TemplateView):
             'login_form': FloppyAuthenticationForm(),
             'upcoming_events': upcoming_events,
         }
+
+
+class InviteAcceptView(TemplateView):
+    pass
