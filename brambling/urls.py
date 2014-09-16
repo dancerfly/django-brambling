@@ -25,6 +25,8 @@ from brambling.views.core import (
     UserDashboardView,
     SplashView,
     InviteAcceptView,
+    InviteSendView,
+    InviteDeleteView,
 )
 from brambling.views.organizer import (
     EventCreateView,
@@ -97,6 +99,12 @@ urlpatterns = patterns('',
     url(r'^invite/(?P<code>[a-zA-Z0-9~-]{20})/$',
         InviteAcceptView.as_view(),
         name="brambling_invite_accept"),
+    url(r'^invite/(?P<code>[a-zA-Z0-9~-]{20})/send/$',
+        InviteSendView.as_view(),
+        name="brambling_invite_send"),
+    url(r'^invite/(?P<code>[a-zA-Z0-9~-]{20})/delete/$',
+        InviteDeleteView.as_view(),
+        name="brambling_invite_delete"),
 
     url(r'^profile/$',
         PersonView.as_view(),

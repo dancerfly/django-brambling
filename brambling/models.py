@@ -274,8 +274,7 @@ class Event(models.Model):
 
     def get_pending_invites(self):
         return Invite.objects.filter(kind=Invite.EDITOR,
-                                     content_id=self.pk,
-                                     status__in=(Invite.UNSENT, Invite.SENT))
+                                     content_id=self.pk)
 
 
 class Item(models.Model):
@@ -1009,15 +1008,6 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
-    UNSENT = 'unsent'
-    SENT = 'sent'
-    ACCEPTED = 'accepted'
-    STATUS_CHOICES = (
-        (UNSENT, _("Unsent")),
-        (SENT, _("Sent")),
-        (ACCEPTED, _("Accepted")),
-    )
-
     HOME = 'home'
     EDITOR = 'editor'
     KIND_CHOICES = (
@@ -1030,7 +1020,7 @@ class Invite(models.Model):
     email = models.EmailField()
     #: User who sent the invitation.
     user = models.ForeignKey(Person)
-    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default=UNSENT)
+    is_sent = models.BooleanField(default=False)
     kind = models.CharField(max_length=6, choices=KIND_CHOICES)
     content_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
@@ -1068,5 +1058,5 @@ class Invite(models.Model):
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[self.email],
         )
-        self.status = Invite.SENT
+        self.is_sent = True
         self.save()

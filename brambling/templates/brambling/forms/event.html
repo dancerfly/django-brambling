@@ -129,15 +129,30 @@
 						<th>{{ editor.get_full_name }}</th>
 						<td>{{ editor.email }}</td>
 						<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
-						{% if event.owner == request.user %}<td><i class='text-danger fa fa-fw fa-remove'></i></td>{% endif %}
+						{% if event.owner == request.user %}
+							<td>
+								<i class='text-danger fa fa-fw fa-times'></i>
+							</td>
+						{% endif %}
 					</tr>
 				{% endfor %}
 				{% for invite in event.get_pending_invites %}
 					<tr>
 						<th>{{ invite.email }}</th>
 						<td>{{ invite.email }}</td>
-						<td><i class='fa fa-fw {% if invite.status == "unsent" %}fa-envelope{% else %}fa-paper-plane{% endif %}'></i> {{ invite.get_status_display }}</td>
-						{% if event.owner == request.user %}<td><i class='text-danger fa fa-fw fa-remove'></i></td>{% endif %}
+						<td>
+							{% if invite.is_sent %}
+								<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+							{% else %}
+								<i class='fa fa-fw fa-envelope'></i> Not sent
+							{% endif %}
+						</td>
+						{% if event.owner == request.user %}
+							<td>
+								<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+								<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+							</td>
+						{% endif %}
 					</tr>
 				{% endfor %}
 			</tbody>

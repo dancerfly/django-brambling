@@ -6,7 +6,7 @@
 {% block main %}
 	<h2>Sign up</h2>
 
-	<form action="{{ request.path }}" method="post">
+	<form action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
 		{% csrf_token %}
 		{% form form using "brambling/forms/signup.html" %}
 		<button class='btn btn-primary' type="submit">Create your account!</button>

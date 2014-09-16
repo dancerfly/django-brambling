@@ -17,7 +17,12 @@ from brambling.views.utils import get_dwolla
 class SignUpView(CreateView):
     form_class = SignUpForm
     template_name = 'registration/sign_up.html'
-    success_url = '/'
+
+    def get_success_url(self):
+        redirect_to = self.request.GET.get('next', '/')
+        if not is_safe_url(url=redirect_to, host=self.request.get_host()):
+            redirect_to = '/'
+        return redirect_to
 
     def get_form_kwargs(self):
         kwargs = super(SignUpView, self).get_form_kwargs()
