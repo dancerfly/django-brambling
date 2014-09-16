@@ -272,7 +272,7 @@ class Event(models.Model):
     def uses_dwolla(self):
         return bool(self.dwolla_user_id)
 
-    def get_pending_invites(self):
+    def get_invites(self):
         return Invite.objects.filter(kind=Invite.EDITOR,
                                      content_id=self.pk)
 
@@ -925,6 +925,10 @@ class Home(models.Model):
                                                 blank=True,
                                                 null=True,
                                                 verbose_name="My/Our home is (a/an)")
+
+    def get_invites(self):
+        return Invite.objects.filter(kind=Invite.HOME,
+                                     content_id=self.pk)
 
 
 class EventHousing(models.Model):

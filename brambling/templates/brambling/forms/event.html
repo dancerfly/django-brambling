@@ -136,7 +136,7 @@
 						{% endif %}
 					</tr>
 				{% endfor %}
-				{% for invite in event.get_pending_invites %}
+				{% for invite in event.get_invites %}
 					<tr>
 						<th>{{ invite.email }}</th>
 						<td>{{ invite.email }}</td>

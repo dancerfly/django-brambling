@@ -20,7 +20,8 @@ class EventForm(forms.ModelForm):
     disconnect_stripe = forms.BooleanField(required=False)
     disconnect_dwolla = forms.BooleanField(required=False)
     editors = forms.CharField(help_text='Comma-separated email addresses',
-                              widget=forms.Textarea)
+                              widget=forms.Textarea,
+                              required=False)
 
     class Meta:
         model = Event

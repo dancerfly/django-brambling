@@ -189,7 +189,7 @@ class HomeView(UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super(HomeView, self).get_form_kwargs()
-        kwargs['person'] = self.request.user
+        kwargs['request'] = self.request
         return kwargs
 
     def get_success_url(self):

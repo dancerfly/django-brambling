@@ -20,6 +20,45 @@
 		</div>{# /.row #}
 		{% formrow form.housing_categories %}
 		{% formrow form.public_transit_access %}
+
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th colspan="4">Residents</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for resident in form.instance.residents.all %}
+					<tr>
+						<th>{{ resident.get_full_name }}</th>
+						<td>{{ resident.email }}</td>
+						<td></td>
+						<td>
+							<i class='text-danger fa fa-fw fa-times'></i>
+						</td>
+					</tr>
+				{% endfor %}
+
+				{% for invite in home.get_invites %}
+					<tr>
+						<th>{{ invite.email }}</th>
+						<td>{{ invite.email }}</td>
+						<td>
+							{% if invite.is_sent %}
+								<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+							{% else %}
+								<i class='fa fa-fw fa-envelope'></i> Not sent
+							{% endif %}
+						</td>
+						<td>
+							<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+							<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		{% formrow form.residents %}
 	</div>
 </div>{# /.panel #}
 <div class="panel panel-default">

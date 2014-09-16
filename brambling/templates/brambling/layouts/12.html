@@ -1,5 +1,8 @@
 {% extends "brambling/__base.html" %}
 
 {% block content %}
+	{% block messages %}
+		{% include "brambling/layouts/_messages.html" %}
+	{% endblock %}
 	{% block main %}{% endblock %}
 {% endblock %}

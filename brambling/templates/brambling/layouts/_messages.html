@@ -6,6 +6,6 @@
 		</div>
 	{% endfor %}
 {% endif %}
-{% if not user.confirmed_email %}
+{% if user.is_authenticated and not user.confirmed_email %}
 	<div class='alert alert-warning'>You must confirm your email address to register for events. <a class='alert-link' href="{% url 'brambling_email_confirm_send' %}">Resend confirmation email</a></div>
 {% endif %}
