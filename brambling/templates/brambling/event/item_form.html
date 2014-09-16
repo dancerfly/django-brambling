@@ -21,7 +21,8 @@
 			{% formrow form.description %}
 		{% endform %}
 
-		<p class="text-muted">Click on an image to expand it. Drag and drop to reorder.</p>
+		<h3>Images</h3>
+		<p class="text-muted">Drag and drop to reorder.</p>
 
 		{{ itemimage_formset.management_form }}
 
@@ -35,29 +36,20 @@
 		<div class="hidden">
 			<div class='panel panel-default item-image item-image-template'>
 				<header class='panel-heading'>
-					<div class='panel-title'>
-						<a href="#{{ itemimage_formset.empty_form.prefix }}-collapse" data-toggle="collapse">
-							<i class="fa fa-fw fa-chevron-down"></i> Image <span class="count"></span>
-						</a>
-						<div class="actions pull-right"></div>
-					</div>
+					<div class="actions pull-right"></div>
+					{% with form=itemimage_formset.empty_form %}
+						{% form form using %}
+							{% formrow form.image %}
+							<div class='row js-hide'>
+								<div class='col-md-6'>{% formrow form.order %}</div>
+								<div class='col-md-6'>{% formrow form.DELETE %}</div>
+							</div>
+							{% for field in form.hidden_fields %}
+								{% formfield field %}
+							{% endfor %}
+						{% endform %}
+					{% endwith %}
 				</header>
-				<div class="panel-collapse collapse in" id="{{ itemimage_formset.empty_form.prefix }}-collapse">
-					<div class='panel-body'>
-						{% with form=itemimage_formset.empty_form %}
-							{% form form using %}
-								{% formrow form.image %}
-								<div class='row js-hide'>
-									<div class='col-md-6'>{% formrow form.order %}</div>
-									<div class='col-md-6'>{% formrow form.DELETE %}</div>
-								</div>
-								{% for field in form.hidden_fields %}
-									{% formfield field %}
-								{% endfor %}
-							{% endform %}
-						{% endwith %}
-					</div>
-				</div>
 			</div>
 		</div>
 
@@ -65,27 +57,18 @@
 			{% for form in itemimage_formset.forms %}
 				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} item-image'>
 					<header class='panel-heading'>
-						<div class='panel-title'>
-							<a href="#{{ form.prefix }}-collapse" title="click to expand" data-toggle="collapse">
-								<i class="fa fa-fw fa-chevron-down"></i> Image <span class="count">{{ forloop.counter }}</span>
-							</a>
-							<div class="actions pull-right"></div>
-						</div>{# /.panel-title #}
+						<div class="actions pull-right"></div>
+						{% form form using %}
+							{% formrow form.image with display_image=1 %}
+							<div class='row js-hide'>
+								<div class='col-md-6'>{% formrow form.order %}</div>
+								<div class='col-md-6'>{% formrow form.DELETE %}</div>
+							</div>
+							{% for field in form.hidden_fields %}
+								{% formfield field %}
+							{% endfor %}
+						{% endform %}
 					</header>
-					<div class="panel-collapse collapse{% if form.errors or not form.instance.pk %} in{% endif %}" id="{{ form.prefix }}-collapse">
-						<div class='panel-body'>
-							{% form form using %}
-								{% formrow form.image with display_image=1 %}
-								<div class='row js-hide'>
-									<div class='col-md-6'>{% formrow form.order %}</div>
-									<div class='col-md-6'>{% formrow form.DELETE %}</div>
-								</div>
-								{% for field in form.hidden_fields %}
-									{% formfield field %}
-								{% endfor %}
-							{% endform %}
-						</div>
-					</div>
 				</div>
 			{% endfor %}
 		</div>
@@ -96,6 +79,9 @@
 				</div>{# /.panel-title #}
 			</header>
 		</div>
+
+
+		<h3>Item Options</h3>
 
 		{{ itemoption_formset.management_form }}
 
