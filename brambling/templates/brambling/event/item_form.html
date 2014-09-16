@@ -7,10 +7,10 @@
 {% block main %}
 	{{ block.super }}
 
-	<h2>{% if item.pk %}Edit item: {{ item.name }}{% else %}Add an item{% endif %}</h2>
+	<h2>{% if item.pk %}{{ item.name }}{% else %}Add an item{% endif %}</h2>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
-	<form action="{{ request.path }}" id="itemForm" method="post" novalidate>
+	<form action="{{ request.path }}" id="itemForm" method="post" novalidate enctype="multipart/form-data">
 		{% csrf_token %}
 		{% form item_form using %}
 			<div class="row">
@@ -20,12 +20,86 @@
 
 			{% formrow form.description %}
 		{% endform %}
-		
+
+		<p class="text-muted">Click on an image to expand it. Drag and drop to reorder.</p>
+
 		{{ itemimage_formset.management_form }}
 
-		<p class="text-muted">Click on an option to expand it. Drag and drop to reorder.</p>
+		{% if itemimage_formset.non_form_errors %}
+			{% for error in itemimage_formset.non_form_errors %}
+				<p class='text-danger'>{{ error }}</p>
+			{% endfor %}
+		{% endif %}
+
+		{# template for additional item image forms #}
+		<div class="hidden">
+			<div class='panel panel-default item-image item-image-template'>
+				<header class='panel-heading'>
+					<div class='panel-title'>
+						<a href="#{{ itemimage_formset.empty_form.prefix }}-collapse" data-toggle="collapse">
+							<i class="fa fa-fw fa-chevron-down"></i> Image <span class="count"></span>
+						</a>
+						<div class="actions pull-right"></div>
+					</div>
+				</header>
+				<div class="panel-collapse collapse in" id="{{ itemimage_formset.empty_form.prefix }}-collapse">
+					<div class='panel-body'>
+						{% with form=itemimage_formset.empty_form %}
+							{% form form using %}
+								{% formrow form.image %}
+								<div class='row js-hide'>
+									<div class='col-md-6'>{% formrow form.order %}</div>
+									<div class='col-md-6'>{% formrow form.DELETE %}</div>
+								</div>
+								{% for field in form.hidden_fields %}
+									{% formfield field %}
+								{% endfor %}
+							{% endform %}
+						{% endwith %}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="item-images-list panel-group">
+			{% for form in itemimage_formset.forms %}
+				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} item-image'>
+					<header class='panel-heading'>
+						<div class='panel-title'>
+							<a href="#{{ form.prefix }}-collapse" title="click to expand" data-toggle="collapse">
+								<i class="fa fa-fw fa-chevron-down"></i> Image <span class="count">{{ forloop.counter }}</span>
+							</a>
+							<div class="actions pull-right"></div>
+						</div>{# /.panel-title #}
+					</header>
+					<div class="panel-collapse collapse{% if form.errors or not form.instance.pk %} in{% endif %}" id="{{ form.prefix }}-collapse">
+						<div class='panel-body'>
+							{% form form using %}
+								{% formrow form.image with display_image=1 %}
+								<div class='row js-hide'>
+									<div class='col-md-6'>{% formrow form.order %}</div>
+									<div class='col-md-6'>{% formrow form.DELETE %}</div>
+								</div>
+								{% for field in form.hidden_fields %}
+									{% formfield field %}
+								{% endfor %}
+							{% endform %}
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+
+		<div class='panel panel-default'>
+			<header class='panel-heading'>
+				<div class='panel-title js-formset-add image-add'>
+				</div>{# /.panel-title #}
+			</header>
+		</div>
 
 		{{ itemoption_formset.management_form }}
+
+		<p class="text-muted">Click on an option to expand it. Drag and drop to reorder.</p>
 
 		{% if itemoption_formset.non_form_errors %}
 			{% for error in itemoption_formset.non_form_errors %}
@@ -39,7 +113,7 @@
 				<header class='panel-heading'>
 					<div class='panel-title'>
 						<a href="#{{ itemoption_formset.empty_form.prefix }}-collapse" data-toggle="collapse">
-							<i class="fa fa-chevron-down"></i> Option <span class="count"></span>
+							<i class="fa fa-fw fa-chevron-down"></i> Option <span class="count"></span>
 						</a>
 						<div class="actions pull-right"></div>
 					</div>
@@ -74,7 +148,7 @@
 
 		<div class='panel panel-default'>
 			<header class='panel-heading'>
-				<div class='panel-title js-formset-add'>
+				<div class='panel-title js-formset-add option-add'>
 				</div>{# /.panel-title #}
 			</header>
 		</div>
@@ -89,6 +163,25 @@
 	<script type="text/javascript">
 		(function () {
 			"use strict";
+			var item_images_renumber = function () {
+				$('.item-images-list .item-image:visible').each(function(i){
+					$(this).find('.count').html(i+1);
+				});
+			};
+
+			$('.item-images-list').on('row_added.formset row_removed.formset reordered.formset', item_images_renumber);
+
+			$('.item-images-list').formset({
+				prefix: '{{ itemimage_formset.prefix }}',
+				deleteTrigger: '<a href="#"><i class="fa fa-times"></i></a>',
+				deleteWrapper: '.actions',
+				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add an Image</a>',
+				addWrapper: '.js-formset-add.image-add',
+				formTemplate: '.item-image-template',
+				sortableHandle: '.panel-heading',
+				sortableField: 'order'
+			});
+
 			var item_options_renumber = function () {
 				$('.item-options-list .item-option:visible').each(function(i){
 					$(this).find('.count').html(i+1);
@@ -101,12 +194,12 @@
 				prefix: '{{ itemoption_formset.prefix }}',
 				deleteTrigger: '<a href="#"><i class="fa fa-times"></i></a>',
 				deleteWrapper: '.actions',
-				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add Another</a>',
-				addWrapper: '.js-formset-add',
+				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add an Option</a>',
+				addWrapper: '.js-formset-add.option-add',
 				formTemplate: '.item-option-template',
 				sortableHandle: '.panel-heading',
 				sortableField: 'order'
-			})
+			});
 		}());
 	</script>
 {% endblock %}

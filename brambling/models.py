@@ -302,7 +302,7 @@ class Item(models.Model):
 
 
 class ItemImage(models.Model):
-    item = models.ForeignKey(Item)
+    item = models.ForeignKey(Item, related_name='images')
     order = models.PositiveSmallIntegerField()
     image = models.ImageField()
 
