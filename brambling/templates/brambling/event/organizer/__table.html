@@ -63,9 +63,15 @@
                             {% block cell %}
                                 {% if cell.is_boolean %}
                                     {% if cell.value %}
-                                        <i class='text-success fa fa-check'></i>
+                                        <span class="fa-stack" title="Yes">
+                                            <i class="fa fa-circle fa-stack-2x text-success"></i>
+                                            <i class='fa fa-check fa-inverse fa-stack-1x'></i>
+                                        </span>
                                     {% else %}
-                                        <i class='text-danger fa fa-times'></i>
+                                        <span class="fa-stack" title="No">
+                                            <i class="fa fa-circle fa-stack-2x text-danger"></i>
+                                            <i class='fa fa-times fa-inverse fa-stack-1x'></i>
+                                        </span>
                                     {% endif %}
                                 {% else %}
                                     {{ cell }}
