@@ -998,17 +998,20 @@ class HousingAssignment(models.Model):
 
 
 class InviteManager(models.Manager):
-    def create_invite(self, **kwargs):
-        if 'code' not in kwargs:
-            while True:
-                kwargs['code'] = get_random_string(
-                    length=20,
-                    allowed_chars='abcdefghijklmnopqrstuvwxyz'
-                                  'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-~'
-                )
-                if not Invite.objects.filter(code=kwargs['code']):
-                    break
-        return self.create(**kwargs)
+    def get_or_create_invite(self, email, user, kind, content_id):
+        while True:
+            code = get_random_string(
+                length=20,
+                allowed_chars='abcdefghijklmnopqrstuvwxyz'
+                              'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-~'
+            )
+            if not Invite.objects.filter(code=code):
+                break
+        defaults = {
+            'user': user,
+            'code': code,
+        }
+        return self.get_or_create(email=email, content_id=content_id, kind=kind, defaults=defaults)
 
 
 class Invite(models.Model):

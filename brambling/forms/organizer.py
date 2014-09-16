@@ -94,17 +94,18 @@ class EventForm(forms.ModelForm):
             instance.dates = Date.objects.filter(date__in=date_set)
         if self.request.user == instance.owner and self.cleaned_data['editors']:
             for editor in self.cleaned_data['editors']:
-                invite = Invite.objects.create_invite(
+                invite, created = Invite.objects.get_or_create_invite(
                     email=editor,
                     user=self.request.user,
                     kind=Invite.EDITOR,
                     content_id=instance.pk
                 )
-                invite.send(
-                    content=instance,
-                    secure=self.request.is_secure(),
-                    site=get_current_site(self.request),
-                )
+                if created:
+                    invite.send(
+                        content=instance,
+                        secure=self.request.is_secure(),
+                        site=get_current_site(self.request),
+                    )
         return instance
 
 

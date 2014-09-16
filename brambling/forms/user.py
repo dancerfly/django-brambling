@@ -158,15 +158,16 @@ class HomeForm(forms.ModelForm):
             instance.residents.add(self.request.user)
         if self.cleaned_data['residents']:
             for resident in self.cleaned_data['residents']:
-                invite = Invite.objects.create_invite(
+                invite, created = Invite.objects.get_or_create_invite(
                     email=resident,
                     user=self.request.user,
                     kind=Invite.HOME,
                     content_id=instance.pk
                 )
-                invite.send(
-                    content=instance,
-                    secure=self.request.is_secure(),
-                    site=get_current_site(self.request),
-                )
+                if created:
+                    invite.send(
+                        content=instance,
+                        secure=self.request.is_secure(),
+                        site=get_current_site(self.request),
+                    )
         return instance
