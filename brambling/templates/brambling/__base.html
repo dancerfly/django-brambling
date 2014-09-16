@@ -21,28 +21,8 @@
 	<link rel="stylesheet" type="text/css" href="{% static "brambling/css/styles.css" %}" />
 {% endblock stylesheets %}
 
-{% block navbar-collapse-inner %}
-	{% if request.user.is_authenticated %}
-		{% url 'brambling_dashboard' as brambling_dashboard_url %}
-		{% url 'brambling_event_create' as brambling_event_create_url %}
-		{% url 'brambling_home' as brambling_home_url %}
-		{% url 'brambling_user_profile' as brambling_user_profile_url %}
-		<li><a href="{{ brambling_dashboard_url }}"><i class="fa fa-calendar fa-fw"></i> Your Events</a></li>
-		<li class="dropdown">
-			<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user fa-fw"></i> {{ request.user.get_full_name }} <i class="fa fa-caret-down"></i></a>
-			<ul class="dropdown-menu">
-				<li><a href="{{ brambling_user_profile_url }}"><i class="fa fa-cog fa-fw"></i> Profile Settings</a></li>
-				<li><a href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home Settings</a></li>
-				<li><a href="{{ brambling_event_create_url }}"><i class="fa fa-plus fa-fw"></i> Create an Event</a></li>
-				<li><a href="{% url 'logout' %}"><i class="fa fa-power-off fa-fw"></i> Log out</a></li>
-			</ul>
-		</li>
-	{% else %}
-		{% url 'login' as login_url %}
-		{% url 'brambling_signup' as brambling_signup_url %}
-		<li{% if request.path == login_url %} class='active'{% endif %}><a href="{{ login_url }}">Log in</a></li>
-		<li{% if request.path == brambling_signup_url %} class='active'{% endif %}><a href="{{ brambling_signup_url }}">Sign up</a></li>
-	{% endif %}
+{% block top%}
+	{% include "brambling/_navbar.html" %}
 {% endblock %}
 
 {% block javascripts %}

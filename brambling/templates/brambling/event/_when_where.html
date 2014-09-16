@@ -1,29 +1,3 @@
-{% load zenaida %}
-
-<i class="fa fa-clock-o fa-fw"></i>
-{% td_to_dict event.start_date|td_timeuntil as time_until_event %}
-
-{# start date #}
-{% if time_until_event.days == 0 %}
-	Today
-{% elif time_until_event.days == 1 %}
-	Tomorrow
-{% else %}
-	{{ event.start_date }}
-{% endif %}
-
-{% if event.start_time %}
-	at {{ event.start_time }}
-{% endif %}
-
-{# end date #}
-{% if event.start_date != event.end_date %}
-	&#8211; {{ event.end_date }}
-{% endif %}
-
-{# days left#}
-{% if time_until_event.days > 1 and time_until_event.days < 15 %}
-	(in {{ time_until_event.days }} day{{ time_until_event|pluralize }})
-{% endif %}
-<i class="fa fa-map-marker fa-fw"></i>
-{{ event.city }}, {{ event.state_or_province }}, {{ event.country }}
+{# TODO: Remove this file and change all references to it to include both includables separately #}
+{% include "brambling/event/_when.html" %}
+{% include "brambling/event/_where.html" %}

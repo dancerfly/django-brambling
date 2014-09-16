@@ -1,0 +1,15 @@
+{% extends "brambling/__base.html" %}
+
+{% block body %}
+
+	{% block top %}
+		{% include "brambling/_navbar.html" with container_class="container-fluid" %}
+	{% endblock top %}
+
+	<div class="container-fluid">
+		{% block content %}{% endblock %}
+	</div>
+
+	{% block bottom %}{% endblock %}
+
+{% endblock body %}
