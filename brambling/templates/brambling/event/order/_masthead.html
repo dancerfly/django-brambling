@@ -11,28 +11,9 @@
 			<a class="uncolored-link" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
 			{% if event_admin_nav %}
 				<div class="pull-right">
-					<button class="btn btn-primary-light dropdown-toggle" type="button" id="manageEventMenu" data-toggle="dropdown">
-						Manage Event <i class="caret"></i>
-					</button>
-					<ul class="dropdown-menu" role="menu" aria-labelledby="manageEventMenu">
-						<li>
-							<a role="menuitem" href="{% url 'brambling_event_shop' event.slug %}">
-								<i class="fa fa-shopping-cart fa-fw"></i>
-								View Shop
-							</a>
-						</li>
-						<li role="presentation" class="divider"></li>
-						{% for item in event_admin_nav %}
-							<li>
-								<a role="menuitem" href="{{ item.url }}">
-									{% if item.icon %}
-										<i class="fa {{ item.icon }} fa-fw"></i>
-									{% endif %}
-									{{ item.label }}
-								</a>
-							</li>
-						{% endfor %}
-					</ul>
+					<a href="{% url "brambling_event_summary" event.slug %}" class="btn btn-primary-light">
+						<i class="fa fa-cog"></i> Manage Event
+					</a>
 				</div>
 			{% endif %}
 		</h1>
