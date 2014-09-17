@@ -47,13 +47,7 @@ $masthead-padding-vertical: $line-height-computed
 
 .masthead-brand
     background-color: $brand-primary
-    color: lighten($brand-primary, 45%)
-    .text-accent
-        color: #FFF
-    .masthead-link
-        color: lighten($brand-primary, 30%)
-        &:hover
-            color: #FFF
+    +text-light($brand-primary)
 
 .masthead-light
     +background(#E5E5E5 linear-gradient(bottom, #D5D5D5 0%, #E5E5E5 10%))
@@ -75,8 +69,8 @@ $masthead-padding-vertical: $line-height-computed
     +box-shadow(inset 0 0 0 1px rgba(0,0,0,.35))
     +border-radius($border-radius-base $border-radius-base 0 0)
     +box-sizing(border-box)
+    +text-light(lighten($gray,5%))
     position: relative
-    color: #FFF
     &::after
         content: " "
         display: block
