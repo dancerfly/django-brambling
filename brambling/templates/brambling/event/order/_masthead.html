@@ -1,7 +1,7 @@
 {% load zenaida daguerre %}
 
 {% if event.banner_image %}
-	{% adjust event.banner_image 'fill' width=1000 height=320 as banner_image %}
+	{% adjust event.banner_image 'fill' width=940 height=320 as banner_image %}
 {% endif %}
 
 <div class="masthead clearfix{% if banner_image %} masthead-light{% else %} masthead-brand{% endif %}">

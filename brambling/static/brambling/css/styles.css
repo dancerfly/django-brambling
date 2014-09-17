@@ -6040,9 +6040,9 @@ html, body {
 }
 
 .masthead-cover-image {
-  height: 360px;
-  margin-left: -15px;
-  margin-right: -15px;
+  height: 320px;
+  margin-left: 0;
+  margin-right: 0;
   padding-left: 15px;
   padding-right: 15px;
   margin-bottom: -20px;
@@ -6189,7 +6189,7 @@ a.step.complete:hover {
 }
 
 .stepbar-hug-masthead {
-  margin: -20px -15px 20px -15px;
+  margin: -20px 0 20px 0;
   -moz-border-radius: 0 0 4px 4px;
   -webkit-border-radius: 0;
   border-radius: 0 0 4px 4px;
