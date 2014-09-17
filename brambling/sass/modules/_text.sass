@@ -1,3 +1,17 @@
+//// Universal Font Styles
+
+h1, h2, h3, h4, h5, h6
+	// Sloppy fix for St. Ryde's high baseline.
+	// TODO: Fix this in the font file instead.
+	position: relative
+	top: .125em
+
+h1, h2, .h2, h3, .h3
+	font-weight: $headings-font-weight-bold
+
+
+//// Utilities
+
 .text-large
 	font-size: $font-size-large
 
@@ -11,14 +25,10 @@
 	&:last-child::after
 		content: ""
 
-.btn-primary-light
-	+button-variant($btn-primary-color, $yellow-light, $btn-primary-border)
-
-.btn-default-dark
-	+button-variant($btn-default-color, darken($btn-default-bg,10%), $btn-default-border)
-
 .scroll-x
 	overflow: scroll
+
+//// Anchors
 
 .a-opacity:hover
 	opacity: .85
@@ -36,9 +46,17 @@
 	&:hover, &:active, &:focus
 		text-decoration: none
 
+//// Buttons
+
+.btn-primary-light
+	+button-variant($btn-primary-color, $yellow-light, $btn-primary-border)
+
+.btn-default-dark
+	+button-variant($btn-default-color, darken($btn-default-bg,10%), $btn-default-border)
+
+//// &c.
+
 .collapser:before
 	content: "▼ More "
 	.collapse.in + &
 		content: "▲ Less "
-
-	
