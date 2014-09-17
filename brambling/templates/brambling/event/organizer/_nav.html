@@ -1,0 +1,24 @@
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">{{ event.name }}</h4>
+		<small class="text-muted">
+			{% include "brambling/event/_when.html" %}<br />
+			{% include "brambling/event/_where.html" %}
+		</small>
+	</div>
+	<div class="list-group">
+		{% for item in event_admin_nav %}
+			<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">
+				{% if item.icon %}
+					<i class="fa fa-fw {{ item.icon }}"></i>
+				{% endif %}
+				{{ item.label }}
+			</a>
+		{% endfor %}
+	</div>
+	<div class="panel-footer">
+		<a href="{{ event.get_absolute_url }}" class="btn btn-default btn-block">
+			View Event Shop
+		</a>
+	</div>
+</div>

@@ -1,4 +1,4 @@
-{% extends "brambling/layouts/9_3.html" %}
+{% extends "brambling/layouts/8_4.html" %}
 
 {% load staticfiles %}
 
@@ -11,9 +11,9 @@
 		</div>
 		{% for event in registered_events %}
 			{% include "brambling/_event_list_item.html" with registered="true" %}
-		{% endfor %}		
+		{% endfor %}
 	{% endif %}
-	
+
 	<div class="page-header{% if registered_events %} margin-leader-dbl{% endif %}">
 		<h1>Upcoming Events</h1>
 	</div>

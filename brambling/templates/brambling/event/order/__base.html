@@ -5,7 +5,7 @@
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
 {% block main %}
-	{% include "brambling/event/_masthead.html" %}
+	{% include "brambling/event/order/_masthead.html" %}
 
 	{% if workflow %}
 		{% include "brambling/event/order/_steps.html" %}

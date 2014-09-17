@@ -1,4 +1,4 @@
-{% extends 'brambling/event/__manage.html' %}
+{% extends 'brambling/event/organizer/__base.html' %}
 
 {% load floppyforms zenaida staticfiles %}
 
@@ -35,7 +35,7 @@
 	<!-- Tab panes -->
 	<div class="tab-content">
 		<div class="tab-pane{% if not payment_form.is_bound and not discount_form.is_bound %} active{% endif %}" id="summary">
-			{% include "brambling/event/_admin_order_summary.html" %}
+			{% include "brambling/event/organizer/_admin_order_summary.html" %}
 		</div>
 		<div class="tab-pane{% if payment_form.is_bound %} active{% endif %}" id="payment">
 			<div class='row'>

@@ -1,0 +1,11 @@
+{% extends 'brambling/event/organizer/__base.html' %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-2 col-md-3 col-sm-3">
+            {% include "brambling/event/organizer/_nav.html" %}
+        </div>
+        {# Narrower column that doesn't span the whole width of the page. #}
+        <div class="col-lg-7 col-md-7 col-sm-9">{% block main %}{% endblock %}</div>
+    </div>
+{% endblock %}
