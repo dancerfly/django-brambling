@@ -1,4 +1,11 @@
-$masthead-logo-size: 75px
+@import compass/css3/box-sizing
+@import compass/css3/border-radius
+@import compass/css3/box-shadow
+@import compass/css3/images
+
+$masthead-padding-vertical: $line-height-computed
+
+// BASE
 
 .masthead
     position: relative
@@ -7,36 +14,92 @@ $masthead-logo-size: 75px
         left: -6000px
         bottom: $line-height-computed
         right: -6000px
-    padding: $line-height-computed 6000px
-    background: darken($brand-primary, 10%)
-    color: lighten($brand-primary, 45%)
+    padding: $masthead-padding-vertical 6000px
     text-shadow: 0 1px 0 rgba(0, 0, 0, .15)
-    &.splash, > :first-child
+    &.splash
         margin-top: 0
-    > :last-child
-        margin-bottom: 0
+
+// VARIATIONS
+// These variations can, generally, be combined.
+
+// Positioning
+.masthead-b, .masthead-t, .masthead-l, .masthead-r
+    position: absolute
+    z-index: 2
+
+.masthead-b
+    bottom: $line-height-computed/2
+
+.masthead-t
+    top: $line-height-computed/2
+
+.masthead-l
+    left: $grid-gutter-width/2
+
+.masthead-r
+    right: $grid-gutter-width/2
+
+.swallow-navbar .masthead-t
+    // Corrections to top positioning for mastheads that overlap the navbar.
+    top: $navbar-height + $line-height-computed/2
+
+// THEMES
+
+.masthead-primary
+    background-color: darken($brand-primary, 10%)
+    color: lighten($brand-primary, 45%)
+    .masthead-link
+        color: lighten($brand-primary, 30%)
+        &:hover
+            color: #FFF
     strong
         color: #FFF
 
-.masthead-logo
-    position: relative
-    float: left
-    height: $masthead-logo-size
-    width: $masthead-logo-size
-    > img
-        +absolute-center
+.masthead-brand
+    background-color: $yellow-dark
+    color: lighten($yellow-dark, 45%)
+    .masthead-link
+        color: lighten($yellow-dark, 30%)
+        &:hover
+            color: #FFF
+    strong
+        color: #FFF
 
-.masthead-inner
-    position: absolute
-    left: 6000px +$masthead-logo-size + $line-height-computed
-    right: 6000px
-    top: 0
+.masthead-light
+    +background(#E5E5E5 linear-gradient(bottom, #D5D5D5 0%, #E5E5E5 10%))
+
+// SUBCOMPONENTS
+
+.masthead-cover-image
+    // Should be wrapped inside .masthead, but around the rest of the contents
+    // of the masthead.
+    height: 300px
+    margin-left: 0
+    margin-right: 0
+    padding-left: $grid-gutter-width/2
+    padding-right: $grid-gutter-width/2
+    margin-bottom: -$masthead-padding-vertical
+    margin-top: 0
+    background-size: cover
+    background-repeat: no-repeat
+    +box-shadow(inset 0 0 0 1px rgba(0,0,0,.35))
+    +border-radius($border-radius-base $border-radius-base 0 0)
+    +box-sizing(border-box)
+    position: relative
+    color: #FFF
+    &::after
+        content: " "
+        display: block
+        position: absolute
+        bottom: 0
+        left: 0
+        right: 0
+        height: 150px
+        +background(linear-gradient(bottom, rgba(0,0,0,.5), rgba(0,0,0,0)))
+
 
 .masthead-link
-    color: lighten($brand-primary, 30%)
     font-weight: bold
-    &:hover
-        color: #FFF
 
 .masthead-pills
     margin: 0 -15px

@@ -4,6 +4,14 @@
 
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
+{% block top %}
+	{% if event.banner_image %}
+		{% include "brambling/_navbar.html" with navbar_class="navbar navbar-default navbar-static-top" %}
+	{% else %}
+		{{ block.super }}
+	{% endif %}
+{% endblock %}
+
 {% block main %}
 	{% include "brambling/event/order/_masthead.html" %}
 
@@ -45,6 +53,18 @@
 {% endblock %}
 
 {% block javascripts %}
+	{# This bit of javascript needs to run pretty early to avoid a flash of content and jump. #}
+	{% if event.banner_image and current_step.name != "Shop" %}
+		<script type="text/javascript">
+			(function () {
+				var scroll_to = document.getElementById("mastheadDetails").getBoundingClientRect().top + window.pageYOffset - document.documentElement.clientTop - 10;
+				console.log(scroll_to);
+				// Scroll to where the mastheadDetails element should be.
+				window.scrollTo(0, scroll_to);
+			}());
+		</script>
+	{% endif %}
+
 	{{ block.super }}
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
 {% endblock %}
