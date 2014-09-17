@@ -72,8 +72,11 @@ a.step
 	overflow: visible
 	> .step
 		border-color: #CCC
-		border-right: 1px solid
-		border-bottom: 1px solid
+		border-style: solid
+		border-top-width: 0
+		border-left-width: 0
+		border-right-width: 1px
+		border-bottom-width: 1px
 		&:first-child
 			+border-radius(0 0 0 $border-radius-base)
 			border-left-width: 1px
