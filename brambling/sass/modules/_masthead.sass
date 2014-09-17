@@ -1,4 +1,11 @@
+@import compass/css3/box-sizing
+@import compass/css3/border-radius
+@import compass/css3/box-shadow
+@import compass/css3/images
+
 $masthead-logo-size: 75px
+
+// BASE
 
 .masthead
     position: relative
@@ -8,7 +15,7 @@ $masthead-logo-size: 75px
         bottom: $line-height-computed
         right: -6000px
     padding: $line-height-computed 6000px
-    background: darken($brand-primary, 10%)
+    background-color: darken($brand-primary, 10%)
     color: lighten($brand-primary, 45%)
     text-shadow: 0 1px 0 rgba(0, 0, 0, .15)
     &.splash, > :first-child
@@ -18,19 +25,37 @@ $masthead-logo-size: 75px
     strong
         color: #FFF
 
-.masthead-logo
-    position: relative
-    float: left
-    height: $masthead-logo-size
-    width: $masthead-logo-size
-    > img
-        +absolute-center
+// VARIATIONS
+// These variations can, generally, be combined.
 
-.masthead-inner
-    position: absolute
-    left: 6000px +$masthead-logo-size + $line-height-computed
-    right: 6000px
-    top: 0
+.masthead-swallow-navbar
+    // For Mastheads that need to overlap the navbar.
+    // Best used with .navbar-transparent.
+    margin-top: -$navbar-height + -$line-height-computed
+    padding-top: $navbar-height + $line-height-computed
+
+.masthead-cover-image
+    // For Mastheads that have a cover image instead of a background-color.
+    height: 360px
+    margin-left: -$grid-gutter-width/2
+    margin-right: -$grid-gutter-width/2
+    padding-left: $grid-gutter-width/2
+    padding-right: $grid-gutter-width/2
+    background-size: cover
+    background-repeat: no-repeat
+    +box-sizing(border-box)
+    +box-shadow(inset 0 0 0 1px rgba(0,0,0,.35))
+
+.masthead-gradient-up
+    &::after
+        content: " "
+        display: block
+        position: absolute
+        bottom: 0
+        left: 0
+        right: 0
+        height: 150px
+        +background(linear-gradient(bottom, rgba(0,0,0,.5), rgba(0,0,0,0)))
 
 .masthead-link
     color: lighten($brand-primary, 30%)
@@ -54,3 +79,31 @@ $masthead-logo-size: 75px
 
 .masthead-bold
     color: #FFF
+
+// Positioning
+.masthead-b, .masthead-t, .masthead-l, .masthead-r
+    position: absolute
+    z-index: 2
+
+.masthead-b
+    bottom: $line-height-computed/2
+
+.masthead-t
+    top: $line-height-computed/2
+
+.masthead-l
+    left: $grid-gutter-width/2
+
+.masthead-r
+    right: $grid-gutter-width/2
+
+.masthead-swallow-navbar .masthead-t
+    // Corrections to top positioning for mastheads that overlap the navbar.
+    top: $navbar-height + $line-height-computed/2
+
+// Theming
+.masthead-brand
+    background-color: $yellow-dark
+    color: lighten($yellow-dark, 45%)
+    .masthead-link
+        color: lighten($yellow-dark, 30%)
