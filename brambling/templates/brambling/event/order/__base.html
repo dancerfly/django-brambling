@@ -53,6 +53,16 @@
 {% endblock %}
 
 {% block javascripts %}
+	{# This bit of javascript needs to run pretty early to avoid a flash of content and jump. #}
+	{% if event.banner_image and current_step.name != "Shop" %}
+		<script type="text/javascript">
+			(function () {
+				// Scroll to where the mastheadDetails element should be.
+				window.scrollTo(0, 245);
+			}());
+		</script>
+	{% endif %}
+
 	{{ block.super }}
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
 {% endblock %}
