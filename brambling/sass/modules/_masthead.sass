@@ -45,25 +45,15 @@ $masthead-padding-vertical: $line-height-computed
 
 // THEMES
 
-.masthead-primary
-    background-color: darken($brand-primary, 10%)
+.masthead-brand
+    background-color: $brand-primary
     color: lighten($brand-primary, 45%)
+    .text-accent
+        color: #FFF
     .masthead-link
         color: lighten($brand-primary, 30%)
         &:hover
             color: #FFF
-    strong
-        color: #FFF
-
-.masthead-brand
-    background-color: $yellow-dark
-    color: lighten($yellow-dark, 45%)
-    .masthead-link
-        color: lighten($yellow-dark, 30%)
-        &:hover
-            color: #FFF
-    strong
-        color: #FFF
 
 .masthead-light
     +background(#E5E5E5 linear-gradient(bottom, #D5D5D5 0%, #E5E5E5 10%))
@@ -97,7 +87,6 @@ $masthead-padding-vertical: $line-height-computed
         height: 150px
         +background(linear-gradient(bottom, rgba(0,0,0,.5), rgba(0,0,0,0)))
 
-
 .masthead-link
     font-weight: bold
 
@@ -114,6 +103,3 @@ $masthead-padding-vertical: $line-height-computed
         border: 0
         color: black
         text-shadow: none
-
-.masthead-bold
-    color: #FFF
