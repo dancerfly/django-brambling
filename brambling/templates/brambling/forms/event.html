@@ -74,7 +74,7 @@
 
 <div class="panel panel-default">
 	<header class="panel-heading">
-		<h4 class="panel-title">Settings</h4>
+		<h4 class="panel-title">Registration</h4>
 	</header>
 	<div class="panel-body">
 		{% formrow form.cart_timeout %}
@@ -101,8 +101,66 @@
 			{% endwith %}
 		</div>
 		{% formrow form.liability_waiver %}
+	</div>{# /.panel-body #}
+</div>{# /.panel #}
+
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Sharing</h4>
+	</header>
+	<div class="panel-body">
 		{% formrow form.privacy %}
-		{% formrow form.editors %}
+
+		<p>The following people have access to edit this event. Only the event owner can add or remove editors.</p>
+
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th colspan="3">Permissions</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<th>{{ event.owner.get_full_name }}</th>
+					<td>{{ event.owner.email }}</td>
+					<td><i class='fa fa-fw fa-lock'></i> Owner</td>
+					{% if event.owner == request.user %}<td></td>{% endif %}
+				</tr>
+				{% for editor in event.editors.all %}
+					<tr>
+						<th>{{ editor.get_full_name }}</th>
+						<td>{{ editor.email }}</td>
+						<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
+						{% if event.owner == request.user %}
+							<td>
+								<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+							</td>
+						{% endif %}
+					</tr>
+				{% endfor %}
+				{% for invite in event.get_invites %}
+					<tr>
+						<th>{{ invite.email }}</th>
+						<td>{{ invite.email }}</td>
+						<td>
+							{% if invite.is_sent %}
+								<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+							{% else %}
+								<i class='fa fa-fw fa-envelope'></i> Not sent
+							{% endif %}
+						</td>
+						{% if event.owner == request.user %}
+							<td>
+								<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+								<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+							</td>
+						{% endif %}
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+		{% formrow form.editors with label="Invite more editors" %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
 

@@ -17,7 +17,12 @@ from brambling.views.utils import get_dwolla
 class SignUpView(CreateView):
     form_class = SignUpForm
     template_name = 'registration/sign_up.html'
-    success_url = '/'
+
+    def get_success_url(self):
+        redirect_to = self.request.GET.get('next', '/')
+        if not is_safe_url(url=redirect_to, host=self.request.get_host()):
+            redirect_to = '/'
+        return redirect_to
 
     def get_form_kwargs(self):
         kwargs = super(SignUpView, self).get_form_kwargs()
@@ -184,8 +189,29 @@ class HomeView(UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super(HomeView, self).get_form_kwargs()
-        kwargs['person'] = self.request.user
+        kwargs['request'] = self.request
         return kwargs
 
     def get_success_url(self):
         return reverse('brambling_home')
+
+
+class RemoveResidentView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+        try:
+            home = Home.objects.get(residents=self.request.user)
+        except Home.DoesNotExist:
+            pass
+        else:
+            try:
+                person = Person.objects.get(pk=kwargs['pk'])
+            except Person.DoesNotExist:
+                pass
+            else:
+                home.residents.remove(person)
+                if not home.residents.exists():
+                    home.delete()
+            messages.success(request, 'Removed resident successfully.')
+        return HttpResponseRedirect(reverse('brambling_home'))

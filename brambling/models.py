@@ -3,16 +3,20 @@ from datetime import timedelta
 import itertools
 import operator
 
+from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
+from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import signals
-from django.template.defaultfilters import date
+from django.template.defaultfilters import date, striptags
+from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
@@ -267,6 +271,10 @@ class Event(models.Model):
 
     def uses_dwolla(self):
         return bool(self.dwolla_user_id)
+
+    def get_invites(self):
+        return Invite.objects.filter(kind=Invite.EDITOR,
+                                     content_id=self.pk)
 
 
 class Item(models.Model):
@@ -918,10 +926,14 @@ class Home(models.Model):
                                                 null=True,
                                                 verbose_name="My/Our home is (a/an)")
 
+    def get_invites(self):
+        return Invite.objects.filter(kind=Invite.HOME,
+                                     content_id=self.pk)
+
 
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
-    home = models.ForeignKey(Home, blank=True, null=True)
+    home = models.ForeignKey(Home, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order)
 
     # Eventually add a contact_person field.
@@ -983,3 +995,75 @@ class HousingAssignment(models.Model):
     attendee = models.ForeignKey(Attendee)
     slot = models.ForeignKey(HousingSlot)
     assignment_type = models.CharField(max_length=6, choices=ASSIGNMENT_TYPE_CHOICES)
+
+
+class InviteManager(models.Manager):
+    def get_or_create_invite(self, email, user, kind, content_id):
+        while True:
+            code = get_random_string(
+                length=20,
+                allowed_chars='abcdefghijklmnopqrstuvwxyz'
+                              'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-~'
+            )
+            if not Invite.objects.filter(code=code):
+                break
+        defaults = {
+            'user': user,
+            'code': code,
+        }
+        return self.get_or_create(email=email, content_id=content_id, kind=kind, defaults=defaults)
+
+
+class Invite(models.Model):
+    HOME = 'home'
+    EDITOR = 'editor'
+    KIND_CHOICES = (
+        (HOME, _("Home")),
+        (EDITOR, _("Editor")),
+    )
+
+    objects = InviteManager()
+    code = models.CharField(max_length=20, unique=True)
+    email = models.EmailField()
+    #: User who sent the invitation.
+    user = models.ForeignKey(Person)
+    is_sent = models.BooleanField(default=False)
+    kind = models.CharField(max_length=6, choices=KIND_CHOICES)
+    content_id = models.IntegerField()
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = (('email', 'content_id', 'kind'),)
+
+    def send(self, site, body_template_name='brambling/mail/invite_{kind}_body.html',
+             subject_template_name='brambling/mail/invite_{kind}_subject.html',
+             content=None, secure=False):
+        context = {
+            'invite': self,
+            'site': site,
+            'protocol': 'https' if secure else 'http',
+        }
+        if content is not None:
+            context['content'] = content
+        body = render_to_string(
+            body_template_name.format(kind=self.kind),
+            context
+        )
+        subject = render_to_string(
+            subject_template_name.format(kind=self.kind),
+            context
+        )
+
+        # Email subject *must not* contain newlines
+        subject = ''.join(subject.splitlines())
+
+        send_mail(
+            subject=subject,
+            message=striptags(body),
+            html_message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[self.email],
+        )
+        self.is_sent = True
+        self.save()

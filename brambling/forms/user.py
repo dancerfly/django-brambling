@@ -2,12 +2,14 @@ from django.conf import settings
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import (AuthenticationForm, PasswordResetForm,
                                        SetPasswordForm)
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
-from brambling.models import Person, Home, DanceStyle
+from brambling.models import Person, Home, DanceStyle, Invite
 from brambling.utils import send_confirmation_email
 
 
@@ -122,6 +124,11 @@ class PersonForm(BasePersonForm):
 
 
 class HomeForm(forms.ModelForm):
+    residents = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to list themselves as a housemate and will be able to edit house settings and housemate list.',
+                                widget=forms.Textarea,
+                                label='List more residents',
+                                required=False)
+
     class Meta:
         model = Home
         exclude = ()
@@ -129,11 +136,39 @@ class HomeForm(forms.ModelForm):
             'country': forms.Select
         }
 
-    def __init__(self, person, *args, **kwargs):
-        self.person = person
+    def __init__(self, request, *args, **kwargs):
+        self.request = request
         super(HomeForm, self).__init__(*args, **kwargs)
 
+    def clean_residents(self):
+        residents = self.cleaned_data['residents']
+        if not residents:
+            return []
+
+        validator = EmailValidator()
+        # Split email list by commas and trim whitespace:
+        residents = [x.strip() for x in residents.split(',')]
+        for resident in residents:
+            validator(resident)
+        return residents
+
     def save(self, commit=True):
+        created = self.instance.pk is None
         instance = super(HomeForm, self).save(commit)
-        instance.residents.add(self.person)
+        if created:
+            instance.residents.add(self.request.user)
+        if self.cleaned_data['residents']:
+            for resident in self.cleaned_data['residents']:
+                invite, created = Invite.objects.get_or_create_invite(
+                    email=resident,
+                    user=self.request.user,
+                    kind=Invite.HOME,
+                    content_id=instance.pk
+                )
+                if created:
+                    invite.send(
+                        content=instance,
+                        secure=self.request.is_secure(),
+                        site=get_current_site(self.request),
+                    )
         return instance

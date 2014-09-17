@@ -21,7 +21,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Refund, SubRefund)
+                              Refund, SubRefund, Person)
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav, get_order,
                                    clear_expired_carts)
@@ -63,6 +63,11 @@ class EventCreateView(CreateView):
         return modelform_factory(self.model, form=self.form_class,
                                  exclude=('owner', 'editors', 'dates',
                                           'housing_dates'))
+
+    def get_form_kwargs(self):
+        kwargs = super(EventCreateView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
 
 
 class EventSummaryView(TemplateView):
@@ -144,6 +149,11 @@ class EventUpdateView(UpdateView):
             raise Http404
         return obj
 
+    def get_form_kwargs(self):
+        kwargs = super(EventUpdateView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
     def get_success_url(self):
         return reverse('brambling_event_update',
                        kwargs={'slug': self.object.slug})
@@ -218,6 +228,26 @@ class DwollaConnectView(View):
 
         return HttpResponseRedirect(reverse('brambling_event_update',
                                             kwargs={'slug': event.slug}))
+
+
+class RemoveEditorView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+        try:
+            event = Event.objects.get(slug=kwargs['event_slug'])
+        except Event.DoesNotExist:
+            raise Http404
+        if not event.owner_id == request.user.pk:
+            raise Http404
+        try:
+            person = Person.objects.get(pk=kwargs['pk'])
+        except Person.DoesNotExist:
+            pass
+        else:
+            event.editors.remove(person)
+        messages.success(request, 'Removed editor successfully.')
+        return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
 
 
 def item_form(request, *args, **kwargs):

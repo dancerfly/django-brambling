@@ -1,0 +1,11 @@
+<p>You've been listed as a housemate by {{ user.get_full_name }}!</p>
+
+<p>Click on the following link to confirm:</p>
+
+{% url "brambling_invite_accept" code=invite.code as url %}
+
+<a href="{{ protocol }}://{{ site.domain }}{{ url }}">{{ protocol }}://{{ site.domain }}{{ url }}</a>
+
+Happy dancing!
+
+The {{ site.name }} Team

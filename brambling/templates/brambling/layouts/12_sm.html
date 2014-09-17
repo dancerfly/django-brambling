@@ -2,6 +2,9 @@
 
 {% block content %}
 	<div class="container-sm">
+		{% block messages %}
+			{% include "brambling/layouts/_messages.html" %}
+		{% endblock %}
 		{% block main %}{% endblock %}
 	</div>
 {% endblock %}

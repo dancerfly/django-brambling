@@ -1,0 +1,11 @@
+<p>You've been invited to help edit {{ content.name }}!</p>
+
+<p>Click on the following link to accept the invitation and get cracking!</p>
+
+{% url "brambling_invite_accept" code=invite.code as url %}
+
+<a href="{{ protocol }}://{{ site.domain }}{{ url }}">{{ protocol }}://{{ site.domain }}{{ url }}</a>
+
+Happy editing!
+
+The {{ site.name }} Team
