@@ -3,7 +3,7 @@
 @import compass/css3/box-shadow
 @import compass/css3/images
 
-$masthead-logo-size: 75px
+$masthead-padding-vertical: $line-height-computed
 
 // BASE
 
@@ -14,71 +14,13 @@ $masthead-logo-size: 75px
         left: -6000px
         bottom: $line-height-computed
         right: -6000px
-    padding: $line-height-computed 6000px
-    background-color: darken($brand-primary, 10%)
-    color: lighten($brand-primary, 45%)
+    padding: $masthead-padding-vertical 6000px
     text-shadow: 0 1px 0 rgba(0, 0, 0, .15)
-    &.splash, > :first-child
+    &.splash
         margin-top: 0
-    > :last-child
-        margin-bottom: 0
-    strong
-        color: #FFF
 
 // VARIATIONS
 // These variations can, generally, be combined.
-
-.masthead-swallow-navbar
-    // For Mastheads that need to overlap the navbar.
-    // Best used with .navbar-transparent.
-    margin-top: -$navbar-height + -$line-height-computed
-    padding-top: $navbar-height + $line-height-computed
-
-.masthead-cover-image
-    // For Mastheads that have a cover image instead of a background-color.
-    height: 360px
-    margin-left: -$grid-gutter-width/2
-    margin-right: -$grid-gutter-width/2
-    padding-left: $grid-gutter-width/2
-    padding-right: $grid-gutter-width/2
-    background-size: cover
-    background-repeat: no-repeat
-    +box-sizing(border-box)
-    +box-shadow(inset 0 0 0 1px rgba(0,0,0,.35))
-
-.masthead-gradient-up
-    &::after
-        content: " "
-        display: block
-        position: absolute
-        bottom: 0
-        left: 0
-        right: 0
-        height: 150px
-        +background(linear-gradient(bottom, rgba(0,0,0,.5), rgba(0,0,0,0)))
-
-.masthead-link
-    color: lighten($brand-primary, 30%)
-    font-weight: bold
-    &:hover
-        color: #FFF
-
-.masthead-pills
-    margin: 0 -15px
-    > li > a
-        display: inline
-        &:hover
-            background: none
-
-.masthead-form
-    input, .chosen-container-multi .chosen-choices, .chosen-container-single .chosen-single, .chosen-container-active.chosen-container-multi .chosen-choices, .chosen-container-active.chosen-container-single .chosen-single, .chosen-container-single .chosen-drop
-        background-color: #FFF
-        border: 0
-        color: black
-        text-shadow: none
-
-.masthead-bold
-    color: #FFF
 
 // Positioning
 .masthead-b, .masthead-t, .masthead-l, .masthead-r
@@ -97,13 +39,80 @@ $masthead-logo-size: 75px
 .masthead-r
     right: $grid-gutter-width/2
 
-.masthead-swallow-navbar .masthead-t
+.swallow-navbar .masthead-t
     // Corrections to top positioning for mastheads that overlap the navbar.
     top: $navbar-height + $line-height-computed/2
 
-// Theming
+// THEMES
+
+.masthead-primary
+    background-color: darken($brand-primary, 10%)
+    color: lighten($brand-primary, 45%)
+    .masthead-link
+        color: lighten($brand-primary, 30%)
+        &:hover
+            color: #FFF
+    strong
+        color: #FFF
+
 .masthead-brand
     background-color: $yellow-dark
     color: lighten($yellow-dark, 45%)
     .masthead-link
         color: lighten($yellow-dark, 30%)
+        &:hover
+            color: #FFF
+    strong
+        color: #FFF
+
+.masthead-light
+    +background(#E5E5E5 linear-gradient(bottom, #D5D5D5 0%, #E5E5E5 10%))
+
+// SUBCOMPONENTS
+
+.masthead-cover-image
+    // Should be wrapped inside .masthead, but around the rest of the contents
+    // of the masthead.
+    height: 360px
+    margin-left: -$grid-gutter-width/2
+    margin-right: -$grid-gutter-width/2
+    padding-left: $grid-gutter-width/2
+    padding-right: $grid-gutter-width/2
+    margin-bottom: -$masthead-padding-vertical
+    margin-top: -$masthead-padding-vertical
+    background-size: cover
+    background-repeat: no-repeat
+    +box-shadow(inset 0 0 0 1px rgba(0,0,0,.35))
+    +box-sizing(border-box)
+    position: relative
+    color: #FFF
+    &::after
+        content: " "
+        display: block
+        position: absolute
+        bottom: 0
+        left: 0
+        right: 0
+        height: 150px
+        +background(linear-gradient(bottom, rgba(0,0,0,.5), rgba(0,0,0,0)))
+
+
+.masthead-link
+    font-weight: bold
+
+.masthead-pills
+    margin: 0 -15px
+    > li > a
+        display: inline
+        &:hover
+            background: none
+
+.masthead-form
+    input, .chosen-container-multi .chosen-choices, .chosen-container-single .chosen-single, .chosen-container-active.chosen-container-multi .chosen-choices, .chosen-container-active.chosen-container-single .chosen-single, .chosen-container-single .chosen-drop
+        background-color: #FFF
+        border: 0
+        color: black
+        text-shadow: none
+
+.masthead-bold
+    color: #FFF

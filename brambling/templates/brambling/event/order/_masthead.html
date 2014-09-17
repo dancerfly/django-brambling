@@ -1,37 +1,34 @@
 {% load zenaida daguerre %}
 
 {% if event.banner_image %}
-	{% adjust event.banner_image 'fill' width=1000 height=360 as banner_image %}
+	{% adjust event.banner_image 'fill' width=1000 height=320 as banner_image %}
 {% endif %}
 
-<div
-	class="masthead masthead-brand clearfix{% if banner_image %} masthead-swallow-navbar masthead-cover-image masthead-gradient-up{% endif %}"
-	{% if banner_image %}
-		style="background-image: url({{ banner_image }});"
-	{% endif %}>
+<div class="masthead clearfix{% if banner_image %} masthead-light{% else %} masthead-brand{% endif %}">
+	{% if banner_image %}<div class="masthead-cover-image" style="background-image: url({{ banner_image }})">{% endif %}
+		{% if event_admin_nav %}
+			<a href="{% url "brambling_event_summary" event.slug %}" class="btn btn-primary-light masthead-t masthead-r">
+				<i class="fa fa-cog"></i> Manage Event
+			</a>
+		{% endif %}
 
-	{% if event_admin_nav %}
-		<a href="{% url "brambling_event_summary" event.slug %}" class="btn btn-primary-light masthead-t masthead-r">
-			<i class="fa fa-cog"></i> Manage Event
-		</a>
-	{% endif %}
-
-	<div{% if banner_image %} class="masthead-b masthead-l masthead-r"{% endif %}>
-		<div class="media">
-			<div class="pull-left media-object">
-				{% if event.logo_image %}
-					{% adjust event.logo_image 'fit' width=128 height=128 as image %}
-					<img src="{{ image }}" class="image-framed" width="{{ image.width }}" height="{{ image.height }}">
-				{% endif %}
-			</div>{# /.media-object.pull-left #}
-			<div class="media-body">
-				<h1 class="masthead-bold media-heading">
-					<a class="uncolored-link" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
-				</h1>
-				<p class="text-large">
-					{% include "brambling/event/_when_where.html" %}
-				</p>
-			</div>{# /.media-body #}
-		</div>{# /.media #}
-	</div>{# /.masthead-bl #}
+		<div{% if banner_image %} class="masthead-b masthead-l masthead-r"{% endif %}>
+			<div class="media">
+				<div class="pull-left media-object">
+					{% if event.logo_image %}
+						{% adjust event.logo_image 'fit' width=128 height=128 as image %}
+						<img src="{{ image }}" class="image-framed" width="{{ image.width }}" height="{{ image.height }}">
+					{% endif %}
+				</div>{# /.media-object.pull-left #}
+				<div class="media-body">
+					<h1 class="masthead-bold media-heading">
+						<a class="uncolored-link" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
+					</h1>
+					<p class="text-large">
+						{% include "brambling/event/_when_where.html" %}
+					</p>
+				</div>{# /.media-body #}
+			</div>{# /.media #}
+		</div>{# /.masthead-bl #}
+	{% if banner_image %}</div>{# /.masthead-cover-image #}{% endif %}
 </div>{# /.masthead #}

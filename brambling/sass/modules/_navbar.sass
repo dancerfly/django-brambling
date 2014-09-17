@@ -13,20 +13,19 @@
         &, &:hover, &:focus
             color: white
             background: rgba(0, 0, 0, .25)
-    & > .container
-        // A bottom border that only shows up if there's a color field beneath it
-        border-bottom: 1px solid rgba(255, 255, 255, .35)
-        margin-bottom: -1px
     .navbar-collapse
         @media (min-width: $screen-sm-min)
             padding: 0
 
 .navbar-transparent
-    background: transparent
-    > .container
-        background-color: rgba(0,0,0,.5)
-        border-bottom-width: 0
-        margin-bottom: 0
+    background-color: rgba(0,0,0,.5)
 
 .nav-tabs
     margin-bottom: $line-height-computed
+
+.swallow-navbar
+    // To be used on elements immediately following the navbar that should be
+    // made to overlap with the navbar.
+    // Best used in tandem with .navbar-transparent.
+    margin-top: -$navbar-height + -$line-height-computed
+    padding-top: $navbar-height + $line-height-computed
