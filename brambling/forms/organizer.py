@@ -93,6 +93,7 @@ class ItemForm(forms.ModelForm):
 class ItemOptionForm(forms.ModelForm):
     class Meta:
         model = ItemOption
+        exclude = ()
 
     def __init__(self, event, *args, **kwargs):
         self.event = event
@@ -136,6 +137,7 @@ ItemImageFormSet = forms.inlineformset_factory(
     Item,
     ItemImage,
     extra=0,
+    exclude=(),
 )
 
 
