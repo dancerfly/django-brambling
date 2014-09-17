@@ -56,7 +56,8 @@ class EventForm(forms.ModelForm):
             return []
 
         validator = EmailValidator()
-        editors = editors.split(',')
+        # Split email list by commas and trim whitespace:
+        editors = [x.strip() for x in editors.split(',')]
         for editor in editors:
             validator(editor)
         return editors
