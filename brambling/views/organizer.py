@@ -230,8 +230,8 @@ def item_form(request, *args, **kwargs):
         item = Item()
     if request.method == 'POST':
         form = ItemForm(event, request.POST, instance=item)
-        image_formset = ItemImageFormSet(request.POST, instance=item)
-        formset = ItemOptionFormSet(event, request.POST, instance=item)
+        image_formset = ItemImageFormSet(data=request.POST, files=request.FILES, instance=item, prefix='image')
+        formset = ItemOptionFormSet(event, request.POST, instance=item, prefix='option')
         # Always run all.
         form.is_valid()
         image_formset.is_valid()
@@ -245,8 +245,8 @@ def item_form(request, *args, **kwargs):
             return HttpResponseRedirect(url)
     else:
         form = ItemForm(event, instance=item)
-        image_formset = ItemImageFormSet(instance=item)
-        formset = ItemOptionFormSet(event, instance=item)
+        image_formset = ItemImageFormSet(instance=item, prefix='image')
+        formset = ItemOptionFormSet(event, instance=item, prefix='option')
     context = {
         'event': event,
         'item': item,
