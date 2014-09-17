@@ -1,7 +1,7 @@
 {% load daguerre %}
 
 <div class="media margin-leader-dbl event-listing">
-	<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
+	<a href="{{ event.get_absolute_url }}" class=" a-secret a-opacity pull-left">
 		<div class="media-object relative margin-leader-tiny">
 			<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
 				<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
