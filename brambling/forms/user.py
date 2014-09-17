@@ -124,9 +124,9 @@ class PersonForm(BasePersonForm):
 
 
 class HomeForm(forms.ModelForm):
-    residents = forms.CharField(help_text='Comma-separated email addresses',
+    residents = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to list themselves as a housemate and will be able to edit house settings and housemate list.',
                                 widget=forms.Textarea,
-                                label='Invite more residents',
+                                label='List more residents',
                                 required=False)
 
     class Meta:

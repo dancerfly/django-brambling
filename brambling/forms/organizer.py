@@ -19,7 +19,7 @@ class EventForm(forms.ModelForm):
     end_date = forms.DateField()
     disconnect_stripe = forms.BooleanField(required=False)
     disconnect_dwolla = forms.BooleanField(required=False)
-    editors = forms.CharField(help_text='Comma-separated email addresses',
+    editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
                               required=False)
 
