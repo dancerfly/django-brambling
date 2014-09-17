@@ -147,7 +147,7 @@ class HomeForm(forms.ModelForm):
 
         validator = EmailValidator()
         # Split email list by commas and trim whitespace:
-        residents = [x.trim() for x in residents.split(',')]
+        residents = [x.strip() for x in residents.split(',')]
         for resident in residents:
             validator(resident)
         return residents
