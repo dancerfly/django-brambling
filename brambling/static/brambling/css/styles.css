@@ -6114,7 +6114,6 @@ html, body {
   -webkit-border-radius: 4px;
   border-radius: 4px;
   overflow: hidden;
-  width: 100%;
   margin-bottom: 20px;
 }
 
@@ -6187,6 +6186,38 @@ a.step:hover {
 }
 a.step.complete:hover {
   background: #de8e0f;
+}
+
+.stepbar-hug-masthead {
+  margin: -20px -15px 20px -15px;
+  -moz-border-radius: 0 0 4px 4px;
+  -webkit-border-radius: 0;
+  border-radius: 0 0 4px 4px;
+  border-top: 0;
+  overflow: visible;
+}
+.stepbar-hug-masthead > .step {
+  border-color: #CCC;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+.stepbar-hug-masthead > .step:first-child {
+  -moz-border-radius: 0 0 0 4px;
+  -webkit-border-radius: 0;
+  border-radius: 0 0 0 4px;
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+.stepbar-hug-masthead > .step:last-child {
+  -moz-border-radius: 0 0 4px 0;
+  -webkit-border-radius: 0;
+  border-radius: 0 0 4px 0;
+}
+.stepbar-hug-masthead > .complete, .stepbar-hug-masthead > .current {
+  border-color: #ae6f0c;
+}
+.stepbar-hug-masthead > .complete::after, .stepbar-hug-masthead > .current::after {
+  bottom: -1px;
 }
 
 .text-large {

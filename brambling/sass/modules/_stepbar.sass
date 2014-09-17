@@ -4,7 +4,6 @@
 	@extend .clearfix
 	+border-radius($border-radius-base)
 	overflow: hidden
-	width: 100%
 	margin-bottom: $line-height-computed
 
 .step
@@ -64,3 +63,24 @@ a.step
 	&.complete:hover
 		background: $yellow-dark
 
+// VARIANTS
+
+.stepbar-hug-masthead
+	margin: -$line-height-computed #{-$grid-gutter-width/2} $line-height-computed #{-$grid-gutter-width/2}
+	+border-radius(0 0 $border-radius-base $border-radius-base)
+	border-top: 0
+	overflow: visible
+	> .step
+		border-color: #CCC
+		border-right: 1px solid
+		border-bottom: 1px solid
+		&:first-child
+			+border-radius(0 0 0 $border-radius-base)
+			border-left-width: 1px
+			border-left-style: solid
+		&:last-child
+			+border-radius(0 0 $border-radius-base 0)
+	> .complete, > .current
+		border-color: darken($yellow-dark, 10%)
+		&::after
+			bottom: -1px
