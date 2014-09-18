@@ -14,53 +14,55 @@
 				{% endif %}
 			</div>
 		</header>
-		<table class='table'>
-			<thead>
-				<tr>
-					<th class="col-sm-3">Items</th>
-					<th class="col-sm-1">Type</th>
-					<th class="col-sm-3">Timestamp</th>
-					<th>Status</th>
-					<th></th>
-					<th class='text-right'>Amount ({{ event.currency }})</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for item in attendee.bought_items %}
-					{% cycle 0 1 as is_active silent %}
-					<tr{% if is_active %} class='active'{% endif %}>
-						{% with bought_item=item.bought_item %}
-							<th>{{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</th>
-							<td>{{ bought_item.item_option.item.get_category_display }}</td>
-							<td class='text-muted'>{{ bought_item.added|date:"n/j/Y H:i:s" }}</td>
-							<td>{{ bought_item.get_status_display }}</td>
-							<td>{% block item_actions %}{% endblock %}</td>
-							<td class='text-right'>{{ bought_item.item_option.price|format_money:event.currency }}</td>
-						{% endwith %}
+		<div class="scroll-x">
+			<table class='table'>
+				<thead>
+					<tr>
+						<th class="col-sm-3">Items</th>
+						<th class="col-sm-1">Type</th>
+						<th class="col-sm-3">Timestamp</th>
+						<th>Status</th>
+						<th></th>
+						<th class='text-right'>Amount ({{ event.currency }})</th>
 					</tr>
-					{% for discount in item.discounts %}
+				</thead>
+				<tbody>
+					{% for item in attendee.bought_items %}
+						{% cycle 0 1 as is_active silent %}
 						<tr{% if is_active %} class='active'{% endif %}>
-							<td>{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em></td>
-							<td>Discount</td>
-							<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-							<td></td>
-							<td>{% block discount_actions %}{% endblock %}</td>
-							<td class='text-right text-success'>({{ discount.savings|format_money:event.currency }})</td>
+							{% with bought_item=item.bought_item %}
+								<th>{{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</th>
+								<td>{{ bought_item.item_option.item.get_category_display }}</td>
+								<td class='text-muted'>{{ bought_item.added|date:"n/j/Y H:i:s" }}</td>
+								<td>{{ bought_item.get_status_display }}</td>
+								<td>{% block item_actions %}{% endblock %}</td>
+								<td class='text-right'>{{ bought_item.item_option.price|format_money:event.currency }}</td>
+							{% endwith %}
 						</tr>
+						{% for discount in item.discounts %}
+							<tr{% if is_active %} class='active'{% endif %}>
+								<td>{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em></td>
+								<td>Discount</td>
+								<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+								<td></td>
+								<td>{% block discount_actions %}{% endblock %}</td>
+								<td class='text-right text-success'>({{ discount.savings|format_money:event.currency }})</td>
+							</tr>
+						{% endfor %}
+						{% for refund in item.refunds %}
+							<tr{% if is_active %} class='active'{% endif %}>
+								<td></td>
+								<td>Refund</td>
+								<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
+								<td></td>
+								<td>{% block refund_actions %}{% endblock %}</td>
+								<td class='text-right text-success'>({{ refund.amount|format_money:event.currency }})</td>
+							</tr>
+						{% endfor %}
 					{% endfor %}
-					{% for refund in item.refunds %}
-						<tr{% if is_active %} class='active'{% endif %}>
-							<td></td>
-							<td>Refund</td>
-							<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-							<td></td>
-							<td>{% block refund_actions %}{% endblock %}</td>
-							<td class='text-right text-success'>({{ refund.amount|format_money:event.currency }})</td>
-						</tr>
-					{% endfor %}
-				{% endfor %}
-			</tbody>
-		</table>
+				</tbody>
+			</table>
+		</div>
 		<table class='table'>
 			<thead>
 				<tr>
@@ -77,64 +79,68 @@
 		</table>
 	</div>
 {% endfor %}
-<table class='table'>
-	<thead>
-		<tr>
-			<th class="col-sm-3">Payments</th>
-			<th class="col-sm-1">Type</th>
-			<th class="col-sm-3">Timestamp</th>
-			<th></th>
-			<th class='text-right'>Amount ({{ event.currency }})</th>
-		</tr>
-	</thead>
-	<tfoot>
-		<tr class='active'>
-			<th colspan="4">Net payments</th>
-			<th class='text-right'>({{ net_payments|format_money:event.currency }})</th>
-		</tr>
-	</tfoot>
-	<tbody>
-		{% for payment in payments %}
+<div class="scroll-x">
+	<table class='table'>
+		<thead>
 			<tr>
-				<td>{{ payment.card }}</td>
-				<td>{{ payment.get_method_display }}</td>
-				<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-				<td>{% block payment_actions %}{% endblock %}</td>
-				<td class='text-right'>({{ payment.amount|format_money:event.currency }})</td>
+				<th class="col-sm-3">Payments</th>
+				<th class="col-sm-1">Type</th>
+				<th class="col-sm-3">Timestamp</th>
+				<th></th>
+				<th class='text-right'>Amount ({{ event.currency }})</th>
 			</tr>
-		{% endfor %}
-		{% for refund in refunds %}
+		</thead>
+		<tfoot>
+			<tr class='active'>
+				<th colspan="4">Net payments</th>
+				<th class='text-right'>({{ net_payments|format_money:event.currency }})</th>
+			</tr>
+		</tfoot>
+		<tbody>
+			{% for payment in payments %}
+				<tr>
+					<td>{{ payment.card }}</td>
+					<td>{{ payment.get_method_display }}</td>
+					<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+					<td>{% block payment_actions %}{% endblock %}</td>
+					<td class='text-right'>({{ payment.amount|format_money:event.currency }})</td>
+				</tr>
+			{% endfor %}
+			{% for refund in refunds %}
+				<tr>
+					<td></td>
+					<td>Refund</td>
+					<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
+					<td></td>
+					<td class='text-right'>{{ refund.amount|format_money:event.currency }}</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>
+	
+<div class="scroll-x">
+	<table class='table'>
+		<thead>
 			<tr>
-				<td></td>
-				<td>Refund</td>
-				<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-				<td></td>
-				<td class='text-right'>{{ refund.amount|format_money:event.currency }}</td>
+				<th colspan="2">Summary</th>
 			</tr>
-		{% endfor %}
-	</tbody>
-</table>
-
-<table class='table'>
-	<thead>
-		<tr>
-			<th colspan="2">Summary</th>
-		</tr>
-	</thead>
-	<tfoot>
-		<tr class='active'>
-			<th>Net balance</th>
-			<td class='text-right{% if net_balance < 0 %} text-success{% elif net_balance > 0 %} text-danger{% endif %}'>{% if net_balance < 0 %}Owed {% elif net_balance > 0 %}Owe {% endif %}<strong>{{ net_balance|absolute_value|format_money:event.currency }}</strong></td>
-		</tr>
-	</tfoot>
-	<tbody>
-		<tr>
-			<th>Net cost</th>
-			<th class='text-right{% if net_cost > 0 %} text-danger{% endif %}'>{{ net_cost|format_money:event.currency }}</th>
-		</tr>
-		<tr>
-			<th>Net payments</th>
-			<th class='text-right{% if net_payments > 0 %} text-success{% endif %}'>{% if net_payments > 0 %}({% endif %}{{ net_payments|format_money:event.currency }}{% if net_payments > 0 %}){% endif %}</th>
-		</tr>
-	</tbody>
-</table>
+		</thead>
+		<tfoot>
+			<tr class='active'>
+				<th>Net balance</th>
+				<td class='text-right{% if net_balance < 0 %} text-success{% elif net_balance > 0 %} text-danger{% endif %}'>{% if net_balance < 0 %}Owed {% elif net_balance > 0 %}Owe {% endif %}<strong>{{ net_balance|absolute_value|format_money:event.currency }}</strong></td>
+			</tr>
+		</tfoot>
+		<tbody>
+			<tr>
+				<th>Net cost</th>
+				<th class='text-right{% if net_cost > 0 %} text-danger{% endif %}'>{{ net_cost|format_money:event.currency }}</th>
+			</tr>
+			<tr>
+				<th>Net payments</th>
+				<th class='text-right{% if net_payments > 0 %} text-success{% endif %}'>{% if net_payments > 0 %}({% endif %}{{ net_payments|format_money:event.currency }}{% if net_payments > 0 %}){% endif %}</th>
+			</tr>
+		</tbody>
+	</table>
+</div>
