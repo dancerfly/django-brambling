@@ -25,8 +25,7 @@
 		</p>
 		<p>
 		{% if event.description %}
-			<div class="collapse" id="{{ event.slug }}-collapse">{{ event.description|linebreaks }}</div>
-			<a class="collapser" data-toggle="collapse" data-target="#{{ event.slug }}-collapse">Information</a>
+			<div class="shortened" data-lines="2">{{ event.description|linebreaks }}</div>
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 		<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
