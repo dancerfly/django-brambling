@@ -4,6 +4,8 @@
 @import compass/css3/images
 
 $masthead-padding-vertical: $line-height-computed
+$cover-image-height: 300px
+$cover-image-padding-vertical: $line-height-computed
 
 // BASE
 
@@ -19,30 +21,6 @@ $masthead-padding-vertical: $line-height-computed
     &.splash
         margin-top: 0
 
-// VARIATIONS
-// These variations can, generally, be combined.
-
-// Positioning
-.masthead-b, .masthead-t, .masthead-l, .masthead-r
-    position: absolute
-    z-index: 2
-
-.masthead-b
-    bottom: $line-height-computed/2
-
-.masthead-t
-    top: $line-height-computed/2
-
-.masthead-l
-    left: $grid-gutter-width/2
-
-.masthead-r
-    right: $grid-gutter-width/2
-
-.swallow-navbar .masthead-t
-    // Corrections to top positioning for mastheads that overlap the navbar.
-    top: $navbar-height + $line-height-computed/2
-
 // THEMES
 
 .masthead-brand
@@ -57,11 +35,10 @@ $masthead-padding-vertical: $line-height-computed
 .masthead-cover-image
     // Should be wrapped inside .masthead, but around the rest of the contents
     // of the masthead.
-    height: 300px
+    height: $cover-image-height
     margin-left: 0
     margin-right: 0
-    padding-left: $grid-gutter-width/2
-    padding-right: $grid-gutter-width/2
+    padding: $cover-image-padding-vertical $grid-gutter-width/2
     margin-bottom: -$masthead-padding-vertical
     margin-top: 0
     background-size: cover
@@ -71,6 +48,9 @@ $masthead-padding-vertical: $line-height-computed
     +box-sizing(border-box)
     +text-light(lighten($gray,5%))
     position: relative
+    > .relative
+        height: $cover-image-height - ($cover-image-padding-vertical * 2)
+        z-index: 2 // keep in front of the gradient
     &::after
         content: " "
         display: block

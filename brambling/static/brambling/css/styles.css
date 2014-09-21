@@ -6075,6 +6075,21 @@ h1, h2, .h2, h3, .h3 {
 .relative {
   position: relative;
 }
+.relative > .relative-left, .relative > .relative-right, .relative > .relative-top, .relative > .relative-bottom {
+  position: absolute;
+}
+.relative > .relative-left {
+  left: 0;
+}
+.relative > .relative-right {
+  right: 0;
+}
+.relative > .relative-top {
+  top: 0;
+}
+.relative > .relative-bottom {
+  bottom: 0;
+}
 
 .media > .pull-left {
   margin-right: 20px;
@@ -6091,31 +6106,6 @@ h1, h2, .h2, h3, .h3 {
 }
 .masthead.splash {
   margin-top: 0;
-}
-
-.masthead-b, .masthead-t, .masthead-l, .masthead-r {
-  position: absolute;
-  z-index: 2;
-}
-
-.masthead-b {
-  bottom: 10px;
-}
-
-.masthead-t {
-  top: 10px;
-}
-
-.masthead-l {
-  left: 15px;
-}
-
-.masthead-r {
-  right: 15px;
-}
-
-.swallow-navbar .masthead-t {
-  top: 50px;
 }
 
 .masthead-brand {
@@ -6144,8 +6134,7 @@ h1, h2, .h2, h3, .h3 {
   height: 300px;
   margin-left: 0;
   margin-right: 0;
-  padding-left: 15px;
-  padding-right: 15px;
+  padding: 20px 15px;
   margin-bottom: -20px;
   margin-top: 0;
   background-size: cover;
@@ -6172,6 +6161,10 @@ h1, h2, .h2, h3, .h3 {
 }
 .masthead-cover-image .masthead-link:hover {
   color: white;
+}
+.masthead-cover-image > .relative {
+  height: 260px;
+  z-index: 2;
 }
 .masthead-cover-image::after {
   content: " ";

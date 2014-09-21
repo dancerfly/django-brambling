@@ -22,6 +22,22 @@
 
 .relative
 	position: relative
+	// The following utility classes allow you to position an element in any
+	// corner of a .relative element. NOTE: if the .relative element does not
+	// containe any children that are NOT positioned this way, it will default
+	// to a height of 0. You may need to assign a height to the element
+	// elsewhere or give it a child with height, not positioned using
+	//  these classes.
+	> .relative-left, & > .relative-right, & > .relative-top, & > .relative-bottom
+		position: absolute
+	> .relative-left
+		left: 0
+	> .relative-right
+		right: 0
+	> .relative-top
+		top: 0
+	> .relative-bottom
+		bottom: 0
 
 .media > .pull-left
 	margin-right: $line-height-computed
