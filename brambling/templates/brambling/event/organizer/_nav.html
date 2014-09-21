@@ -1,6 +1,10 @@
 <div class="panel panel-default">
 	<div class="panel-heading">
-		<h4 class="panel-title">{{ event.name }}</h4>
+		<h4 class="panel-title">
+			<a href="{{ event.get_absolute_url }}">
+				{{ event.name }}
+			</a>
+		</h4>
 		<small class="text-muted">
 			{% include "brambling/event/_when.html" %}<br />
 			{% include "brambling/event/_where.html" %}
