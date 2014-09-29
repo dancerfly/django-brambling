@@ -185,12 +185,10 @@ class Date(models.Model):
 class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
-    PRIVATE = 'private'
 
     PRIVACY_CHOICES = (
         (PUBLIC, _("List publicly")),
         (LINK, _("Visible to anyone with the link")),
-        (PRIVATE, _("Only visible to owner and editors")),
     )
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
@@ -225,7 +223,10 @@ class Event(models.Model):
                                                   "of my own free will."), help_text=_("'{event}' will be automatically replaced with your event name when users are presented with the waiver."))
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PRIVATE, help_text="Who can view this event.")
+                               default=PUBLIC, help_text="Who can view this event.")
+    is_published = models.BooleanField(default=False)
+    # If an event is "frozen", it can no longer be edited or unpublished.
+    is_frozen = models.BooleanField(default=False)
 
     owner = models.ForeignKey('Person',
                               related_name='owner_events')
@@ -265,6 +266,15 @@ class Event(models.Model):
         return (user.is_authenticated() and user.is_active and
                 (user.is_superuser or user.pk == self.owner_id or
                  self.editors.filter(pk=user.pk).exists()))
+
+    def viewable_by(self, user):
+        if not user.is_authenticated() or not user.is_active:
+            return False
+
+        if not self.is_published and not self.editable_by(user):
+            return False
+
+        return True
 
     def uses_stripe(self):
         return bool(self.stripe_user_id)

@@ -250,6 +250,40 @@ class RemoveEditorView(View):
         return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
 
 
+class PublishEventView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+        try:
+            event = Event.objects.get(slug=kwargs['event_slug'])
+        except Event.DoesNotExist:
+            raise Http404
+        if not event.editable_by(request.user):
+            raise Http404
+        if not event.is_published:
+            event.is_published = True
+            event.save()
+        return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
+
+
+class UnpublishEventView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+        try:
+            event = Event.objects.get(slug=kwargs['event_slug'])
+        except Event.DoesNotExist:
+            raise Http404
+        if event.is_frozen:
+            raise Http404
+        if not event.editable_by(request.user):
+            raise Http404
+        if event.is_published:
+            event.is_published = False
+            event.save()
+        return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
+
+
 def item_form(request, *args, **kwargs):
     event = get_event_or_404(kwargs['event_slug'])
     if not event.editable_by(request.user):

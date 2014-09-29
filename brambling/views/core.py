@@ -21,6 +21,7 @@ class UserDashboardView(TemplateView):
 
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
+            is_published=True,
         ).exclude(
             order__person=user,
             order__bought_items__status=BoughtItem.PAID,
@@ -30,6 +31,7 @@ class UserDashboardView(TemplateView):
         upcoming_events_interest = Event.objects.filter(
             privacy=Event.PUBLIC,
             dance_styles__person=user,
+            is_published=True,
         ).exclude(
             order__person=user,
             order__bought_items__status=BoughtItem.PAID,

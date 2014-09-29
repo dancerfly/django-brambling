@@ -195,6 +195,8 @@ class OrderMixin(object):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         self.event = get_event_or_404(kwargs['event_slug'])
+        if not self.event.viewable_by(self.request.user):
+            raise Http404
         if 'code' in self.kwargs:
             self.order = get_order(self.event, code=self.kwargs['code'])
             if (not self.order.person == self.request.user and
@@ -612,6 +614,9 @@ class SummaryView(OrderMixin, TemplateView):
             if form and form.is_valid():
                 form.save()
                 self.order.mark_cart_paid()
+                if not self.event.is_frozen:
+                    self.event.is_frozen = True
+                    self.event.save()
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)

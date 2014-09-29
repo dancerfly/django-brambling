@@ -21,6 +21,21 @@
 		{% endfor %}
 	</div>
 	<div class="panel-footer">
+		{% if event.is_frozen %}
+			<div class='tipped form-group' data-placement="right" data-container="body" title="Event is frozen and cannot be unpublished">
+				<button class='btn btn-danger btn-block' disabled>
+					Unpublish Event
+				</button>
+			</div>
+		{% elif event.is_published %}
+			<div class='form-group'>
+				<a href='{% url "brambling_event_unpublish" event_slug=event.slug %}' class='btn btn-danger btn-block'>Unpublish Event</a>
+			</div>
+		{% else %}
+			<div class='form-group'>
+				<a href='{% url "brambling_event_publish" event_slug=event.slug %}' class='btn btn-success btn-block'>Publish Event</a>
+			</div>
+		{% endif %}
 		<a href="{{ event.get_absolute_url }}" class="btn btn-default btn-block">
 			View Event Shop
 		</a>
