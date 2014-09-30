@@ -16,6 +16,10 @@
 	{% include "brambling/_navbar.html" %}
 {% endblock %}
 
+{% block bottom %}
+	{% include "brambling/_footer.html" %}
+{% endblock bottom %}
+
 {% block javascripts %}
 	{{ block.super }}
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>

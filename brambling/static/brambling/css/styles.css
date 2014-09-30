@@ -5831,6 +5831,7 @@ button.close {
 
 html, body {
   overflow-x: hidden;
+  padding: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -5868,7 +5869,7 @@ h1, h2, .h2, h3, .h3 {
   opacity: 0.85;
 }
 
-.a-inherit, .a-uncolored, .a-secret {
+.a-inherit, .a-uncolored, .a-secret, footer a {
   color: inherit;
 }
 
@@ -6001,6 +6002,16 @@ h1, h2, .h2, h3, .h3 {
   -webkit-border-bottom-right-radius: 3px;
   border-bottom-right-radius: 3px;
   border: 1px solid #de8e0f;
+}
+
+footer {
+  margin-top: 40px;
+  padding: 0 15px;
+  text-align: center;
+  color: #919191;
+}
+footer a {
+  font-weight: bold;
 }
 
 .form-control:focus {
