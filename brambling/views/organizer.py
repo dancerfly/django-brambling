@@ -36,7 +36,7 @@ class EventCreateView(CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.method.lower() in self.http_method_names:
-            if not request.user.is_authenticated():
+            if not request.user.is_authenticated() or not request.user.is_superuser:
                 raise Http404
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
 
