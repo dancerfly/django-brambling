@@ -5861,6 +5861,13 @@ h1, h2, .h2, h3, .h3 {
   content: "";
 }
 
+.ul-default {
+  padding-left: 10px;
+}
+.ul-default > li {
+  margin-left: 10px;
+}
+
 .scroll-x {
   overflow: scroll;
 }
