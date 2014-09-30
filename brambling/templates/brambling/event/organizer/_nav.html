@@ -31,9 +31,15 @@
 			<div class='form-group'>
 				<a href='{% url "brambling_event_unpublish" event_slug=event.slug %}' class='btn btn-danger btn-block'>Unpublish Event</a>
 			</div>
-		{% else %}
+		{% elif event.can_be_published %}
 			<div class='form-group'>
 				<a href='{% url "brambling_event_publish" event_slug=event.slug %}' class='btn btn-success btn-block'>Publish Event</a>
+			</div>
+		{% else %}
+			<div class='tipped form-group' data-placement="right" data-container="body" title="This event needs to have at least one class or pass before you can publish it. Go to the items section to set that up!">
+				<button class='btn btn-success btn-block' disabled>
+					Publish Event
+				</button>
 			</div>
 		{% endif %}
 		<a href="{{ event.get_absolute_url }}" class="btn btn-default btn-block">

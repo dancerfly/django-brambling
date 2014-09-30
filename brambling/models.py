@@ -276,6 +276,12 @@ class Event(models.Model):
 
         return True
 
+    def can_be_published(self):
+        # See https://github.com/littleweaver/django-brambling/issues/150
+        # At least one pass / class must exist before the event can be published.
+        pass_class_count = ItemOption.objects.filter(item__event=self, item__category__in=(Item.CLASS, Item.PASS)).count()
+        return pass_class_count >= 1
+
     def uses_stripe(self):
         return bool(self.stripe_user_id)
 

@@ -260,6 +260,8 @@ class PublishEventView(View):
             raise Http404
         if not event.editable_by(request.user):
             raise Http404
+        if not event.can_be_published():
+            raise Http404
         if not event.is_published:
             event.is_published = True
             event.save()
