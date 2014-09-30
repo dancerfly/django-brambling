@@ -383,7 +383,9 @@ class AttendeesView(OrderMixin, TemplateView):
         try:
             unassigned_pass = self.order.bought_items.filter(
                 item_option__item__category=Item.PASS,
-                attendee__isnull=True
+                attendee__isnull=True,
+            ).exclude(
+                status=BoughtItem.REFUNDED,
             ).order_by('added')[:1][0]
         except IndexError:
             return self.render_to_response(self.get_context_data())
@@ -421,9 +423,11 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
 
     def get_object(self):
         try:
-            self.event_pass = self.order.bought_items.select_related('attendee').get(
+            self.event_pass = self.order.bought_items.select_related('attendee').exclude(
+                status=BoughtItem.REFUNDED,
+            ).get(
                 pk=self.kwargs['pk'],
-                item_option__item__category=Item.PASS
+                item_option__item__category=Item.PASS,
             )
         except BoughtItem.DoesNotExist:
             raise Http404
@@ -466,6 +470,11 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context['event_pass'] = self.event_pass
+        context['ordered_passes'] = self.order.bought_items.filter(
+            item_option__item__category=Item.PASS,
+        ).exclude(
+            status=BoughtItem.REFUNDED,
+        ).order_by('added')
         return context
 
 
