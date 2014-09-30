@@ -41,3 +41,16 @@
 
 .media > .pull-left
 	margin-right: $line-height-computed
+
+.pane-default
+	+full-width
+	margin:
+		top: 2*$line-height-computed
+		bottom: 2*$line-height-computed
+	padding:
+		top: $line-height-computed
+		bottom: $line-height-computed
+	background-color: $gray-lighter
+	&.splash
+		margin-bottom: 0
+		padding-bottom: 2*$line-height-computed

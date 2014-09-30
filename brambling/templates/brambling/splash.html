@@ -38,19 +38,15 @@
 	</div>
 	<div class='row'>
 		<div class='col-sm-6'>
-			<h2>
-				About Dancerfly
-			</h2>
-			<p>Dancerfly is an <a href="https://github.com/littleweaver/django-brambling">open source</a> dance registration platform built <strong>by dancers, for dancers</strong>. We're still in the early stages of development, so we'd love your feedback! (There will be a feedback button in the lower right of your screen once you've logged in.)</p>
+			<h2>About Dancerfly</h2>
+			<p>Dancerfly is an <a href="https://github.com/littleweaver/django-brambling">open source</a> dance registration platform built <strong>by dancers, for dancers</strong>. We're still in active development, so we'd love your feedback! (There will be a feedback button in the lower right of your screen once you've logged in.)</p>
 			<p><strong>Why open source?</strong> No single dance scene has enough resources (in terms of skilled volunteers) to truly focus on creating an application that meets all of their needs. As dancers, we've seen a variety of homegrown systems over the years, none of them quite polished enough for general use.</p>
 			<p>By providing a <strong>solid, easy-to-use</strong> alternative, we hope to save some time for local organizers and volunteers – and if we're lucky, to get a hand in return to make this the most awesomest social dance event registration system ever!</p>
 			<p>Thanks for your help!</p>
 			<h4><a href="http://littleweaverweb.com/">Little Weaver Web Collective</a></h4>
 		</div>
 		<div class='col-sm-6'>
-			<h2>
-				Features
-			</h2>
+			<h2>Features</h2>
 			<ul class="ul-default">
 				<li>Manage merch, passes, and classes through the same portal</li>
 				<li>Manage housing</li>
@@ -62,37 +58,41 @@
 				<li>Multiple editors for a single event</li>
 				<li>Attractive event page!</li>
 			</ul>
+			<h2>Beta Events</h2>
+			<p>If might like to host an event using Dancerfly, please <a href="mailto:hello@littleweaverweb.com">email us</a>.</p>
 		</div>
 	</div>
-	<h2>Upcoming Events on Dancerfly</h2>
-	{% for event in upcoming_events|slice:"5" %}
-		<div class="media margin-leader-dbl event-listing">
-			<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
-				<div class="media-object relative margin-leader-tiny">
-					<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
-						<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
-						<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
+	<div class="pane-default splash">	
+		<h2>Upcoming Events on Dancerfly</h2>
+		{% for event in upcoming_events|slice:"3" %}
+			<div class="media margin-leader-dbl event-listing">
+				<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
+					<div class="media-object relative margin-leader-tiny">
+						<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
+							<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
+							<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
+						</div>
+						{% if event.logo_image %}
+							{% adjust event.logo_image 'fit' width=100 height=100 as image %}
+						{% elif event.banner_image %}
+							{% adjust event.banner_image 'fill' width=100 height=100 as image %}
+						{% endif %}
+						{% if event.logo_image or event.banner_image %}
+							<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
+						{% endif %}
 					</div>
-					{% if event.logo_image %}
-						{% adjust event.logo_image 'fit' width=100 height=100 as image %}
-					{% elif event.banner_image %}
-						{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-					{% endif %}
-					{% if event.logo_image or event.banner_image %}
-						<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
-					{% endif %}
+				</a>
+				<div class="media-body">
+					<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
+					<h4 class="text-muted">{{ event.tagline }}</h4>
+					<p>
+						{% include "brambling/event/_when_where.html" %}
+					</p>
+					<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 				</div>
-			</a>
-			<div class="media-body">
-				<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
-				<h4 class="text-muted">{{ event.tagline }}</h4>
-				<p>
-					{% include "brambling/event/_when_where.html" %}
-				</p>
-				<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 			</div>
-		</div>
-	{% endfor %}
+		{% endfor %}
+	</div>
 {% endblock %}
 
 
