@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url, include
 from django.templatetags.static import static
-from django.views.generic.base import RedirectView
+from django.views.generic.base import TemplateView, RedirectView
 
 from brambling.forms.user import (
     FloppyAuthenticationForm,
@@ -68,6 +68,10 @@ urlpatterns = patterns('',
                    UserDashboardView.as_view(),
                    SplashView.as_view()),
         name="brambling_dashboard"),
+    url(r'^about/$',
+        TemplateView.as_view(template_name='brambling/about.html'),
+        name='brambling_about'),
+
     url(r'^create/$',
         EventCreateView.as_view(),
         name="brambling_event_create"),
