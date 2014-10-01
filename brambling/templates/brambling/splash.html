@@ -87,7 +87,8 @@
 						<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
 						<h4 class="text-muted">{{ event.tagline }}</h4>
 						<p>
-							{% include "brambling/event/_when_where.html" %}
+							{% include "brambling/event/_when.html" %}
+							{% include "brambling/event/_where.html" %}
 						</p>
 						<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 					</div>

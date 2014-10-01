@@ -20,7 +20,8 @@
 							<a class="a-uncolored" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
 						</h1>
 						<p class="text-large">
-							{% include "brambling/event/_when_where.html" %}
+							{% include "brambling/event/_when.html" %}
+							{% include "brambling/event/_where.html" %}
 						</p>
 					</div>{# /.media-body #}
 				</div>{# /.media #}
