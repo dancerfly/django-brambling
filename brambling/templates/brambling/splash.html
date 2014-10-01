@@ -62,37 +62,39 @@
 			<p>If might like to host an event using Dancerfly, please <a href="mailto:hello@littleweaverweb.com">email us</a>.</p>
 		</div>
 	</div>
-	<div class="pane-default splash">	
-		<h2>Upcoming Events on Dancerfly</h2>
-		{% for event in upcoming_events|slice:"3" %}
-			<div class="media margin-leader-dbl event-listing">
-				<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
-					<div class="media-object relative margin-leader-tiny">
-						<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
-							<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
-							<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
+	{% if upcoming_events %}
+		<div class="pane-default splash">	
+			<h2>Upcoming Events on Dancerfly</h2>
+			{% for event in upcoming_events|slice:"3" %}
+				<div class="media margin-leader-dbl event-listing">
+					<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
+						<div class="media-object relative margin-leader-tiny">
+							<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
+								<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
+								<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
+							</div>
+							{% if event.logo_image %}
+								{% adjust event.logo_image 'fit' width=100 height=100 as image %}
+							{% elif event.banner_image %}
+								{% adjust event.banner_image 'fill' width=100 height=100 as image %}
+							{% endif %}
+							{% if event.logo_image or event.banner_image %}
+								<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
+							{% endif %}
 						</div>
-						{% if event.logo_image %}
-							{% adjust event.logo_image 'fit' width=100 height=100 as image %}
-						{% elif event.banner_image %}
-							{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-						{% endif %}
-						{% if event.logo_image or event.banner_image %}
-							<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
-						{% endif %}
+					</a>
+					<div class="media-body">
+						<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
+						<h4 class="text-muted">{{ event.tagline }}</h4>
+						<p>
+							{% include "brambling/event/_when_where.html" %}
+						</p>
+						<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 					</div>
-				</a>
-				<div class="media-body">
-					<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
-					<h4 class="text-muted">{{ event.tagline }}</h4>
-					<p>
-						{% include "brambling/event/_when_where.html" %}
-					</p>
-					<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 				</div>
-			</div>
-		{% endfor %}
-	</div>
+			{% endfor %}
+		</div>
+	{% endif %}
 {% endblock %}
 
 
