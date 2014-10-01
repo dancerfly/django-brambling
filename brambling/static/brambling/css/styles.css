@@ -6477,3 +6477,8 @@ a.step.complete:hover {
 #dancerflyBrandName {
   vertical-align: top;
 }
+
+#dancerflyFooter {
+  position: relative;
+  right: -55px;
+}
