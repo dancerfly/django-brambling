@@ -83,7 +83,24 @@ a.step
 			border-left-style: solid
 		&:last-child
 			+border-radius(0 0 $border-radius-base 0)
+			+box-shadow(-1px 0 0 0 whitesmoke)
 	> .complete, > .current
-		border-color: darken($yellow-dark, 10%)
+		border-color: $yellow-darker
+		&:last-child
+			+box-shadow(-1px 0 0 0 $yellow-darker)
+	> .current
 		&::after
 			bottom: -1px
+		&::before
+			content: " "
+			position: absolute
+			margin-left: auto
+			margin-right: auto
+			bottom: 0
+			left: 0
+			right: 0
+			height: 0
+			width: 0
+			border-bottom: 7px solid $yellow-darker
+			border-left: 6px solid transparent
+			border-right: 6px solid transparent

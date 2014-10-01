@@ -6365,12 +6365,34 @@ a.step.complete:hover {
   -ms-border-radius: 0 0 4px 0;
   -o-border-radius: 0 0 4px 0;
   border-radius: 0 0 4px 0;
+  -webkit-box-shadow: -1px 0 0 0 whitesmoke;
+  -moz-box-shadow: -1px 0 0 0 whitesmoke;
+  box-shadow: -1px 0 0 0 whitesmoke;
 }
 .stepbar-hug-masthead > .complete, .stepbar-hug-masthead > .current {
   border-color: #ae6f0c;
 }
-.stepbar-hug-masthead > .complete::after, .stepbar-hug-masthead > .current::after {
+.stepbar-hug-masthead > .complete:last-child, .stepbar-hug-masthead > .current:last-child {
+  -webkit-box-shadow: -1px 0 0 0 #ae6f0c;
+  -moz-box-shadow: -1px 0 0 0 #ae6f0c;
+  box-shadow: -1px 0 0 0 #ae6f0c;
+}
+.stepbar-hug-masthead > .current::after {
   bottom: -1px;
+}
+.stepbar-hug-masthead > .current::before {
+  content: " ";
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  width: 0;
+  border-bottom: 7px solid #ae6f0c;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
 }
 
 .image-framed {
