@@ -37,7 +37,7 @@
 
 	{% if item_options %}
 		{% regroup item_options by item as option_list %}
-		<div class="row margin-leader" id="items-list">
+		<div class="row" id="items-list">
 			<div class="col-md-5 col-md-push-7">
 				{% with has_cart=order.has_cart %}
 					{% if has_cart %}

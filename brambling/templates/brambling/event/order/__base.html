@@ -21,7 +21,7 @@
 
 	{% if order.has_cart %}
 		{% if next_step %}
-			<div class='row'>
+			<div class='row margin-trailer'>
 				<div class='col-md-6'>
 					{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time only %}
 				</div>

@@ -3,7 +3,7 @@
 {% td_to_dict expiry_time|td_timeuntil as time_left %}
 
 
-    <div class='alert
+    <div class='alert margin-trailer-md-0
         {% if time_left.days == 0 and time_left.hours == 0 %}
             {% if time_left.minutes < 3 and time_left.minutes > 0 %}
                 alert-warning

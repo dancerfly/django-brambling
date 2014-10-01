@@ -6092,6 +6092,10 @@ footer a {
   max-width: 480px;
 }
 
+.margin-leader-0 {
+  margin-top: 0;
+}
+
 .margin-leader-tiny {
   margin-top: 4px;
 }
@@ -6100,10 +6104,31 @@ footer a {
   margin-top: 40px;
 }
 
+.margin-trailer-0 {
+  margin-bottom: 0;
+}
+
 .margin-trailer-dbl {
   margin-bottom: 40px;
 }
 
+@media (min-width: 992px) {
+  .margin-leader-md {
+    margin-top: 20px;
+  }
+
+  .margin-leader-md-0 {
+    margin-top: 0;
+  }
+
+  .margin-trailer-md {
+    margin-bottom: 20px;
+  }
+
+  .margin-trailer-md-0 {
+    margin-bottom: 0;
+  }
+}
 .relative {
   position: relative;
 }
