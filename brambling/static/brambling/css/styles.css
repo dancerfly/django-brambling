@@ -6403,9 +6403,6 @@ a.step.complete:hover {
   -ms-border-radius: 0 0 4px 0;
   -o-border-radius: 0 0 4px 0;
   border-radius: 0 0 4px 0;
-  -webkit-box-shadow: -1px 0 0 0 whitesmoke;
-  -moz-box-shadow: -1px 0 0 0 whitesmoke;
-  box-shadow: -1px 0 0 0 whitesmoke;
 }
 .stepbar-hug-masthead > .complete, .stepbar-hug-masthead > .current {
   border-color: #ae6f0c;
