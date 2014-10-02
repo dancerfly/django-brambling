@@ -202,7 +202,7 @@ class Event(models.Model):
     banner_image = models.ImageField(blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
-    country = CountryField()
+    country = CountryField(default='US')
     timezone = models.CharField(max_length=40, default='UTC')
     currency = models.CharField(max_length=10, default='USD')
 

@@ -22,6 +22,20 @@ class EventForm(forms.ModelForm):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
                               required=False)
+    timezone = forms.ChoiceField(choices=(
+        ('America/Anchorage', 'America/Anchorage'),
+        ('America/Adak', 'America/Adak'),
+        ('America/Phoenix', 'America/Phoenix'),
+        ('America/Chicago', 'America/Chicago'),
+        ('America/New_York', 'America/New_York'),
+        ('America/Indiana/Indianapolis', 'America/Indiana/Indianapolis'),
+        ('America/Indiana/Knox', 'America/Indiana/Knox'),
+        ('America/Detroit', 'America/Detroit'),
+        ('America/Denver', 'America/Denver'),
+        ('America/Los_Angeles', 'America/Los_Angeles'),
+        ('Pacific/Honolulu', 'Pacific/Honolulu'),
+
+    ))
 
     class Meta:
         model = Event
@@ -29,10 +43,7 @@ class EventForm(forms.ModelForm):
                    'stripe_user_id', 'stripe_refresh_token',
                    'stripe_access_token', 'stripe_publishable_key',
                    'dwolla_user_id', 'dwolla_access_token', 'editors',
-                   'is_published', 'is_frozen')
-        widgets = {
-            'country': forms.Select
-        }
+                   'is_published', 'is_frozen', 'country', 'currency')
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
