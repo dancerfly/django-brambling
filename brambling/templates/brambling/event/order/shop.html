@@ -86,6 +86,27 @@
 				</div>
 			</div>
 			<div class="col-md-7 col-md-pull-5">
+
+				{% if event.description or event.website_url%}
+					<div class="list-group">
+						{% if event.description %}
+							<div class="list-group-item">
+								<div class="shortened" data-lines="3">
+									{{ event.description }}
+								</div>
+							</div>
+						{% endif %}
+						{% if event.website_url %}
+							<a class="list-group-item" href="{{ event.website_url }}">
+								<div class="pull-right">
+									<i class="fa fa-chevron-right"></i>
+								</div>
+								{{ event.website_url }}
+							</a>
+						{% endif %}
+					</div>
+				{% endif %}
+
 				{% for options in option_list %}
 					<div class='panel panel-default'>
 						<header class='panel-heading clearfix'>
