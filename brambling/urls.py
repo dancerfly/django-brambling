@@ -130,6 +130,9 @@ urlpatterns = patterns('',
         name='brambling_home_remove_resident'),
 
     url(r'^daguerre/', include('daguerre.urls')),
+    url(r'^404/$', 'django.views.defaults.page_not_found'),
+    url(r'^418/$', TemplateView.as_view(template_name='418.html')),
+    url(r'^500/$', 'django.views.defaults.server_error'),
 
     url(r'^(?P<event_slug>[\w-]+)/$',
         RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
