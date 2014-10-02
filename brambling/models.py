@@ -196,7 +196,6 @@ class Event(models.Model):
                             help_text="URL-friendly version of the event name."
                                       " Dashes, 0-9, and lower-case a-z only.",
                             unique=True)
-    tagline = models.CharField(max_length=75, blank=True)
     description = models.TextField(blank=True)
     website_url = models.URLField(blank=True)
     logo_image = models.ImageField(blank=True)
