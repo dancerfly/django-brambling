@@ -152,7 +152,9 @@ class HousingSlotForm(forms.ModelForm):
 
 class HostingForm(MemoModelForm):
     providing_housing = forms.BooleanField(initial=False, required=False)
-    save_as_defaults = forms.BooleanField(initial=True, required=False)
+    save_as_defaults = forms.BooleanField(initial=True, required=False,
+            label="Remember this information for future events.",
+            help_text="You will still be able to modify it later.")
 
     class Meta:
         model = EventHousing

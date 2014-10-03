@@ -930,10 +930,12 @@ class Home(models.Model):
                                       verbose_name="I/We don't want in my/our home")
 
     person_prefer = models.TextField(blank=True,
-                                     verbose_name="I/We would love to host")
+                                     verbose_name="I/We would love to host",
+                                     help_text="Provide a list of names, separated by line breaks.")
 
     person_avoid = models.TextField(blank=True,
-                                    verbose_name="I/We don't want to host")
+                                    verbose_name="I/We don't want to host",
+                                    help_text="Provide a list of names, separated by line breaks.")
 
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='homes',
@@ -977,10 +979,12 @@ class EventHousing(models.Model):
                                       verbose_name="I/We don't want in my/our home")
 
     person_prefer = models.TextField(blank=True,
-                                     verbose_name="I/We would love to host")
+                                     verbose_name="I/We would love to host",
+                                     help_text="Provide a list of names, separated by line breaks.")
 
     person_avoid = models.TextField(blank=True,
-                                    verbose_name="I/We don't want to host")
+                                    verbose_name="I/We don't want to host",
+                                    help_text="Provide a list of names, separated by line breaks.")
 
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='eventhousing',

@@ -24,7 +24,7 @@
 			});
 			$('#id_providing_housing').trigger('change');
 		});
-	</script>	
+	</script>
 {% endblock %}
 
 {% block main %}
@@ -37,7 +37,7 @@
 
 		<div id='hostingFields' class="collapse{% if form.instance.order.providing_housing %} in{% endif %}">
 			{% form form using "brambling/forms/hosting.html" %}
-			<div class="row">
+			<div class="row margin-leader-dbl">
 				<div class="col-sm-8 col-sm-offset-2">
 					<p>
 						In the form below, use the <strong>Comfy</strong> column to specify
