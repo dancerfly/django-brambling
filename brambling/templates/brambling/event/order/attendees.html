@@ -43,10 +43,14 @@
 						<div class='{% if unassigned_items %}col-md-6{% else %}col-md-4{% endif %}'>
 							<div class='panel panel-primary'>
 								<div class='panel-heading'>
-									<div class='panel-title'><a href='{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug %}'>
-										{{ attendee.get_full_name }}
-										<i class='fa fa-pencil'></i>
-									</a></div>
+									<div class='panel-title'>
+										<a href='{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug %}'>
+											{{ attendee.get_full_name }}
+										</a>
+										<a href='{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug %}' class="pull-right">
+											<i class='fa fa-fw fa-pencil'></i>
+										</a>
+									</div>
 								</div>
 								{% with items=attendee.bought_items.all %}
 									{% if items %}
