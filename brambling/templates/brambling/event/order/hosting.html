@@ -1,11 +1,12 @@
 {% extends 'brambling/event/order/__base.html' %}
 
-{% load floppyforms %}
+{% load floppyforms staticfiles %}
 
 {% block title %}Provide housing data – {{ block.super }}{% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
+	<script type="text/javascript" src="{% static "brambling/brambling.hostingform.js" %}"></script>
 
 	{% include 'brambling/event/order/_use_discount_js.html' %}
 
@@ -45,7 +46,7 @@
 						you can host if they are willing to sleep in slightly tighter
 						conditions.
 					</p>
-					<table class="table table-striped table-condensed">
+					<table class="table table-striped table-condensed" id="HostingFormTable">
 						<thead>
 							<tr>
 								<th class="col-xs-4">Date</th>
@@ -61,11 +62,19 @@
 										<td class="text-right">{{ form.instance.night }}</td>
 										<td>{% formrow form.spaces using "brambling/forms/rows/no_label.html" %}</td>
 										<td>{% formrow form.spaces_max using "brambling/forms/rows/no_label.html" %}</td>
+										<td>
+											{% if forloop.first %}
+												<button class="btn btn-default btn-block" type="button" id="FillAllButton">
+													Copy to all rows <i class="fa fa-arrow-down"></i>
+												</button>
+											{% endif %}
+										</td>
 									</tr>
 								{% endform %}
 							{% endfor %}
 						</tbody>
 					</table>
+					<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
 				</div>{# /.col-sm-8 #}
 			</div>{# /.row #}
 		</div>

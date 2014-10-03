@@ -1,3 +1,6 @@
+// A happy little namespace for us to use:
+(function () { var brambling = window.brambling = {}; }());
+
 // From https://docs.djangoproject.com/en/dev/ref/contrib/csrf/#ajax
 
 function getCookie(name) {
