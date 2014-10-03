@@ -31,7 +31,11 @@ class ShopStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def _is_completed(self):
-        return self.workflow.order.has_cart() or self.workflow.order.checked_out
+        order = self.workflow.order
+        return (order.checked_out or
+                (order.cart_start_time is not None and
+                 order.bought_items.filter(status=BoughtItem.RESERVED,
+                                           item_option__item__category=Item.PASS).exists()))
 
 
 class AttendeeStep(Step):
