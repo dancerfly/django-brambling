@@ -150,7 +150,8 @@ class HostingStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
-        return self.workflow.event.collect_housing_data
+        return (self.workflow.event.collect_housing_data and
+                self.workflow.order.attendees.exclude(housing_status=Attendee.NEED).exists())
 
     def _is_completed(self):
         return (not self.workflow.order.providing_housing) or EventHousing.objects.filter(
@@ -559,8 +560,9 @@ class SurveyDataView(OrderMixin, UpdateView):
         return super(SurveyDataView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('brambling_event_order_summary',
-                       kwargs={'event_slug': self.event.slug})
+        if self.current_step.errors:
+            return self.current_step.url
+        return self.current_step.next_step.url
 
 
 class HostingView(OrderMixin, UpdateView):
