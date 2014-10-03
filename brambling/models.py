@@ -694,6 +694,15 @@ class Order(models.Model):
             'net_balance': net_balance,
         }
 
+    def get_eventhousing(self):
+        # Workaround for DNE exceptions on nonexistant reverse relations.
+        if not hasattr(self, '_eventhousing'):
+            try:
+                self._eventhousing = self.eventhousing
+            except EventHousing.DoesNotExist:
+                self._eventhousing = None
+        return self._eventhousing
+
 
 class Payment(models.Model):
     STRIPE = 'stripe'
@@ -951,7 +960,7 @@ class Home(models.Model):
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
     home = models.ForeignKey(Home, blank=True, null=True, on_delete=models.SET_NULL)
-    order = models.ForeignKey(Order)
+    order = models.OneToOneField(Order, related_name='eventhousing')
 
     # Eventually add a contact_person field.
     contact_name = models.CharField(max_length=100)

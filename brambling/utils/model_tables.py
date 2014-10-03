@@ -171,8 +171,9 @@ class ModelTable(object):
         """
 
         if not hasattr(self, '_form'):
-            choices = [(field[1], field[0]) for field in self.get_fields()]
-            initial = [field[1] for field in self.get_fields() if field[2]]
+            fields = self.get_fields()
+            choices = [(field[1], field[0]) for field in fields]
+            initial = [field[1] for field in fields if field[2]]
             field = forms.MultipleChoiceField(
                 choices=choices,
                 initial=initial,
@@ -298,7 +299,24 @@ class OrderTable(ModelTable):
     )
 
     SURVEY_FIELDS = (
-        ("Send flyers", "send_flyers", True),
+        ("Heard Through", "heard_through", True),
+        ("Heard Through (Other)", "heard_through_other", True),
+        ("Send Flyers", "send_flyers", True),
+        ("Flyers Address", "send_flyers_full_address", True),
+    )
+
+    HOUSING_FIELDS = (
+        ("Providing housing", "providing_housing", True),
+        ("Hosting Contact name", "contact_name", True),
+        ("Hosting Contact email", "contact_email", True),
+        ("Hosting Contact phone", "contact_phone", True),
+        ("Hosting Address", "hosting_full_address", True),
+        ("Hosting Public transit access", "public_transit_access", True),
+        ("Hosting Environmental Factors", "ef_present", True),
+        ("Hosting Environmental Factors Avoided", "ef_avoid", True),
+        ("Hosting People Preference", "person_prefer", True),
+        ("Hosting People Avoid", "person_avoid", True),
+        ("Hosting Home Categories", "housing_categories", True),
     )
 
     def __init__(self, event, *args, **kwargs):
@@ -309,4 +327,93 @@ class OrderTable(ModelTable):
         fields = self.BASE_FIELDS
         if self.event.collect_survey_data:
             fields += self.SURVEY_FIELDS
+        if self.event.collect_housing_data:
+            fields += self.HOUSING_FIELDS
+            from brambling.models import HousingSlot
+
+            def wrapper_spaces(date):
+                def inner_spaces(obj):
+                    if obj.get_eventhousing():
+                        try:
+                            return HousingSlot.objects.get(eventhousing__order=obj, night=date).spaces
+                        except HousingSlot.DoesNotExist:
+                            pass
+                    return ''
+                return inner_spaces
+
+            def wrapper_spaces_max(date):
+                def inner_spaces_max(obj):
+                    if obj.get_eventhousing():
+                        try:
+                            return HousingSlot.objects.get(eventhousing__order=obj, night=date).spaces_max
+                        except HousingSlot.DoesNotExist:
+                            pass
+                    return ''
+                return inner_spaces_max
+
+            for date in self.event.housing_dates.all():
+                fields += (
+                    ("Hosting {} spaces".format(date.date.strftime("%m/%d/%Y")), wrapper_spaces(date), True),
+                    ("Hosting {} max".format(date.date.strftime("%m/%d/%Y")), wrapper_spaces_max(date), True),
+                )
         return fields
+
+    def send_flyers_full_address(self, obj):
+        if obj.send_flyers:
+            return u", ".join((
+                obj.send_flyers_address,
+                obj.send_flyers_city,
+                obj.send_flyers_state_or_province,
+                unicode(obj.send_flyers_country),
+            ))
+        return ''
+
+    def hosting_full_address(self, obj):
+        eventhousing = obj.get_eventhousing()
+        if eventhousing:
+            return u", ".join((
+                eventhousing.address,
+                eventhousing.city,
+                eventhousing.state_or_province,
+                unicode(eventhousing.country),
+            ))
+        return ''
+
+    def get_eventhousing_attr(self, obj, name):
+        eventhousing = obj.get_eventhousing()
+        if eventhousing:
+            return getattr(eventhousing, name)
+        return ''
+
+    def contact_name(self, obj):
+        return self.get_eventhousing_attr(obj, 'contact_name')
+
+    def contact_email(self, obj):
+        return self.get_eventhousing_attr(obj, 'contact_email')
+
+    def contact_phone(self, obj):
+        return self.get_eventhousing_attr(obj, 'contact_phone')
+
+    def public_transit_access(self, obj):
+        return self.get_eventhousing_attr(obj, 'public_transit_access')
+
+    def person_prefer(self, obj):
+        return self.get_eventhousing_attr(obj, 'person_prefer')
+
+    def person_avoid(self, obj):
+        return self.get_eventhousing_attr(obj, 'person_avoid')
+
+    def get_eventhousing_csm(self, obj, name):
+        eventhousing = obj.get_eventhousing()
+        if eventhousing:
+            return comma_separated_manager(name)(self, eventhousing)
+        return ''
+
+    def ef_present(self, obj):
+        return self.get_eventhousing_csm(obj, 'ef_present')
+
+    def ef_avoid(self, obj):
+        return self.get_eventhousing_csm(obj, 'ef_avoid')
+
+    def housing_categories(self, obj):
+        return self.get_eventhousing_csm(obj, 'housing_categories')
