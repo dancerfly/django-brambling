@@ -8,6 +8,22 @@
 	{{ block.super }}
 
 	{% include 'brambling/event/order/_use_discount_js.html' %}
+
+	<script>
+		$(function(){
+			$('#id_heard_through').on('change', function() {
+				if (this.value=='other') {
+					$('#heardOtherField').collapse('show');
+				} else {
+					$('#heardOtherField').collapse('hide');
+				}
+			});
+			$('#heardOtherField').collapse({
+				toggle: false
+			});
+			$('#id_heard_through').trigger('change');
+		});
+	</script>
 {% endblock %}
 
 {% block next_step_button %}
@@ -24,7 +40,10 @@
 
 
 			{% formrow form.heard_through %}
-			{% formrow form.heard_through_other %}
+
+			<div id="heardOtherField" class="collapse{% if form.instance.heard_through %} in{% endif %}">
+				{% formrow form.heard_through_other %}
+			</div>
 
 			<div data-target="#promotionalCollapse" data-toggle="collapse">
 				{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
