@@ -8,6 +8,22 @@
 	{{ block.super }}
 
 	{% include 'brambling/event/order/_use_discount_js.html' %}
+
+	<script>
+		$(function(){
+			$('#id_providing_housing').on('change', function() {
+				if (this.checked) {
+					$('#hostingFields').collapse('show');
+				} else {
+					$('#hostingFields').collapse('hide');
+				}
+			});
+			$('#hostingFields').collapse({
+				toggle: false
+			});
+			$('#id_providing_housing').trigger('change');
+		});
+	</script>	
 {% endblock %}
 
 {% block main %}
@@ -16,9 +32,7 @@
 	<form action="" method="post" novalidate>
 		{% csrf_token %}
 
-		<div data-target="#hostingFields" data-toggle="collapse">
-			{% formrow form.providing_housing with label="I want to house visiting dancers" %}
-		</div>
+		{% formrow form.providing_housing with label="I want to house visiting dancers" %}
 
 		<div id='hostingFields' class="collapse{% if form.instance.order.providing_housing %} in{% endif %}">
 			{% form form using "brambling/forms/hosting.html" %}

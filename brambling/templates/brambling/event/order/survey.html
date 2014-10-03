@@ -22,6 +22,18 @@
 				toggle: false
 			});
 			$('#id_heard_through').trigger('change');
+
+			$('#id_send_flyers').on('change', function() {
+				if (this.checked) {
+					$('#promotionalCollapse').collapse('show');
+				} else {
+					$('#promotionalCollapse').collapse('hide');
+				}
+			});
+			$('#promotionalCollapse').collapse({
+				toggle: false
+			});
+			$('#id_send_flyers').trigger('change');
 		});
 	</script>
 {% endblock %}
@@ -38,16 +50,13 @@
 		{% form form using %}
 			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-
 			{% formrow form.heard_through %}
 
 			<div id="heardOtherField" class="collapse{% if form.instance.heard_through %} in{% endif %}">
 				{% formrow form.heard_through_other %}
 			</div>
 
-			<div data-target="#promotionalCollapse" data-toggle="collapse">
 				{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
-			</div>
 			<div id="promotionalCollapse" class="collapse{% if form.instance.send_flyers %} in{% endif %}">
 				{% formrow form.send_flyers_address %}
 				<div class="row">
