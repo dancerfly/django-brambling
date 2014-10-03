@@ -19,6 +19,9 @@ class AttendeeBasicDataForm(forms.ModelForm):
     class Meta:
         model = Attendee
         exclude = ()
+        widgets = {
+            'housing_status': forms.RadioSelect,
+        }
 
     def __init__(self, event_pass, *args, **kwargs):
         super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
@@ -38,6 +41,15 @@ class AttendeeBasicDataForm(forms.ModelForm):
                 self.fields['additional_items'].initial = additional_items
         else:
             del self.fields['additional_items']
+
+        if 'housing_status' in self.fields:
+            self.fields['housing_status'].label = "Housing"
+            self.fields['housing_status'].choices = (
+                (Attendee.NEED, 'Request housing'),
+                (Attendee.HAVE, 'Already arranged'),
+                (Attendee.HOME, 'Staying at own home'),
+            )
+            self.fields['housing_status'].initial = ''
 
     def clean_housing_status(self):
         housing_status = self.cleaned_data['housing_status']
