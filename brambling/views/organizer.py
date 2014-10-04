@@ -40,34 +40,33 @@ class EventCreateView(CreateView):
                 raise Http404
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form, *args, **kwargs):
-        "Force form owner to be the current user."
-        form.instance.owner = self.request.user
-        return super(EventCreateView, self).form_valid(form, *args, **kwargs)
-
     def get_initial(self):
         "Instantiate form with owner as current user."
-        initial = {'owner': self.request.user}
+        initial = {
+            'country': 'US',
+        }
         try:
             data = requests.get('http://api.hostip.info/get_json.php', timeout=.5).json()
         except requests.exceptions.Timeout:
             pass
         else:
-            initial['country'] = data['country_code']
-            if ', ' in data['city']:
+            if data['country_code'] == 'US' and ', ' in data['city']:
                 initial['city'], initial['state'] = data['city'].split(', ')
 
         return initial
 
     def get_form_class(self):
-        return modelform_factory(self.model, form=self.form_class,
-                                 exclude=('owner', 'editors', 'dates',
-                                          'housing_dates'))
+        return modelform_factory(self.model, form=self.form_class)
 
     def get_form_kwargs(self):
         kwargs = super(EventCreateView, self).get_form_kwargs()
         kwargs['request'] = self.request
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(EventCreateView, self).get_context_data(**kwargs)
+        context['owner'] = self.request.user
+        return context
 
 
 class EventSummaryView(TemplateView):
@@ -163,6 +162,7 @@ class EventUpdateView(UpdateView):
         context.update({
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
+            'owner': self.object.owner,
         })
         if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.uses_dwolla():
             dwolla = get_dwolla()

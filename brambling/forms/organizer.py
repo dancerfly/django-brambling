@@ -59,6 +59,8 @@ class EventForm(forms.ModelForm):
         if not self.instance.uses_dwolla():
             del self.fields['disconnect_dwolla']
         self.request = request
+        if self.instance.pk is None:
+            self.instance.owner = request.user
         if not request.user == self.instance.owner:
             del self.fields['editors']
 

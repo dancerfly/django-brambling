@@ -128,10 +128,10 @@
 			</thead>
 			<tbody>
 				<tr>
-					<th>{{ event.owner.get_full_name }}</th>
-					<td>{{ event.owner.email }}</td>
+					<th>{{ owner.get_full_name }}</th>
+					<td>{{ owner.email }}</td>
 					<td><i class='fa fa-fw fa-lock'></i> Owner</td>
-					{% if event.owner == request.user %}<td></td>{% endif %}
+					{% if owner == request.user %}<td></td>{% endif %}
 				</tr>
 				{% for editor in event.editors.all %}
 					<tr>
