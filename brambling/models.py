@@ -374,8 +374,7 @@ class Discount(models.Model):
 
 
 class PersonManager(BaseUserManager):
-    def _create_user(self, email, password, name, is_superuser,
-                     **extra_fields):
+    def _create_user(self, email, password, is_superuser, **extra_fields):
         """
         Creates and saves a User with the given username, email and password.
         """
@@ -383,19 +382,17 @@ class PersonManager(BaseUserManager):
         if not email:
             raise ValueError('Email must be given')
         email = self.normalize_email(email)
-        name = name or email
-        person = self.model(email=email, name=name,
-                            is_superuser=is_superuser, last_login=now,
-                            created_timestamp=now, **extra_fields)
+        person = self.model(email=email, is_superuser=is_superuser,
+                            last_login=now, created_timestamp=now, **extra_fields)
         person.set_password(password)
         person.save(using=self._db)
         return person
 
-    def create_user(self, email, password=None, name=None, **extra_fields):
-        return self._create_user(email, password, name, False, **extra_fields)
+    def create_user(self, email, password=None, **extra_fields):
+        return self._create_user(email, password, False, **extra_fields)
 
-    def create_superuser(self, email, password, name=None, **extra_fields):
-        return self._create_user(email, password, name, True, **extra_fields)
+    def create_superuser(self, email, password, **extra_fields):
+        return self._create_user(email, password, True, **extra_fields)
 
 
 class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
@@ -409,7 +406,7 @@ class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
 
     ### Start custom user requirements
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name']
+    REQUIRED_FIELDS = ['given_name', 'surname']
 
     @property
     def is_staff(self):
