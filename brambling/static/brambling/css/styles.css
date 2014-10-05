@@ -5884,7 +5884,7 @@ h1, h2, .h2, h3, .h3 {
   opacity: 0.85;
 }
 
-.a-inherit, .a-uncolored, .a-secret, footer a {
+.a-inherit, .a-uncolored, .a-secret {
   color: inherit;
 }
 
@@ -6026,7 +6026,7 @@ footer {
   color: #919191;
 }
 footer a {
-  font-weight: bold;
+  color: #c59c5b;
 }
 
 .form-control:focus {
@@ -6474,18 +6474,12 @@ a.step.complete:hover {
   padding-top: 60px;
 }
 
-#dancerflyBrand {
-  margin-right: 5px;
-  position: relative;
-  top: -1px;
-  height: 22px;
+.dancerfly-brand {
+  font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
+  font-weight: 400;
+  font-size: 1.1em;
 }
 
 #dancerflyBrandName {
   vertical-align: top;
-}
-
-#dancerflyFooter {
-  position: relative;
-  right: -55px;
 }
