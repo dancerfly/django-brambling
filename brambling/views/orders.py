@@ -257,14 +257,13 @@ class AddToOrderView(OrderMixin, View):
         clear_expired_carts(self.event)
 
         try:
-            item_option = ItemOption.objects.annotate(taken=Count('boughtitem')
-                                           ).get(item__event=self.event,
+            item_option = ItemOption.objects.get(item__event=self.event,
                                                  pk=kwargs['pk'])
         except ItemOption.DoesNotExist:
             raise Http404
 
         # If a total number is set and has been reached, the item is sold out.
-        if item_option.total_number is not None and item_option.taken >= item_option.total_number:
+        if item_option.total_number is not None and item_option.remaining <= 0:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
         if self.order.person.confirmed_email or self.is_admin_request:
@@ -367,10 +366,13 @@ class ChooseItemsView(OrderMixin, TemplateView):
             available_start__lte=now,
             available_end__gte=now,
             item__event=self.event,
-        ).annotate(taken=Count('boughtitem')).filter(
-            # Display items which are still in stock OR which don't have a limited stock.
-            Q(total_number__gt=F('taken')) | Q(total_number=None)
-        ).order_by('item')
+        ).order_by('item').extra(select={
+            'taken': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.item_option_id = brambling_itemoption.id AND
+brambling_boughtitem.status != 'refunded'
+"""
+        })
 
         context['item_options'] = item_options
         return context

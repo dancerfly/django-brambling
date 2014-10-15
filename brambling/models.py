@@ -340,7 +340,7 @@ class ItemOption(models.Model):
     @property
     def remaining(self):
         if not hasattr(self, 'taken'):
-            self.taken = self.boughtitem_set.count()
+            self.taken = self.boughtitem_set.exclude(status=BoughtItem.REFUNDED).count()
         return self.total_number - self.taken
 
 
