@@ -366,7 +366,7 @@ class ChooseItemsView(OrderMixin, TemplateView):
             available_start__lte=now,
             available_end__gte=now,
             item__event=self.event,
-        ).order_by('item').extra(select={
+        ).order_by('item', 'order').extra(select={
             'taken': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
 brambling_boughtitem.item_option_id = brambling_itemoption.id AND
