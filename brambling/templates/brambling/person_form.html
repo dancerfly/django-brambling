@@ -56,6 +56,16 @@
 				{% endif %}
 			</div>
 		</div>
+		<div class='panel panel-default'>
+			<header class="panel-heading">
+				<h4 class="panel-title">Change Password</h4>
+			</header>
+			<div class="panel-body">
+				{% formrow form.old_password %}
+				{% formrow form.new_password1 %}
+				{% formrow form.new_password2 %}
+			</div>
+		</div>
 		<button class="btn btn-primary" type="submit">Save changes</button>
 		<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
 	</form>

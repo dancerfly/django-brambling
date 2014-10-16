@@ -76,6 +76,14 @@ class PersonView(UpdateView):
         kwargs['request'] = self.request
         return kwargs
 
+    def form_valid(self, form):
+        messages.add_message(self.request, messages.SUCCESS, "Profile saved.")
+        return super(PersonView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        messages.add_message(self.request, messages.ERROR, "Please correct the errors below.")
+        return super(PersonView, self).form_invalid(form)
+
     def get_success_url(self):
         return self.request.path
 

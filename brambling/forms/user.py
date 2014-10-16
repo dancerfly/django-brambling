@@ -97,7 +97,21 @@ class SignUpForm(BasePersonForm):
 
 
 class PersonForm(BasePersonForm):
+    error_messages = {
+        'password_incorrect': _("Your old password was entered incorrectly. "
+                                "Please enter it again."),
+        'password_mismatch': _("The two password fields didn't match."),
+    }
     disconnect_dwolla = forms.BooleanField(required=False)
+    old_password = forms.CharField(label=_("Old password"),
+                                   widget=forms.PasswordInput,
+                                   required=False)
+    new_password1 = forms.CharField(label=_("New password"),
+                                    widget=forms.PasswordInput,
+                                    required=False)
+    new_password2 = forms.CharField(label=_("New password confirmation"),
+                                    widget=forms.PasswordInput,
+                                    required=False)
 
     class Meta:
         model = Person
@@ -112,11 +126,48 @@ class PersonForm(BasePersonForm):
         if not self.instance.dwolla_user_id:
             del self.fields['disconnect_dwolla']
 
+    def clean_old_password(self):
+        """
+        Validates that the old_password field is correct (if provided).
+        """
+        old_password = self.cleaned_data["old_password"]
+        if old_password and not self.instance.check_password(old_password):
+            raise ValidationError(
+                self.error_messages['password_incorrect'],
+                code='password_incorrect',
+            )
+        return old_password
+
+    def clean_new_password2(self):
+        """
+        Validates that the passwords are the same and that the old_password
+        field was also provided.
+        """
+        password1 = self.cleaned_data.get('new_password1')
+        password2 = self.cleaned_data.get('new_password2')
+        if password1 and password2:
+            if not self.cleaned_data["old_password"]:
+                self.add_error(
+                    'old_password',
+                    ValidationError(
+                        self.error_messages['password_incorrect'],
+                        code='password_incorrect',
+                    )
+                )
+            if password1 != password2:
+                raise ValidationError(
+                    self.error_messages['password_mismatch'],
+                    code='password_mismatch',
+                )
+        return password2
+
     def save(self, commit=True):
         self.instance.modified_directly = True
         if self.cleaned_data.get('disconnect_dwolla'):
             self.instance.dwolla_user_id = ''
             self.instance.dwolla_access_token = ''
+        if self.cleaned_data.get('new_password1'):
+            self.instance.set_password(self.cleaned_data['new_password1'])
         person = super(PersonForm, self).save(commit)
         if commit:
             self.email_confirmation()
