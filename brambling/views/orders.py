@@ -365,18 +365,39 @@ class EventPublicView(TemplateView):
         if request.user.is_authenticated():
             url = reverse("brambling_event_shop", kwargs=kwargs)
             return HttpResponseRedirect(url)
+
+        self.event = get_event_or_404(kwargs['event_slug'])
+
+        # Make sure the event is viewable.
+        if not self.event.viewable_by(request.user):
+            raise Http404
+
         return super(EventPublicView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(EventPublicView, self).get_context_data(**kwargs)
-        event = get_event_or_404(kwargs['event_slug'])
 
-        # Make sure the event is viewable.
-        if not event.viewable_by(self.request.user):
-            raise Http404
+        event = self.event
+        now = timezone.now()
+        clear_expired_carts(self.event)
+
+        # TODO: this is identical to the query in
+        # `ChooseItemsView.get_context_data`. We should DRY this up.
+        item_options = ItemOption.objects.filter(
+            available_start__lte=now,
+            available_end__gte=now,
+            item__event=self.event,
+        ).order_by('item', 'order').extra(select={
+            'taken': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.item_option_id = brambling_itemoption.id AND
+brambling_boughtitem.status != 'refunded'
+"""
+        })
 
         context.update({
             'event': event,
+            'item_options': item_options,
         })
         return context
 

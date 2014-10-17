@@ -7,26 +7,29 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	{% include 'brambling/event/order/_use_discount_js.html' %}
+	{% if user.is_authenticated %}
+		{% include 'brambling/event/order/_use_discount_js.html' %}
 
-	<script>
-		$(function(){
-			$('a[target]').on('click', function(e){
-				e.preventDefault();
-				$.post($(this).attr('target'), function(data){
-					// For now, just reload the page.
-					if (data.success) {
-						location.reload();
-					} else if (data.error) {
-						$('#items-list').before(
-							"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
-						);
-					}
-				});
-			})
-		});
-	</script>
-	{% include "brambling/event/order/_confirmation_screen.html" %}
+		<script>
+			$(function(){
+				$('a[target]').on('click', function(e){
+					e.preventDefault();
+					$.post($(this).attr('target'), function(data){
+						// For now, just reload the page.
+						if (data.success) {
+							location.reload();
+						} else if (data.error) {
+							$('#items-list').before(
+								"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
+							);
+						}
+					});
+				})
+			});
+		</script>
+		{% include "brambling/event/order/_confirmation_screen.html" %}
+	{% endif %}
+
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
 {% endblock %}
 
@@ -162,7 +165,7 @@
 						</header>
 						<div class='list-group'>
 							{% for option in options.list %}
-								<a target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
+								<a{% if user.is_authenticated %} target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}'{% endif %} href='javascript://' class="list-group-item">
 									{# <div class="scroll-x"> #}
 										<div class='row'>
 											<div class='col-sm-5'>{{ option.name }}</div>
