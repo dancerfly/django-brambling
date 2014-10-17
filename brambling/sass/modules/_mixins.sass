@@ -23,3 +23,9 @@
 		color: lighten($color, 30%)
 		&:hover
 			color: #FFF
+
+=striped-bg($bg-color: #ccc, $darken-amount: 5%, $stripe-color: darken($bg-color, $darken-amount))
+	// http://codepen.io/nathos/pen/ablfk
+	background-color: $bg-color
+	@include background-image(linear-gradient(-45deg, $stripe-color 25%, transparent 25%, transparent 50%, $stripe-color 50%, $stripe-color 75%, transparent 75%, transparent))
+	background-size: 40px 40px

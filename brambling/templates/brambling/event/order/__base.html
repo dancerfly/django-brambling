@@ -12,12 +12,16 @@
 	{% endif %}
 {% endblock %}
 
+{% block messages %}{% endblock %}{# blank the messages here and put them lower down #}
+
 {% block main %}
 	{% include "brambling/event/order/_masthead.html" %}
 
 	{% if workflow %}
 		{% include "brambling/event/order/_steps.html" %}
 	{% endif %}
+
+	{% include "brambling/layouts/_messages.html" %}
 
 	{% if order.has_cart %}
 		{% if next_step %}
