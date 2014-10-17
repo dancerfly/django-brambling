@@ -64,6 +64,9 @@ class Row(object):
         for key, value in self.data.items():
             yield Cell(key, value)
 
+    def __len__(self):
+        return len(self.data)
+
 
 class ModelTable(object):
     """

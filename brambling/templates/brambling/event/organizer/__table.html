@@ -86,7 +86,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="2">Nothing matches the filter criteria.</td>
+                        <td colspan="{{ table.header_row|length }}">Nothing matches the filter criteria.</td>
                     </tr>
                 {% endfor %}
             </tbody>
