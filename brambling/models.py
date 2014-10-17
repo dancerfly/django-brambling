@@ -267,9 +267,6 @@ class Event(models.Model):
                  self.editors.filter(pk=user.pk).exists()))
 
     def viewable_by(self, user):
-        if not user.is_authenticated() or not user.is_active:
-            return False
-
         if not self.is_published and not self.editable_by(user):
             return False
 

@@ -352,6 +352,34 @@ class RemoveDiscountView(OrderMixin, View):
         return None
 
 
+class EventPublicView(TemplateView):
+    template_name = 'brambling/event/order/shop.html'
+
+    def get(self, request, *args, **kwargs):
+        """
+        If the user is authenticated, go ahead and push them to the shop view.
+        Otherwise, render as usual.
+
+        """
+
+        if request.user.is_authenticated():
+            url = reverse("brambling_event_shop", kwargs=kwargs)
+            return HttpResponseRedirect(url)
+        return super(EventPublicView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(EventPublicView, self).get_context_data(**kwargs)
+        event = get_event_or_404(kwargs['event_slug'])
+
+        # Make sure the event is viewable.
+        if not event.viewable_by(self.request.user):
+            raise Http404
+
+        context.update({
+            'event': event,
+        })
+        return context
+
 class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/shop.html'
     current_step_slug = 'shop'
