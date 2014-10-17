@@ -114,6 +114,12 @@ class Workflow(object):
         self.steps = OrderedDict(((cls.slug, cls(self, index))
                                   for index, cls in enumerate(cls_iter)))
 
+    @property
+    def active_steps(self):
+
+        return [step for step in self.steps.values()
+                if step.is_active()]
+
 
 class Step(object):
     name = None

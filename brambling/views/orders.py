@@ -103,8 +103,9 @@ class HousingStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
-        return self.workflow.order.attendees.filter(
-            housing_status=Attendee.NEED).exists()
+        if not hasattr(self, '_active'):
+            self._active = self.workflow.order.attendees.filter(housing_status=Attendee.NEED).exists()
+        return self._active
 
     def _is_completed(self):
         return not self.workflow.order.attendees.filter(
@@ -154,8 +155,9 @@ class HostingStep(Step):
                        kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
-        return (self.workflow.event.collect_housing_data and
-                self.workflow.order.attendees.exclude(housing_status=Attendee.NEED).exists())
+        if not hasattr(self, '_active'):
+            self._active = self.workflow.order.attendees.exclude(housing_status=Attendee.NEED).exists()
+        return self._active
 
     def _is_completed(self):
         return (not self.workflow.order.providing_housing) or EventHousing.objects.filter(

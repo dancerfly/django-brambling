@@ -1,5 +1,5 @@
-<div class="stepbar stepbar-{{ workflow.steps|length }}-up{% if event.banner_image %} stepbar-hug-masthead{% endif %}">
-	{% for step in workflow.steps.values %}
+<div class="stepbar stepbar-{{ workflow.active_steps|length }}-up{% if event.banner_image %} stepbar-hug-masthead{% endif %}">
+	{% for step in workflow.active_steps %}
 
 		{# a or div, depending on if the step is accessible #}
 		{% if step == current_step %}
