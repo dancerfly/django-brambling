@@ -16,7 +16,7 @@
 						{% endif %}
 					</div>{# /.media-object.pull-left #}
 					<div class="media-body">
-						<h1 class="text-accent media-heading">
+						<h1 class="text-accent media-heading{% if event_admin_nav %} masthead-h1-admin{% endif %}">
 							<a class="a-uncolored" href="{% url "brambling_event_shop" event.slug %}">{{ event.name }}</a>
 						</h1>
 						<p class="text-large">
