@@ -7,7 +7,7 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	{% if user.is_authenticated %}
+	{% if user.is_authenticated and user.confirmed_email %}
 		{% include 'brambling/event/order/_use_discount_js.html' %}
 
 		<script>
@@ -27,7 +27,6 @@
 				})
 			});
 		</script>
-		{% include "brambling/event/order/_confirmation_screen.html" %}
 	{% endif %}
 
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
@@ -101,7 +100,7 @@
 								</span>
 							</div>
 						</div>
-						{% if not user.is_authenticated %}
+						{% if not user.confirmed_email or not user.is_authenticated %}
 							<div class="scrim"></div>
 						{% endif %}
 					</div>{# /.list-group #}
@@ -184,7 +183,7 @@
 						</header>
 						<div class='list-group relative'>
 							{% for option in options.list %}
-								<a{% if user.is_authenticated %} target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}'{% endif %} href='javascript://' class="list-group-item">
+								<a{% if user.is_authenticated and user.confirmed_email %} target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}'{% endif %} href='javascript://' class="list-group-item">
 									{# <div class="scroll-x"> #}
 										<div class='row'>
 											<div class='col-sm-5'>{{ option.name }}</div>
@@ -195,7 +194,7 @@
 									{# </div> #}
 								</a>
 							{% endfor %}
-							{% if not user.is_authenticated %}
+							{% if not user.confirmed_email or not user.is_authenticated %}
 								<div class="scrim"></div>
 							{% endif %}
 						</div>
