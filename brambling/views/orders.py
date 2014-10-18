@@ -199,8 +199,10 @@ class HostingWorkflow(Workflow):
 class OrderMixin(object):
     current_step_slug = None
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated() or not request.user.is_active:
+            return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
+
         self.event = get_event_or_404(kwargs['event_slug'])
         if not self.event.viewable_by(self.request.user):
             raise Http404
@@ -220,7 +222,7 @@ class OrderMixin(object):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
                         return HttpResponseRedirect(step.url)
-        return super(OrderMixin, self).dispatch(*args, **kwargs)
+        return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
     @property
     def is_admin_request(self):
@@ -400,6 +402,7 @@ brambling_boughtitem.status != 'refunded'
             'item_options': item_options,
         })
         return context
+
 
 class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/shop.html'
