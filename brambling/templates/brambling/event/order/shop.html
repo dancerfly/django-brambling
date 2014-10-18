@@ -44,8 +44,8 @@
 					<strong>{{ event.name }}</strong> is using Dancerfly to manage event registration. You&#8217;ll need to <a href="{% url "login" %}" class="alert-link">log in</a> with your Dancerfly account or <a href="{% url "brambling_signup" %}" class="alert-link">create an account</a> to register for the event. It&#8217;s free and easy and only takes a minute.
 				</div>
 				<div class="col-sm-4">
-					<a href="{% url "brambling_signup" %}" class="btn btn-primary btn-block">Create an Account</a>
-					<a href="{% url "login" %}" class="btn btn-default btn-block">Log In</a>
+					<a href="{% url "brambling_signup" %}?next={{ request.path }}" class="btn btn-primary btn-block">Create an Account</a>
+					<a href="{% url "login" %}?next={{ request.path }}" class="btn btn-default btn-block">Log In</a>
 				</div>
 			</div>
 		</div>
