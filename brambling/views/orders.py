@@ -363,7 +363,7 @@ class EventPublicView(TemplateView):
         """
 
         if request.user.is_authenticated():
-            url = reverse("brambling_event_shop", kwargs=kwargs)
+            url = reverse("brambling_event_order_summary", kwargs=kwargs)
             return HttpResponseRedirect(url)
 
         self.event = get_event_or_404(kwargs['event_slug'])
