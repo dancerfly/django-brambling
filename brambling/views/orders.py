@@ -199,8 +199,10 @@ class HostingWorkflow(Workflow):
 class OrderMixin(object):
     current_step_slug = None
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated() or not request.user.is_active:
+            return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
+
         self.event = get_event_or_404(kwargs['event_slug'])
         if not self.event.viewable_by(self.request.user):
             raise Http404
@@ -220,7 +222,7 @@ class OrderMixin(object):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
                         return HttpResponseRedirect(step.url)
-        return super(OrderMixin, self).dispatch(*args, **kwargs)
+        return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
     @property
     def is_admin_request(self):
@@ -350,6 +352,56 @@ class RemoveDiscountView(OrderMixin, View):
 
     def get_workflow(self):
         return None
+
+
+class EventPublicView(TemplateView):
+    template_name = 'brambling/event/order/shop.html'
+
+    def get(self, request, *args, **kwargs):
+        """
+        If the user is authenticated, go ahead and push them to the shop view.
+        Otherwise, render as usual.
+
+        """
+
+        if request.user.is_authenticated():
+            url = reverse("brambling_event_order_summary", kwargs=kwargs)
+            return HttpResponseRedirect(url)
+
+        self.event = get_event_or_404(kwargs['event_slug'])
+
+        # Make sure the event is viewable.
+        if not self.event.viewable_by(request.user):
+            raise Http404
+
+        return super(EventPublicView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(EventPublicView, self).get_context_data(**kwargs)
+
+        event = self.event
+        now = timezone.now()
+        clear_expired_carts(self.event)
+
+        # TODO: this is identical to the query in
+        # `ChooseItemsView.get_context_data`. We should DRY this up.
+        item_options = ItemOption.objects.filter(
+            available_start__lte=now,
+            available_end__gte=now,
+            item__event=self.event,
+        ).order_by('item', 'order').extra(select={
+            'taken': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.item_option_id = brambling_itemoption.id AND
+brambling_boughtitem.status != 'refunded'
+"""
+        })
+
+        context.update({
+            'event': event,
+            'item_options': item_options,
+        })
+        return context
 
 
 class ChooseItemsView(OrderMixin, TemplateView):

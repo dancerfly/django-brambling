@@ -7,26 +7,28 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	{% include 'brambling/event/order/_use_discount_js.html' %}
+	{% if user.is_authenticated and user.confirmed_email %}
+		{% include 'brambling/event/order/_use_discount_js.html' %}
 
-	<script>
-		$(function(){
-			$('a[target]').on('click', function(e){
-				e.preventDefault();
-				$.post($(this).attr('target'), function(data){
-					// For now, just reload the page.
-					if (data.success) {
-						location.reload();
-					} else if (data.error) {
-						$('#items-list').before(
-							"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
-						);
-					}
-				});
-			})
-		});
-	</script>
-	{% include "brambling/event/order/_confirmation_screen.html" %}
+		<script>
+			$(function(){
+				$('a[target]').on('click', function(e){
+					e.preventDefault();
+					$.post($(this).attr('target'), function(data){
+						// For now, just reload the page.
+						if (data.success) {
+							location.reload();
+						} else if (data.error) {
+							$('#items-list').before(
+								"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
+							);
+						}
+					});
+				})
+			});
+		</script>
+	{% endif %}
+
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
 {% endblock %}
 
@@ -34,6 +36,22 @@
 	{{ block.super }}
 
 	{% include "brambling/event/_empty_shop_alert.html" %}
+
+	{% if not user.is_authenticated %}
+		<div class="alert alert-warning">
+			<div class="row">
+				<div class="col-sm-8">
+					<strong>{{ event.name }}</strong> is using Dancerfly to manage event registration. You&#8217;ll need to <a href="{% url "login" %}" class="alert-link">log in</a> with your Dancerfly account or <a href="{% url "brambling_signup" %}" class="alert-link">create an account</a> to register for the event. It&#8217;s free and easy and only takes a minute.
+				</div>
+				<div class="col-sm-4">
+					<a href="{% url "brambling_signup" %}?next={{ request.path }}" class="btn btn-primary btn-block">Create an Account</a>
+					<a href="{% url "login" %}?next={{ request.path }}" class="btn btn-default btn-block">Log In</a>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+
+
 
 	{% if item_options %}
 		{% regroup item_options by item as option_list %}
@@ -68,21 +86,24 @@
 							<i class="fa fa-fw fa-gift"></i> Discounts
 						</div>
 					</header>
-					<ul class='list-group'>
+					<div class='list-group relative'>
 						{% for discount in discounts %}
-							<li class='list-group-item'>
+							<div class='list-group-item'>
 								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
-							</li>
+							</div>
 						{% endfor %}
-						<li class='list-group-item'>
+						<div class='list-group-item'>
 							<div class='input-group'>
 								<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
 								<span class='input-group-btn'>
 									<button id='discountCodeButton' class='btn btn-default' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
 								</span>
 							</div>
-						</li>
-					</ul>
+						</div>
+						{% if not user.confirmed_email or not user.is_authenticated %}
+							<div class="scrim"></div>
+						{% endif %}
+					</div>{# /.list-group #}
 				</div>
 			</div>
 			<div class="col-md-7 col-md-pull-5">
@@ -160,9 +181,9 @@
 								{% endif %}
 							{% endwith %}
 						</header>
-						<div class='list-group'>
+						<div class='list-group relative'>
 							{% for option in options.list %}
-								<a target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}' href='javascript://' class="list-group-item">
+								<a{% if user.is_authenticated and user.confirmed_email %} target='{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}'{% endif %} href='javascript://' class="list-group-item">
 									{# <div class="scroll-x"> #}
 										<div class='row'>
 											<div class='col-sm-5'>{{ option.name }}</div>
@@ -173,6 +194,9 @@
 									{# </div> #}
 								</a>
 							{% endfor %}
+							{% if not user.confirmed_email or not user.is_authenticated %}
+								<div class="scrim"></div>
+							{% endif %}
 						</div>
 					</div>
 				{% endfor %}
