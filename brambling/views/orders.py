@@ -250,7 +250,6 @@ class OrderMixin(object):
 
 class AddToOrderView(OrderMixin, View):
     @method_decorator(ajax_required)
-    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         clear_expired_carts(self.event)
 
@@ -264,7 +263,7 @@ class AddToOrderView(OrderMixin, View):
         if item_option.total_number is not None and item_option.remaining <= 0:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
-        if self.order.person.confirmed_email or self.is_admin_request:
+        if self.order.person is None or self.order.person.confirmed_email or self.is_admin_request:
             self.order.add_to_cart(item_option)
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})
@@ -275,11 +274,11 @@ class AddToOrderView(OrderMixin, View):
 
 class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
-    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
 
-        if not bought_item.order.person == request.user:
+        if ((request.user.is_authenticated() and not bought_item.order.person == request.user) or
+                (not request.user.is_authenticated() and bought_item.order.person is not None)):
             return JsonResponse({'error': "You do not own that item."}, status=403)
 
         bought_item.order.remove_from_cart(bought_item)
@@ -289,7 +288,6 @@ class RemoveFromOrderView(View):
 
 class ApplyDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
-    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         discounts = Discount.objects.filter(
             code=kwargs['discount'],
@@ -329,7 +327,6 @@ class ApplyDiscountView(OrderMixin, View):
 
 class RemoveDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
-    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         if not self.is_admin_request:
             raise Http404
