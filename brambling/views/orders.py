@@ -21,14 +21,21 @@ from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    get_dwolla)
 
 
-class ShopStep(Step):
-    name = 'Shop'
-    slug = 'shop'
+class OrderStep(Step):
+    view_name = None
 
     @property
     def url(self):
-        return reverse('brambling_event_shop',
-                       kwargs={'event_slug': self.workflow.event.slug})
+        kwargs = {'event_slug': self.workflow.event.slug}
+        if self.workflow.order.person_id is None:
+            kwargs['code'] = self.workflow.order.code
+        return reverse(self.view_name, kwargs=kwargs)
+
+
+class ShopStep(OrderStep):
+    name = 'Shop'
+    slug = 'shop'
+    view_name = 'brambling_event_shop'
 
     def _is_completed(self):
         order = self.workflow.order
@@ -38,14 +45,10 @@ class ShopStep(Step):
                                            item_option__item__category=Item.PASS).exists()))
 
 
-class AttendeeStep(Step):
+class AttendeeStep(OrderStep):
     name = 'Attendees'
     slug = 'attendees'
-
-    @property
-    def url(self):
-        return reverse('brambling_event_attendee_list',
-                       kwargs={'event_slug': self.workflow.event.slug})
+    view_name = 'brambling_event_attendee_list'
 
     def _is_completed(self):
         return not self.workflow.order.bought_items.filter(attendee__isnull=True).exists()
@@ -89,18 +92,14 @@ class AttendeeStep(Step):
         return errors
 
 
-class HousingStep(Step):
+class HousingStep(OrderStep):
     name = 'Housing'
     slug = 'housing'
+    view_name = 'brambling_event_attendee_housing'
 
     @classmethod
     def include_in(cls, workflow):
         return workflow.event.collect_housing_data
-
-    @property
-    def url(self):
-        return reverse('brambling_event_attendee_housing',
-                       kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
         if not hasattr(self, '_active'):
@@ -124,35 +123,27 @@ class HousingStep(Step):
         return errors
 
 
-class SurveyStep(Step):
+class SurveyStep(OrderStep):
     name = 'Survey'
     slug = 'survey'
+    view_name = 'brambling_event_survey'
 
     @classmethod
     def include_in(cls, workflow):
         return workflow.event.collect_survey_data
 
-    @property
-    def url(self):
-        return reverse('brambling_event_survey',
-                       kwargs={'event_slug': self.workflow.event.slug})
-
     def _is_completed(self):
         return self.workflow.order.survey_completed
 
 
-class HostingStep(Step):
+class HostingStep(OrderStep):
     name = 'Hosting'
     slug = 'hosting'
+    view_name = 'brambling_event_hosting'
 
     @classmethod
     def include_in(cls, workflow):
         return workflow.event.collect_housing_data
-
-    @property
-    def url(self):
-        return reverse('brambling_event_hosting',
-                       kwargs={'event_slug': self.workflow.event.slug})
 
     def is_active(self):
         if not hasattr(self, '_active'):
@@ -166,14 +157,10 @@ class HostingStep(Step):
         ).exists()
 
 
-class PaymentStep(Step):
+class PaymentStep(OrderStep):
     name = 'Payment'
     slug = 'payment'
-
-    @property
-    def url(self):
-        return reverse('brambling_event_order_summary',
-                       kwargs={'event_slug': self.workflow.event.slug})
+    view_name = 'brambling_event_order_summary'
 
     def _is_completed(self):
         return False
@@ -200,19 +187,26 @@ class OrderMixin(object):
     current_step_slug = None
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated() or not request.user.is_active:
+        if request.user.is_authenticated() and not request.user.is_active:
             return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
 
         self.event = get_event_or_404(kwargs['event_slug'])
-        if not self.event.viewable_by(self.request.user):
+        if not self.event.viewable_by(request.user):
             raise Http404
-        if 'code' in self.kwargs:
+        if self.kwargs.get('code'):
             self.order = get_order(self.event, code=self.kwargs['code'])
-            if (not self.order.person == self.request.user and
+            if (request.user.is_authenticated() and
+                    not self.order.person == request.user and
                     not self.is_admin_request):
                 raise Http404
+            if (not request.user.is_authenticated() and
+                    self.order.person is not None):
+                raise Http404
+        elif request.user.is_authenticated():
+            self.order = get_order(self.event, person=request.user)
         else:
-            self.order = get_order(self.event, self.request.user)
+            self.order = get_order(self.event)
+
         self.workflow = self.get_workflow()
         if self.workflow is None or self.current_step_slug is None:
             self.current_step = None
@@ -352,56 +346,6 @@ class RemoveDiscountView(OrderMixin, View):
 
     def get_workflow(self):
         return None
-
-
-class EventPublicView(TemplateView):
-    template_name = 'brambling/event/order/shop.html'
-
-    def get(self, request, *args, **kwargs):
-        """
-        If the user is authenticated, go ahead and push them to the shop view.
-        Otherwise, render as usual.
-
-        """
-
-        if request.user.is_authenticated():
-            url = reverse("brambling_event_order_summary", kwargs=kwargs)
-            return HttpResponseRedirect(url)
-
-        self.event = get_event_or_404(kwargs['event_slug'])
-
-        # Make sure the event is viewable.
-        if not self.event.viewable_by(request.user):
-            raise Http404
-
-        return super(EventPublicView, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(EventPublicView, self).get_context_data(**kwargs)
-
-        event = self.event
-        now = timezone.now()
-        clear_expired_carts(self.event)
-
-        # TODO: this is identical to the query in
-        # `ChooseItemsView.get_context_data`. We should DRY this up.
-        item_options = ItemOption.objects.filter(
-            available_start__lte=now,
-            available_end__gte=now,
-            item__event=self.event,
-        ).order_by('item', 'order').extra(select={
-            'taken': """
-SELECT COUNT(*) FROM brambling_boughtitem WHERE
-brambling_boughtitem.item_option_id = brambling_itemoption.id AND
-brambling_boughtitem.status != 'refunded'
-"""
-        })
-
-        context.update({
-            'event': event,
-            'item_options': item_options,
-        })
-        return context
 
 
 class ChooseItemsView(OrderMixin, TemplateView):
