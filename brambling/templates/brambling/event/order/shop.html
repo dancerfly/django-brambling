@@ -113,7 +113,7 @@
 						{% if event.description %}
 							<div class="list-group-item">
 								<div class="shortened" data-lines="3">
-									{{ event.description }}
+									{{ event.description|linebreaks }}
 								</div>
 							</div>
 						{% endif %}
