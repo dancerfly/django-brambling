@@ -11,7 +11,6 @@
 		var discountReload = true;
 	</script>
 	{% include 'brambling/event/order/_use_discount_js.html' %}
-	{% include 'brambling/event/order/_confirmation_screen.html' %}
 	{% if event.uses_stripe %}{% include "brambling/_stripe_js.html" %}{% endif %}
 {% endblock %}
 
