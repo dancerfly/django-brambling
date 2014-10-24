@@ -6,9 +6,9 @@
 
 {% block top %}
 	{% if event.banner_image %}
-		{% include "brambling/_navbar.html" with navbar_class="navbar navbar-default navbar-static-top" %}
-	{% else %}
 		{{ block.super }}
+	{% else %}
+		{% include "brambling/_navbar.html" with navbar_class="navbar navbar-default navbar-static-top navbar-hugged" %}
 	{% endif %}
 {% endblock %}
 

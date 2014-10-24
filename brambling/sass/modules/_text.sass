@@ -19,9 +19,11 @@ h1, h2, .h2, h3, .h3
 
 .list-comma
 	display: inline
-	&::after
+	&::before
 		content: ", "
-	&:last-child::after
+	&:last-child::before
+		content: ", and "
+	&:first-child::before
 		content: ""
 
 .ul-default

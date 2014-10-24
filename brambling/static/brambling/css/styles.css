@@ -5862,10 +5862,13 @@ h1, h2, .h2, h3, .h3 {
 .list-comma {
   display: inline;
 }
-.list-comma::after {
+.list-comma::before {
   content: ", ";
 }
-.list-comma:last-child::after {
+.list-comma:last-child::before {
+  content: ", and ";
+}
+.list-comma:first-child::before {
   content: "";
 }
 
@@ -6294,6 +6297,11 @@ footer a {
   background: none;
 }
 
+.masthead-h1-alone {
+  margin-bottom: 0;
+  margin-left: 30px;
+}
+
 .masthead-h1-admin {
   margin-right: 130px;
 }
@@ -6500,6 +6508,13 @@ a.step.complete:hover {
 
 .nav-tabs {
   margin-bottom: 20px;
+}
+
+.navbar-hugged {
+  margin-bottom: 0;
+}
+.navbar-hugged > .container, .navbar-hugged > .container-sm, .navbar-hugged > .container-xs {
+  border-bottom: 1px solid #ffbd1c;
 }
 
 .swallow-navbar {

@@ -201,31 +201,38 @@
 	{% include "brambling/event/order/_masthead.html" %}
 	<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
 		<div class="panel-body">
-			<div class="row">
-				<div class="col-md-4">
-					<p class="text-large">
-						{% include "brambling/event/_when.html" %}
-					</p>
-					<p class="text-large">
-						{% include "brambling/event/_where.html" %}
-					</p>
-					{% for style in event.dance_styles.all %}
-						<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
-					{% endfor %}
-				</div>
-				<div class="col-md-8">
-					{% if event.description %}
+			{% if event.description %}
+				<div class="row">
+					<div class="col-md-4">
+							<p class="text-large">
+								{% include "brambling/event/_when.html" %}
+							</p>
+							<p class="text-large">
+								{% include "brambling/event/_where.html" %}
+							</p>
+							{% for style in event.dance_styles.all %}
+								<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
+							{% endfor %}
+					</div>
+					<div class="col-md-8">
 						<div>
 							{{ event.description|linebreaks }}
 						</div>
-					{% endif %}
-					{% if event.website_url %}
-						<a href="{{ event.website_url }}" class="btn btn-primary">
-							More information at {{ event.website_url }} <i class="fa fa-fw fa-chevron-right"></i>
-						</a>
-					{% endif %}
+						{% if event.website_url %}
+							<a href="{{ event.website_url }}" class="btn btn-primary">
+								More information <i class="fa fa-fw fa-chevron-right"></i>
+							</a>
+						{% endif %}
+					</div>
 				</div>
-			</div>
+			{% else %}
+				{% if event.website_url %}
+					<a href="{{ event.website_url }}" class="btn btn-primary pull-right">
+						More information <i class="fa fa-fw fa-chevron-right"></i>
+					</a>
+				{% endif %}
+				<h4 class="text-muted event-tags">Featuring {% for style in event.dance_styles.all %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %} dancing.</h4>
+			{% endif %}
 		</div>
 	</div>
 {% endblock masthead %}
