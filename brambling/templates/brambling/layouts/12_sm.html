@@ -1,10 +1,14 @@
 {% extends "brambling/__base.html" %}
 
 {% block content %}
-	<div class="container-sm">
-		{% block messages %}
-			{% include "brambling/layouts/_messages.html" %}
-		{% endblock %}
-		{% block main %}{% endblock %}
+	<div class="container">
+		<div class="row">
+			<div class="max-width-sm">			
+				{% block messages %}
+					{% include "brambling/layouts/_messages.html" %}
+				{% endblock %}
+				{% block main %}{% endblock %}
+			</div>
+		</div>
 	</div>
 {% endblock %}
