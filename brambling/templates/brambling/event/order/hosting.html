@@ -30,15 +30,19 @@
 {% block main %}
 	{{ block.super }}
 
-	<form action="" method="post" novalidate>
+	<form action="" class="max-width-sm" method="post" novalidate>
 		{% csrf_token %}
 
 		{% formrow form.providing_housing with label="I want to house visiting dancers" %}
 
 		<div id='hostingFields' class="collapse{% if form.instance.order.providing_housing %} in{% endif %}">
 			{% form form using "brambling/forms/hosting.html" %}
-			<div class="row margin-leader-dbl">
-				<div class="col-sm-8 col-sm-offset-2">
+
+			<div class="panel panel-default margin-leader-dbl">
+				<header class="panel-heading">
+					<h4 class="panel-title">Capacity</h4>
+				</header>
+				<div class="panel-body">
 					<p>
 						In the form below, use the <strong>Comfy</strong> column to specify
 						how many people can sleep comfortably in your home. Use the
@@ -74,10 +78,15 @@
 							{% endfor %}
 						</tbody>
 					</table>
-					<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
-				</div>{# /.col-sm-8 #}
-			</div>{# /.row #}
+				</div>
+			</div>
 		</div>
-
+		<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
 	</form>
 {% endblock %}
+
+{% block countdown_next %}
+	{% if order.has_cart %}
+		{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time %}
+	{% endif %}
+{% endblock countdown_next %}
