@@ -1,7 +1,6 @@
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -12,7 +11,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
                                     SurveyDataForm)
-from brambling.models import (Event, Item, BoughtItem, ItemOption,
+from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
@@ -392,9 +391,14 @@ class AttendeesView(OrderMixin, TemplateView):
         except IndexError:
             return self.render_to_response(self.get_context_data())
         else:
+            kwargs = {
+                'event_slug': self.event.slug,
+                'pk': unassigned_pass.pk
+            }
+            if self.order.person_id is None:
+                kwargs['code'] = self.order.code
             return HttpResponseRedirect(reverse('brambling_event_attendee_edit',
-                                                kwargs={'event_slug': self.event.slug,
-                                                        'pk': unassigned_pass.pk}))
+                                                kwargs=kwargs))
 
     def get_context_data(self, **kwargs):
         context = super(AttendeesView, self).get_context_data(**kwargs)
@@ -439,7 +443,7 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     def get_initial(self):
         initial = super(AttendeeBasicDataView, self).get_initial()
         pass_count = self.order.bought_items.filter(item_option__item__category=Item.PASS).count()
-        if pass_count == 1:
+        if pass_count == 1 and self.request.user.is_authenticated():
             person = self.request.user
             initial.update({
                 'given_name': person.given_name,
@@ -457,7 +461,8 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        if form.instance.email == self.request.user.email:
+        if (self.request.user.is_authenticated() and
+                form.instance.email == self.request.user.email):
             form.instance.person = self.request.user
             form.instance.person_confirmed = True
 
@@ -513,8 +518,12 @@ class AttendeeHousingView(OrderMixin, TemplateView):
         return self.render_to_response(context)
 
     def get_success_url(self):
-        return reverse('brambling_event_survey',
-                       kwargs={'event_slug': self.event.slug})
+        kwargs = {
+            'event_slug': self.event.slug,
+        }
+        if self.order.person_id is None:
+            kwargs['code'] = self.order.code
+        return reverse('brambling_event_survey', kwargs=kwargs)
 
     def get_forms(self):
         memo_dict = {}
@@ -587,12 +596,16 @@ class HostingView(OrderMixin, UpdateView):
             return EventHousing(
                 event=self.event,
                 order=self.order,
-                home=self.order.person.home
+                home=self.order.person.home if self.order.person_id is not None else None
             )
 
     def get_success_url(self):
-        return reverse('brambling_event_order_summary',
-                       kwargs={'event_slug': self.event.slug})
+        kwargs = {
+            'event_slug': self.event.slug,
+        }
+        if self.order.person_id is None:
+            kwargs['code'] = self.order.code
+        return reverse('brambling_event_order_summary', kwargs=kwargs)
 
 
 class SummaryView(OrderMixin, TemplateView):
@@ -648,7 +661,10 @@ class SummaryView(OrderMixin, TemplateView):
                 new_data = self.request.POST
             elif 'dwolla' in self.request.POST:
                 dwolla_data = self.request.POST
-        self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
+        if self.order.person_id is not None:
+            self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
+        else:
+            self.choose_card_form = None
         self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
         self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
 
@@ -656,7 +672,7 @@ class SummaryView(OrderMixin, TemplateView):
         context = super(SummaryView, self).get_context_data(**kwargs)
 
         context.update({
-            'has_cards': self.order.person.cards.exists(),
+            'has_cards': self.order.person.cards.exists() if self.order.person_id else False,
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'dwolla_form': getattr(self, 'dwolla_form', None),
@@ -669,7 +685,12 @@ class SummaryView(OrderMixin, TemplateView):
             dwolla = get_dwolla()
             client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
                                             settings.DWOLLA_APPLICATION_SECRET)
-            next_url = reverse('brambling_event_order_summary', kwargs={'event_slug': self.event.slug})
+            kwargs = {
+                'event_slug': self.event.slug,
+            }
+            if self.order.person_id is None:
+                kwargs['code'] = self.order.code
+            next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
             redirect_url = reverse('brambling_user_dwolla_connect') + "?next_url=" + next_url
             context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
                                                                 "Send|AccountInfoFull")

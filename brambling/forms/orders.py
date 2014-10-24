@@ -181,14 +181,17 @@ class HostingForm(MemoModelForm):
         self.initial.update({
             'providing_housing': self.instance.order.providing_housing
         })
+        person = self.instance.order.person
+        if person is None:
+            del self.fields['save_as_defaults']
 
         if self.instance.pk is None:
-            person = self.instance.order.person
-            self.initial.update({
-                'contact_name': person.get_full_name(),
-                'contact_email': person.email,
-                'contact_phone': person.phone,
-            })
+            if person is not None:
+                self.initial.update({
+                    'contact_name': person.get_full_name(),
+                    'contact_email': person.email,
+                    'contact_phone': person.phone,
+                })
             home = self.instance.home
             if home is not None:
                 self.fields['ef_present_confirm'] = forms.BooleanField(
@@ -268,7 +271,7 @@ class HostingForm(MemoModelForm):
             for form in self.slot_forms:
                 form.instance.eventhousing = instance
                 form.save()
-            if self.cleaned_data['save_as_defaults']:
+            if self.cleaned_data.get('save_as_defaults'):
                 home = instance.home or Home()
                 new_home = home.pk is None
                 home.address = instance.address
