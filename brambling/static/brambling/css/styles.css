@@ -5950,6 +5950,31 @@ h1, h2, .h2, h3, .h3 {
   content: "▲ Less ";
 }
 
+.carousel-inner {
+  background-color: black;
+}
+.carousel-inner > .item > img {
+  margin: 0 auto;
+}
+
+.carousel-control > .fa-chevron-left, .carousel-control > .fa-chevron-right {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+}
+.carousel-control > .fa-chevron-left {
+  left: 50%;
+  margin-left: -10px;
+}
+.carousel-control > .fa-chevron-right {
+  right: 50%;
+  margin-right: -10px;
+}
+
 .event-listing .media-object {
   height: 100px;
   width: 100px;
@@ -6066,15 +6091,11 @@ footer a {
 }
 
 .item-img {
-  margin-right: 15px;
+  margin-left: 15px;
 }
 .item-img:hover {
   opacity: 0.7;
   cursor: pointer;
-}
-
-.carousel-inner > .item > img {
-  margin: 0 auto;
 }
 
 .image-framed {
