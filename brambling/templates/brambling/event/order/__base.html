@@ -15,11 +15,13 @@
 {% block messages %}{% endblock %}{# blank the messages here and put them lower down #}
 
 {% block main %}
-	{% include "brambling/event/order/_masthead.html" %}
+	{% block masthead %}
+		{% include "brambling/event/order/_masthead.html" %}
 
-	{% if workflow %}
-		{% include "brambling/event/order/_steps.html" %}
-	{% endif %}
+		{% if workflow %}
+			{% include "brambling/event/order/_steps.html" %}
+		{% endif %}
+	{% endblock masthead %}
 
 	{% include "brambling/layouts/_messages.html" %}
 
@@ -40,7 +42,7 @@
 				{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time %}
 			{% endif %}
 		{% endif %}
-		{% endblock countdown_next %}
+	{% endblock countdown_next %}
 {% endblock %}
 
 {% block javascripts %}

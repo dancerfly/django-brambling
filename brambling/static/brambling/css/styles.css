@@ -4651,22 +4651,22 @@ a.list-group-item-danger.active, a.list-group-item-danger.active:hover, a.list-g
   border-bottom: 1px solid #dddddd;
 }
 
-.panel-default {
+.panel-default, .panel-dark {
   border-color: #dddddd;
 }
-.panel-default > .panel-heading {
+.panel-default > .panel-heading, .panel-dark > .panel-heading {
   color: #333333;
   background-color: whitesmoke;
   border-color: #dddddd;
 }
-.panel-default > .panel-heading + .panel-collapse > .panel-body {
+.panel-default > .panel-heading + .panel-collapse > .panel-body, .panel-dark > .panel-heading + .panel-collapse > .panel-body {
   border-top-color: #dddddd;
 }
-.panel-default > .panel-heading .badge {
+.panel-default > .panel-heading .badge, .panel-dark > .panel-heading .badge {
   color: whitesmoke;
   background-color: #333333;
 }
-.panel-default > .panel-footer + .panel-collapse > .panel-body {
+.panel-default > .panel-footer + .panel-collapse > .panel-body, .panel-dark > .panel-footer + .panel-collapse > .panel-body {
   border-bottom-color: #dddddd;
 }
 
@@ -6140,6 +6140,20 @@ footer a {
     margin-bottom: 0;
   }
 }
+.hug, .masthead, .stepbar-hug-masthead {
+  margin-top: -20px;
+  margin-bottom: 20px;
+  -moz-border-radius-topleft: 0;
+  -webkit-border-top-left-radius: 0;
+  border-top-left-radius: 0;
+  -moz-border-radius-topright: 0;
+  -webkit-border-top-right-radius: 0;
+  border-top-right-radius: 0;
+}
+.hug.panel, .panel.masthead, .panel.stepbar-hug-masthead {
+  border-top: 0;
+}
+
 .relative {
   position: relative;
 }
@@ -6185,8 +6199,6 @@ footer a {
   margin-right: -6000px;
   padding-left: 6000px;
   padding-right: 6000px;
-  margin-top: -20px;
-  margin-bottom: 20px;
   padding-top: 20px;
   padding-bottom: 20px;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
@@ -6304,6 +6316,10 @@ footer a {
   letter-spacing: 0.25px;
 }
 
+.panel-dark {
+  background-color: whitesmoke;
+}
+
 .scrim {
   background-color: rgba(235, 235, 235, 0.5);
   background-image: -webkit-linear-gradient(-45deg, rgba(240, 173, 78, 0.25) 25%, transparent 25%, transparent 50%, rgba(240, 173, 78, 0.25) 50%, rgba(240, 173, 78, 0.25) 75%, transparent 75%, transparent);
@@ -6343,7 +6359,7 @@ footer a {
   color: white;
 }
 .step.current {
-  background: #de8e0f;
+  background: #c67f0d;
   position: relative;
 }
 .step.current:after {
@@ -6401,12 +6417,6 @@ a.step.complete:hover {
 }
 
 .stepbar-hug-masthead {
-  margin: -20px 0 20px 0;
-  -webkit-border-radius: 0 0 4px 4px;
-  -moz-border-radius: 0 0 4px 4px;
-  -ms-border-radius: 0 0 4px 4px;
-  -o-border-radius: 0 0 4px 4px;
-  border-radius: 0 0 4px 4px;
   border-top: 0;
   overflow: visible;
 }

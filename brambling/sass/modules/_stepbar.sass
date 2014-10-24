@@ -18,7 +18,7 @@
 		background: lighten($brand-primary,2%)
 		color: #FFF
 	&.current
-		background: $yellow-dark
+		background: darken($yellow-dark,5%)
 		position: relative
 		&:after
 			content: " "
@@ -66,8 +66,7 @@ a.step
 // VARIANTS
 
 .stepbar-hug-masthead
-	margin: -$line-height-computed 0 $line-height-computed 0
-	+border-radius(0 0 $border-radius-base $border-radius-base)
+	@extend .hug
 	border-top: 0
 	overflow: visible
 	> .step

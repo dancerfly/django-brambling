@@ -50,6 +50,11 @@
 	{% endif %}
 
 	{% if item_options %}
+
+		<h1 class="margin-leader-dbl">Register for {{ event.name }}</h1>
+
+		{% include "brambling/event/order/_steps.html" with no_hug="True" %}
+
 		{% regroup item_options by item as option_list %}
 		<div class="row" id="items-list">
 			<div class="col-md-5 col-md-push-7">
@@ -108,27 +113,6 @@
 				{% endif %}
 			</div>
 			<div class="col-md-7 col-md-pull-5">
-
-				{% if event.description or event.website_url%}
-					<div class="list-group">
-						{% if event.description %}
-							<div class="list-group-item">
-								<div class="shortened" data-lines="3">
-									{{ event.description|linebreaks }}
-								</div>
-							</div>
-						{% endif %}
-						{% if event.website_url %}
-							<a class="list-group-item" href="{{ event.website_url }}">
-								<div class="pull-right">
-									<i class="fa fa-chevron-right"></i>
-								</div>
-								{{ event.website_url }}
-							</a>
-						{% endif %}
-					</div>
-				{% endif %}
-
 				{% for options in option_list %}
 					<div class='panel panel-default'>
 						<header class='panel-heading clearfix'>
@@ -210,7 +194,41 @@
 			</div>
 		</div>
 	{% endif %}
-{% endblock %}
+{% endblock main %}
+
+
+{% block masthead %}
+	{% include "brambling/event/order/_masthead.html" %}
+	<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
+		<div class="panel-body">
+			<div class="row">
+				<div class="col-md-4">
+					<p class="text-large">
+						{% include "brambling/event/_when.html" %}
+					</p>
+					<p class="text-large">
+						{% include "brambling/event/_where.html" %}
+					</p>
+					{% for style in event.dance_styles.all %}
+						<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
+					{% endfor %}
+				</div>
+				<div class="col-md-8">
+					{% if event.description %}
+						<div>
+							{{ event.description|linebreaks }}
+						</div>
+					{% endif %}
+					{% if event.website_url %}
+						<a href="{{ event.website_url }}" class="btn btn-primary">
+							More information at {{ event.website_url }} <i class="fa fa-fw fa-chevron-right"></i>
+						</a>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock masthead %}
 
 
 {% block countdown_next %}{% endblock %}

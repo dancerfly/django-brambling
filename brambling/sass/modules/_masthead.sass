@@ -12,9 +12,7 @@ $cover-image-padding-vertical: $line-height-computed
 .masthead
     position: relative
     +full-width
-    margin:
-        top: -$line-height-computed // to brush up against the navbar
-        bottom: $line-height-computed
+    @extend .hug
     padding:
         top: $masthead-padding-vertical
         bottom: $masthead-padding-vertical
