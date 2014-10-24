@@ -35,8 +35,6 @@
 {% block main %}
 	{{ block.super }}
 
-	{% include "brambling/event/_empty_shop_alert.html" %}
-
 	{% if not user.is_authenticated %}
 		<div class="alert alert-warning">
 			<div class="row">
@@ -51,14 +49,15 @@
 		</div>
 	{% endif %}
 
-
-
 	{% if item_options %}
 		{% regroup item_options by item as option_list %}
 		<div class="row" id="items-list">
 			<div class="col-md-5 col-md-push-7">
 				{% with has_cart=order.has_cart %}
 					{% if has_cart %}
+						<div class="margin-trailer">
+							{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time %}
+						</div>
 						<div class='panel panel-default'>
 							<header class='panel-heading'>
 								<div class='panel-title'>
@@ -68,10 +67,9 @@
 							{% regroup order.get_groupable_cart by item_option.item as cart_list %}
 							<ul class='list-group'>
 								{% for options in cart_list %}
-									<li class='list-group-item'><strong>{{ options.grouper }}</strong></li>
 									{% for personitem in options.list %}
 										<li class='list-group-item'>
-											{{ personitem.item_option.name }} <a target='{% if order.person %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if order.person %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
 										</li>
 									{% endfor %}
 								{% endfor %}
@@ -105,6 +103,9 @@
 						{% endif %}
 					</div>{# /.list-group #}
 				</div>
+				{% if next_step %}
+					{% include "brambling/event/order/_next_step_button.html" %}
+				{% endif %}
 			</div>
 			<div class="col-md-7 col-md-pull-5">
 
@@ -210,3 +211,6 @@
 		</div>
 	{% endif %}
 {% endblock %}
+
+
+{% block countdown_next %}{% endblock %}
