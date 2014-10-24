@@ -198,7 +198,6 @@ class Event(models.Model):
                             unique=True)
     description = models.TextField(blank=True)
     website_url = models.URLField(blank=True)
-    logo_image = models.ImageField(blank=True)
     banner_image = models.ImageField(blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)

@@ -3,16 +3,12 @@
 <div class="media margin-leader-dbl event-listing">
 	<a href="{{ event.get_absolute_url }}" class=" a-secret a-opacity pull-left">
 		<div class="media-object relative margin-leader-tiny">
-			<div class="{% if event.logo_image or event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
+			<div class="{% if event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
 				<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
 				<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
 			</div>
-			{% if event.logo_image %}
-				{% adjust event.logo_image 'fit' width=100 height=100 as image %}
-			{% elif event.banner_image %}
+			{% if event.banner_image %}
 				{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-			{% endif %}
-			{% if event.logo_image or event.banner_image %}
 				<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
 			{% endif %}
 		</div>
