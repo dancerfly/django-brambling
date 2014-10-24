@@ -764,7 +764,7 @@ class BoughtItem(models.Model):
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
-                                      self.order.person.get_full_name(),
+                                      self.order.code,
                                       self.pk)
 
     def get_summary_data(self):
