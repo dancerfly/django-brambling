@@ -50,6 +50,11 @@
 	{% endif %}
 
 	{% if item_options %}
+
+		<h1 class="margin-leader-dbl">Register for {{ event.name }}</h1>
+
+		{% include "brambling/event/order/_steps.html" with no_hug="True" %}
+
 		{% regroup item_options by item as option_list %}
 		<div class="row" id="items-list">
 			<div class="col-md-5 col-md-push-7">
@@ -108,33 +113,12 @@
 				{% endif %}
 			</div>
 			<div class="col-md-7 col-md-pull-5">
-
-				{% if event.description or event.website_url%}
-					<div class="list-group">
-						{% if event.description %}
-							<div class="list-group-item">
-								<div class="shortened" data-lines="3">
-									{{ event.description|linebreaks }}
-								</div>
-							</div>
-						{% endif %}
-						{% if event.website_url %}
-							<a class="list-group-item" href="{{ event.website_url }}">
-								<div class="pull-right">
-									<i class="fa fa-chevron-right"></i>
-								</div>
-								{{ event.website_url }}
-							</a>
-						{% endif %}
-					</div>
-				{% endif %}
-
 				{% for options in option_list %}
 					<div class='panel panel-default'>
 						<header class='panel-heading clearfix'>
 							{% with images=options.grouper.images.all %}
 								{% if images %}
-									<img src="{% adjust images.0.image 'fit' width=100 height=100 %}" class="img-responsive pull-left item-img" data-toggle="modal" data-target="#imageModal{{ forloop.counter }}">
+									<img src="{% adjust images.0.image 'fit' width=100 height=100 %}" class="img-responsive pull-right item-img" data-toggle="modal" data-target="#imageModal{{ forloop.counter }}">
 								{% endif %}
 								<div class='panel-title'>{{ options.grouper.name }}</div>
 								<div class="shortened" data-lines="2">
@@ -169,10 +153,10 @@
 												{% if images|length > 1 %}
 													<!-- Controls -->
 													<a class="left carousel-control" href="#item-carousel{{ forloop.counter }}" role="button" data-slide="prev">
-														<span class="icon-prev fa fa-2x fa-chevron-left"></span>
+														<i class="fa fa-2x fa-chevron-left"></i>
 													</a>
 													<a class="right carousel-control" href="#item-carousel{{ forloop.counter }}" role="button" data-slide="next">
-														<span class="icon-next fa fa-2x fa-chevron-right"></span>
+														<i class="fa fa-2x fa-chevron-right"></i>
 													</a>
 												{% endif %}
 											</div>
@@ -210,7 +194,48 @@
 			</div>
 		</div>
 	{% endif %}
-{% endblock %}
+{% endblock main %}
+
+
+{% block masthead %}
+	{% include "brambling/event/order/_masthead.html" %}
+	<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
+		<div class="panel-body">
+			{% if event.description %}
+				<div class="row">
+					<div class="col-md-4">
+							<p class="text-large">
+								{% include "brambling/event/_when.html" %}
+							</p>
+							<p class="text-large">
+								{% include "brambling/event/_where.html" %}
+							</p>
+							{% for style in event.dance_styles.all %}
+								<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
+							{% endfor %}
+					</div>
+					<div class="col-md-8">
+						<div>
+							{{ event.description|linebreaks }}
+						</div>
+						{% if event.website_url %}
+							<a href="{{ event.website_url }}" class="btn btn-primary">
+								More information <i class="fa fa-fw fa-chevron-right"></i>
+							</a>
+						{% endif %}
+					</div>
+				</div>
+			{% else %}
+				{% if event.website_url %}
+					<a href="{{ event.website_url }}" class="btn btn-primary pull-right">
+						More information <i class="fa fa-fw fa-chevron-right"></i>
+					</a>
+				{% endif %}
+				<h4 class="text-muted event-tags">Featuring {% for style in event.dance_styles.all %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %} dancing.</h4>
+			{% endif %}
+		</div>
+	</div>
+{% endblock masthead %}
 
 
 {% block countdown_next %}{% endblock %}

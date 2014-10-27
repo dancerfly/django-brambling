@@ -46,25 +46,27 @@
 	<form action="" method="post" novalidate>
 		{{ block.super }}
 
-		{% csrf_token %}
-		{% form form using %}
-			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+		<div class="max-width-sm">
+			{% csrf_token %}
+			{% form form using %}
+				{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-			{% formrow form.heard_through %}
+				{% formrow form.heard_through %}
 
-			<div id="heardOtherField" class="collapse{% if form.instance.heard_through %} in{% endif %}">
-				{% formrow form.heard_through_other %}
-			</div>
-
-				{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
-			<div id="promotionalCollapse" class="collapse{% if form.instance.send_flyers %} in{% endif %}">
-				{% formrow form.send_flyers_address %}
-				<div class="row">
-					<div class="col-md-5">{% formrow form.send_flyers_city %}</div>
-					<div class="col-md-3">{% formrow form.send_flyers_state_or_province %}</div>
-					<div class="col-md-4">{% formrow form.send_flyers_country %}</div>
+				<div id="heardOtherField" class="collapse{% if form.instance.heard_through %} in{% endif %}">
+					{% formrow form.heard_through_other %}
 				</div>
-			</div>
-		{% endform %}
+
+					{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
+				<div id="promotionalCollapse" class="collapse{% if form.instance.send_flyers %} in{% endif %}">
+					{% formrow form.send_flyers_address %}
+					<div class="row">
+						<div class="col-md-5">{% formrow form.send_flyers_city %}</div>
+						<div class="col-md-3">{% formrow form.send_flyers_state_or_province %}</div>
+						<div class="col-md-4">{% formrow form.send_flyers_country %}</div>
+					</div>
+				</div>
+			{% endform %}
+		</div>
 	</form>
 {% endblock %}

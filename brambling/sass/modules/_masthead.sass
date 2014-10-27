@@ -12,9 +12,7 @@ $cover-image-padding-vertical: $line-height-computed
 .masthead
     position: relative
     +full-width
-    margin:
-        top: -$line-height-computed // to brush up against the navbar
-        bottom: $line-height-computed
+    +hug
     padding:
         top: $masthead-padding-vertical
         bottom: $masthead-padding-vertical
@@ -71,6 +69,10 @@ $cover-image-padding-vertical: $line-height-computed
         display: inline
         &:hover
             background: none
+
+.masthead-h1-alone
+    margin-bottom: 0
+    margin-left: 1.5*$line-height-computed
 
 .masthead-h1-admin
     margin-right: 6.5*$line-height-computed

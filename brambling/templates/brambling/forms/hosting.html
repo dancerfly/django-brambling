@@ -1,44 +1,18 @@
 {% load floppyforms %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-{% formrow form.contact_name %}
-{% formrow form.contact_email %}
-{% formrow form.contact_phone %}
-
-
-{% formrow form.address %}
-<div class="row">
-	<div class="col-sm-5">
-		{% formrow form.city %}
-	</div>
-	<div class="col-sm-3">
-		{% formrow form.state_or_province %}
-	</div>
-	<div class="col-sm-4">
-		{% formrow form.country %}
-	</div>
-</div>{# /.row #}
-
-{% formrow form.public_transit_access %}
-
-{% formrow form.housing_categories d%}
-{% if form.housing_categories_confirm %}{% formrow form.housing_categories_confirm %}{% endif %}
-
-<div class='row'>
-	<div class='col-md-6'>
-		{% formrow form.ef_present %}
-		{% if form.ef_present_confirm %}{% formrow form.ef_present_confirm %}{% endif %}
-	</div>
-	<div class='col-md-6'>
-		{% formrow form.ef_avoid %}
-{% if form.ef_avoid_confirm %}{% formrow form.ef_avoid_confirm %}{% endif %}
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">House Contact</h4>
+	</header>
+	<div class="panel-body">
+		{% formrow form.contact_name %}
+		{% formrow form.contact_email %}
+		{% formrow form.contact_phone %}
 	</div>
 </div>
 
-<div class='row'>
-	<div class='col-md-6'>{% formrow form.person_prefer %}</div>
-	<div class='col-md-6'>{% formrow form.person_avoid %}</div>
-</div>
+{% form form using "brambling/forms/home.html" %}
 
 {% formrow form.other_needs %}
 
