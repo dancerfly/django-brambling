@@ -33,7 +33,6 @@ from brambling.views.organizer import (
     EventSummaryView,
     EventUpdateView,
     StripeConnectView,
-    DwollaConnectView,
     RemoveEditorView,
     PublishEventView,
     UnpublishEventView,
@@ -46,6 +45,11 @@ from brambling.views.organizer import (
     OrderDetailView,
     RefundView,
 )
+from brambling.views.payment import (
+    EventDwollaConnectView,
+    OrderDwollaConnectView,
+    UserDwollaConnectView,
+)
 from brambling.views.user import (
     PersonView,
     HomeView,
@@ -55,7 +59,6 @@ from brambling.views.user import (
     send_confirmation_email_view,
     CreditCardAddView,
     CreditCardDeleteView,
-    UserDwollaConnectView,
 )
 from brambling.views.utils import split_view, route_view, get_event_or_404
 
@@ -74,9 +77,6 @@ urlpatterns = patterns('',
     url(r'^stripe_connect/$',
         StripeConnectView.as_view(),
         name="brambling_stripe_connect"),
-    url(r'^dwolla_connect/$',
-        DwollaConnectView.as_view(),
-        name="brambling_dwolla_connect"),
 
     url(r'^login/$',
         'django.contrib.auth.views.login',
@@ -169,6 +169,9 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/order/(?:(?P<code>[a-zA-Z0-9]{{8}})/)?discount/use/(?P<discount>{})/$'.format(Discount.CODE_REGEX),
         ApplyDiscountView.as_view(),
         name="brambling_event_use_discount"),
+    url(r'^(?P<event_slug>[\w-]+)/order/(?P<code>[a-zA-Z0-9]{8})/dwolla_connect/$',
+        OrderDwollaConnectView.as_view(),
+        name="brambling_order_dwolla_connect"),
 
     url(r'^(?P<slug>[\w-]+)/summary/$',
         EventSummaryView.as_view(),
@@ -176,6 +179,9 @@ urlpatterns = patterns('',
     url(r'^(?P<slug>[\w-]+)/edit/$',
         EventUpdateView.as_view(),
         name="brambling_event_update"),
+    url(r'^(?P<slug>[\w-]+)/dwolla_connect/$',
+        EventDwollaConnectView.as_view(),
+        name="brambling_event_dwolla_connect"),
     url(r'^(?P<event_slug>[\w-]+)/remove_editor/(?P<pk>\d+)$',
         RemoveEditorView.as_view(),
         name="brambling_event_remove_editor"),

@@ -681,7 +681,10 @@ class SummaryView(OrderMixin, TemplateView):
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
         })
-        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.request.user.dwolla_user_id:
+        user = self.request.user
+        dwolla_obj = user if user.is_authenticated() else self.order
+        if (getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and
+                not dwolla_obj.dwolla_user_id):
             dwolla = get_dwolla()
             client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
                                             settings.DWOLLA_APPLICATION_SECRET)
@@ -691,7 +694,7 @@ class SummaryView(OrderMixin, TemplateView):
             if self.order.person_id is None:
                 kwargs['code'] = self.order.code
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
-            redirect_url = reverse('brambling_user_dwolla_connect') + "?next_url=" + next_url
+            redirect_url = dwolla_obj.get_dwolla_connect_url() + "?next_url=" + next_url
             context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
                                                                 "Send|AccountInfoFull")
         context.update(self.summary_data)

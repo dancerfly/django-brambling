@@ -79,7 +79,7 @@
 				{% csrf_token %}
 				<input name='new_card' value='1' type='hidden'>
 
-				{% formrow new_card_form.save_card %}
+				{% if new_card_form.save_card %}{% formrow new_card_form.save_card %}{% endif %}
 
 				{% for error in new_card_form.non_field_errors %}
 					<div class='alert alert-danger'>
@@ -98,7 +98,7 @@
 			{% endif %}
 			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
-		{% if event.uses_dwolla %}
+		{% if event.connected_to_dwolla %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -106,7 +106,12 @@
 					</h4>
 				</div>
 				<div class="panel-body">
-					{% if user.dwolla_user_id %}
+					{% if user.dwolla_user_id or order.dwolla_user_id %}
+						{% if user.dwolla_user_id %}
+							<p>Connected account: {{ user.dwolla_user_id }}</p>
+						{% else %}
+							<p>Connected account: {{ order.dwolla_user_id }}</p>
+						{% endif %}
 						<form novalidate action="" method="post">
 							{% csrf_token %}
 							<input name='dwolla' value='1' type='hidden'>

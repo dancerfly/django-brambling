@@ -96,7 +96,7 @@ class PersonView(UpdateView):
             dwolla = get_dwolla()
             client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
                                             settings.DWOLLA_APPLICATION_SECRET)
-            redirect_url = reverse('brambling_user_dwolla_connect')
+            redirect_url = self.request.user.get_dwolla_connect_url()
             context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
                                                                 "Send|AccountInfoFull")
         return context
@@ -156,33 +156,6 @@ class CreditCardDeleteView(View):
 
     def post(self, *args, **kwargs):
         return self.delete(*args, **kwargs)
-
-
-class UserDwollaConnectView(View):
-    def get(self, request, *args, **kwargs):
-        dwolla = get_dwolla()
-        client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                        settings.DWOLLA_APPLICATION_SECRET)
-        redirect_url = reverse('brambling_user_dwolla_connect')
-        if 'next_url' in self.request.GET:
-            redirect_url += '?next_url=' + self.request.GET['next_url']
-        token = client.get_oauth_token(request.GET['code'],
-                                       redirect_uri=request.build_absolute_uri(redirect_url))
-
-        user = request.user
-        user.dwolla_access_token = token
-
-        # Now get account info.
-        dwolla_user = dwolla.DwollaUser(token)
-        user.dwolla_user_id = dwolla_user.get_account_info()['Id']
-        user.save()
-        if ('next_url' in request.GET and
-                is_safe_url(url=request.GET['next_url'],
-                            host=request.get_host())):
-            next_url = request.GET['next_url']
-        else:
-            next_url = reverse('brambling_user_profile')
-        return HttpResponseRedirect(next_url)
 
 
 class HomeView(UpdateView):

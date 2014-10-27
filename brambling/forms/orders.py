@@ -340,7 +340,7 @@ class AddCardForm(forms.Form):
 
     def save_card(self, card, user):
         creditcard = CreditCard.objects.create(
-            person=self.user,
+            person=user,
             fingerprint=card.fingerprint,
             stripe_card_id=card.id,
             exp_month=card.exp_month,
@@ -402,9 +402,14 @@ class BasePaymentForm(forms.Form):
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
     save_card = forms.BooleanField(required=False)
 
+    def __init__(self, *args, **kwargs):
+        super(OneTimePaymentForm, self).__init__(*args, **kwargs)
+        if not self.user.is_authenticated():
+            del self.fields['save_card']
+
     def _post_clean(self):
         try:
-            if self.cleaned_data['save_card']:
+            if self.cleaned_data.get('save_card'):
                 self.card = self.add_card(self.cleaned_data['token'])
                 self._charge = self.charge(self.card.id, self.customer)
             else:
@@ -414,7 +419,7 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             self.add_error(None, e.message)
 
     def save(self):
-        if self.cleaned_data['save_card']:
+        if self.cleaned_data.get('save_card'):
             user = self.user
         else:
             user = None
@@ -458,7 +463,11 @@ class DwollaPaymentForm(BasePaymentForm):
                 if self.amount <= 0:
                     self._charge = None
                 else:
-                    dwolla_user = dwolla.DwollaUser(self.user.dwolla_access_token)
+                    if self.user.is_authenticated():
+                        user_access_token = self.user.dwolla_access_token
+                    else:
+                        user_access_token = self.order.dwolla_access_token
+                    dwolla_user = dwolla.DwollaUser(user_access_token)
                     charge_id = dwolla_user.send_funds(float(self.amount),
                                                        self.order.event.dwolla_user_id,
                                                        self.cleaned_data['dwolla_pin'])

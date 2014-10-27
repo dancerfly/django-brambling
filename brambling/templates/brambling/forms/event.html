@@ -183,10 +183,10 @@
 				<hr />
 			{% endif %}
 
-			{% if form.instance.uses_dwolla or dwolla_oauth_url %}
+			{% if form.instance.connected_to_dwolla or dwolla_oauth_url %}
 				<h3>Dwolla</h3>
 
-				{% if form.instance.uses_dwolla %}
+				{% if form.instance.connected_to_dwolla %}
 					<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
 					{% formrow form.disconnect_dwolla with label="Disconnect" %}
 				{% else %}

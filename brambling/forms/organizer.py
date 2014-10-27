@@ -56,7 +56,7 @@ class EventForm(forms.ModelForm):
         self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
         if not self.instance.uses_stripe():
             del self.fields['disconnect_stripe']
-        if not self.instance.uses_dwolla():
+        if not self.instance.connected_to_dwolla():
             del self.fields['disconnect_dwolla']
         self.request = request
         if self.instance.pk is None:

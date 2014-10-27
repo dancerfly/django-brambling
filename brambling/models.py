@@ -110,6 +110,23 @@ class AbstractNamedModel(models.Model):
         abstract = True
 
 
+class AbstractDwollaModel(models.Model):
+    class Meta:
+        abstract = True
+
+    # Token obtained via OAuth.
+    dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
+    dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
+
+    def connected_to_dwolla(self):
+        return (bool(self.dwolla_user_id) and
+                bool(settings.DWOLLA_APPLICATION_KEY) and
+                bool(settings.DWOLLA_APPLICATION_SECRET))
+
+    def get_dwolla_connect_url(self):
+        raise NotImplementedError
+
+
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
@@ -182,7 +199,7 @@ class Date(models.Model):
 
 
 # TODO: "meta" class for groups of events? For example, annual events?
-class Event(models.Model):
+class Event(AbstractDwollaModel):
     PUBLIC = 'public'
     LINK = 'link'
 
@@ -247,15 +264,15 @@ class Event(models.Model):
     stripe_refresh_token = models.CharField(max_length=32, blank=True, default='')
     stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
 
-    # Token obtained via OAuth.
-    dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
-    dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
-
     def __unicode__(self):
         return smart_text(self.name)
 
     def get_absolute_url(self):
         return reverse('brambling_event_root', kwargs={'event_slug': self.slug})
+
+    def get_dwolla_connect_url(self):
+        return reverse('brambling_event_dwolla_connect',
+                       kwargs={'slug': self.slug})
 
     def get_liability_waiver(self):
         return self.liability_waiver.format(event=self.name)
@@ -279,9 +296,6 @@ class Event(models.Model):
 
     def uses_stripe(self):
         return bool(self.stripe_user_id)
-
-    def uses_dwolla(self):
-        return bool(self.dwolla_user_id)
 
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.EDITOR,
@@ -391,7 +405,7 @@ class PersonManager(BaseUserManager):
         return self._create_user(email, password, True, **extra_fields)
 
 
-class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
+class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=50, blank=True)
@@ -450,9 +464,6 @@ class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     default_card = models.OneToOneField('CreditCard', blank=True, null=True,
                                         related_name='default_for',
                                         on_delete=models.SET_NULL)
-    # Token obtained via OAuth.
-    dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
-    dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
 
     # Internal tracking
     modified_directly = models.BooleanField(default=False)
@@ -463,6 +474,9 @@ class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
 
     def __unicode__(self):
         return self.get_full_name()
+
+    def get_dwolla_connect_url(self):
+        return reverse('brambling_user_dwolla_connect')
 
 
 class CreditCard(models.Model):
@@ -501,7 +515,7 @@ def delete_stripe_card(sender, instance, **kwargs):
     customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
-class Order(models.Model):
+class Order(AbstractDwollaModel):
     """
     This model represents metadata connecting an event and a person.
     For example, it links to the items that a person has bought. It
@@ -553,6 +567,11 @@ class Order(models.Model):
 
     class Meta:
         unique_together = ('event', 'code')
+
+    def get_dwolla_connect_url(self):
+        return reverse('brambling_order_dwolla_connect',
+                       kwargs={'event_slug': self.event.slug,
+                               'code': self.code})
 
     def add_discount(self, discount, force=False):
         if discount.event_id != self.event_id:

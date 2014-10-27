@@ -164,11 +164,11 @@ class EventUpdateView(UpdateView):
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'owner': self.object.owner,
         })
-        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.uses_dwolla():
+        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.connected_to_dwolla():
             dwolla = get_dwolla()
             client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
                                             settings.DWOLLA_APPLICATION_SECRET)
-            redirect_url = reverse('brambling_dwolla_connect') + "?state=" + self.object.slug
+            redirect_url = self.object.get_dwolla_connect_url()
             context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
                                                                 "Send|AccountInfoFull|Transactions")
         return context
@@ -201,30 +201,6 @@ class StripeConnectView(View):
                 messages.success(request, 'Stripe account connected!')
             else:
                 messages.error(request, 'Something went wrong. Please try again.')
-
-        return HttpResponseRedirect(reverse('brambling_event_update',
-                                            kwargs={'slug': event.slug}))
-
-
-class DwollaConnectView(View):
-    def get(self, request, *args, **kwargs):
-        try:
-            event = Event.objects.get(slug=request.GET.get('state'))
-        except Event.DoesNotExist:
-            raise Http404
-        dwolla = get_dwolla()
-        client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                        settings.DWOLLA_APPLICATION_SECRET)
-        redirect_url = reverse('brambling_dwolla_connect') + "?state=" + request.GET['state']
-        token = client.get_oauth_token(request.GET['code'],
-                                       redirect_uri=request.build_absolute_uri(redirect_url))
-
-        event.dwolla_access_token = token
-
-        # Now get account info.
-        dwolla_user = dwolla.DwollaUser(token)
-        event.dwolla_user_id = dwolla_user.get_account_info()['Id']
-        event.save()
 
         return HttpResponseRedirect(reverse('brambling_event_update',
                                             kwargs={'slug': event.slug}))
