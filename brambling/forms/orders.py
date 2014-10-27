@@ -50,6 +50,7 @@ class AttendeeBasicDataForm(forms.ModelForm):
                 (Attendee.HOME, 'Staying at own home'),
             )
             self.fields['housing_status'].initial = ''
+            self.fields['phone'].help_text = 'Required if requesting housing'
 
     def clean_housing_status(self):
         housing_status = self.cleaned_data['housing_status']
