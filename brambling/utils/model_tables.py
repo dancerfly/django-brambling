@@ -279,7 +279,9 @@ class AttendeeTable(ModelTable):
 
     def order_placed_by(self, obj):
         person = obj.order.person
-        return "{} ({})".format(person.get_full_name(), person.email)
+        if person:
+            return "{} ({})".format(person.get_full_name(), person.email)
+        return ""
 
     def pass_type(self, obj):
         return "{}: {}".format(
