@@ -6527,11 +6527,7 @@ a.step.complete:hover {
 
 .navbar-default {
   border: 0;
-<<<<<<< HEAD
-=======
   border-bottom: 1px solid #c67f0d;
-  color: white;
->>>>>>> Fixed navbar hides on scroll
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
 }
 .navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:hover, .navbar-default .navbar-nav > .open > a:focus {
@@ -6555,22 +6551,6 @@ a.step.complete:hover {
   border-bottom: 1px solid #ffbd1c;
 }
 
-<<<<<<< HEAD
-.orange-bar {
-  height: 8px;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1035;
-  background-color: #de8e0f;
-}
-.orange-bar:hover {
-  background-color: #e8a500;
-}
-
-=======
->>>>>>> Fixed navbar hides on scroll
 .dancerfly-brand {
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
   font-weight: 400;
