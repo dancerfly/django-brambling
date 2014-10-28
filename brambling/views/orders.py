@@ -210,8 +210,10 @@ class OrderMixin(object):
         if self.workflow is None or self.current_step_slug is None:
             self.current_step = None
         else:
-            self.current_step = self.workflow.steps[self.current_step_slug]
-            if not self.current_step.is_active() or not self.current_step.is_accessible():
+            self.current_step = self.workflow.steps.get(self.current_step_slug)
+            if (not self.current_step or
+                    not self.current_step.is_active() or
+                    not self.current_step.is_accessible()):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
                         return HttpResponseRedirect(step.url)
