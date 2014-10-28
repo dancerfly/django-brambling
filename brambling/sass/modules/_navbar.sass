@@ -1,5 +1,5 @@
 .navbar-default
-    background: $yellow-dark
+    background: $brand-primary
     border: 0
     color: #FFF
     font-family: $headings-font-family
@@ -34,3 +34,14 @@
     // Best used in tandem with .navbar-transparent.
     margin-top: -$navbar-height + -$line-height-computed
     padding-top: $navbar-height + $line-height-computed
+
+.orange-bar
+    height: 8px
+    position: fixed
+    width: 100%
+    top: 0
+    left: 0
+    z-index: 1035
+    background-color: $brand-primary
+    &:hover
+        background-color: $yellow-light

@@ -6564,6 +6564,19 @@ a.step.complete:hover {
   padding-top: 60px;
 }
 
+.orange-bar {
+  height: 8px;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1035;
+  background-color: #de8e0f;
+}
+.orange-bar:hover {
+  background-color: #e8a500;
+}
+
 .dancerfly-brand {
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
   font-weight: 400;

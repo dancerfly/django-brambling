@@ -4,7 +4,7 @@
 	{% adjust event.banner_image 'fill' width=940 height=300 as banner_image %}
 {% endif %}
 
-<div class="masthead clearfix{% if banner_image %} masthead-light{% else %} masthead-brand{% endif %}">
+<div class="masthead clearfix{% if banner_image %} masthead-light{% else %} masthead-brand orange-barred{% endif %}">
 	{% if banner_image %}<div class="masthead-cover-image" style="background-image: url({{ banner_image }})">{% endif %}
 		<div class="relative">
 			<div id="mastheadDetails" {% if banner_image %} class="relative-bottom relative-left relative-right"{% endif %}>

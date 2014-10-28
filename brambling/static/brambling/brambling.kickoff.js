@@ -44,6 +44,21 @@ $(function() {
     // Add popovers to elements with class "popover-dismiss".
     $('.popped').popover({trigger: "focus"});
 
+    // // Keep an orange line at the top when you scroll down
+    var barred_height = -8;
+    $('.orange-barred').each(function(){
+        barred_height += $(this).outerHeight();
+    })
+    var barred = $('.orange-barred').last();
+    $(window).scroll(function(){
+        if($(window).scrollTop()>=barred_height){
+            barred.append('<a href="#" class="orange-bar"></a>');
+        }else{
+            $('.orange-bar').remove();
+        }
+    });
+    $(window).trigger('scroll');
+
     // Bind some brambling-specific events to the countdown timer.
     $('[data-countdown="timer"]').on("updated.countdown", function (e, data) {
         var alert,
