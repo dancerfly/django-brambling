@@ -5842,6 +5842,9 @@ body {
   min-height: 100%;
   padding-top: 60px;
 }
+body.no-navbar {
+  padding-top: 0;
+}
 
 h1, h2, h3, h4, h5, h6 {
   position: relative;
@@ -6209,6 +6212,10 @@ footer a {
   padding-top: 20px;
   padding-bottom: 20px;
   background-color: #eeeeee;
+  border-color: #e4e4e4;
+  border-style: solid;
+  border-top-width: 1px;
+  border-bottom-width: 1px;
 }
 .pane-default.splash {
   margin-bottom: 0;
@@ -6239,6 +6246,7 @@ footer a {
 
 .masthead-brand {
   background-color: #de8e0f;
+  border-bottom: 1px solid #c67f0d;
   color: #fceed6;
 }
 .masthead-brand .text-accent {
@@ -6545,7 +6553,7 @@ a.step.complete:hover {
 
 .navbar-hugged {
   margin-bottom: 0;
-  border-bottom: 0;
+  border-bottom-width: 0;
 }
 .navbar-hugged > .container, .navbar-hugged > .container-sm, .navbar-hugged > .container-xs {
   border-bottom: 1px solid #ffbd1c;

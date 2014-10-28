@@ -46,19 +46,24 @@ $(function() {
 
     // // Keep an orange line at the top when you scroll down
     var barred_height = -8;
-    $('.orange-barred').each(function(){
-        barred_height += $(this).outerHeight();
-    })
+    $('.orange-barred').each(function(){barred_height += $(this).outerHeight();})
     var barred = $('.navbar-fixed-top');
-
+    var hugged = barred.filter('.navbar-hugged').children('.container');
     function navbarTop(){
-        if($(window).scrollTop()>=barred_height){
+        var scroll = $(window).scrollTop();
+        if(scroll>=32){
             barred.css('top',-32);
         }else{
             barred.css('top',-$(window).scrollTop());
-        }
+        };
+        if(scroll>=barred_height){
+            barred.css('border-bottom-width',1);
+            hugged.css('border-bottom-width',0);
+        }else{
+            barred.css('border-bottom-width',0);
+            hugged.css('border-bottom-width',1);
+        };
     }
-
     $(window).scroll(navbarTop);
     $(window).trigger('scroll');
     barred.hover(
