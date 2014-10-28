@@ -5840,6 +5840,7 @@ html {
 
 body {
   min-height: 100%;
+  padding-top: 60px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -6520,8 +6521,17 @@ a.step.complete:hover {
   border-radius: 0 0 4px 0;
 }
 
+.navbar-fixed-top:hover {
+  top: 0;
+}
+
 .navbar-default {
   border: 0;
+<<<<<<< HEAD
+=======
+  border-bottom: 1px solid #c67f0d;
+  color: white;
+>>>>>>> Fixed navbar hides on scroll
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
 }
 .navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:hover, .navbar-default .navbar-nav > .open > a:focus {
@@ -6539,11 +6549,13 @@ a.step.complete:hover {
 
 .navbar-hugged {
   margin-bottom: 0;
+  border-bottom: 0;
 }
 .navbar-hugged > .container, .navbar-hugged > .container-sm, .navbar-hugged > .container-xs {
   border-bottom: 1px solid #ffbd1c;
 }
 
+<<<<<<< HEAD
 .orange-bar {
   height: 8px;
   position: fixed;
@@ -6557,6 +6569,8 @@ a.step.complete:hover {
   background-color: #e8a500;
 }
 
+=======
+>>>>>>> Fixed navbar hides on scroll
 .dancerfly-brand {
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
   font-weight: 400;

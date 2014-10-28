@@ -1,7 +1,11 @@
 // See height and colors defined in _variables.sass
 
+.navbar-fixed-top:hover
+    top: 0
+
 .navbar-default
     border: 0
+    border-bottom: 1px solid $btn-primary-border
     font-family: $headings-font-family
     .navbar-nav > .open > a
         &, &:hover, &:focus
@@ -15,8 +19,10 @@
 
 .navbar-hugged
     margin-bottom: 0
+    border-bottom: 0
     > .container
         border-bottom: 1px solid lighten($yellow-light,10%)
+<<<<<<< HEAD
 
 .orange-bar
     height: 8px
@@ -28,3 +34,5 @@
     background-color: $brand-primary
     &:hover
         background-color: $yellow-light
+=======
+>>>>>>> Fixed navbar hides on scroll

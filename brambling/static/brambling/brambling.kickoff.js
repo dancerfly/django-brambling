@@ -49,15 +49,22 @@ $(function() {
     $('.orange-barred').each(function(){
         barred_height += $(this).outerHeight();
     })
-    var barred = $('.orange-barred').last();
-    $(window).scroll(function(){
+    var barred = $('.navbar-fixed-top');
+
+    function navbarTop(){
         if($(window).scrollTop()>=barred_height){
-            barred.append('<a href="#" class="orange-bar"></a>');
+            barred.css('top',-32);
         }else{
-            $('.orange-bar').remove();
+            barred.css('top',-$(window).scrollTop());
         }
-    });
+    }
+
+    $(window).scroll(navbarTop);
     $(window).trigger('scroll');
+    barred.hover(
+        function(){barred.animate({'top': '0'},150)},
+        navbarTop
+    );
 
     // Bind some brambling-specific events to the countdown timer.
     $('[data-countdown="timer"]').on("updated.countdown", function (e, data) {
