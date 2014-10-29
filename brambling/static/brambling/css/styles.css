@@ -6552,11 +6552,16 @@ a.step.complete:hover {
 }
 
 .navbar-hugged {
-  margin-bottom: 0;
   border-bottom-width: 0;
 }
 .navbar-hugged > .container, .navbar-hugged > .container-sm, .navbar-hugged > .container-xs {
   border-bottom: 1px solid #ffbd1c;
+}
+.navbar-hugged.navbar-hugged-remove {
+  border-bottom-width: 1;
+}
+.navbar-hugged.navbar-hugged-remove > .container, .navbar-hugged.navbar-hugged-remove > .container-sm, .navbar-hugged.navbar-hugged-remove > .container-xs {
+  border-bottom-width: 0;
 }
 
 .dancerfly-brand {

@@ -34,6 +34,7 @@ $.ajaxSetup({
 });
 
 $(function() {
+    var $win = $(window);
 
     // Prevent disabled links from doing anything.
     $('.disabled a').on('click', function(e){e.preventDefault();});
@@ -44,30 +45,49 @@ $(function() {
     // Add popovers to elements with class "popover-dismiss".
     $('.popped').popover({trigger: "focus"});
 
-    // // Keep an orange line at the top when you scroll down
-    var barred_height = -8;
-    $('.orange-barred').each(function(){barred_height += $(this).outerHeight();})
-    var barred = $('.navbar-fixed-top');
-    var hugged = barred.filter('.navbar-hugged').children('.container');
-    function navbarTop(){
-        var scroll = $(window).scrollTop();
+    // Keep an orange line at the top when you scroll down   
+    var $navbar_color_height, $navbar_scroll_check;
+    var $navbar_fixed = $('.navbar-fixed-top');
+    var $navbar_toggle = $navbar_fixed.children('.container').children('.navbar-header').children('.navbar-toggle');
+    var $navbar_hugged = $navbar_fixed.filter('.navbar-hugged');
+    var navbarColorHeight = function(){
+        $navbar_color_height = -10;
+        $('.orange-barred').each(function(){$navbar_color_height += $(this).outerHeight();});
+        $navbar_scroll_check = $navbar_color_height+50;
+    };
+    var navbarTop = function(){
+        var scroll = $win.scrollTop();
         if(scroll>=32){
-            barred.css('top',-32);
+            $navbar_fixed.css('top',-32);
+            $navbar_toggle.css('top',-8);
         }else{
-            barred.css('top',-$(window).scrollTop());
-        };
-        if(scroll>=barred_height){
-            barred.css('border-bottom-width',1);
-            hugged.css('border-bottom-width',0);
-        }else{
-            barred.css('border-bottom-width',0);
-            hugged.css('border-bottom-width',1);
-        };
+            $navbar_fixed.css('top',-$win.scrollTop());
+            $navbar_toggle.css('top',-0.25*$win.scrollTop());
+        }
+        if($navbar_hugged){
+            if(scroll>=$navbar_color_height){
+                $navbar_hugged.removeClass('navbar-hugged');
+            }else{
+                $navbar_hugged.addClass('navbar-hugged');
+            }
+        }
+    };
+    navbarColorHeight();
+    navbarTop();
+    $win.resize(navbarColorHeight);
+    if($win.scrollTop()<=$navbar_scroll_check){
+        $win.scroll(function(){        
+            navbarTop();
+        });
     }
-    $(window).scroll(navbarTop);
-    $(window).trigger('scroll');
-    barred.hover(
-        function(){barred.animate({'top': '0'},150)},
+    $navbar_fixed.hover(
+        function(){
+            $navbar_fixed.animate({'top': '0'},150);
+            $navbar_toggle.animate({'top': '0'},150);
+            if($win.scrollTop()>=$navbar_color_height-30){
+                $navbar_hugged.removeClass('navbar-hugged');  
+            }
+        },
         navbarTop
     );
 

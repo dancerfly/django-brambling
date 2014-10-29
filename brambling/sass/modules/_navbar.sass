@@ -18,7 +18,11 @@
     margin-bottom: $line-height-computed
 
 .navbar-hugged
-    margin-bottom: 0
     border-bottom-width: 0
     > .container
         border-bottom: 1px solid lighten($yellow-light,10%)
+    &.navbar-hugged-remove
+        border-bottom-width: 1
+        > .container
+            border-bottom-width: 0
+        
