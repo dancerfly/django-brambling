@@ -656,6 +656,8 @@ class Order(AbstractDwollaModel):
         ).order_by('item_option__item', 'item_option__order', '-added')
 
     def get_summary_data(self):
+        if self.cart_is_expired():
+            self.delete_cart()
         payments = self.payments.order_by('timestamp')
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
