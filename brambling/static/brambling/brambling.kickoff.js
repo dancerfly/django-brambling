@@ -75,11 +75,11 @@ $(function() {
     navbarColorHeight();
     navbarTop();
     $win.resize(navbarColorHeight);
-    if($win.scrollTop()<=$navbar_scroll_check){
-        $win.scroll(function(){        
+    $win.scroll(function(){        
+        if($win.scrollTop()<=$navbar_scroll_check){
             navbarTop();
-        });
-    }
+        }
+    });
     $navbar_fixed.hover(
         function(){
             $navbar_fixed.animate({'top': '0'},150);
