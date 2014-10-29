@@ -1,85 +1,92 @@
+{% extends "floppyforms/layouts/bootstrap.html" %}
+
 {% load floppyforms %}
-{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-<div class="panel panel-default">
-	<header class="panel-heading">
-		<h4 class="panel-title">Basic Information</h4>
-	</header>
-	<div class="panel-body">
-		{% formrow form.address %}
-		<div class="row">
-			<div class="col-sm-5">
-				{% formrow form.city %}
-			</div>
-			<div class="col-sm-3">
-				{% formrow form.state_or_province %}
-			</div>
-			<div class="col-sm-4">
-				{% formrow form.country %}
-			</div>
-		</div>{# /.row #}
-		{% formrow form.housing_categories %}
-		{% formrow form.public_transit_access %}
+{% block rows %}
+	{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+	<div class="panel panel-default">
+		<header class="panel-heading">
+			<h4 class="panel-title">Basic Information</h4>
+		</header>
+		<div class="panel-body">
+			{% formrow form.address %}
+			<div class="row">
+				<div class="col-sm-5">
+					{% formrow form.city %}
+				</div>
+				<div class="col-sm-3">
+					{% formrow form.state_or_province %}
+				</div>
+				<div class="col-sm-4">
+					{% formrow form.country %}
+				</div>
+			</div>{# /.row #}
+			{% formrow form.housing_categories %}
+			{% if form.housing_categories_confirm %}{% formrow form.housing_categories_confirm %}{% endif %}
+			{% formrow form.public_transit_access %}
 
-		{% with residents=form.instance.residents.all %}
-			{% if residents %}
-				<table class='table table-striped'>
-					<thead>
-						<tr>
-							<th colspan="4">Residents</th>
-						</tr>
-					</thead>
-					<tbody>
-						{% for resident in residents %}
+			{% with residents=form.instance.residents.all %}
+				{% if residents %}
+					<table class='table table-striped'>
+						<thead>
 							<tr>
-								<th>{{ resident.get_full_name }}</th>
-								<td>{{ resident.email }}</td>
-								<td></td>
-								<td>
-									<a href="{% url 'brambling_home_remove_resident' pk=resident.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
-								</td>
+								<th colspan="4">Residents</th>
 							</tr>
-						{% endfor %}
+						</thead>
+						<tbody>
+							{% for resident in residents %}
+								<tr>
+									<th>{{ resident.get_full_name }}</th>
+									<td>{{ resident.email }}</td>
+									<td></td>
+									<td>
+										<a href="{% url 'brambling_home_remove_resident' pk=resident.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+									</td>
+								</tr>
+							{% endfor %}
 
-						{% for invite in home.get_invites %}
-							<tr>
-								<th>{{ invite.email }}</th>
-								<td>{{ invite.email }}</td>
-								<td>
-									{% if invite.is_sent %}
-										<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
-									{% else %}
-										<i class='fa fa-fw fa-envelope'></i> Not sent
-									{% endif %}
-								</td>
-								<td>
-									<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
-									<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
-								</td>
-							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			{% endif %}
-		{% endwith %}
-		{% formrow form.residents %}
+							{% for invite in home.get_invites %}
+								<tr>
+									<th>{{ invite.email }}</th>
+									<td>{{ invite.email }}</td>
+									<td>
+										{% if invite.is_sent %}
+											<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+										{% else %}
+											<i class='fa fa-fw fa-envelope'></i> Not sent
+										{% endif %}
+									</td>
+									<td>
+										<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+										<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				{% endif %}
+			{% endwith %}
+			{% formrow form.residents %}
+		</div>
+	</div>{# /.panel #}
+	<div class="panel panel-default">
+		<header class="panel-heading">
+			<h4 class="panel-title">Environmental factors</h4>
+		</header>
+		<div class="panel-body">
+			{% formrow form.ef_present %}
+			{% if form.ef_present_confirm %}{% formrow form.ef_present_confirm %}{% endif %}
+			{% formrow form.ef_avoid %}
+			{% if form.ef_avoid_confirm %}{% formrow form.ef_avoid_confirm %}{% endif %}
+		</div>
 	</div>
-</div>{# /.panel #}
-<div class="panel panel-default">
-	<header class="panel-heading">
-		<h4 class="panel-title">Environmental factors</h4>
-	</header>
-	<div class="panel-body">
-		{% formrow form.ef_present %}
-		{% formrow form.ef_avoid %}
+	<div class="panel panel-default">
+		<header class="panel-heading">
+			<h4 class="panel-title">People</h4>
+		</header>
+		<div class="panel-body">
+			{% formrow form.person_prefer %}
+			{% formrow form.person_avoid %}
+		</div>
 	</div>
-</div>
-<div class="panel panel-default">
-	<header class="panel-heading">
-		<h4 class="panel-title">People</h4>
-	</header>
-	<div class="panel-body">
-		{% formrow form.person_prefer %}
-		{% formrow form.person_avoid %}
-	</div>
-</div>
+{% endblock %}

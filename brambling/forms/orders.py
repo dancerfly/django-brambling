@@ -158,6 +158,14 @@ class SurveyDataForm(forms.ModelForm):
 
 
 class HousingSlotForm(forms.ModelForm):
+    def clean_spaces_max(self):
+        cd = self.cleaned_data
+        spaces = cd.get('spaces')
+        spaces_max = cd.get('spaces_max')
+        if not spaces_max >= spaces:
+            raise forms.ValidationError("Max spaces must be greater than or equal to comfy spaces.")
+        return spaces_max
+
     class Meta:
         model = HousingSlot
         fields = ('spaces', 'spaces_max')
@@ -255,11 +263,18 @@ class HostingForm(MemoModelForm):
         valid = super(HostingForm, self).is_valid()
         if not self.cleaned_data['providing_housing']:
             return True
-        if valid:
-            for form in self.slot_forms:
-                if not form.is_valid():
-                    valid = False
-                    break
+        any_slots = False
+        for form in self.slot_forms:
+            if not form.is_valid():
+                valid = False
+                # Otherwise invalid forms would cause "at least one space"
+                # errors.
+                any_slots = True
+            elif form.cleaned_data['spaces'] or form.cleaned_data['spaces_max']:
+                any_slots = True
+        if not any_slots:
+            self.add_error(None, "At least one space must be provided to offer housing.")
+            valid = False
         return valid
 
     def save(self):

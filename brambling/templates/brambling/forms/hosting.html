@@ -1,19 +1,24 @@
+{% extends "brambling/forms/home.html" %}
+
 {% load floppyforms %}
-{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-<div class="panel panel-default">
-	<header class="panel-heading">
-		<h4 class="panel-title">House Contact</h4>
-	</header>
-	<div class="panel-body">
-		{% formrow form.contact_name %}
-		{% formrow form.contact_email %}
-		{% formrow form.contact_phone %}
+{% block rows %}
+	{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+	<div class="panel panel-default">
+		<header class="panel-heading">
+			<h4 class="panel-title">House Contact</h4>
+		</header>
+		<div class="panel-body">
+			{% formrow form.contact_name %}
+			{% formrow form.contact_email %}
+			{% formrow form.contact_phone %}
+		</div>
 	</div>
-</div>
 
-{% form form using "brambling/forms/home.html" %}
+	{{ block.super }}
 
-{% formrow form.other_needs %}
+	{% formrow form.other_needs %}
 
-{% formrow form.save_as_defaults %}
+	{% formrow form.save_as_defaults %}
+{% endblock %}

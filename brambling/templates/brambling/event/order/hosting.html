@@ -62,10 +62,10 @@
 						<tbody>
 							{% for form in form.slot_forms %}
 								{% form form using %}
-									<tr{% if form.spaces.errors or form.spaces_max.errors %} class="danger"{% endif %}>
+									<tr{% if form.errors %} class="danger"{% endif %}>
 										<td class="text-right">{{ form.instance.night }}</td>
-										<td>{% formrow form.spaces using "brambling/forms/rows/no_label.html" %}</td>
-										<td>{% formrow form.spaces_max using "brambling/forms/rows/no_label.html" %}</td>
+										<td>{% formfield form.spaces %}</td>
+										<td>{% formfield form.spaces_max %}</td>
 										<td>
 											{% if forloop.first %}
 												<button class="btn btn-default btn-block" type="button" id="FillAllButton">
@@ -74,6 +74,19 @@
 											{% endif %}
 										</td>
 									</tr>
+									{% if form.errors %}
+										{% for key, list in form.errors.iteritems %}
+											{% for error in list %}
+												<tr class="danger text-danger">
+													<td></td>
+													<td colspan="2">
+														{{ error}}
+													</td>
+													<td></td>
+												</tr>
+											{% endfor %}
+										{% endfor %}
+									{% endif %}
 								{% endform %}
 							{% endfor %}
 						</tbody>
