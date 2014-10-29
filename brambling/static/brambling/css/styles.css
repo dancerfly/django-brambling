@@ -5840,6 +5840,10 @@ html {
 
 body {
   min-height: 100%;
+  padding-top: 60px;
+}
+body.no-navbar {
+  padding-top: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -6208,6 +6212,10 @@ footer a {
   padding-top: 20px;
   padding-bottom: 20px;
   background-color: #eeeeee;
+  border-color: #e4e4e4;
+  border-style: solid;
+  border-top-width: 1px;
+  border-bottom-width: 1px;
 }
 .pane-default.splash {
   margin-bottom: 0;
@@ -6238,6 +6246,7 @@ footer a {
 
 .masthead-brand {
   background-color: #de8e0f;
+  border-bottom: 1px solid #c67f0d;
   color: #fceed6;
 }
 .masthead-brand .text-accent {
@@ -6520,8 +6529,13 @@ a.step.complete:hover {
   border-radius: 0 0 4px 0;
 }
 
+.navbar-fixed-top:hover {
+  top: 0;
+}
+
 .navbar-default {
   border: 0;
+  border-bottom: 1px solid #c67f0d;
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
 }
 .navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:hover, .navbar-default .navbar-nav > .open > a:focus {
@@ -6538,23 +6552,16 @@ a.step.complete:hover {
 }
 
 .navbar-hugged {
-  margin-bottom: 0;
+  border-bottom-width: 0;
 }
 .navbar-hugged > .container, .navbar-hugged > .container-sm, .navbar-hugged > .container-xs {
   border-bottom: 1px solid #ffbd1c;
 }
-
-.orange-bar {
-  height: 8px;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1035;
-  background-color: #de8e0f;
+.navbar-hugged.navbar-hugged-remove {
+  border-bottom-width: 1;
 }
-.orange-bar:hover {
-  background-color: #e8a500;
+.navbar-hugged.navbar-hugged-remove > .container, .navbar-hugged.navbar-hugged-remove > .container-sm, .navbar-hugged.navbar-hugged-remove > .container-xs {
+  border-bottom-width: 0;
 }
 
 .dancerfly-brand {
