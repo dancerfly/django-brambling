@@ -130,6 +130,12 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
+COMPRESSOR_ENABLED = True
+
+COMPRESS_PRECOMPILERS = (
+    ('text/sass', 'sass -r bootstrap-sass --compass "{infile}" {outfile}'),
+)
+
 
 from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
