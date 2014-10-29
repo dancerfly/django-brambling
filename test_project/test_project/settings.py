@@ -44,6 +44,7 @@ INSTALLED_APPS = (
     'floppyforms',
     'django_filters',
     'daguerre',
+    'compressor',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -100,6 +101,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 import os
 MEDIA_URL = '/media/'
@@ -120,6 +122,13 @@ STRIPE_PUBLISHABLE_KEY = None
 
 DWOLLA_APPLICATION_KEY = None
 DWOLLA_APPLICATION_SECRET = None
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    # other finders..
+    'compressor.finders.CompressorFinder',
+)
 
 
 from django.contrib.messages import constants as messages
