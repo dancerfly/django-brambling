@@ -1,10 +1,47 @@
 {% extends "brambling/layouts/8_4.html" %}
 
-{% load staticfiles %}
+{% load staticfiles hints %}
 
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
 {% block main %}
+
+	{% hint request.user "welcome" %}
+		<div class="alert alert-info" id="welcomeHint">
+			<form action="{{ hint.dismiss_action }}" method="post" data-dismiss-hint="#welcomeHint">
+
+				{% csrf_token %}
+				{{ hint.dismiss_form }}
+
+				<button class="close"><span aria-hidden="true">&times;</span></button>
+
+				<p><strong>Welcome to Dancerfly!</strong></p>
+
+				<p>
+					Thanks for signing up for Dancerfly.
+					We&#8217;re happy to have you here! If you were registering
+					for an event, head back to that event page. We&#8217;ll keep
+					you logged in so you can register quickly.
+				</p>
+				<p>
+					Below is a list of upcoming events we think you might be
+					interested in. If there&#8217;s not much listed there it&#8217;s
+					because there aren&#8217;t enough events coming up or because
+					your dance preferences are too restrictive. You can update those
+					preferences (and other settings) on your
+					<a href="{% url "brambling_user_profile"%}" class="alert-link">profile settings</a>
+					page.
+				</p>
+				<p>
+					When you&#8217;re ready to use the website on your own, go ahead
+					and dismiss this message with the <strong>&times;</strong> in the corner. We won&#8217;t
+					show it again.
+				</p>
+
+			</form>
+		</div>
+	{% endhint %}
+
 	{% if registered_events %}
 		<div class="page-header">
 			<h1>Events You Registered For</h1>
