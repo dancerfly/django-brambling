@@ -170,29 +170,66 @@
 			<h4 class="panel-title">Payment Options</h4>
 		</header>
 		<div class='panel-body'>
-			{% if form.STRIPE_APPLICATION_ID %}
-				<h3>Stripe</h3>
+			<p>
+				We currently offer two payment processors: Stripe and Dwolla.
+				You may enable either or both processors.
+			</p>
+			<p>
+				You must register for an account with each payment processor you
+				use. Sales go directly to those accounts with Dancerfly&#8217;s
+				fee automatically subtracted. Click the info icon next to each
+				payment processor to learn more.
+			</p>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Processor</th>
+						<th>Status</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{# Stripe: #}
+					{% if form.STRIPE_APPLICATION_ID %}
+						<tr>
+							<th>
+								<i class="fa fa-fw fa-credit-card"></i>
+								Stripe
+								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 3.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
+							</th>
+							{% if form.instance.uses_stripe %}
+								<td>Enabled ({{ form.instance.stripe_user_id }})</td>
+								<td>{% formrow form.disconnect_stripe with label="Disconnect" %}</td>
+							{% else %}
+								<td>Not Enabled</td>
+								<td>
+									<a href='https://connect.stripe.com/oauth/authorize?client_id={{ form.STRIPE_APPLICATION_ID }}&response_type=code&scope=read_write&state={{ form.instance.slug }}' class='btn btn-info btn-xs'>Connect</i></a>
+								</td>
+							{% endif %}
+						</tr>
+					{% endif %}
 
-				{% if form.instance.uses_stripe %}
-					<p>Connected account: {{ form.instance.stripe_user_id }}</p>
-					{% formrow form.disconnect_stripe with label="Disconnect" %}
-				{% else %}
-					<a href='https://connect.stripe.com/oauth/authorize?client_id={{ form.STRIPE_APPLICATION_ID }}&response_type=code&scope=read_write&state={{ form.instance.slug }}' class='btn btn-primary'>Connect to Stripe <i class='fa fa-external-link'></i></a>
-				{% endif %}
-
-				<hr />
-			{% endif %}
-
-			{% if form.instance.connected_to_dwolla or dwolla_oauth_url %}
-				<h3>Dwolla</h3>
-
-				{% if form.instance.connected_to_dwolla %}
-					<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
-					{% formrow form.disconnect_dwolla with label="Disconnect" %}
-				{% else %}
-					<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
-				{% endif %}
-			{% endif %}
+					{# Dwolla: #}
+					{% if form.instance.connected_to_dwolla or dwolla_oauth_url %}
+						<tr>
+							<th>
+								<i class="fa fa-fw fa-money"></i>
+								Dwolla
+								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
+							</th>
+							{% if form.instance.connected_to_dwolla %}
+								<td>Enabled ({{ form.instance.dwolla_user_id }})</td>
+								<td>{% formrow form.disconnect_dwolla with label="Disconnect" %}</td>
+							{% else %}
+								<td>Not Enabled</td>
+								<td>
+									<a href='{{ dwolla_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
+								</td>
+							{% endif %}
+						</tr>
+					{% endif %}
+				</tbody>
+			</table>
 		</div>
 	</div>
 {% endif %}
