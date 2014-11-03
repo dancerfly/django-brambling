@@ -264,6 +264,10 @@ class Event(AbstractDwollaModel):
     stripe_refresh_token = models.CharField(max_length=32, blank=True, default='')
     stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
 
+    # This is a secret value set by admins
+    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+                                                  validators=[MaxValueValidator(100), MinValueValidator(0)])
+
     def __unicode__(self):
         return smart_text(self.name)
 

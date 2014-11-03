@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_DOWN
+
 from django.conf import settings
 from django.db.models import Q
 import floppyforms.__future__ as forms
@@ -361,7 +363,7 @@ class AddCardForm(forms.Form):
             exp_month=card.exp_month,
             exp_year=card.exp_year,
             last4=card.last4,
-            brand=card.type,
+            brand=card.brand,
         )
 
         if user and user.default_card_id is None:
@@ -373,13 +375,17 @@ class AddCardForm(forms.Form):
 
 class BasePaymentForm(forms.Form):
     def __init__(self, order, bought_items, *args, **kwargs):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
+        stripe.api_key = order.event.stripe_access_token
         self.order = order
         # bought_items is a list of summary dicts.
         self.bought_items = [item for item in bought_items
                              if item['net_balance'] > 0]
         self.amount = sum((item['net_balance'] for item in self.bought_items))
         super(BasePaymentForm, self).__init__(*args, **kwargs)
+
+    def get_fee(self, amount):
+        """Returns a percentage """
+        return self.order.event.application_fee_percent / 100 * amount
 
     def charge(self, card_or_token, customer=None):
         if self.amount <= 0:
@@ -392,11 +398,13 @@ class BasePaymentForm(forms.Form):
                 card=card_or_token,
                 api_key=self.order.event.stripe_access_token,
             )
+        fee = self.get_fee(amount).quantize(Decimal('1.'), rounding=ROUND_DOWN)
         return stripe.Charge.create(
             amount=amount,
             currency=self.order.event.currency,
             customer=customer,
             card=card_or_token,
+            application_fee=fee,
         )
 
     def save_payment(self, charge, creditcard):
@@ -483,9 +491,11 @@ class DwollaPaymentForm(BasePaymentForm):
                     else:
                         user_access_token = self.order.dwolla_access_token
                     dwolla_user = dwolla.DwollaUser(user_access_token)
+                    fee = self.get_fee(self.amount).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
                     charge_id = dwolla_user.send_funds(float(self.amount),
                                                        self.order.event.dwolla_user_id,
-                                                       self.cleaned_data['dwolla_pin'])
+                                                       self.cleaned_data['dwolla_pin'],
+                                                       facil_amount=float(fee))
                     # Charge id returned by send_funds is the transaction ID
                     # for the user; the event has a different transaction ID.
                     # But we can use this one to get that one.
