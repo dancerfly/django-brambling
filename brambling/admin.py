@@ -61,7 +61,6 @@ class PersonAdmin(UserAdmin):
 
     add_fieldsets = (
         (None, {
-            'classes': ('wide',),
             'fields': (('email', 'password1', 'password2'), tuple(Person.REQUIRED_FIELDS))
         }),
     )
@@ -78,7 +77,8 @@ class PersonAdmin(UserAdmin):
         ('Registration Settings', {'fields': (
             'dietary_restrictions',
             ('ef_cause', 'ef_avoid'),
-            ('person_prefer', 'person_avoid'),
+            'person_prefer',
+            'person_avoid',
             'housing_prefer',
             'other_needs',
             'dance_styles',

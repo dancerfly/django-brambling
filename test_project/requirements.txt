@@ -6,6 +6,7 @@ django-countries==2.0
 django-debug-toolbar==1.2
 django-debug-toolbar-template-timings==0.6.1
 django-filter==0.7
+django-grappelli==2.6.2
 Pillow==2.5.3
 django-daguerre==2.1.2
 six==1.5.2

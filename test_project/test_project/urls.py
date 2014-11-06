@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + patterns('',
+    url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^feedback/', include('zenaida.contrib.feedback.urls')),
     url(r'^hints/', include('zenaida.contrib.hints.urls')),
