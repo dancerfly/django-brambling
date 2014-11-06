@@ -32,6 +32,14 @@
 
 	{% include "brambling/event/order/_summary.html" %}
 
+	<p>A receipt for this purchase will be sent to
+		{% if order.person %}
+			{{ order.person.name }} ({{ order.person.email }})
+		{% elif order.email %}
+			{{ order.email }}
+		{% endif %}
+	</p>
+
 	{% if net_balance > 0 %}
 		{% if event.uses_stripe %}
 			{% if has_cards %}

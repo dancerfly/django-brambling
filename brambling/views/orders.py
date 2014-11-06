@@ -156,6 +156,19 @@ class HostingStep(OrderStep):
         ).exists()
 
 
+class OrderEmailStep(OrderStep):
+    name = 'Email'
+    slug = 'email'
+    view_name = 'brambling_event_order_email'
+
+    @classmethod
+    def include_in(cls, workflow):
+        return workflow.order.person is None
+
+    def _is_completed(self):
+        return bool(self.workflow.order.email)
+
+
 class PaymentStep(OrderStep):
     name = 'Payment'
     slug = 'payment'
@@ -167,7 +180,7 @@ class PaymentStep(OrderStep):
 
 class RegistrationWorkflow(Workflow):
     step_classes = [ShopStep, AttendeeStep, HousingStep, SurveyStep,
-                    HostingStep, PaymentStep]
+                    HostingStep, OrderEmailStep, PaymentStep]
 
 
 class ShopWorkflow(Workflow):
@@ -234,6 +247,11 @@ class OrderMixin(object):
             'order': self.order
         }
         return self.get_workflow_class()(**kwargs)
+
+    def get_success_url(self):
+        if self.current_step.errors:
+            return self.current_step.url
+        return self.current_step.next_step.url
 
     def get_context_data(self, **kwargs):
         context = super(OrderMixin, self).get_context_data(**kwargs)
@@ -471,11 +489,6 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
         self.object = form.save()
         return super(AttendeeBasicDataView, self).form_valid(form)
 
-    def get_success_url(self):
-        if self.current_step.errors:
-            return self.current_step.url
-        return self.current_step.next_step.url
-
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context['event_pass'] = self.event_pass
@@ -571,11 +584,6 @@ class SurveyDataView(OrderMixin, UpdateView):
         form.save()
         return super(SurveyDataView, self).form_valid(form)
 
-    def get_success_url(self):
-        if self.current_step.errors:
-            return self.current_step.url
-        return self.current_step.next_step.url
-
 
 class HostingView(OrderMixin, UpdateView):
     template_name = 'brambling/event/order/hosting.html'
@@ -608,6 +616,17 @@ class HostingView(OrderMixin, UpdateView):
         if self.order.person_id is None:
             kwargs['code'] = self.order.code
         return reverse('brambling_event_order_summary', kwargs=kwargs)
+
+
+class OrderEmailView(OrderMixin, UpdateView):
+    template_name = 'brambling/event/order/email.html'
+    current_step_slug = 'email'
+
+    def get_form_class(self):
+        return forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+
+    def get_object(self):
+        return self.order
 
 
 class SummaryView(OrderMixin, TemplateView):

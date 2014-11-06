@@ -19,6 +19,7 @@ from brambling.views.orders import (
     AttendeeHousingView,
     SurveyDataView,
     HostingView,
+    OrderEmailView,
     SummaryView,
 )
 from brambling.views.core import (
@@ -163,6 +164,9 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/order/(?:(?P<code>[a-zA-Z0-9]{8})/)?hosting/$',
         HostingView.as_view(),
         name='brambling_event_hosting'),
+    url(r'^(?P<event_slug>[\w-]+)/order/(?P<code>[a-zA-Z0-9]{8})/email/$',
+        OrderEmailView.as_view(),
+        name="brambling_event_order_email"),
     url(r'^(?P<event_slug>[\w-]+)/order/(?:(?P<code>[a-zA-Z0-9]{8})/)?summary/$',
         SummaryView.as_view(),
         name="brambling_event_order_summary"),

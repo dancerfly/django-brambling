@@ -1,0 +1,25 @@
+{% extends 'brambling/event/order/__base.html' %}
+
+{% load floppyforms %}
+
+{% block title %}Email receipt – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	<form action="" method="post" novalidate>
+		{% csrf_token %}
+
+		<div class="max-width-sm">
+			{% form form using %}
+				{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+				<p>Please enter your email address if you would like to receive a receipt and link to your order.</p>
+
+				{% formrow form.email %}
+			{% endform %}
+		</div>
+
+		<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
+	</form>
+{% endblock %}

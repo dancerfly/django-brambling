@@ -549,6 +549,7 @@ class Order(AbstractDwollaModel):
 
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
+    email = models.EmailField(blank=True)
     code = models.CharField(max_length=8, db_index=True)
 
     cart_start_time = models.DateTimeField(blank=True, null=True)
