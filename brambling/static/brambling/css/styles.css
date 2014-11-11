@@ -6382,6 +6382,10 @@ footer a {
   z-index: 3;
 }
 
+.shortened > :last-child {
+  margin-bottom: 0;
+}
+
 .stepbar {
   margin-bottom: 20px;
   -webkit-border-radius: 4px;
