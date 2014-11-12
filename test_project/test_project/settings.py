@@ -124,6 +124,9 @@ DWOLLA_APPLICATION_KEY = None
 DWOLLA_APPLICATION_SECRET = None
 
 
+GRAPPELLI_ADMIN_TITLE = "Dancerfly"
+
+
 from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert alert-info',
