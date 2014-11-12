@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = (
     'brambling',
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -121,6 +122,9 @@ STRIPE_PUBLISHABLE_KEY = None
 
 DWOLLA_APPLICATION_KEY = None
 DWOLLA_APPLICATION_SECRET = None
+
+
+GRAPPELLI_ADMIN_TITLE = "Dancerfly"
 
 
 from django.contrib.messages import constants as messages
