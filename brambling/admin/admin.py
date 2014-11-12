@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from brambling.models import Person
+from brambling.models import Person, Event
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
 
 
@@ -46,4 +46,60 @@ class PersonAdmin(UserAdmin):
 	ordering = ('-created_timestamp',)
 
 
+class EventAdmin(admin.ModelAdmin):
+	fieldsets = (
+		(None, {
+			'fields': ('name', 'slug'),
+		}),
+		("Details", {
+			'classes': ('grp-collapse grp-closed',),
+			'fields': (
+				('name', 'slug'),
+				('has_dances', 'has_classes'),
+				'privacy', 'is_published',
+				('website_url', 'banner_image'),
+				'description',
+				('city', 'state_or_province'),
+				'country',
+				'dance_styles',
+				'currency',
+			),
+		}),
+		("Dates", {
+			'classes': ('grp-collapse grp-closed',),
+			'fields': (
+				'timezone', 'dates',
+				('start_time', 'end_time'),
+				'housing_dates'
+			)
+		}),
+		("Checkout", {
+			'classes': ('grp-collapse grp-closed',),
+			'fields': (
+				('collect_housing_data', 'collect_survey_data'),
+				'liability_waiver', 'cart_timeout', 'housing_dates'
+			)
+		}),
+		("Permissions", {
+			'classes': ('grp-collapse grp-closed',),
+			'fields': ("owner", "editors"),
+		}),
+		("Financial Transactions", {
+			'classes': ('grp-collapse grp-closed',),
+			'fields': (
+				("dwolla_user_id", "dwolla_access_token"),
+				("stripe_user_id", "stripe_access_token"),
+				("stripe_refresh_token", "stripe_publishable_key"),
+			)
+		}),
+		("Dancerfly Internal", {
+			'classes': ('grp-collapse grp-closed',),
+			'fields': ('is_frozen', 'application_fee_percent')
+		}),
+	)
+	raw_id_fields = ('owner',)
+	filter_horizontal = ("dance_styles", "dates", "housing_dates", "editors")
+
+
 admin.site.register(Person, PersonAdmin)
+admin.site.register(Event, EventAdmin)
