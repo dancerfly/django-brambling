@@ -230,6 +230,31 @@
 					{% endif %}
 				</tbody>
 			</table>
+
+			<p>You can also (or alternately) allow payment by check. Dancerfly does not charge a fee on check payments, since the payment doesn't go through our systems. However, this method may require much more effort on the part of event organizers, since you will need to manually confirm receipt of all check payments.</p>
+
+			{% formrow form.check_payment_allowed with label="Allow payment by check" %}
+
+			{% formrow form.check_payable_to with label="Pay to the order of" %}
+			{% formrow form.check_recipient with label="Mail to" %}
+			{% formrow form.check_address with label="Address" %}
+			<div class="row">
+				<div class="col-sm-5">
+					{% formrow form.check_city with label="City" %}
+				</div>
+				<div class="col-sm-3">
+					{% formrow form.check_state_or_province with label="State or province" %}
+				</div>
+				<div class="col-sm-4">
+					<div class='form-group'>
+						<label class='control-label'>Country *</label>
+						<select class="chosen-select" disabled>
+							<option selected="selected">United States</option>
+						</select>
+					</div>
+				</div>
+			</div>{# /.row #}
+			{% formrow form.check_postmark_cutoff with label="Postmark cutoff" %}
 		</div>
 	</div>
 {% endif %}

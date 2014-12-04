@@ -45,6 +45,9 @@ class EventForm(forms.ModelForm):
                    'dwolla_user_id', 'dwolla_access_token', 'editors',
                    'is_published', 'is_frozen', 'country', 'currency',
                    'application_fee_percent')
+        widgets = {
+            'check_country': forms.Select
+        }
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
@@ -76,6 +79,16 @@ class EventForm(forms.ModelForm):
         for editor in editors:
             validator(editor)
         return editors
+
+    def clean_check_payment_allowed(self):
+        cpa = self.cleaned_data['check_payment_allowed']
+        if cpa:
+            for field in ('check_payable_to', 'check_postmark_cutoff',
+                          'check_recipient', 'check_address',
+                          'check_city', 'check_state_or_province',
+                          'check_country'):
+                self.fields[field].required = True
+        return cpa
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()

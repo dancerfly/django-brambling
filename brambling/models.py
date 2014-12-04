@@ -270,13 +270,13 @@ class Event(AbstractDwollaModel):
 
     check_payment_allowed = models.BooleanField(default=False)
     check_payable_to = models.CharField(max_length=50, blank=True)
-    check_latest_postmark = models.DateField(blank=True, null=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
 
     check_recipient = models.CharField(max_length=50, blank=True)
     check_address = models.CharField(max_length=200, blank=True)
     check_city = models.CharField(max_length=50, blank=True)
     check_state_or_province = models.CharField(max_length=50, blank=True)
-    check_country = CountryField(blank=True)
+    check_country = CountryField(default='US')
 
     def __unicode__(self):
         return smart_text(self.name)
