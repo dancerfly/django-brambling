@@ -84,7 +84,7 @@ class AttendeeHousingDataForm(MemoModelForm):
         if self.instance.person == self.instance.order.person:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
 
-            if not self.instance.housing_completed:
+            if self.instance.person and not self.instance.housing_completed:
                 if self.instance.person.modified_directly:
                     self.fields['ef_cause_confirm'] = forms.BooleanField(
                         required=True,
@@ -123,7 +123,8 @@ class AttendeeHousingDataForm(MemoModelForm):
     def save(self):
         self.instance.housing_completed = True
         instance = super(AttendeeHousingDataForm, self).save()
-        if (self.instance.person == self.instance.order.person and
+        if (self.instance.person and
+                self.instance.person == self.instance.order.person and
                 self.cleaned_data['save_as_defaults']):
             person = self.instance.person
             person.ef_cause = instance.ef_cause.all()
