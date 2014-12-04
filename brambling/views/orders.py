@@ -698,7 +698,7 @@ class SummaryView(OrderMixin, TemplateView):
         if self.event.uses_dwolla():
             self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
         if self.event.uses_checks():
-            self.check_form = CheckPaymentForm(data=check_data, user=self.request.user, **kwargs)
+            self.check_form = CheckPaymentForm(data=check_data, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(SummaryView, self).get_context_data(**kwargs)

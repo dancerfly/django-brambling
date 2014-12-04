@@ -34,9 +34,9 @@
 
 	<p>A receipt for this purchase will be sent to
 		{% if order.person %}
-			{{ order.person.name }} ({{ order.person.email }})
+			<strong>{{ order.person.name }} ({{ order.person.email }})</strong>.
 		{% elif order.email %}
-			{{ order.email }}
+			<strong>{{ order.email }}</strong>.
 		{% endif %}
 	</p>
 
@@ -151,16 +151,15 @@
 					<ul>
 						<li>Make checks out to: <strong>{{ event.check_payable_to }}</strong></li>
 						<li>Mail them to:
-							<blockquote>
-								{{ event.check_recipient }}
-								{{ event.check_address }}
-								{{ event.check_city }}
-								{{ event.check_state_or_province }}
+							<p>
+								{{ event.check_recipient }}</br />
+								{{ event.check_address }}</br />
+								{{ event.check_city }}, {{ event.check_state_or_province }}
 								{{ event.check_country }}
-							</blockquote>
+							</p>
 						</li>
 					</ul>
-					<p>Checks must be postmarked by {{ event.check_latest_postmark }}. Please include your order code (<strong>{{ order.code }}</strong>) in the memo line of your check.</p>
+					<p>Checks must be postmarked by {{ event.check_postmark_cutoff|date:"F jS, Y" }}. Please include your order code (<strong>{{ order.code }}</strong>) in the memo line of your check.</p>
 					<form novalidate action="" method="post">
 						{% csrf_token %}
 						<input name='check' value='1' type='hidden'>
