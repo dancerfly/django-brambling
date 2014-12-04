@@ -623,7 +623,9 @@ class OrderEmailView(OrderMixin, UpdateView):
     current_step_slug = 'email'
 
     def get_form_class(self):
-        return forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+        cls = forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+        cls.base_fields['email'].required = True
+        return cls
 
     def get_object(self):
         return self.order
