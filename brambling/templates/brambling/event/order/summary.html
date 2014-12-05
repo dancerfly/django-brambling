@@ -30,6 +30,19 @@
 		{{ block.super }}
 	{% endwith %}
 
+	{% if net_balance > 0 %}
+		<div class="alert alert-warning">
+			Your order is not yet complete. Please review your order and use one
+			of the payment options below to complete your order.
+		</div>
+	{% else %}
+		<div class="alert alert-success">
+			Your order is complete. Below is a record of your purchases and your
+			payment.
+			{# TODO: Add check instructions if they have an outstanding check payment. #}
+		</div>
+	{% endif %}
+
 	{% include "brambling/event/order/_summary.html" %}
 
 	<p>A receipt for this purchase will be sent to
@@ -162,7 +175,7 @@
 						{% csrf_token %}
 						<input name='check' value='1' type='hidden'>
 
-						<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+						<button type="submit" class="btn btn-primary">Complete Order ({{ net_balance|format_money:event.currency }})</button>
 					</form>
 				</div>
 			</div>
