@@ -85,6 +85,7 @@
 			<tr>
 				<th class="col-sm-3">Payments</th>
 				<th class="col-sm-1">Type</th>
+				<th class='col-sm-1'>Received</th>
 				<th class="col-sm-3">Timestamp</th>
 				<th></th>
 				<th class='text-right'>Amount ({{ event.currency }})</th>
@@ -92,15 +93,16 @@
 		</thead>
 		<tfoot>
 			<tr class='active'>
-				<th colspan="4">Net payments</th>
+				<th colspan="5">Net payments</th>
 				<th class='text-right'>({{ net_payments|format_money:event.currency }})</th>
 			</tr>
 		</tfoot>
 		<tbody>
 			{% for payment in payments %}
 				<tr>
-					<td>{{ payment.card }}</td>
+					<td>{{ payment.card|default:"" }}</td>
 					<td>{{ payment.get_method_display }}</td>
+					<td>{% block payment_is_confirmed %}{% if payment.is_confirmed %}<i class='fa fa-check text-success'></i>{% else %}<i class='fa fa-ban text-danger'></i>{% endif %}{% endblock %}</td>
 					<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
 					<td>{% block payment_actions %}{% endblock %}</td>
 					<td class='text-right'>({{ payment.amount|format_money:event.currency }})</td>
@@ -110,6 +112,7 @@
 				<tr>
 					<td></td>
 					<td>Refund</td>
+					<td></td>
 					<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
 					<td></td>
 					<td class='text-right'>{{ refund.amount|format_money:event.currency }}</td>

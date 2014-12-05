@@ -34,11 +34,21 @@
 
 	<p>A receipt for this purchase will be sent to
 		{% if order.person %}
-			{{ order.person.name }} ({{ order.person.email }})
+			<strong>{{ order.person.name }} ({{ order.person.email }})</strong>.
 		{% elif order.email %}
-			{{ order.email }}
+			<strong>{{ order.email }}</strong>.
 		{% endif %}
 	</p>
+	{% if event.uses_checks %}
+		<p>Checks should be made out to <strong>{{ event.check_payable_to }}</strong> and include your order code (<strong>{{ order.code }}</strong>) in the memo line. Mail them to:</p>
+		<p>
+			{{ event.check_recipient }}</br />
+			{{ event.check_address }}</br />
+			{{ event.check_city }}, {{ event.check_state_or_province }}
+			{{ event.check_country }}
+		</p>
+		<p>Checks must be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}.</p>
+	{% endif %}
 
 	{% if net_balance > 0 %}
 		{% if event.uses_stripe %}
@@ -106,7 +116,7 @@
 			{% endif %}
 			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
-		{% if event.connected_to_dwolla %}
+		{% if event.uses_dwolla %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -137,6 +147,23 @@
 					{% else %}
 						<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
 					{% endif %}
+				</div>
+			</div>
+		{% endif %}
+		{% if event.uses_checks %}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						Pay with check
+					</h4>
+				</div>
+				<div class="panel-body">
+					<form novalidate action="" method="post">
+						{% csrf_token %}
+						<input name='check' value='1' type='hidden'>
+
+						<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+					</form>
 				</div>
 			</div>
 		{% endif %}

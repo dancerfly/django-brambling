@@ -119,9 +119,11 @@ class AbstractDwollaModel(models.Model):
     dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
 
     def connected_to_dwolla(self):
-        return (bool(self.dwolla_user_id) and
-                bool(settings.DWOLLA_APPLICATION_KEY) and
-                bool(settings.DWOLLA_APPLICATION_SECRET))
+        return bool(
+            self.dwolla_user_id and
+            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
+            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
+        )
 
     def get_dwolla_connect_url(self):
         raise NotImplementedError
@@ -268,6 +270,16 @@ class Event(AbstractDwollaModel):
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
 
+    check_payment_allowed = models.BooleanField(default=False)
+    check_payable_to = models.CharField(max_length=50, blank=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
+
+    check_recipient = models.CharField(max_length=50, blank=True)
+    check_address = models.CharField(max_length=200, blank=True)
+    check_city = models.CharField(max_length=50, blank=True)
+    check_state_or_province = models.CharField(max_length=50, blank=True)
+    check_country = CountryField(default='US')
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -299,7 +311,17 @@ class Event(AbstractDwollaModel):
         return pass_class_count >= 1
 
     def uses_stripe(self):
-        return bool(self.stripe_user_id)
+        return bool(
+            getattr(settings, 'STRIPE_SECRET_KEY', False) and
+            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
+            self.stripe_user_id
+        )
+
+    def uses_dwolla(self):
+        return self.connected_to_dwolla()
+
+    def uses_checks(self):
+        return self.check_payment_allowed
 
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.EDITOR,
@@ -743,6 +765,7 @@ class Payment(models.Model):
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
+    is_confirmed = models.BooleanField(default=False)
 
 
 class SubPayment(models.Model):

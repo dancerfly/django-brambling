@@ -413,7 +413,8 @@ class BasePaymentForm(forms.Form):
                                          amount=self.amount,
                                          method=Payment.STRIPE,
                                          remote_id=charge.id,
-                                         card=creditcard)
+                                         card=creditcard,
+                                         is_confirmed=True)
         SubPayment.objects.bulk_create((
             SubPayment(payment=payment,
                        bought_item=item['bought_item'],
@@ -510,7 +511,23 @@ class DwollaPaymentForm(BasePaymentForm):
         payment = Payment.objects.create(order=self.order,
                                          amount=self.amount,
                                          method=Payment.DWOLLA,
-                                         remote_id=self._charge)
+                                         remote_id=self._charge,
+                                         is_confirmed=True)
+        SubPayment.objects.bulk_create((
+            SubPayment(payment=payment,
+                       bought_item=item['bought_item'],
+                       amount=item['net_balance'])
+            for item in self.bought_items
+        ))
+        return payment
+
+
+class CheckPaymentForm(BasePaymentForm):
+    def save(self):
+        payment = Payment.objects.create(order=self.order,
+                                         amount=self.amount,
+                                         method=Payment.CHECK,
+                                         is_confirmed=False)
         SubPayment.objects.bulk_create((
             SubPayment(payment=payment,
                        bought_item=item['bought_item'],

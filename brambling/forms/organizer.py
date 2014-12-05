@@ -39,12 +39,14 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
+        # TODO: When multiple countries are supported, remove 'country'
+        # and 'check_country' from excludes:
         exclude = ('dates', 'housing_dates', 'owner',
                    'stripe_user_id', 'stripe_refresh_token',
                    'stripe_access_token', 'stripe_publishable_key',
                    'dwolla_user_id', 'dwolla_access_token', 'editors',
                    'is_published', 'is_frozen', 'country', 'currency',
-                   'application_fee_percent')
+                   'application_fee_percent', 'check_country')
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
@@ -76,6 +78,16 @@ class EventForm(forms.ModelForm):
         for editor in editors:
             validator(editor)
         return editors
+
+    def clean_check_payment_allowed(self):
+        cpa = self.cleaned_data['check_payment_allowed']
+        if cpa:
+            # TODO: When multiple countries are supported, add 'check_country' to this list:
+            for field in ('check_payable_to', 'check_postmark_cutoff',
+                          'check_recipient', 'check_address',
+                          'check_city', 'check_state_or_province'):
+                self.fields[field].required = True
+        return cpa
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()

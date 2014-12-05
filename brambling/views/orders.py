@@ -10,7 +10,7 @@ import floppyforms.__future__ as forms
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
-                                    SurveyDataForm)
+                                    SurveyDataForm, CheckPaymentForm)
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
@@ -623,7 +623,9 @@ class OrderEmailView(OrderMixin, UpdateView):
     current_step_slug = 'email'
 
     def get_form_class(self):
-        return forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+        cls = forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+        cls.base_fields['email'].required = True
+        return cls
 
     def get_object(self):
         return self.order
@@ -657,6 +659,8 @@ class SummaryView(OrderMixin, TemplateView):
                 form = self.new_card_form
             if 'dwolla' in request.POST:
                 form = self.dwolla_form
+            if 'check' in request.POST:
+                form = self.check_form
             if form and form.is_valid():
                 form.save()
                 self.order.mark_cart_paid()
@@ -675,19 +679,26 @@ class SummaryView(OrderMixin, TemplateView):
         choose_data = None
         new_data = None
         dwolla_data = None
+        check_data = None
         if self.request.method == 'POST':
-            if 'choose_card' in self.request.POST:
+            if 'choose_card' in self.request.POST and self.event.uses_stripe():
                 choose_data = self.request.POST
-            elif 'new_card' in self.request.POST:
+            elif 'new_card' in self.request.POST and self.event.uses_stripe():
                 new_data = self.request.POST
-            elif 'dwolla' in self.request.POST:
+            elif 'dwolla' in self.request.POST and self.event.uses_dwolla():
                 dwolla_data = self.request.POST
-        if self.order.person_id is not None:
-            self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
-        else:
-            self.choose_card_form = None
-        self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
-        self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
+            elif 'check' in self.request.POST and self.event.uses_checks():
+                check_data = self.request.POST
+        if self.event.uses_stripe():
+            if self.order.person_id is not None:
+                self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
+            else:
+                self.choose_card_form = None
+            self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
+        if self.event.uses_dwolla():
+            self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
+        if self.event.uses_checks():
+            self.check_form = CheckPaymentForm(data=check_data, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(SummaryView, self).get_context_data(**kwargs)
@@ -697,6 +708,7 @@ class SummaryView(OrderMixin, TemplateView):
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'dwolla_form': getattr(self, 'dwolla_form', None),
+            'check_form': getattr(self, 'check_form', None),
             'net_balance': self.net_balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',

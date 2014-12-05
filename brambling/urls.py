@@ -45,6 +45,7 @@ from brambling.views.organizer import (
     OrderFilterView,
     OrderDetailView,
     RefundView,
+    TogglePaymentConfirmationView,
 )
 from brambling.views.payment import (
     EventDwollaConnectView,
@@ -61,7 +62,7 @@ from brambling.views.user import (
     CreditCardAddView,
     CreditCardDeleteView,
 )
-from brambling.views.utils import split_view, route_view, get_event_or_404
+from brambling.views.utils import split_view
 
 
 urlpatterns = patterns('',
@@ -222,6 +223,9 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/orders/(?P<code>[a-zA-Z0-9]{8})/refund/(?P<item_pk>\d+)/$',
         RefundView.as_view(),
         name="brambling_event_refund"),
+    url(r'^(?P<event_slug>[\w-]+)/orders/(?P<code>[a-zA-Z0-9]{8})/confirm/(?P<payment_pk>\d+)/$',
+        TogglePaymentConfirmationView.as_view(),
+        name="brambling_event_toggle_payment_confirmation"),
 
     url(r'^(?P<event_slug>[\w-]+)/discount/$',
         DiscountListView.as_view(),

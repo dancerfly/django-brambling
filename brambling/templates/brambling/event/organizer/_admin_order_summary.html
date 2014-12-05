@@ -40,3 +40,6 @@
 
 {% block attendee_actions %}
 {% endblock %}
+
+{# class is used to hook in and call this as an api endpoint. #}
+{% block payment_is_confirmed %}<a class='payment-confirmation-toggle' href="{% url 'brambling_event_toggle_payment_confirmation' code=order.code payment_pk=payment.pk event_slug=event.slug %}">{% if payment.is_confirmed %}<i class='fa fa-check text-success'></i>{% else %}<i class='fa fa-ban text-danger'></i>{% endif %}</a>{% endblock %}
