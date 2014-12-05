@@ -13,13 +13,14 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import signals
-from django.template.defaultfilters import date, striptags
-from django.template.loader import render_to_string
+from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+
+from brambling.mail import send_fancy_mail
 
 
 DEFAULT_DANCE_STYLES = (
@@ -1116,24 +1117,12 @@ class Invite(models.Model):
         }
         if content is not None:
             context['content'] = content
-        body = render_to_string(
-            body_template_name.format(kind=self.kind),
-            context
-        )
-        subject = render_to_string(
-            subject_template_name.format(kind=self.kind),
-            context
-        )
 
-        # Email subject *must not* contain newlines
-        subject = ''.join(subject.splitlines())
-
-        send_mail(
-            subject=subject,
-            message=striptags(body),
-            html_message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+        send_fancy_mail(
             recipient_list=[self.email],
+            subject_template=subject_template_name.format(kind=self.kind),
+            body_template=body_template_name.format(kind=self.kind),
+            context=context,
         )
         self.is_sent = True
         self.save()

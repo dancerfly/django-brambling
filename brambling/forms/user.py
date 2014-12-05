@@ -9,8 +9,8 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
+from brambling.mail import send_confirmation_email
 from brambling.models import Person, Home, DanceStyle, Invite
-from brambling.utils import send_confirmation_email
 
 
 class FloppyAuthenticationForm(AuthenticationForm):
@@ -36,8 +36,10 @@ class BasePersonForm(forms.ModelForm):
 
     def email_confirmation(self):
         if 'email' in self.changed_data:
-            send_confirmation_email(self.instance, self.request,
-                                    secure=self.request.is_secure())
+            send_confirmation_email(
+                self.instance,
+                site=get_current_site(self.request),
+                secure=self.request.is_secure())
 
 
 class SignUpForm(BasePersonForm):

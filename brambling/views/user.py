@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
@@ -10,7 +11,7 @@ from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
-from brambling.utils import send_confirmation_email
+from brambling.mail import send_confirmation_email
 from brambling.views.utils import get_dwolla
 
 
@@ -33,7 +34,7 @@ class SignUpView(CreateView):
 def send_confirmation_email_view(request, *args, **kwargs):
     if not request.user.is_authenticated():
         raise Http404
-    send_confirmation_email(request.user, request, secure=request.is_secure())
+    send_confirmation_email(request.user, site=get_current_site(request), secure=request.is_secure())
     messages.add_message(request, messages.SUCCESS, "Confirmation email sent.")
     return HttpResponseRedirect('/')
 
