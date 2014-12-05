@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.views.generic import (ListView, CreateView, UpdateView,
@@ -577,3 +577,23 @@ class OrderDetailView(DetailView):
             self.discount_form.save()
             return HttpResponseRedirect(request.path)
         return super(OrderDetailView, self).get(request, *args, **kwargs)
+
+
+class TogglePaymentConfirmationView(View):
+    def get_object(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        try:
+            self.order = Order.objects.get(event=self.event,
+                                           code=self.kwargs['code'])
+            return Payment.objects.get(order=self.order,
+                                       pk=self.kwargs['payment_pk'])
+        except (Order.DoesNotExist, Payment.DoesNotExist):
+            raise Http404
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.is_confirmed = not self.object.is_confirmed
+        self.object.save()
+        return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})

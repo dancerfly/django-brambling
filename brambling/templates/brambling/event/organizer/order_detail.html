@@ -9,17 +9,31 @@
 
 	<script src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
 	<script>
-		$('[data-toggle=tab]').click(function (e) {
-			e.preventDefault();
-			$(this).tab('show');
-		});
-		$('.removeDiscountLink').on('click', function(e){
-			e.preventDefault();
-			$.post($(this).attr('href'), function(){
-				location.reload();
+		$(function() {
+			$('[data-toggle=tab]').click(function (e) {
+				e.preventDefault();
+				$(this).tab('show');
+			});
+			$('.removeDiscountLink').on('click', function(e){
+				e.preventDefault();
+				$.post($(this).attr('href'), function(){
+					location.reload();
+				});
+			});
+			$('.payment-confirmation-toggle').on('click', function(e) {
+				e.preventDefault();
+				var $this = $(this);
+				$.getJSON(this.href, function(data) {
+					if (data.is_confirmed) {
+						$this.html("<i class='fa fa-check text-success'></i>");
+					} else {
+						$this.html("<i class='fa fa-ban text-danger'></i>");
+					}
+				});
 			});
 		});
 	</script>
+
 {% endblock %}
 
 {% block main %}
