@@ -119,9 +119,11 @@ class AbstractDwollaModel(models.Model):
     dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
 
     def connected_to_dwolla(self):
-        return (bool(self.dwolla_user_id) and
-                bool(getattr(settings, 'DWOLLA_APPLICATION_KEY', False)) and
-                bool(getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)))
+        return bool(
+            self.dwolla_user_id and
+            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
+            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
+        )
 
     def get_dwolla_connect_url(self):
         raise NotImplementedError
@@ -309,10 +311,10 @@ class Event(AbstractDwollaModel):
         return pass_class_count >= 1
 
     def uses_stripe(self):
-        return (
+        return bool(
             getattr(settings, 'STRIPE_SECRET_KEY', False) and
             getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
-            bool(self.stripe_user_id)
+            self.stripe_user_id
         )
 
     def uses_dwolla(self):
