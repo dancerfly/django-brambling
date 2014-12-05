@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
@@ -11,6 +12,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
                                     SurveyDataForm, CheckPaymentForm)
+from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing, Payment)
@@ -667,6 +669,12 @@ class SummaryView(OrderMixin, TemplateView):
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()
+                send_order_receipt(self.order, self.summary_data,
+                                   get_current_site(self.request),
+                                   secure=self.request.is_secure())
+                send_order_alert(self.order, self.summary_data,
+                                 get_current_site(self.request),
+                                 secure=self.request.is_secure())
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)

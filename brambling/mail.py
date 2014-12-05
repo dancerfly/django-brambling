@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.template.loader import render_to_string
 from django.template.defaultfilters import striptags
 from django.utils.encoding import force_bytes
@@ -70,5 +71,8 @@ def send_order_alert(order, summary_data, site, secure=False,
         'protocol': 'https' if secure else 'http',
     }
     context.update(summary_data)
-    email = order.person.email if order.person else order.email
-    send_fancy_mail([email], subject_template, body_template, context)
+    from brambling.models import Person
+    emails = Person.objects.filter(Q(owner_events=order.event) |
+                                   Q(editor_events=order.event)
+                                   ).values_list('email', flat=True)
+    send_fancy_mail(emails, subject_template, body_template, context)
