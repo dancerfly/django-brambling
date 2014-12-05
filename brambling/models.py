@@ -262,7 +262,7 @@ class Event(AbstractDwollaModel):
     # These are obtained with Stripe Connect via Oauth.
     stripe_user_id = models.CharField(max_length=32, blank=True, default='')
     stripe_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_refresh_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
     stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
 
     # This is a secret value set by admins
