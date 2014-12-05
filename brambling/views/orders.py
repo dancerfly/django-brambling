@@ -13,7 +13,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     SurveyDataForm, CheckPaymentForm)
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
-                              Attendee, EventHousing)
+                              Attendee, EventHousing, Payment)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, get_order,
                                    clear_expired_carts, Workflow, Step,
@@ -712,7 +712,7 @@ class SummaryView(OrderMixin, TemplateView):
             'net_balance': self.net_balance,
             # TODO: This calculation should maybe be in `Order.get_summary_data`
             'unconfirmed_check_payments': self.order.payments.filter(
-                    method="check", is_confirmed=False).exists(),
+                    method=Payment.CHECK, is_confirmed=False).exists(),
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
