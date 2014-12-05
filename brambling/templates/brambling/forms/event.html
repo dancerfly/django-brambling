@@ -50,6 +50,7 @@
 			<div class="col-sm-3">
 				{% formrow form.state_or_province %}
 			</div>
+			{# TODO: When multiple countries are supported, make this a real form row: #}
 			<div class="col-sm-4">
 				<div class='form-group'>
 					<label class='control-label'>Country *</label>
@@ -246,6 +247,7 @@
 					{% formrow form.check_state_or_province with label="State or province" %}
 				</div>
 				<div class="col-sm-4">
+					{# TODO: When multiple countries are supported, make this a real form row: #}
 					<div class='form-group'>
 						<label class='control-label'>Country *</label>
 						<select class="chosen-select" disabled>
