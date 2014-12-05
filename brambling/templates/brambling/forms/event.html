@@ -172,19 +172,20 @@
 		</header>
 		<div class='panel-body'>
 			<p>
-				We currently offer two payment processors: Stripe and Dwolla.
-				You may enable either or both processors.
+				We currently offer three payment methods: Stripe (Credit Cards),
+				Dwolla, or payments by mail. You may enable any combination of
+				these payment methods for your event.
 			</p>
 			<p>
-				You must register for an account with each payment processor you
-				use. Sales go directly to those accounts with Dancerfly&#8217;s
+				You must register for an account with Stripe or Dwolla if you
+				choose to use them. Sales go directly to those accounts with Dancerfly&#8217;s
 				fee automatically subtracted. Click the info icon next to each
-				payment processor to learn more.
+				payment method to learn more.
 			</p>
-			<table class="table table-striped">
+			<table class="table">
 				<thead>
 					<tr>
-						<th>Processor</th>
+						<th>Method</th>
 						<th>Status</th>
 						<th>Actions</th>
 					</tr>
@@ -212,7 +213,7 @@
 
 					{# Dwolla: #}
 					{% if form.instance.connected_to_dwolla or dwolla_oauth_url %}
-						<tr>
+						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla
@@ -229,34 +230,59 @@
 							{% endif %}
 						</tr>
 					{% endif %}
+
+					{# By Mail/Check: #}
+					<tr>
+						<th>
+							<i class="fa fa-fw fa-envelope"></i>
+							By Mail/Check
+							<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-html="true" data-content="Allow payments by mail. Note that Dancerfly does &lt;i&gt;not&lt;/i&gt; confirm these payments. See configuration for more details."><i class="fa fa-info-circle"></i></a>
+						</th>
+						<td>
+							{% if form.instance.uses_checks %}Enabled{% else %}Disabled{% endif %}
+						</td>
+						<td>
+							<a href='#CheckConfig' data-toggle="collapse" class="btn btn-xs btn-info"><i class="fa fa-cog"></i> Configure</a>
+						</td>
+					</tr>
+					<tr class="collapse active {% if form.instance.uses_checks %}in{% endif %}" id="CheckConfig">
+						<td colspan="3">
+							{% formrow form.check_payment_allowed with label="Enable Payment by Check" %}
+
+							<div class="alert alert-info">
+								<strong>Note:</strong>
+								Dancerfly does not confirm shipping or receipt of checks by mail.
+								Attendees are responsible for mailing their checks and
+								organizers are responsible for marking those checks as received.
+								Dancerfly does not charge a fee on transactions by mail.
+							</div>
+
+							{% formrow form.check_payable_to with label="Checks made out to" %}
+							{% formrow form.check_recipient with label="Mail addressed to" %}
+							{% formrow form.check_address with label="Address" %}
+							<div class="row">
+								<div class="col-sm-5">
+									{% formrow form.check_city with label="City" %}
+								</div>
+								<div class="col-sm-3">
+									{% formrow form.check_state_or_province with label="State or province" %}
+								</div>
+								<div class="col-sm-4">
+									{# TODO: When multiple countries are supported, make this a real form row: #}
+									<div class='form-group'>
+										<label class='control-label'>Country *</label>
+										<select class="chosen-select" disabled>
+											<option selected="selected">United States</option>
+										</select>
+									</div>
+								</div>
+							</div>{# /.row #}
+							{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}
+
+						</td>
+					</tr>
 				</tbody>
 			</table>
-
-			<p>You can also (or alternately) allow payment by check. Dancerfly does not charge a fee on check payments, since the payment doesn't go through our systems. However, this method may require much more effort on the part of event organizers, since you will need to manually confirm receipt of all check payments.</p>
-
-			{% formrow form.check_payment_allowed with label="Allow payment by check" %}
-
-			{% formrow form.check_payable_to with label="Pay to the order of" %}
-			{% formrow form.check_recipient with label="Mail to" %}
-			{% formrow form.check_address with label="Address" %}
-			<div class="row">
-				<div class="col-sm-5">
-					{% formrow form.check_city with label="City" %}
-				</div>
-				<div class="col-sm-3">
-					{% formrow form.check_state_or_province with label="State or province" %}
-				</div>
-				<div class="col-sm-4">
-					{# TODO: When multiple countries are supported, make this a real form row: #}
-					<div class='form-group'>
-						<label class='control-label'>Country *</label>
-						<select class="chosen-select" disabled>
-							<option selected="selected">United States</option>
-						</select>
-					</div>
-				</div>
-			</div>{# /.row #}
-			{% formrow form.check_postmark_cutoff with label="Postmark cutoff" %}
 		</div>
 	</div>
 {% endif %}
