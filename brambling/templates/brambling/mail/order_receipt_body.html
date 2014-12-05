@@ -1,5 +1,11 @@
-<p>Hello! Thanks for registering for {{ event.name }}. The details of your registration are below!</p>
 {% load zenaida %}
+<p>Hello! Thanks for registering for {{ event.name }}. The details of your registration are below!</p>
+
+{% if unconfirmed_check_payments %}
+	<p>Note: Your passes are reserved, but the organizer has not yet received your payment by mail.</p>
+	{% include "brambling/event/order/_check_payment_info.html" %}
+	<p>If you believe this is in error, please contact the event organizer directly.</p>
+{% endif %}
 
 {% for attendee in attendees %}
 	<div class='panel panel-primary'>

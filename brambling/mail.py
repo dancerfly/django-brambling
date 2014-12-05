@@ -44,7 +44,7 @@ def send_confirmation_email(person, site, secure=False,
     send_fancy_mail([person.email], subject_template, body_template, context)
 
 
-def send_order_receipt(order, site, secure=False,
+def send_order_receipt(order, summary_data, site, secure=False,
                        subject_template="brambling/mail/order_receipt_subject.txt",
                        body_template="brambling/mail/order_receipt_body.html"):
     context = {
@@ -54,6 +54,21 @@ def send_order_receipt(order, site, secure=False,
         'site': site,
         'protocol': 'https' if secure else 'http',
     }
-    context.update(order.get_summary_data())
+    context.update(summary_data)
+    email = order.person.email if order.person else order.email
+    send_fancy_mail([email], subject_template, body_template, context)
+
+
+def send_order_alert(order, summary_data, site, secure=False,
+                     subject_template="brambling/mail/order_alert_subject.txt",
+                     body_template="brambling/mail/order_alert_body.html"):
+    context = {
+        'order': order,
+        'person': order.person,
+        'event': order.event,
+        'site': site,
+        'protocol': 'https' if secure else 'http',
+    }
+    context.update(summary_data)
     email = order.person.email if order.person else order.email
     send_fancy_mail([email], subject_template, body_template, context)
