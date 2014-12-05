@@ -268,13 +268,7 @@
 									{% formrow form.check_state_or_province with label="State or province" %}
 								</div>
 								<div class="col-sm-4">
-									{# TODO: When multiple countries are supported, make this a real form row: #}
-									<div class='form-group'>
-										<label class='control-label'>Country *</label>
-										<select class="chosen-select" disabled>
-											<option selected="selected">United States</option>
-										</select>
-									</div>
+									{% formrow form.check_zip with label="Zip Code"%}
 								</div>
 							</div>{# /.row #}
 							{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}

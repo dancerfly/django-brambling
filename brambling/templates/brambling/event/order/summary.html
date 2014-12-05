@@ -44,7 +44,7 @@
 		<p>
 			{{ event.check_recipient }}</br />
 			{{ event.check_address }}</br />
-			{{ event.check_city }}, {{ event.check_state_or_province }}
+			{{ event.check_city }}, {{ event.check_state_or_province }} {{ event.check_zip }}
 			{{ event.check_country }}
 		</p>
 		<p>Checks must be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}.</p>

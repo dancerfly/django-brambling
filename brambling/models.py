@@ -21,7 +21,6 @@ from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 
-
 DEFAULT_DANCE_STYLES = (
     "Alt Blues",
     "Trad Blues",
@@ -278,6 +277,7 @@ class Event(AbstractDwollaModel):
     check_address = models.CharField(max_length=200, blank=True)
     check_city = models.CharField(max_length=50, blank=True)
     check_state_or_province = models.CharField(max_length=50, blank=True)
+    check_zip = models.CharField(max_length=12, blank=True)
     check_country = CountryField(default='US')
 
     def __unicode__(self):
