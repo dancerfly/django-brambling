@@ -35,35 +35,32 @@
 			Your order is not yet complete. Please review your order and use one
 			of the payment options below to complete your order.
 		</div>
+	{% elif unconfirmed_check_payments %}
+		<div class="alert alert-warning">
+			<p>Your passes are reserved, but the organizer has not yet received your payment by mail.</p>
+			{% include "brambling/event/order/_check_payment_info.html" %}
+			<p>If you believe this is in error, please contact the event organizer directly.</p>
+		</div>
 	{% else %}
 		<div class="alert alert-success">
 			Your order is complete. Below is a record of your purchases and your
 			payment.
-			{# TODO: Add check instructions if they have an outstanding check payment. #}
 		</div>
 	{% endif %}
 
 	{% include "brambling/event/order/_summary.html" %}
 
-	<p>A receipt for this purchase will be sent to
-		{% if order.person %}
-			<strong>{{ order.person.name }} ({{ order.person.email }})</strong>.
-		{% elif order.email %}
-			<strong>{{ order.email }}</strong>.
-		{% endif %}
-	</p>
-	{% if event.uses_checks %}
-		<p>Checks should be made out to <strong>{{ event.check_payable_to }}</strong> and include your order code (<strong>{{ order.code }}</strong>) in the memo line. Mail them to:</p>
-		<p>
-			{{ event.check_recipient }}</br />
-			{{ event.check_address }}</br />
-			{{ event.check_city }}, {{ event.check_state_or_province }} {{ event.check_zip }}
-			{{ event.check_country }}
-		</p>
-		<p>Checks must be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}.</p>
-	{% endif %}
+	{# START PAYMENT OPTIONS #}
 
 	{% if net_balance > 0 %}
+		<p>A receipt for this purchase will be sent to
+			{% if order.person %}
+			<strong>{{ order.person.name }} ({{ order.person.email }})</strong>.
+			{% elif order.email %}
+			<strong>{{ order.email }}</strong>.
+			{% endif %}
+		</p>
+
 		{% if event.uses_stripe %}
 			{% if has_cards %}
 				<div class="panel-group" id="accordion">
@@ -171,6 +168,7 @@
 					</h4>
 				</div>
 				<div class="panel-body">
+					{% include "brambling/event/order/_check_payment_info.html" %}
 					<form novalidate action="" method="post">
 						{% csrf_token %}
 						<input name='check' value='1' type='hidden'>
@@ -186,4 +184,6 @@
 			<button type="submit" class="btn btn-primary">Confirm cart purchases</button>
 		</form>
 	{% endif %}
+
+	{# END PAYMENT OPTIONS #}
 {% endblock %}

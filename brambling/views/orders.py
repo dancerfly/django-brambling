@@ -710,6 +710,9 @@ class SummaryView(OrderMixin, TemplateView):
             'dwolla_form': getattr(self, 'dwolla_form', None),
             'check_form': getattr(self, 'check_form', None),
             'net_balance': self.net_balance,
+            # TODO: This calculation should maybe be in `Order.get_summary_data`
+            'unconfirmed_check_payments': self.order.payments.filter(
+                    method="check", is_confirmed=False).exists(),
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
