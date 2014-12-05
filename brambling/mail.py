@@ -54,5 +54,6 @@ def send_order_receipt(order, site, secure=False,
         'site': site,
         'protocol': 'https' if secure else 'http',
     }
+    context.update(order.get_summary_data())
     email = order.person.email if order.person else order.email
     send_fancy_mail([email], subject_template, body_template, context)
