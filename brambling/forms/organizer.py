@@ -82,7 +82,7 @@ class EventForm(forms.ModelForm):
     def clean_check_payment_allowed(self):
         cpa = self.cleaned_data['check_payment_allowed']
         if cpa:
-            # TODO: When multiple countries are supported, add 'country to this list'
+            # TODO: When multiple countries are supported, add 'check_country' to this list:
             for field in ('check_payable_to', 'check_postmark_cutoff',
                           'check_recipient', 'check_address',
                           'check_city', 'check_state_or_province'):
