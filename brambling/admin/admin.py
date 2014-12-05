@@ -84,12 +84,18 @@ class EventAdmin(admin.ModelAdmin):
             'classes': ('grp-collapse grp-closed',),
             'fields': ("owner", "editors"),
         }),
-        ("Financial Transactions", {
+        ("Payment Methods", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
                 ("dwolla_user_id", "dwolla_access_token"),
                 ("stripe_user_id", "stripe_access_token"),
                 ("stripe_refresh_token", "stripe_publishable_key"),
+                "check_payment_allowed",
+                ("check_payable_to", "check_postmark_cutoff"),
+                "check_recipient",
+                "check_address",
+                ("check_city", "check_state_or_province"),
+                ("check_zip", "check_country"),
             )
         }),
         ("Dancerfly Internal", {
