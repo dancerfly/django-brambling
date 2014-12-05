@@ -39,6 +39,16 @@
 			<strong>{{ order.email }}</strong>.
 		{% endif %}
 	</p>
+	{% if event.uses_checks %}
+		<p>Checks should be made out to <strong>{{ event.check_payable_to }}</strong> and include your order code (<strong>{{ order.code }}</strong>) in the memo line. Mail them to:</p>
+		<p>
+			{{ event.check_recipient }}</br />
+			{{ event.check_address }}</br />
+			{{ event.check_city }}, {{ event.check_state_or_province }}
+			{{ event.check_country }}
+		</p>
+		<p>Checks must be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}.</p>
+	{% endif %}
 
 	{% if net_balance > 0 %}
 		{% if event.uses_stripe %}
@@ -148,18 +158,6 @@
 					</h4>
 				</div>
 				<div class="panel-body">
-					<ul>
-						<li>Make checks out to: <strong>{{ event.check_payable_to }}</strong></li>
-						<li>Mail them to:
-							<p>
-								{{ event.check_recipient }}</br />
-								{{ event.check_address }}</br />
-								{{ event.check_city }}, {{ event.check_state_or_province }}
-								{{ event.check_country }}
-							</p>
-						</li>
-					</ul>
-					<p>Checks must be postmarked by {{ event.check_postmark_cutoff|date:"F jS, Y" }}. Please include your order code (<strong>{{ order.code }}</strong>) in the memo line of your check.</p>
 					<form novalidate action="" method="post">
 						{% csrf_token %}
 						<input name='check' value='1' type='hidden'>
