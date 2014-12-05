@@ -10,6 +10,8 @@ import floppyforms.__future__ as forms
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               Date, ItemImage, Payment, Invite)
 
+from localflavor.us.forms import USZipCodeField
+
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
 
@@ -36,6 +38,7 @@ class EventForm(forms.ModelForm):
         ('Pacific/Honolulu', 'Pacific/Honolulu'),
 
     ))
+    check_zip = USZipCodeField(required=False, widget=forms.TextInput)
 
     class Meta:
         model = Event
@@ -85,7 +88,7 @@ class EventForm(forms.ModelForm):
             # TODO: When multiple countries are supported, add 'check_country' to this list:
             for field in ('check_payable_to', 'check_postmark_cutoff',
                           'check_recipient', 'check_address',
-                          'check_city', 'check_state_or_province'):
+                          'check_city', 'check_zip', 'check_state_or_province'):
                 self.fields[field].required = True
         return cpa
 
