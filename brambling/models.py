@@ -279,6 +279,7 @@ class Event(AbstractDwollaModel):
     check_address = models.CharField(max_length=200, blank=True)
     check_city = models.CharField(max_length=50, blank=True)
     check_state_or_province = models.CharField(max_length=50, blank=True)
+    check_zip = models.CharField(max_length=12, blank=True)
     check_country = CountryField(default='US')
 
     def __unicode__(self):
@@ -722,6 +723,9 @@ class Order(AbstractDwollaModel):
         net_cost = gross_cost - total_refunds - total_savings
         net_payments = gross_payments - total_refunds
         net_balance = net_cost - net_payments
+        unconfirmed_check_payments = any((payment.method == Payment.CHECK and
+                                          not payment.is_confirmed
+                                          for payment in payments))
         return {
             'attendees': attendees,
             'bought_items': bought_items,
@@ -734,6 +738,7 @@ class Order(AbstractDwollaModel):
             'net_cost': net_cost,
             'net_payments': net_payments,
             'net_balance': net_balance,
+            'unconfirmed_check_payments': unconfirmed_check_payments
         }
 
     def get_eventhousing(self):

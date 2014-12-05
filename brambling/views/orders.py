@@ -13,7 +13,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     SurveyDataForm, CheckPaymentForm)
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
-                              Attendee, EventHousing)
+                              Attendee, EventHousing, Payment)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, get_order,
                                    clear_expired_carts, Workflow, Step,
