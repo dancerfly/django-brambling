@@ -7,150 +7,133 @@
 	<p>If you believe this is in error, please contact the event organizer directly.</p>
 {% endif %}
 
+<p>You can also view your order information on <a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}{% endif %}">Dancerfly</a>.</p>
+
 {% for attendee in attendees %}
-	<div class='panel panel-primary'>
-		<header class='panel-heading'>
-			<div class='panel-title'>
-				{% if attendee.attendee %}
-					{{ attendee.attendee.get_full_name }}
-					{% block attendee_actions %}
-					<a class='pull-right' href='{% url "brambling_event_attendee_edit" event_slug=event.slug pk=attendee.attendee.event_pass.pk %}'><i class='fa fa-pencil fa-fw'></i></a>
-					{% endblock %}
-				{% else %}
-					Unattached items
-				{% endif %}
-			</div>
-		</header>
-		<div class="scroll-x">
-			<table class='table'>
-				<thead>
-					<tr>
-						<th class="col-sm-3">Items</th>
-						<th class="col-sm-1">Type</th>
-						<th class="col-sm-3">Timestamp</th>
-						<th>Status</th>
-						<th></th>
-						<th class='text-right'>Amount ({{ event.currency }})</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for item in attendee.bought_items %}
-						{% cycle 0 1 as is_active silent %}
-						<tr{% if is_active %} class='active'{% endif %}>
-							{% with bought_item=item.bought_item %}
-								<th>{{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</th>
-								<td>{{ bought_item.item_option.item.get_category_display }}</td>
-								<td class='text-muted'>{{ bought_item.added|date:"n/j/Y H:i:s" }}</td>
-								<td>{{ bought_item.get_status_display }}</td>
-								<td>{% block item_actions %}{% endblock %}</td>
-								<td class='text-right'>{{ bought_item.item_option.price|format_money:event.currency }}</td>
-							{% endwith %}
-						</tr>
-						{% for discount in item.discounts %}
-							<tr{% if is_active %} class='active'{% endif %}>
-								<td>{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em></td>
-								<td>Discount</td>
-								<td class='text-muted'>{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-								<td></td>
-								<td>{% block discount_actions %}{% endblock %}</td>
-								<td class='text-right text-success'>({{ discount.savings|format_money:event.currency }})</td>
-							</tr>
-						{% endfor %}
-						{% for refund in item.refunds %}
-							<tr{% if is_active %} class='active'{% endif %}>
-								<td></td>
-								<td>Refund</td>
-								<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-								<td></td>
-								<td>{% block refund_actions %}{% endblock %}</td>
-								<td class='text-right text-success'>({{ refund.amount|format_money:event.currency }})</td>
-							</tr>
-						{% endfor %}
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-		<table class='table'>
-			<thead>
-				<tr>
-					<th></th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr class='active'>
-					<th class='active'>Net cost</th>
-					<th class='text-right'>{{ attendee.net_cost|format_money:event.currency }}</th>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-{% endfor %}
-<div class="scroll-x">
-	<table class='table'>
+	{% if attendee.attendee %}
+		<h3><a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_attendee_edit' event_slug=event.slug pk=attendee.attendee.event_pass.pk %}{% else %}{% url 'brambling_event_attendee_edit' event_slug=event.slug pk=attendee.attendee.event_pass.pk code=order.code %}{% endif %}">{{ attendee.attendee.get_full_name }}</a></h3>
+	{% else %}
+		<h3>Unattached items</h3>
+	{% endif %}
+	<table>
 		<thead>
 			<tr>
-				<th class="col-sm-3">Payments</th>
-				<th class="col-sm-1">Type</th>
-				<th class='col-sm-1'>Received</th>
-				<th class="col-sm-3">Timestamp</th>
-				<th></th>
-				<th class='text-right'>Amount ({{ event.currency }})</th>
+				<th style="text-align: left;">Items</th>
+				<th style="text-align: left;">Type</th>
+				<th style="text-align: left;">Timestamp</th>
+				<th style="text-align: left;">Status</th>
+				<th style="text-align: left;">Amount ({{ event.currency }})</th>
 			</tr>
 		</thead>
-		<tfoot>
-			<tr class='active'>
-				<th colspan="5">Net payments</th>
-				<th class='text-right'>({{ net_payments|format_money:event.currency }})</th>
-			</tr>
-		</tfoot>
 		<tbody>
-			{% for payment in payments %}
-				<tr>
-					<td>{{ payment.card|default:"" }}</td>
-					<td>{{ payment.get_method_display }}</td>
-					<td>{% block payment_is_confirmed %}{% if payment.is_confirmed %}<i class='fa fa-check text-success'></i>{% else %}<i class='fa fa-ban text-danger'></i>{% endif %}{% endblock %}</td>
-					<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-					<td>{% block payment_actions %}{% endblock %}</td>
-					<td class='text-right'>({{ payment.amount|format_money:event.currency }})</td>
+			{% for item in attendee.bought_items %}
+				{% cycle 0 1 as is_active silent %}
+				<tr{% if is_active %} style="background-color: whitesmoke;"{% endif %}>
+					{% with bought_item=item.bought_item %}
+						<th>{{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</th>
+						<td>{{ bought_item.item_option.item.get_category_display }}</td>
+						<td style="color: whitesmoke;">{{ bought_item.added|date:"n/j/Y H:i:s" }}</td>
+						<td>{{ bought_item.get_status_display }}</td>
+						<td style="text-align: right">{{ bought_item.item_option.price|format_money:event.currency }}</td>
+					{% endwith %}
 				</tr>
-			{% endfor %}
-			{% for refund in refunds %}
-				<tr>
-					<td></td>
-					<td>Refund</td>
-					<td></td>
-					<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-					<td></td>
-					<td class='text-right'>{{ refund.amount|format_money:event.currency }}</td>
-				</tr>
+				{% for discount in item.discounts %}
+					<tr{% if is_active %} style="background-color: whitesmoke;"{% endif %}>
+						<td>{{ discount.discount.name }} <em style="color: whitesmoke;">{{ discount.discount.code }}</em></td>
+						<td>Discount</td>
+						<td style="color: whitesmoke;">{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td></td>
+						<td style="text-align: right;">({{ discount.savings|format_money:event.currency }})</td>
+					</tr>
+				{% endfor %}
+				{% for refund in item.refunds %}
+					<tr{% if is_active %} style="background-color: whitesmoke;"{% endif %}>
+						<td></td>
+						<td>Refund</td>
+						<td style="color: whitesmoke;">{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
+						<td></td>
+						<td style="text-align: right;">({{ refund.amount|format_money:event.currency }})</td>
+					</tr>
+				{% endfor %}
 			{% endfor %}
 		</tbody>
 	</table>
-</div>
-
-<div class="scroll-x">
-	<table class='table'>
+	<table>
 		<thead>
 			<tr>
-				<th colspan="2">Summary</th>
+				<th></th>
+				<th></th>
 			</tr>
 		</thead>
-		<tfoot>
-			<tr class='active'>
-				<th>Net balance</th>
-				<td class='text-right{% if net_balance < 0 %} text-success{% elif net_balance > 0 %} text-danger{% endif %}'>{% if net_balance < 0 %}Owed {% elif net_balance > 0 %}Owe {% endif %}<strong>{{ net_balance|absolute_value|format_money:event.currency }}</strong></td>
-			</tr>
-		</tfoot>
 		<tbody>
 			<tr>
 				<th>Net cost</th>
-				<th class='text-right{% if net_cost > 0 %} text-danger{% endif %}'>{{ net_cost|format_money:event.currency }}</th>
-			</tr>
-			<tr>
-				<th>Net payments</th>
-				<th class='text-right{% if net_payments > 0 %} text-success{% endif %}'>{% if net_payments > 0 %}({% endif %}{{ net_payments|format_money:event.currency }}{% if net_payments > 0 %}){% endif %}</th>
+				<th>{{ attendee.net_cost|format_money:event.currency }}</th>
 			</tr>
 		</tbody>
 	</table>
-</div>
+{% endfor %}
+<table>
+	<thead>
+		<tr>
+			<th>Payments</th>
+			<th>Type</th>
+			<th>Received</th>
+			<th>Timestamp</th>
+			<th></th>
+			<th style="text-align: right">Amount ({{ event.currency }})</th>
+		</tr>
+	</thead>
+	<tfoot>
+		<tr>
+			<th colspan="5">Net payments</th>
+			<th style="text-align: right">({{ net_payments|format_money:event.currency }})</th>
+		</tr>
+	</tfoot>
+	<tbody>
+		{% for payment in payments %}
+			<tr>
+				<td>{{ payment.card|default:"" }}</td>
+				<td>{{ payment.get_method_display }}</td>
+				<td>{% block payment_is_confirmed %}{% if payment.is_confirmed %}Yes{% else %}No{% endif %}{% endblock %}</td>
+				<td style="color: whitesmoke;">{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
+				<td>{% block payment_actions %}{% endblock %}</td>
+				<td style="text-align: right">({{ payment.amount|format_money:event.currency }})</td>
+			</tr>
+		{% endfor %}
+		{% for refund in refunds %}
+			<tr>
+				<td></td>
+				<td>Refund</td>
+				<td></td>
+				<td style="color: whitesmoke;">{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
+				<td></td>
+				<td style="text-align: right">{{ refund.amount|format_money:event.currency }}</td>
+			</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+<table>
+	<thead>
+		<tr>
+			<th colspan="2">Summary</th>
+		</tr>
+	</thead>
+	<tfoot>
+		<tr>
+			<th>Net balance</th>
+			<td style="text-align: right;">{% if net_balance < 0 %}Owed {% elif net_balance > 0 %}Owe {% endif %}<strong>{{ net_balance|absolute_value|format_money:event.currency }}</strong></td>
+		</tr>
+	</tfoot>
+	<tbody>
+		<tr>
+			<th>Net cost</th>
+			<th style="text-align: right;">{{ net_cost|format_money:event.currency }}</th>
+		</tr>
+		<tr>
+			<th>Net payments</th>
+			<th style="text-align: right;">{% if net_payments > 0 %}({% endif %}{{ net_payments|format_money:event.currency }}{% if net_payments > 0 %}){% endif %}</th>
+		</tr>
+	</tbody>
+</table>
