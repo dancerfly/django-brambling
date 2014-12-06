@@ -22,9 +22,6 @@ class UserDashboardView(TemplateView):
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             is_published=True,
-        ).exclude(
-            order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
@@ -32,9 +29,6 @@ class UserDashboardView(TemplateView):
             privacy=Event.PUBLIC,
             dance_styles__person=user,
             is_published=True,
-        ).exclude(
-            order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
@@ -43,15 +37,19 @@ class UserDashboardView(TemplateView):
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).order_by('-last_modified')
 
+        # Registered events is upcoming things you are / might be going to.
+        # So you've paid for something or you're going to.
         registered_events = Event.objects.filter(
             order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
+            order__bought_items__status__in=(BoughtItem.PAID, BoughtItem.RESERVED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__gte=today).order_by('-start_date')
+                   ).filter(start_date__gte=today).order_by('start_date')
 
+        # Past events is things you at one point paid for.
+        # So you've paid for something, even if it was later refunded.
         past_events = Event.objects.filter(
             order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
+            order__bought_items__status__in=(BoughtItem.PAID, BoughtItem.REFUNDED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__lt=today).order_by('-start_date')
 
