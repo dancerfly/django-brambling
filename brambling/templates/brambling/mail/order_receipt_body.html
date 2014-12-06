@@ -1,0 +1,45 @@
+{% load zenaida %}
+<p>Hello, {% if order.person %}{{ order.person.given_name }}{% else %}{{ order.email }}{% endif %}!
+Thanks for registering for {{ event.name }}. We've included a
+short summary of your registration below; you can also view
+and edit your order information at any time on
+<a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}{% endif %}">Dancerfly</a>.</p>
+
+<p>We hope you have a great time! Remember, your event starts on {{ event.start_date|date:"F jS, Y" }}.</p>
+
+{% if unconfirmed_check_payments %}
+	<p>Note: Your passes are reserved, but the organizer has not yet received your payment by mail.</p>
+	{% include "brambling/event/order/_check_payment_info.html" %}
+	<p>If you believe this is in error, please contact the event organizer directly.</p>
+{% endif %}
+
+<table style="width: 100%; text-align: left;">
+	<tbody>
+		<tr>
+			<th>Paid</th>
+			<th>Order code</th>
+		</tr>
+		<tr>
+			<td>{{ net_payments|format_money:event.currency }}</td>
+			<td>{{ order.code }}</td>
+		</tr>
+	</tbody>
+</table>
+
+{% for attendee in attendees %}
+	{% if attendee.attendee %}
+		<h3>{{ attendee.attendee.get_full_name }}</h3>
+	{% else %}
+		<h3>Unattached items</h3>
+	{% endif %}
+
+	{% with bought_items=attendee.bought_items %}
+		{% for item in attendee.bought_items %}
+			{% if not item.refunds %}
+				<li>{{ item.bought_item.item_option.item.name }} ({{ item.bought_item.item_option.name }})</li>
+			{% endif %}
+		{% endfor %}
+	{% endwith %}
+{% endfor %}
+
+<p><em>View more details on <a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}{% endif %}">Dancerfly</a>.</em></p>
