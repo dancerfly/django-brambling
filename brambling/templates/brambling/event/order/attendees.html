@@ -41,13 +41,18 @@
 				<div class="row">
 					{% for attendee in attendees %}
 						<div class='{% if unassigned_items %}col-md-6{% else %}col-md-4{% endif %}'>
+							{% if order.person %}
+								{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug as attendee_url %}
+							{% else %}
+								{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug code=order.code as attendee_url %}
+							{% endif %}
 							<div class='panel panel-primary'>
 								<div class='panel-heading'>
 									<div class='panel-title'>
-										<a href='{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug %}'>
+										<a href='{{ attendee_url }}'>
 											{{ attendee.get_full_name }}
 										</a>
-										<a href='{% url "brambling_event_attendee_edit" pk=attendee.event_pass_id event_slug=event.slug %}' class="pull-right">
+										<a href='{{ attendee_url }}' class="pull-right">
 											<i class='fa fa-fw fa-pencil'></i>
 										</a>
 									</div>
