@@ -73,7 +73,7 @@ class SplashView(TemplateView):
 
     def get_context_data(self):
         today = timezone.now().date()
-        upcoming_events = Event.objects.filter(privacy=Event.PUBLIC).annotate(
+        upcoming_events = Event.objects.filter(privacy=Event.PUBLIC, is_published=True).annotate(
             start_date=Min('dates__date'), end_date=Max('dates__date')
             ).filter(start_date__gte=today).order_by('start_date')
         return {
