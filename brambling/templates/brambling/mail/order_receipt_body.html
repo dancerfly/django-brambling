@@ -7,17 +7,23 @@
 	<p>If you believe this is in error, please contact the event organizer directly.</p>
 {% endif %}
 
-<p>You can also view and edit your order information on <a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}{% endif %}">Dancerfly</a>.</p>
+<p>You can also view and edit your order information on <a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}{% endif %}">Dancerfly</a>.
+We hope you have a great time! Remember, your event starts on {{ event.start_date|date:"F jS, Y" }}.</p>
 
 <h2>Summary</h2>
 
-<dl>
-	<dt>Paid</dt>
-	<dd>{{ net_payments|format_money:event.currency }}</dd>
-
-	<dt>Order Code</dt>
-	<dd>{{ order.code }}</dd>
-</dl>
+<table>
+	<tbody>
+		<tr>
+			<th>Paid</th>
+			<th>Order code</th>
+		</tr>
+		<tr>
+			<td>{{ net_payments|format_money:event.currency }}</td>
+			<td>{{ order.code }}</td>
+		</tr>
+	</tbody>
+</table>
 
 <h2>Details</h2>
 
@@ -28,80 +34,11 @@
 		<h3>Unattached items</h3>
 	{% endif %}
 
-	{% for item in attendee.bought_items %}
-		{% cycle 0 1 as is_active silent %}
-		<tr{% if is_active %} style="background-color: whitesmoke;"{% endif %}>
-			{% with bought_item=item.bought_item %}
-				<th style="text-align: left;">{{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</th>
-				<td style="text-align: left;">{{ bought_item.item_option.item.get_category_display }}</td>
-				<td style="text-align: left; color: whitesmoke;">{{ bought_item.added|date:"n/j/Y H:i:s" }}</td>
-				<td style="text-align: left;">{{ bought_item.get_status_display }}</td>
-				<td style="text-align: right">{{ bought_item.item_option.price|format_money:event.currency }}</td>
-			{% endwith %}
-		</tr>
-		{% for discount in item.discounts %}
-			<tr{% if is_active %} style="background-color: whitesmoke;"{% endif %}>
-				<td>{{ discount.discount.name }} <em style="color: whitesmoke;">{{ discount.discount.code }}</em></td>
-				<td>Discount</td>
-				<td style="color: whitesmoke;">{{ discount.timestamp|date:"n/j/Y H:i:s" }}</td>
-				<td></td>
-				<td style="text-align: right;">({{ discount.savings|format_money:event.currency }})</td>
-			</tr>
+	{% with bought_items=attendee.bought_items %}
+		{% for item in attendee.bought_items %}
+			{% if not item.refunds %}
+				<li>{{ item.bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</li>
+			{% endif %}
 		{% endfor %}
-		{% for refund in item.refunds %}
-			<tr{% if is_active %} style="background-color: whitesmoke;"{% endif %}>
-				<td></td>
-				<td>Refund</td>
-				<td style="color: whitesmoke;">{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-				<td></td>
-				<td style="text-align: right;">({{ refund.amount|format_money:event.currency }})</td>
-			</tr>
-		{% endfor %}
-	{% endfor %}
-				<th>Net cost</th>
-				<th>{{ attendee.net_cost|format_money:event.currency }}</th>
-			</tr>
-		</tbody>
-	</table>
+	{% endwith %}
 {% endfor %}
-<table>
-	<thead>
-		<tr>
-			<th>Payments</th>
-			<th>Type</th>
-			<th>Received</th>
-			<th>Timestamp</th>
-			<th></th>
-			<th style="text-align: right">Amount ({{ event.currency }})</th>
-		</tr>
-	</thead>
-	<tfoot>
-		<tr>
-			<th colspan="5">Net payments</th>
-			<th style="text-align: right">({{ net_payments|format_money:event.currency }})</th>
-		</tr>
-	</tfoot>
-	<tbody>
-		{% for payment in payments %}
-			<tr>
-				<td>{{ payment.card|default:"" }}</td>
-				<td>{{ payment.get_method_display }}</td>
-				<td>{% block payment_is_confirmed %}{% if payment.is_confirmed %}Yes{% else %}No{% endif %}{% endblock %}</td>
-				<td style="color: whitesmoke;">{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-				<td>{% block payment_actions %}{% endblock %}</td>
-				<td style="text-align: right">({{ payment.amount|format_money:event.currency }})</td>
-			</tr>
-		{% endfor %}
-		{% for refund in refunds %}
-			<tr>
-				<td></td>
-				<td>Refund</td>
-				<td></td>
-				<td style="color: whitesmoke;">{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-				<td></td>
-				<td style="text-align: right">{{ refund.amount|format_money:event.currency }}</td>
-			</tr>
-		{% endfor %}
-	</tbody>
-</table>
-
