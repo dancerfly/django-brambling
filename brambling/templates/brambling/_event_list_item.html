@@ -24,18 +24,24 @@
 			<div class="shortened" data-lines="2">{{ event.description|linebreaks }}</div>
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
-		<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
-			{% if registered or event in registered_events%}
-				Edit registration
-			{% else %}
-				Register
+		<div class='form-group'>
+			<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
+				{% if registered or event in registered_events %}
+					Edit registration
+				{% else %}
+					Register
+				{% endif %}
+			</a>
+			{% if event in admin_events %}
+				<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">Manage Event <i class="fa fa-cog"></i></a>
 			{% endif %}
-		</a>
-		{% if event in admin_events %}
-			<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">Manage Event <i class="fa fa-cog"></i></a>
-		{% endif %}
-		{% if event.website_url %}
-			<a href="{{ event.website_url }}" class="btn btn-default-dark" target="_blank">Event website <i class='fa fa-fw fa-external-link'></i></a>
+			{% if event.website_url %}
+				<a href="{{ event.website_url }}" class="btn btn-default-dark" target="_blank">Event website <i class='fa fa-fw fa-external-link'></i></a>
+			{% endif %}
+		</div>
+
+		{% if event.order and event.order.has_cart %}
+			{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=event.order.cart_expire_time %}
 		{% endif %}
 	</div>
 </div>

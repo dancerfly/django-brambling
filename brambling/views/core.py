@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from brambling.models import Event, BoughtItem, Invite, Home
+from brambling.models import Event, BoughtItem, Invite, Home, Order
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
@@ -39,11 +39,20 @@ class UserDashboardView(TemplateView):
 
         # Registered events is upcoming things you are / might be going to.
         # So you've paid for something or you're going to.
-        registered_events = Event.objects.filter(
+        registered_events = list(Event.objects.filter(
             order__person=user,
             order__bought_items__status__in=(BoughtItem.PAID, BoughtItem.RESERVED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__gte=today).order_by('start_date')
+                   ).filter(start_date__gte=today).order_by('start_date'))
+        re_dict = dict((e.pk, e) for e in registered_events)
+        orders = Order.objects.filter(
+            person=user,
+            bought_items__status=BoughtItem.RESERVED,
+            event__in=registered_events
+        )
+        for order in orders:
+            order.event = re_dict[order.event_id]
+            order.event.order = order
 
         # Past events is things you at one point paid for.
         # So you've paid for something, even if it was later refunded.
