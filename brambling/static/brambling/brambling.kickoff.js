@@ -61,8 +61,8 @@ $(function() {
             $navbar_fixed.css('top',-32);
             $navbar_toggle.css('top',-8);
         }else{
-            $navbar_fixed.css('top',-$win.scrollTop());
-            $navbar_toggle.css('top',-0.25*$win.scrollTop());
+            $navbar_fixed.css('top',-Math.max($win.scrollTop(), 0));
+            $navbar_toggle.css('top',-0.25*Math.max($win.scrollTop(), 0));
         }
         if($navbar_hugged){
             if(scroll>=$navbar_color_height){
