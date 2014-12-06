@@ -61,6 +61,7 @@ $(function() {
             $navbar_fixed.css('top',-32);
             $navbar_toggle.css('top',-8);
         }else{
+            // Chrome and Safari let you scroll to negative values.
             $navbar_fixed.css('top',-Math.max($win.scrollTop(), 0));
             $navbar_toggle.css('top',-0.25*Math.max($win.scrollTop(), 0));
         }
@@ -75,9 +76,17 @@ $(function() {
     navbarColorHeight();
     navbarTop();
     $win.resize(navbarColorHeight);
-    $win.scroll(function(){        
+    $win.resize(navbarTop);
+    $win.scroll(function(){
+        // Check whether they're far down enough on the page
+        // to worry about moving the navbar around.
         if($win.scrollTop()<=$navbar_scroll_check){
-            navbarTop();
+            // Check whether the page actually has scrolling.
+            // Some browsers let you scroll past the top and
+            // bottom of pages.
+            if ($win.height() < $(document).height()) {
+                navbarTop();
+            }
         }
     });
     $navbar_fixed.hover(
