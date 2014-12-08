@@ -971,6 +971,7 @@ class Home(models.Model):
     address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=12, blank=True)
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
@@ -1021,6 +1022,7 @@ class EventHousing(models.Model):
     address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=12, blank=True)
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")

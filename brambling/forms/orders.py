@@ -11,6 +11,8 @@ from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               Attendee, HousingSlot, BoughtItem, Item,
                               SubPayment, Order)
 
+from localflavor.us.forms import USZipCodeField
+
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
@@ -179,6 +181,8 @@ class HostingForm(MemoModelForm):
     save_as_defaults = forms.BooleanField(initial=True, required=False,
             label="Remember this information for future events.",
             help_text="You will still be able to modify it later.")
+    zip_code = USZipCodeField(widget=forms.TextInput)
+
 
     class Meta:
         model = EventHousing

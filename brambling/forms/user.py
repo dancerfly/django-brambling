@@ -12,6 +12,8 @@ import floppyforms.__future__ as forms
 from brambling.mail import send_confirmation_email
 from brambling.models import Person, Home, DanceStyle, Invite
 
+from localflavor.us.forms import USZipCodeField
+
 
 class FloppyAuthenticationForm(AuthenticationForm):
     username = forms.CharField(max_length=254)
@@ -181,6 +183,7 @@ class HomeForm(forms.ModelForm):
                                 widget=forms.Textarea,
                                 label='List more residents',
                                 required=False)
+    zip_code = USZipCodeField(widget=forms.TextInput)
 
     class Meta:
         model = Home
