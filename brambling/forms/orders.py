@@ -230,6 +230,7 @@ class HostingForm(MemoModelForm):
                     'address_2': home.address_2,
                     'city': home.city,
                     'state_or_province': home.state_or_province,
+                    'zip_code': home.zip_code,
                     'country': home.country,
                     'public_transit_access': home.public_transit_access,
                     'ef_present': self.filter(EnvironmentalFactor.objects.only('id'),
@@ -302,6 +303,7 @@ class HostingForm(MemoModelForm):
                 home.address_2 = instance.address_2
                 home.city = instance.city
                 home.state_or_province = instance.state_or_province
+                home.zip_code = instance.zip_code
                 home.country = instance.country
                 home.public_transit_access = instance.public_transit_access
                 home.save()
