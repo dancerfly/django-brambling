@@ -10,6 +10,7 @@
 		</header>
 		<div class="panel-body">
 			{% formrow form.address %}
+			{% formrow form.address_2 using "brambling/forms/rows/no_label.html" %}
 			<div class="row">
 				<div class="col-sm-5">
 					{% formrow form.city %}
