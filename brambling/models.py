@@ -968,6 +968,7 @@ class Attendee(AbstractNamedModel):
 
 class Home(models.Model):
     address = models.CharField(max_length=200)
+    address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
     country = CountryField()
@@ -1017,6 +1018,7 @@ class EventHousing(models.Model):
 
     # Duplicated data from Home, plus confirm fields.
     address = models.CharField(max_length=200)
+    address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
     country = CountryField()

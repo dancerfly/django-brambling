@@ -223,6 +223,7 @@ class HostingForm(MemoModelForm):
                 )
                 self.initial.update({
                     'address': home.address,
+                    'address_2': home.address_2,
                     'city': home.city,
                     'state_or_province': home.state_or_province,
                     'country': home.country,
@@ -294,6 +295,7 @@ class HostingForm(MemoModelForm):
                 home = instance.home or Home()
                 new_home = home.pk is None
                 home.address = instance.address
+                home.address_2 = instance.address_2
                 home.city = instance.city
                 home.state_or_province = instance.state_or_province
                 home.country = instance.country
