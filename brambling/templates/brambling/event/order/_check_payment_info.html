@@ -2,6 +2,7 @@
 <p>
 	{{ event.check_recipient }}</br />
 	{{ event.check_address }}</br />
+	{% if event.check_address_2 %}{{ event.check_address_2 }}<br />{% endif %}
 	{{ event.check_city }}, {{ event.check_state_or_province }} {{ event.check_zip }}
 	{{ event.check_country }}
 </p>

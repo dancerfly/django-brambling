@@ -276,6 +276,7 @@ class Event(AbstractDwollaModel):
 
     check_recipient = models.CharField(max_length=50, blank=True)
     check_address = models.CharField(max_length=200, blank=True)
+    check_address_2 = models.CharField(max_length=200, blank=True)
     check_city = models.CharField(max_length=50, blank=True)
     check_state_or_province = models.CharField(max_length=50, blank=True)
     check_zip = models.CharField(max_length=12, blank=True)
