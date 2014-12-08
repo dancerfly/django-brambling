@@ -82,7 +82,6 @@ class PersonView(UpdateView):
         return super(PersonView, self).form_valid(form)
 
     def form_invalid(self, form):
-        messages.add_message(self.request, messages.ERROR, "Please correct the errors below.")
         return super(PersonView, self).form_invalid(form)
 
     def get_success_url(self):

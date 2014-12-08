@@ -1,0 +1,16 @@
+{% if form.errors %}
+	<div class="alert alert-danger">
+		Your form was not successfully submitted.
+		{% if form.non_field_errors %}
+			Please correct the following errors:
+			<ul>
+				{% for error in form.non_field_errors %}
+				<li>{{ error }}</li>
+				{% endfor %}
+			</ul>
+		{% else %}
+			{# If there are no non-field errors, assume there are field errors below. #}
+			Please correct the highlighted fields below.
+		{% endif %}
+	</div>
+{% endif %}
