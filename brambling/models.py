@@ -586,8 +586,10 @@ class Order(AbstractDwollaModel):
     heard_through_other = models.CharField(max_length=128, blank=True)
     send_flyers = models.BooleanField(default=False)
     send_flyers_address = models.CharField(max_length=200, verbose_name='address', blank=True)
+    send_flyers_address_2 = models.CharField(max_length=200, verbose_name='address line 2', blank=True)
     send_flyers_city = models.CharField(max_length=50, verbose_name='city', blank=True)
     send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state or province', blank=True)
+    send_flyers_zip = models.CharField(max_length=12, blank=True)
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)

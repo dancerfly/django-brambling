@@ -141,12 +141,15 @@ class AttendeeHousingDataForm(MemoModelForm):
 
 
 class SurveyDataForm(forms.ModelForm):
+    send_flyers_zip = USZipCodeField(widget=forms.TextInput)
+
     class Meta:
         model = Order
         fields = (
             'heard_through', 'heard_through_other', 'send_flyers',
-            'send_flyers_address', 'send_flyers_city',
-            'send_flyers_state_or_province', 'send_flyers_country'
+            'send_flyers_address', 'send_flyers_address_2', 'send_flyers_city',
+            'send_flyers_state_or_province', 'send_flyers_zip',
+            'send_flyers_country',
         )
         widgets = {
             'send_flyers_country': forms.Select
