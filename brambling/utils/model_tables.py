@@ -367,8 +367,10 @@ class OrderTable(ModelTable):
         if obj.send_flyers:
             return u", ".join((
                 obj.send_flyers_address,
+                obj.send_flyers_address_2,
                 obj.send_flyers_city,
                 obj.send_flyers_state_or_province,
+                obj.send_flyers_zip,
                 unicode(obj.send_flyers_country),
             ))
         return ''
@@ -378,8 +380,10 @@ class OrderTable(ModelTable):
         if eventhousing:
             return u", ".join((
                 eventhousing.address,
+                eventhousing.address_2,
                 eventhousing.city,
                 eventhousing.state_or_province,
+                eventhousing.zip_code,
                 unicode(eventhousing.country),
             ))
         return ''
