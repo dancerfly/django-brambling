@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
+from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.db.models import Q, Min, Max
 from django.http import HttpResponseRedirect, Http404
@@ -73,6 +74,18 @@ class UserDashboardView(TemplateView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(UserDashboardView, self).dispatch(*args, **kwargs)
+
+
+class EventRootView(TemplateView):
+    template_name = "brambling/event/root.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(EventRootView, self).get_context_data(**kwargs)
+        context.update({
+            'event': get_object_or_404(Event, slug=self.kwargs['event_slug']),
+            'site': get_current_site(self.request),
+        })
+        return context
 
 
 class SplashView(TemplateView):
