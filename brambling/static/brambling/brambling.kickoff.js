@@ -45,7 +45,12 @@ $(function() {
     // Add popovers to elements with class "popover-dismiss".
     $('.popped').popover({trigger: "focus"});
 
-    // Keep an orange line at the top when you scroll down   
+    // Add datepickers to date fields.
+    if (!Modernizr.inputtypes.date) {
+        $('input[type="date"]').datepicker({format: "yyyy-mm-dd"});
+    }
+
+    // Keep an orange line at the top when you scroll down
     var $navbar_color_height, $navbar_scroll_check;
     var $navbar_fixed = $('.navbar-fixed-top');
     var $navbar_toggle = $navbar_fixed.children('.container').children('.navbar-header').children('.navbar-toggle');
@@ -94,7 +99,7 @@ $(function() {
             $navbar_fixed.animate({'top': '0'},150);
             $navbar_toggle.animate({'top': '0'},150);
             if($win.scrollTop()>=$navbar_color_height-30){
-                $navbar_hugged.removeClass('navbar-hugged');  
+                $navbar_hugged.removeClass('navbar-hugged');
             }
         },
         navbarTop
