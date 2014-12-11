@@ -11,6 +11,8 @@ from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               Attendee, HousingSlot, BoughtItem, Item,
                               SubPayment, Order)
 
+from localflavor.us.forms import USZipCodeField
+
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
@@ -139,12 +141,15 @@ class AttendeeHousingDataForm(MemoModelForm):
 
 
 class SurveyDataForm(forms.ModelForm):
+    send_flyers_zip = USZipCodeField(widget=forms.TextInput)
+
     class Meta:
         model = Order
         fields = (
             'heard_through', 'heard_through_other', 'send_flyers',
-            'send_flyers_address', 'send_flyers_city',
-            'send_flyers_state_or_province', 'send_flyers_country'
+            'send_flyers_address', 'send_flyers_address_2', 'send_flyers_city',
+            'send_flyers_state_or_province', 'send_flyers_zip',
+            'send_flyers_country',
         )
         widgets = {
             'send_flyers_country': forms.Select
@@ -179,6 +184,8 @@ class HostingForm(MemoModelForm):
     save_as_defaults = forms.BooleanField(initial=True, required=False,
             label="Remember this information for future events.",
             help_text="You will still be able to modify it later.")
+    zip_code = USZipCodeField(widget=forms.TextInput)
+
 
     class Meta:
         model = EventHousing
@@ -223,8 +230,10 @@ class HostingForm(MemoModelForm):
                 )
                 self.initial.update({
                     'address': home.address,
+                    'address_2': home.address_2,
                     'city': home.city,
                     'state_or_province': home.state_or_province,
+                    'zip_code': home.zip_code,
                     'country': home.country,
                     'public_transit_access': home.public_transit_access,
                     'ef_present': self.filter(EnvironmentalFactor.objects.only('id'),
@@ -294,8 +303,10 @@ class HostingForm(MemoModelForm):
                 home = instance.home or Home()
                 new_home = home.pk is None
                 home.address = instance.address
+                home.address_2 = instance.address_2
                 home.city = instance.city
                 home.state_or_province = instance.state_or_province
+                home.zip_code = instance.zip_code
                 home.country = instance.country
                 home.public_transit_access = instance.public_transit_access
                 home.save()

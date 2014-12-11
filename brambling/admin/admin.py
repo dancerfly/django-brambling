@@ -93,7 +93,7 @@ class EventAdmin(admin.ModelAdmin):
                 "check_payment_allowed",
                 ("check_payable_to", "check_postmark_cutoff"),
                 "check_recipient",
-                "check_address",
+                "check_address", "check_address_2",
                 ("check_city", "check_state_or_province"),
                 ("check_zip", "check_country"),
             )

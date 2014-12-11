@@ -259,6 +259,7 @@
 							{% formrow form.check_payable_to with label="Checks made out to" %}
 							{% formrow form.check_recipient with label="Mail addressed to" %}
 							{% formrow form.check_address with label="Address" %}
+							{% formrow form.check_address_2 using "brambling/forms/rows/no_label.html" %}
 							<div class="row">
 								<div class="col-sm-5">
 									{% formrow form.check_city with label="City" %}

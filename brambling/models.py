@@ -276,6 +276,7 @@ class Event(AbstractDwollaModel):
 
     check_recipient = models.CharField(max_length=50, blank=True)
     check_address = models.CharField(max_length=200, blank=True)
+    check_address_2 = models.CharField(max_length=200, blank=True)
     check_city = models.CharField(max_length=50, blank=True)
     check_state_or_province = models.CharField(max_length=50, blank=True)
     check_zip = models.CharField(max_length=12, blank=True)
@@ -585,8 +586,10 @@ class Order(AbstractDwollaModel):
     heard_through_other = models.CharField(max_length=128, blank=True)
     send_flyers = models.BooleanField(default=False)
     send_flyers_address = models.CharField(max_length=200, verbose_name='address', blank=True)
+    send_flyers_address_2 = models.CharField(max_length=200, verbose_name='address line 2', blank=True)
     send_flyers_city = models.CharField(max_length=50, verbose_name='city', blank=True)
     send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state or province', blank=True)
+    send_flyers_zip = models.CharField(max_length=12, blank=True)
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
@@ -967,8 +970,10 @@ class Attendee(AbstractNamedModel):
 
 class Home(models.Model):
     address = models.CharField(max_length=200)
+    address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=12, blank=True)
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
@@ -1016,8 +1021,10 @@ class EventHousing(models.Model):
 
     # Duplicated data from Home, plus confirm fields.
     address = models.CharField(max_length=200)
+    address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=12, blank=True)
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
