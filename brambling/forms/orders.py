@@ -83,7 +83,7 @@ class AttendeeHousingDataForm(MemoModelForm):
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
 
-        if self.instance.person == self.instance.order.person:
+        if self.instance.person and self.instance.person == self.instance.order.person:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
 
             if self.instance.person and not self.instance.housing_completed:
