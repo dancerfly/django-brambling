@@ -42,7 +42,7 @@ $(function() {
     // Add tooltips to elements with class "tipped".
     $('.tipped').tooltip();
 
-    // Add popovers to elements with class "popover-dismiss".
+    // Add dismissable popovers to elements with class "popped".
     $('.popped').popover({trigger: "focus"});
 
     // Add datepickers to date fields.
