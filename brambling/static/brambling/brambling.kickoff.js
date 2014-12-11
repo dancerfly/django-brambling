@@ -42,7 +42,7 @@ $(function() {
     // Add tooltips to elements with class "tipped".
     $('.tipped').tooltip();
 
-    // Add popovers to elements with class "popover-dismiss".
+    // Add dismissable popovers to elements with class "popped".
     $('.popped').popover({trigger: "focus"});
 
     // Keep an orange line at the top when you scroll down   

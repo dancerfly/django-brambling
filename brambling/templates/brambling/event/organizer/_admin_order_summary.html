@@ -12,18 +12,42 @@
 					<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
 					<span class="input-group-btn">
 			{% endif %}
-			<button type='submit' class='btn btn-success tipped' data-placement="top" data-container="body" title="Refund {{ item.net_payments|format_money:event.currency }}">
-				<span class='fa fa-fw fa-rotate-left fa-rotate-90'></span>
-			</button>
+
+			<a class='btn btn-danger' data-toggle="modal" data-target=".{{ bought_item.item_option.item.pk }}">
+				Refund {{ item.net_payments|format_money:event.currency }}
+			</a>
+			<div class="modal fade {{ bought_item.item_option.item.pk }}" tabindex="-1" role="dialog" aria-labelledby="{{ bought_item.item_option.item.pk }}Label" aria-hidden="true">
+				<div class="modal-dialog modal-sm">
+				<div class="modal-content">
+					<div class="modal-body">
+						<h4 id="{{ bought_item.item_option.item.pk }}Label">Are you sure you want to refund {{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})?</h4>
+						<button type='submit' class='btn btn-success btn-block'>Yes, refund</button>
+						<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
+					</div>
+				</div>
+				</div>
+			</div>
+
 			{% if item.uses_dwolla %}
 					</span>
 				</div>
 			{% endif %}
 		{% endif %}
 	{% else %}
-		<button type='submit' class='btn btn-danger tipped' data-placement="top" data-container="body" title="Remove">
+		<a class='btn btn-danger' data-toggle="modal" data-target=".{{ bought_item.item_option.item.pk }}">
 			<span class='fa fa-fw fa-times'></span>
-		</button>
+		</a>
+		<div class="modal fade {{ bought_item.item_option.item.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ bought_item.item_option.item.pk }}" aria-hidden="true">
+			<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-body">
+					<h4 id="Label{{ bought_item.item_option.item.pk }}">Are you sure you want to remove {{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})?</h4>
+					<button type='submit' class='btn btn-success btn-block'>Yes, remove</button>
+					<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
+				</div>
+			</div>
+			</div>
+		</div>
 	{% endif %}
 	</form>
 {% endblock %}
