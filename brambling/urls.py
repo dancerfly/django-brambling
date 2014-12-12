@@ -23,7 +23,6 @@ from brambling.views.orders import (
 )
 from brambling.views.core import (
     UserDashboardView,
-    EventRootView,
     SplashView,
     InviteAcceptView,
     InviteSendView,
@@ -139,7 +138,7 @@ urlpatterns = patterns('',
     url(r'^500/$', 'django.views.defaults.server_error'),
 
     url(r'^(?P<event_slug>[\w-]+)/$',
-        EventRootView.as_view(),
+        RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
         name="brambling_event_root"),
     url(r'^(?P<event_slug>[\w-]+)/order/(?:(?P<code>[a-zA-Z0-9]{8})/)?shop/$',
         ChooseItemsView.as_view(),

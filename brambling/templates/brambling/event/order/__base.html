@@ -5,7 +5,17 @@
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
 {% block meta %}
-	{% include "brambling/event/_meta.html" %}
+	<meta name="description" content="{{ event.description }}" />
+	<meta property="og:site_name" content="Dancerfly" />
+
+	<meta property="og:title" content="{{ event.name }}" />
+	<meta property="og:description" content="{{ event.description }}" />
+	<meta property="og:url" content="https://{{ site.domain }}{% url 'brambling_event_order_summary' event_slug=event.slug %}" />
+	{% if event.banner_image %}
+		<meta property="og:image" content="{% if MEDIA_URL|slice:':7' != 'http://' and MEDIA_URL|slice:':8' != 'https://' %}https://{{ site.domain }}{% endif %}{{ MEDIA_URL }}{{ event.banner_image }}" />
+		<meta property="og:image:width" content="{{ event.banner_image.width }}" />
+		<meta property="og:image:height" content="{{ event.banner_image.height }}" />
+	{% endif %}
 {% endblock %}
 
 {% block top %}
