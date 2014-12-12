@@ -457,26 +457,6 @@ class ApplyDiscountView(OrderMixin, View):
         return None
 
 
-class RemoveDiscountView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if not self.is_admin_request:
-            raise Http404
-        try:
-            boughtitemdiscount = BoughtItemDiscount.objects.get(
-                bought_item__order=self.order,
-                pk=kwargs['discount_pk']
-            )
-        except BoughtItemDiscount.DoesNotExist:
-            pass
-        else:
-            boughtitemdiscount.delete()
-        return JsonResponse({'success': True})
-
-    def get_workflow(self):
-        return None
-
-
 class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/shop.html'
     current_step_slug = 'shop'

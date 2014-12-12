@@ -5,6 +5,7 @@ from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
 
@@ -22,9 +23,11 @@ from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
                               Refund, SubRefund, Person)
+from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav,
-                                   clear_expired_carts)
+                                   clear_expired_carts,
+                                   ajax_required)
 from brambling.utils.model_tables import AttendeeTable, OrderTable
 
 
@@ -528,6 +531,34 @@ class OrderFilterView(FilterView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
+
+
+class OrganizerApplyDiscountView(ApplyDiscountView):
+    def get_order(self):
+        return Order.objects.get(event=self.event, code=self.kwargs['code'])
+
+
+class RemoveDiscountView(OrderMixin, View):
+    @method_decorator(ajax_required)
+    def post(self, request, *args, **kwargs):
+        if not self.is_admin_request:
+            raise Http404
+        try:
+            boughtitemdiscount = BoughtItemDiscount.objects.get(
+                bought_item__order=self.order,
+                pk=kwargs['discount_pk']
+            )
+        except BoughtItemDiscount.DoesNotExist:
+            pass
+        else:
+            boughtitemdiscount.delete()
+        return JsonResponse({'success': True})
+
+    def get_workflow(self):
+        return None
+
+    def get_order(self):
+        return Order.objects.get(event=self.event, code=self.kwargs['code'])
 
 
 class OrderDetailView(DetailView):
