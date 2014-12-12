@@ -23,7 +23,7 @@ from brambling.models import (Event, Item, Discount, Payment,
                               BoughtItemDiscount, BoughtItem,
                               Refund, SubRefund, Person)
 from brambling.views.utils import (get_event_or_404, get_dwolla,
-                                   get_event_admin_nav, get_order,
+                                   get_event_admin_nav,
                                    clear_expired_carts)
 from brambling.utils.model_tables import AttendeeTable, OrderTable
 
@@ -113,7 +113,6 @@ class EventSummaryView(TemplateView):
 
         context.update({
             'event': self.event,
-            'order': get_order(self.event, self.request.user),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
             'attendee_count': Attendee.objects.filter(order__event=self.event).count(),
@@ -541,7 +540,8 @@ class OrderDetailView(DetailView):
         self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
-        self.order = get_order(self.event, code=self.kwargs['code'])
+        self.order = get_object_or_404(Order, event=self.event,
+                                       code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order)
         self.discount_form = ManualDiscountForm(order=self.order)
         if self.request.method == 'POST':

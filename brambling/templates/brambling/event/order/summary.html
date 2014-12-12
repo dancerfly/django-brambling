@@ -48,6 +48,8 @@
 		</div>
 	{% endif %}
 
+	{% if order and not order.person %}<h1><a href="{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}">Order {{ order.code }}</a></h1>{% endif %}
+
 	{% include "brambling/event/order/_summary.html" %}
 
 	{# START PAYMENT OPTIONS #}
