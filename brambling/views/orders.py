@@ -266,12 +266,12 @@ class OrderMixin(object):
         session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
 
         if self.kwargs.get('code'):
-            if self.event.slug in session_orders:
-                del session_orders[self.event.slug]
+            if str(self.event.pk) in session_orders:
+                del session_orders[str(self.event.pk)]
             order_kwargs['code'] = self.kwargs['code']
             code_in_url = True
-        elif self.event.slug in session_orders:
-            order_kwargs['code'] = session_orders[self.event.slug]
+        elif str(self.event.pk) in session_orders:
+            order_kwargs['code'] = session_orders[str(self.event.pk)]
         try:
             if order_kwargs['person'] or order_kwargs.get('code'):
                 order = Order.objects.get(**order_kwargs)
@@ -283,7 +283,7 @@ class OrderMixin(object):
             # Also be sure to remove the code from the session,
             # if that's what they were using.
             if order_kwargs.get('code'):
-                del session_orders[self.event.slug]
+                del session_orders[str(self.event.pk)]
 
                 # If the user is authenticated, try to get the order
                 # they have for this event. Maybe the code snuck in there
@@ -323,7 +323,7 @@ class OrderMixin(object):
 
         if not self.request.user.is_authenticated():
             session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-            session_orders[self.event.slug] = code
+            session_orders[str(self.event.pk)] = code
             self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
         return order
 
@@ -769,6 +769,17 @@ class SummaryView(OrderMixin, TemplateView):
                 send_order_alert(self.order, self.summary_data,
                                  get_current_site(self.request),
                                  secure=self.request.is_secure())
+
+                session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+                del session_orders[str(self.event.pk)]
+                self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+
+                if not self.order.person:
+                    url = reverse('brambling_event_order_summary', kwargs={
+                        'event_slug': self.event.slug,
+                        'code': self.order.code
+                    })
+                    return HttpResponseRedirect(url)
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
