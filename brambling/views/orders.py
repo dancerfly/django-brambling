@@ -771,8 +771,9 @@ class SummaryView(OrderMixin, TemplateView):
                                  secure=self.request.is_secure())
 
                 session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-                del session_orders[str(self.event.pk)]
-                self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+                if str(self.event.pk) in session_orders:
+                    del session_orders[str(self.event.pk)]
+                    self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
 
                 if not self.order.person:
                     url = reverse('brambling_event_order_summary', kwargs={
