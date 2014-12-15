@@ -234,6 +234,9 @@ class OrderMixin(object):
         except Order.DoesNotExist:
             raise Http404
 
+        if self.order.cart_is_expired():
+            self.order.delete_cart()
+
         self.workflow = self.get_workflow()
         if self.workflow is None or self.current_step_slug is None:
             self.current_step = None
