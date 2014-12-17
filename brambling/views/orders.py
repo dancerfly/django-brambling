@@ -6,7 +6,6 @@ from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
@@ -370,7 +369,6 @@ class OrderMixin(object):
 
 class AddToOrderView(OrderMixin, View):
     @method_decorator(ajax_required)
-    @method_decorator(ensure_csrf_cookie)
     def post(self, request, *args, **kwargs):
         clear_expired_carts(self.event)
 

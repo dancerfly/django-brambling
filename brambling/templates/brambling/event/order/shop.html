@@ -34,8 +34,6 @@
 
 {% block main %}
 	{{ block.super }}
-	{# this is required so that AJAX requests work correctly #}
-	{% csrf_token %}
 
 	{% if not user.is_authenticated %}
 		<div class="alert alert-warning">
