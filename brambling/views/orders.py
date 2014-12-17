@@ -5,6 +5,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
@@ -370,6 +371,10 @@ class RemoveDiscountView(OrderMixin, View):
 class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/shop.html'
     current_step_slug = 'shop'
+
+    @method_decorator(ensure_csrf_cookie)
+    def dispatch(self, *args, **kwargs):
+        return super(ChooseItemsView, self).dispatch(*args, **kwargs)
 
     def get_workflow_class(self):
         return (ShopWorkflow if self.order.checked_out
