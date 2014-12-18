@@ -4800,22 +4800,22 @@ a.list-group-item-danger.active, a.list-group-item-danger.active:hover, a.list-g
 }
 
 .panel-primary {
-  border-color: #de8e0f;
+  border-color: #f4a25f;
 }
 .panel-primary > .panel-heading {
-  color: #fff;
-  background-color: #de8e0f;
-  border-color: #de8e0f;
+  color: #64410a;
+  background-color: #f6c577;
+  border-color: #f4a25f;
 }
 .panel-primary > .panel-heading + .panel-collapse > .panel-body {
-  border-top-color: #de8e0f;
+  border-top-color: #f4a25f;
 }
 .panel-primary > .panel-heading .badge {
-  color: #de8e0f;
-  background-color: #fff;
+  color: #f6c577;
+  background-color: #64410a;
 }
 .panel-primary > .panel-footer + .panel-collapse > .panel-body {
-  border-bottom-color: #de8e0f;
+  border-bottom-color: #f4a25f;
 }
 
 .panel-success {
