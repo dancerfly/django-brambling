@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView
@@ -16,11 +17,13 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
-                              Attendee, EventHousing, Payment)
+                              Attendee, EventHousing)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
-                                   ajax_required, get_order,
-                                   clear_expired_carts, Workflow, Step,
-                                   get_dwolla)
+                                   ajax_required, clear_expired_carts,
+                                   Workflow, Step, get_dwolla)
+
+
+ORDER_CODE_SESSION_KEY = '_brambling_order_code'
 
 
 class OrderStep(Step):
@@ -41,6 +44,8 @@ class ShopStep(OrderStep):
 
     def _is_completed(self):
         order = self.workflow.order
+        if not order:
+            return False
         return (order.checked_out or
                 (order.cart_start_time is not None and
                  order.bought_items.filter(status=BoughtItem.RESERVED,
@@ -53,6 +58,8 @@ class AttendeeStep(OrderStep):
     view_name = 'brambling_event_attendee_list'
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return not self.workflow.order.bought_items.filter(attendee__isnull=True).exists()
 
     def get_errors(self):
@@ -104,11 +111,15 @@ class HousingStep(OrderStep):
         return workflow.event.collect_housing_data
 
     def is_active(self):
+        if not self.workflow.order:
+            return False
         if not hasattr(self, '_active'):
             self._active = self.workflow.order.attendees.filter(housing_status=Attendee.NEED).exists()
         return self._active
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return not self.workflow.order.attendees.filter(
             housing_status=Attendee.NEED,
             housing_completed=False
@@ -135,6 +146,8 @@ class SurveyStep(OrderStep):
         return workflow.event.collect_survey_data
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return self.workflow.order.survey_completed
 
 
@@ -148,11 +161,15 @@ class HostingStep(OrderStep):
         return workflow.event.collect_housing_data
 
     def is_active(self):
+        if not self.workflow.order:
+            return False
         if not hasattr(self, '_active'):
             self._active = self.workflow.order.attendees.exclude(housing_status=Attendee.NEED).exists()
         return self._active
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return (not self.workflow.order.providing_housing) or EventHousing.objects.filter(
             event=self.workflow.event,
             order=self.workflow.order
@@ -166,9 +183,11 @@ class OrderEmailStep(OrderStep):
 
     @classmethod
     def include_in(cls, workflow):
-        return workflow.order.person is None
+        return workflow.order is None or workflow.order.person is None
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return bool(self.workflow.order.email)
 
 
@@ -202,25 +221,21 @@ class OrderMixin(object):
     current_step_slug = None
 
     def dispatch(self, request, *args, **kwargs):
+        # TODO: Isn't this a circular redirect?
         if request.user.is_authenticated() and not request.user.is_active:
             return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
 
         self.event = get_event_or_404(kwargs['event_slug'])
         if not self.event.viewable_by(request.user):
             raise Http404
-        if self.kwargs.get('code'):
-            self.order = get_order(self.event, code=self.kwargs['code'])
-            if (request.user.is_authenticated() and
-                    not self.order.person == request.user and
-                    not self.is_admin_request):
-                raise Http404
-            if (not request.user.is_authenticated() and
-                    self.order.person is not None):
-                raise Http404
-        elif request.user.is_authenticated():
-            self.order = get_order(self.event, person=request.user)
-        else:
-            self.order = get_order(self.event)
+
+        try:
+            self.order = self.get_order()
+        except Order.DoesNotExist:
+            raise Http404
+
+        if self.order and self.order.cart_is_expired():
+            self.order.delete_cart()
 
         self.workflow = self.get_workflow()
         if self.workflow is None or self.current_step_slug is None:
@@ -232,7 +247,10 @@ class OrderMixin(object):
                     not self.current_step.is_accessible()):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
-                        return HttpResponseRedirect(step.url)
+                        url_kwargs = {'event_slug': kwargs['event_slug']}
+                        if kwargs.get('code'):
+                            url_kwargs['code'] = kwargs['code']
+                        return HttpResponseRedirect(reverse(step.view_name, kwargs=url_kwargs))
         return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
     @property
@@ -240,6 +258,77 @@ class OrderMixin(object):
         if not hasattr(self, '_is_admin_request'):
             self._is_admin_request = self.event.editable_by(self.request.user)
         return self._is_admin_request
+
+    def get_order(self):
+        order_kwargs = {
+            'event': self.event,
+            'person': self.request.user if self.request.user.is_authenticated() else None,
+        }
+        code_in_url = False
+        order = None
+        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+
+        if self.kwargs.get('code'):
+            if str(self.event.pk) in session_orders:
+                del session_orders[str(self.event.pk)]
+            order_kwargs['code'] = self.kwargs['code']
+            code_in_url = True
+        elif str(self.event.pk) in session_orders:
+            order_kwargs['code'] = session_orders[str(self.event.pk)]
+        try:
+            if order_kwargs['person'] or order_kwargs.get('code'):
+                order = Order.objects.get(**order_kwargs)
+        except Order.DoesNotExist:
+            # If it was in the URL, re-raise the error.
+            if code_in_url:
+                raise
+
+            # Also be sure to remove the code from the session,
+            # if that's what they were using.
+            if order_kwargs.get('code'):
+                del session_orders[str(self.event.pk)]
+
+                # If the user is authenticated, try to get the order
+                # they have for this event. Maybe the code snuck in there
+                # somehow?
+                if self.request.user.is_authenticated():
+                    try:
+                        order = Order.objects.get(
+                            event=self.event,
+                            person=self.request.user
+                        )
+                    except Order.DoesNotExist:
+                        # See if the order exists and belongs to an
+                        # unauthenticated user. If so, and if that user hasn't
+                        # checked out yet, assume that the user created an
+                        # account mid-order and re-assign it.
+                        try:
+                            order = Order.objects.get(
+                                event=self.event,
+                                person__isnull=True,
+                                code=order_kwargs['code'],
+                                checked_out=False
+                            )
+                        except Order.DoesNotExist:
+                            pass
+                        else:
+                            order.person = self.request.user
+                            order.save()
+        return order
+
+    def create_order(self):
+        person = self.request.user if self.request.user.is_authenticated() else None
+        code = get_random_string(8)
+
+        while Order.objects.filter(event=self.event, code=code).exists():
+            code = get_random_string(8)
+        order = Order.objects.create(event=self.event, person=person, code=code)
+
+        if not self.request.user.is_authenticated():
+            session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+            session_orders[str(self.event.pk)] = code
+            self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+        return order
 
     def get_workflow_class(self):
         return RegistrationWorkflow
@@ -253,14 +342,22 @@ class OrderMixin(object):
 
     def get_success_url(self):
         if self.current_step.errors:
-            return self.current_step.url
-        return self.current_step.next_step.url
+            view_name = self.current_step.view_name
+        else:
+            view_name = self.current_step.next_step.view_name
+        kwargs = {'event_slug': self.event.slug}
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
+            kwargs['code'] = self.kwargs['code']
+        return reverse(view_name, kwargs=kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(OrderMixin, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
             'order': self.order,
+            # Use codes if a code was used and there's no authenticated user.
+            'code_in_url': (True if self.kwargs.get('code') and
+                            not self.request.user.is_authenticated() else False),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'is_admin_request': self.is_admin_request,
             'workflow': self.workflow,
@@ -290,6 +387,13 @@ class AddToOrderView(OrderMixin, View):
             self.order.add_to_cart(item_option)
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})
+
+    def get_order(self):
+        order = super(AddToOrderView, self).get_order()
+
+        if order is None:
+            order = self.create_order()
+        return order
 
     def get_workflow(self):
         return None
@@ -344,25 +448,12 @@ class ApplyDiscountView(OrderMixin, View):
             'success': True,
         })
 
-    def get_workflow(self):
-        return None
+    def get_order(self):
+        order = super(ApplyDiscountView, self).get_order()
 
-
-class RemoveDiscountView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if not self.is_admin_request:
-            raise Http404
-        try:
-            boughtitemdiscount = BoughtItemDiscount.objects.get(
-                bought_item__order=self.order,
-                pk=kwargs['discount_pk']
-            )
-        except BoughtItemDiscount.DoesNotExist:
-            pass
-        else:
-            boughtitemdiscount.delete()
-        return JsonResponse({'success': True})
+        if order is None:
+            order = self.create_order()
+        return order
 
     def get_workflow(self):
         return None
@@ -377,7 +468,7 @@ class ChooseItemsView(OrderMixin, TemplateView):
         return super(ChooseItemsView, self).dispatch(*args, **kwargs)
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
+        return (ShopWorkflow if self.order is not None and self.order.checked_out
                 else RegistrationWorkflow)
 
     def get_context_data(self, **kwargs):
@@ -397,6 +488,9 @@ brambling_boughtitem.status != 'refunded'
         })
 
         context['item_options'] = item_options
+        if self.order is not None:
+            context['discounts'] = Discount.objects.filter(
+                orderdiscount__order=self.order).distinct()
         return context
 
 
@@ -405,7 +499,7 @@ class AttendeesView(OrderMixin, TemplateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
+        return (ShopWorkflow if self.order is not None and self.order.checked_out
                 else RegistrationWorkflow)
 
     def get(self, request, *args, **kwargs):
@@ -423,7 +517,7 @@ class AttendeesView(OrderMixin, TemplateView):
                 'event_slug': self.event.slug,
                 'pk': unassigned_pass.pk
             }
-            if self.order.person_id is None:
+            if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
             return HttpResponseRedirect(reverse('brambling_event_attendee_edit',
                                                 kwargs=kwargs))
@@ -445,7 +539,7 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
+        return (ShopWorkflow if self.order is not None and self.order.checked_out
                 else RegistrationWorkflow)
 
     def get_form_class(self):
@@ -513,7 +607,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     current_step_slug = 'housing'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
+        return (ShopWorkflow if self.order is not None and self.order.checked_out
                 else RegistrationWorkflow)
 
     def get(self, request, *args, **kwargs):
@@ -544,7 +638,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
         kwargs = {
             'event_slug': self.event.slug,
         }
-        if self.order.person_id is None:
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.order.code
         return reverse('brambling_event_survey', kwargs=kwargs)
 
@@ -581,7 +675,7 @@ class SurveyDataView(OrderMixin, UpdateView):
     form_class = SurveyDataForm
 
     def get_workflow_class(self):
-        return (SurveyWorkflow if self.order.checked_out
+        return (SurveyWorkflow if self.order is not None and self.order.checked_out
                 else RegistrationWorkflow)
 
     def get_object(self):
@@ -599,7 +693,7 @@ class HostingView(OrderMixin, UpdateView):
     current_step_slug = 'hosting'
 
     def get_workflow_class(self):
-        return (HostingWorkflow if self.order.checked_out
+        return (HostingWorkflow if self.order is not None and self.order.checked_out
                 else RegistrationWorkflow)
 
     def get_object(self):
@@ -621,7 +715,7 @@ class HostingView(OrderMixin, UpdateView):
         kwargs = {
             'event_slug': self.event.slug,
         }
-        if self.order.person_id is None:
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.order.code
         return reverse('brambling_event_order_summary', kwargs=kwargs)
 
@@ -681,6 +775,18 @@ class SummaryView(OrderMixin, TemplateView):
                 send_order_alert(self.order, self.summary_data,
                                  get_current_site(self.request),
                                  secure=self.request.is_secure())
+
+                session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+                if str(self.event.pk) in session_orders:
+                    del session_orders[str(self.event.pk)]
+                    self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+
+                if not self.order.person:
+                    url = reverse('brambling_event_order_summary', kwargs={
+                        'event_slug': self.event.slug,
+                        'code': self.order.code
+                    })
+                    return HttpResponseRedirect(url)
                 return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -738,7 +844,7 @@ class SummaryView(OrderMixin, TemplateView):
             kwargs = {
                 'event_slug': self.event.slug,
             }
-            if self.order.person_id is None:
+            if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
             redirect_url = dwolla_obj.get_dwolla_connect_url() + "?next_url=" + next_url

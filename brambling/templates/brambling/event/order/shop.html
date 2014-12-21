@@ -74,7 +74,7 @@
 								{% for options in cart_list %}
 									{% for personitem in options.list %}
 										<li class='list-group-item'>
-											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if order.person %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if code_in_url %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
 										</li>
 									{% endfor %}
 								{% endfor %}
@@ -92,7 +92,7 @@
 					<div class='list-group relative'>
 						{% for discount in discounts %}
 							<div class='list-group-item'>
-								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+								{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							</div>
 						{% endfor %}
 						<div class='list-group-item'>
@@ -170,7 +170,7 @@
 						</header>
 						<div class='list-group relative'>
 							{% for option in options.list %}
-								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if order.person %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% endif %}'{% endif %} href='javascript://' class="list-group-item">
+								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if code_in_url %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% endif %}'{% endif %} href='javascript://' class="list-group-item">
 									{# <div class="scroll-x"> #}
 										<div class='row'>
 											<div class='col-xs-12 col-sm-6'>

@@ -5,6 +5,7 @@ from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
 
@@ -22,9 +23,11 @@ from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
                               Refund, SubRefund, Person)
+from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404, get_dwolla,
-                                   get_event_admin_nav, get_order,
-                                   clear_expired_carts)
+                                   get_event_admin_nav,
+                                   clear_expired_carts,
+                                   ajax_required)
 from brambling.utils.model_tables import AttendeeTable, OrderTable
 
 
@@ -113,7 +116,6 @@ class EventSummaryView(TemplateView):
 
         context.update({
             'event': self.event,
-            'order': get_order(self.event, self.request.user),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
             'attendee_count': Attendee.objects.filter(order__event=self.event).count(),
@@ -531,6 +533,34 @@ class OrderFilterView(FilterView):
         return context
 
 
+class OrganizerApplyDiscountView(ApplyDiscountView):
+    def get_order(self):
+        return Order.objects.get(event=self.event, code=self.kwargs['code'])
+
+
+class RemoveDiscountView(OrderMixin, View):
+    @method_decorator(ajax_required)
+    def post(self, request, *args, **kwargs):
+        if not self.is_admin_request:
+            raise Http404
+        try:
+            boughtitemdiscount = BoughtItemDiscount.objects.get(
+                bought_item__order=self.order,
+                pk=kwargs['discount_pk']
+            )
+        except BoughtItemDiscount.DoesNotExist:
+            pass
+        else:
+            boughtitemdiscount.delete()
+        return JsonResponse({'success': True})
+
+    def get_workflow(self):
+        return None
+
+    def get_order(self):
+        return Order.objects.get(event=self.event, code=self.kwargs['code'])
+
+
 class OrderDetailView(DetailView):
     template_name = 'brambling/event/organizer/order_detail.html'
 
@@ -541,7 +571,8 @@ class OrderDetailView(DetailView):
         self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
-        self.order = get_order(self.event, code=self.kwargs['code'])
+        self.order = get_object_or_404(Order, event=self.event,
+                                       code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order)
         self.discount_form = ManualDiscountForm(order=self.order)
         if self.request.method == 'POST':

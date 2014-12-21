@@ -13,10 +13,10 @@
 			<ul class='list-group'>
 				{# these are BoughtItems #}
 				{% for pass in ordered_passes %}
-					{% if order.person %}
-						{% url "brambling_event_attendee_edit" pk=pass.pk event_slug=event.slug as attendee_url %}
-					{% else %}
+					{% if code_in_url %}
 						{% url "brambling_event_attendee_edit" pk=pass.pk event_slug=event.slug code=order.code as attendee_url %}
+					{% else %}
+						{% url "brambling_event_attendee_edit" pk=pass.pk event_slug=event.slug as attendee_url %}
 					{% endif %}
 					<a href="{{ attendee_url }}"class='list-group-item{% if pass == event_pass %} active{% elif pass.attendee_id %} disabled{% endif %}'>
 						{% if pass.attendee_id %}

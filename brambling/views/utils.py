@@ -9,34 +9,14 @@ from django.db.models import Max, Min
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 
-from brambling.models import Event, Order, BoughtItem
+from brambling.models import Event, BoughtItem
 
 
 def get_event_or_404(slug):
     qs = Event.objects.annotate(start_date=Min('dates__date'),
                                 end_date=Max('dates__date'))
     return get_object_or_404(qs, slug=slug)
-
-
-def get_order(event, person=None, code=None):
-    order = None
-    if code is not None:
-        order = Order.objects.get(event=event, code=code)
-        if person is not None and order.person != person:
-            raise Order.DoesNotExist
-    elif person is not None:
-        try:
-            order = Order.objects.get(event=event, person=person)
-        except Order.DoesNotExist:
-            pass
-    if order is None:
-        code = get_random_string(8)
-        while Order.objects.filter(event=event, code=code).exists():
-            code = get_random_string(8)
-        order = Order.objects.create(event=event, person=person, code=code)
-    return order
 
 
 def split_view(test, if_true, if_false):
