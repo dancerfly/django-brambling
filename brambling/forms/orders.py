@@ -141,7 +141,7 @@ class AttendeeHousingDataForm(MemoModelForm):
 
 
 class SurveyDataForm(forms.ModelForm):
-    send_flyers_zip = USZipCodeField(widget=forms.TextInput)
+    send_flyers_zip = USZipCodeField(widget=forms.TextInput, required=False)
 
     class Meta:
         model = Order
@@ -162,6 +162,7 @@ class SurveyDataForm(forms.ModelForm):
             self.fields['send_flyers_city'].required = True
             self.fields['send_flyers_state_or_province'].required = True
             self.fields['send_flyers_country'].required = True
+            self.fields['send_flyers_zip'].required = True
         return send_flyers
 
 
