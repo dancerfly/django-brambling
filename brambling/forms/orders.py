@@ -141,7 +141,7 @@ class AttendeeHousingDataForm(MemoModelForm):
 
 
 class SurveyDataForm(forms.ModelForm):
-    send_flyers_zip = USZipCodeField(widget=forms.TextInput, required=False)
+    send_flyers_zip = USZipCodeField(label="Zip code", widget=forms.TextInput, required=False)
 
     class Meta:
         model = Order
