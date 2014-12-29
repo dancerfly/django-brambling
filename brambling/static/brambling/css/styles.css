@@ -6097,6 +6097,15 @@ h1, h2, .h2, h3, .h3 {
   background-color: #333;
 }
 
+.bg-primary-light {
+  background-color: #f7cf8f;
+  color: #64410a;
+}
+
+tfoot.bg-primary-light {
+  border-top: 2px solid #f4a25f;
+}
+
 .collapser:before {
   content: "▼ More ";
 }
@@ -6508,6 +6517,14 @@ footer a {
 
 .panel.hug {
   border-top: 0;
+}
+
+.panel > .scroll-x > table {
+  margin-bottom: 0;
+}
+
+.panel {
+  overflow: hidden;
 }
 
 .scrim {
