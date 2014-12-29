@@ -48,7 +48,7 @@
 		</div>
 	{% endif %}
 
-	<h2>Order <a href="{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}">{{ order.code }}</a></h2>
+	<h2>Order {% if order and not order.person %}<a href="{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}">{% endif %}{{ order.code }}{% if order and not order.person %}</a>{% endif %}</h2>
 
 	<div class="row">
 		<div class="col-md-6">
