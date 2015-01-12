@@ -46,7 +46,7 @@ class ShopStep(OrderStep):
         order = self.workflow.order
         if not order:
             return False
-        return (order.status == Order.COMPLETED or
+        return (order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED) or
                 (order.cart_start_time is not None and
                  order.bought_items.filter(status=BoughtItem.RESERVED,
                                            item_option__item__category=Item.PASS).exists()))
@@ -468,7 +468,7 @@ class ChooseItemsView(OrderMixin, TemplateView):
         return super(ChooseItemsView, self).dispatch(*args, **kwargs)
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status == Order.COMPLETED:
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
             return ShopWorkflow
         return RegistrationWorkflow
 
@@ -500,7 +500,7 @@ class AttendeesView(OrderMixin, TemplateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status == Order.COMPLETED:
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
             return ShopWorkflow
         return RegistrationWorkflow
 
@@ -541,7 +541,7 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status == Order.COMPLETED:
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
             return ShopWorkflow
         return RegistrationWorkflow
 
@@ -610,7 +610,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     current_step_slug = 'housing'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status == Order.COMPLETED:
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
             return ShopWorkflow
         return RegistrationWorkflow
 
@@ -679,7 +679,7 @@ class SurveyDataView(OrderMixin, UpdateView):
     form_class = SurveyDataForm
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status == Order.COMPLETED:
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
             return ShopWorkflow
         return RegistrationWorkflow
 
@@ -698,7 +698,7 @@ class HostingView(OrderMixin, UpdateView):
     current_step_slug = 'hosting'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status == Order.COMPLETED:
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
             return ShopWorkflow
         return RegistrationWorkflow
 
