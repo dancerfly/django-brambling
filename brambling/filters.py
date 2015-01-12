@@ -1,7 +1,6 @@
 import copy
 
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
 import django_filters
 import floppyforms.__future__ as forms
 from floppyforms.__future__.models import FORMFIELD_OVERRIDES
