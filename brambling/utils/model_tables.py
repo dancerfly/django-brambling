@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import csv
+import datetime
 import itertools
 
 from django.contrib.admin.utils import lookup_field
@@ -334,34 +335,35 @@ class OrderTable(ModelTable):
             fields += self.SURVEY_FIELDS
         if self.event.collect_housing_data:
             fields += self.HOUSING_FIELDS
-            from brambling.models import HousingSlot
-
-            def wrapper_spaces(date):
-                def inner_spaces(obj):
-                    if obj.get_eventhousing():
-                        try:
-                            return HousingSlot.objects.get(eventhousing__order=obj, night=date).spaces
-                        except HousingSlot.DoesNotExist:
-                            pass
-                    return ''
-                return inner_spaces
-
-            def wrapper_spaces_max(date):
-                def inner_spaces_max(obj):
-                    if obj.get_eventhousing():
-                        try:
-                            return HousingSlot.objects.get(eventhousing__order=obj, night=date).spaces_max
-                        except HousingSlot.DoesNotExist:
-                            pass
-                    return ''
-                return inner_spaces_max
-
             for date in self.event.housing_dates.all():
                 fields += (
-                    ("Hosting {} spaces".format(date.date.strftime("%m/%d/%Y")), wrapper_spaces(date), True),
-                    ("Hosting {} max".format(date.date.strftime("%m/%d/%Y")), wrapper_spaces_max(date), True),
+                    ("Hosting {} spaces".format(date.date.strftime("%m/%d/%Y")), "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")), True),
+                    ("Hosting {} max".format(date.date.strftime("%m/%d/%Y")), "hosting_max_{}".format(date.date.strftime("%Y%m%d")), True),
                 )
         return fields
+
+    def get_field_val(self, obj, key):
+        date_str = None
+        from brambling.models import HousingSlot
+
+        if key.startswith('hosting_max'):
+            date_str = key[-8:]
+            field = "spaces_max"
+        elif key.startswith('hosting_spaces'):
+            date_str = key[-8:]
+            field = "spaces"
+
+        if date_str:
+            if obj.get_eventhousing():
+                hosting_date = datetime.datetime.strptime(date_str, "%Y%m%d").date()
+                try:
+                    slot = HousingSlot.objects.get(eventhousing__order=obj, night__date=hosting_date)
+                except HousingSlot.DoesNotExist:
+                    pass
+                else:
+                    return getattr(slot, field, '')
+            return ''
+        return super(OrderTable, self).get_field_val(obj, key)
 
     def send_flyers_full_address(self, obj):
         if obj.send_flyers:
