@@ -22,7 +22,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
 from brambling.models import (Event, Item, Discount, Payment,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Refund, SubRefund, Person)
+                              Refund, Person)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404, get_dwolla,
                                    get_event_admin_nav,
@@ -430,12 +430,10 @@ class RefundView(View):
         if not self.event.editable_by(self.request.user):
             raise Http404
         try:
-            self.order = Order.objects.get(event=self.event,
-                                           code=self.kwargs['code'])
+            return Order.objects.get(event=self.event,
+                                     code=self.kwargs['code'])
         except Order.DoesNotExist:
             raise Http404
-        return BoughtItem.objects.get(order=self.order,
-                                      pk=self.kwargs['item_pk'])
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
@@ -447,58 +445,47 @@ class RefundView(View):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        subpayments = self.object.subpayments.annotate(refunded=Sum('refunds__amount'))
-        if not subpayments:
-            self.object.delete()
-        else:
-            total_payments = sum((subpayment.amount for subpayment in subpayments))
-            total_refunds = sum((subpayment.refunded or 0 for subpayment in subpayments))
-            refundable = total_payments - total_refunds
-            if refundable > 0:
-                refund = Refund.objects.create(
+        total_payments = Payment.objects.filter(order=self.object).aggregate(Sum('amount'))
+        total_refunds = Refund.objects.filter(order=self.object).aggregate(Sum('amount'))
+        refundable = total_payments - total_refunds
+        # To support multiple payments, we would just need to run through this
+        # with each payment. ie. we'd need to collect the total_refunds per payment,
+        # not per order.
+        if refundable > 0:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            dwolla = get_dwolla()
+            payment = self.objects.payments.all()[0]
+            if payment.amount != total_payments:
+                raise Exception("More than one payment exists for order.")
+            try:
+                if payment.method == Payment.STRIPE:
+                    stripe_charge = stripe.Charge.retrieve(payment.remote_id)
+                    stripe_refund = stripe_charge.refund(
+                        amount=refundable * 100,
+                    )
+                    remote_id = stripe_refund.id
+                elif payment.method == Payment.DWOLLA:
+                    dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
+                    dwolla_refund = dwolla_user.refund(int(payment.remote_id),
+                                                       "%.2f" % refundable,
+                                                       int(request.POST.get('dwolla_pin')))
+                    remote_id = dwolla_refund['TransactionId']
+            except dwolla.DwollaAPIError, e:
+                messages.error(request, e.message)
+            else:
+                self.object.status = Order.REFUNDED
+                self.object.save()
+                self.object.bought_items.update(status=BoughtItem.REFUNDED)
+                Refund.objects.create(
                     order=self.order,
                     issuer=request.user,
                     bought_item=self.object,
                     amount=refundable,
+                    method=payment.method,
+                    remote_id=remote_id,
+                    payment=payment
                 )
 
-                stripe.api_key = settings.STRIPE_SECRET_KEY
-                dwolla = get_dwolla()
-                try:
-                    for subpayment in subpayments:
-                        amount = subpayment.amount - (subpayment.refunded or 0)
-                        if amount <= 0:
-                            continue
-                        if subpayment.payment.method == Payment.STRIPE:
-                            stripe_charge = stripe.Charge.retrieve(subpayment.payment.remote_id)
-                            stripe_refund = stripe_charge.refund(
-                                amount=amount * 100,
-                            )
-                            remote_id = stripe_refund.id
-                        elif subpayment.payment.method == Payment.DWOLLA:
-                            dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
-                            dwolla_refund = dwolla_user.refund(int(subpayment.payment.remote_id),
-                                                               "%.2f" % amount,
-                                                               int(request.POST.get('dwolla_pin')))
-                            remote_id = dwolla_refund['TransactionId']
-
-                        SubRefund.objects.create(
-                            refund=refund,
-                            subpayment=subpayment,
-                            amount=amount,
-                            method=subpayment.payment.method,
-                            remote_id=remote_id
-                        )
-                except dwolla.DwollaAPIError, e:
-                    refund.delete()
-                    messages.error(request, e.message)
-                else:
-                    self.object.status = BoughtItem.REFUNDED
-                    if self.object.attendee.event_pass == self.object:
-                        self.object.attendee.delete()
-                    else:
-                        self.object.attendee = None
-                    self.object.save()
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
                               'code': self.order.code})

@@ -571,6 +571,17 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
+    # TODO: Add partial_refund status.
+    IN_PROGRESS = 'in_progress'
+    COMPLETED = 'completed'
+    REFUNDED = 'refunded'
+
+    STATUS_CHOICES = (
+        (IN_PROGRESS, _('In progress')),
+        (COMPLETED, _('Completed')),
+        (REFUNDED, _('Refunded')),
+    )
+
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -594,7 +605,7 @@ class Order(AbstractDwollaModel):
 
     providing_housing = models.BooleanField(default=False)
 
-    checked_out = models.BooleanField(default=False)
+    status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
     class Meta:
         unique_together = ('event', 'code')
@@ -776,18 +787,6 @@ class Payment(models.Model):
     is_confirmed = models.BooleanField(default=False)
 
 
-class SubPayment(models.Model):
-    """
-    Represents a portion of a payment assigned to a particular bought item.
-    """
-    payment = models.ForeignKey(Payment, related_name='subpayments')
-    bought_item = models.ForeignKey('BoughtItem', related_name='subpayments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-
-    class Meta:
-        unique_together = ('payment', 'bought_item')
-
-
 class BoughtItem(models.Model):
     """
     Represents an item bought (or reserved) by a person.
@@ -796,12 +795,12 @@ class BoughtItem(models.Model):
     # for display, but they don't really guarantee anything.
     RESERVED = 'reserved'
     UNPAID = 'unpaid'
-    PAID = 'paid'
+    BOUGHT = 'bought'
     REFUNDED = 'refunded'
     STATUS_CHOICES = (
         (RESERVED, _('Reserved')),
         (UNPAID, _('Unpaid')),
-        (PAID, _('Paid')),
+        (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
     )
     item_option = models.ForeignKey(ItemOption)
@@ -816,7 +815,6 @@ class BoughtItem(models.Model):
     # by a single person could be assigned to multiple attendees.
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
-    payments = models.ManyToManyField(Payment, through=SubPayment)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
@@ -881,20 +879,13 @@ class BoughtItemDiscount(models.Model):
 
 
 class Refund(models.Model):
-    order = models.ForeignKey('Order', related_name='refunds')
-    issuer = models.ForeignKey('Person')
-    bought_item = models.ForeignKey(BoughtItem, related_name='refunds')
-    timestamp = models.DateTimeField(default=timezone.now)
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-
-
-class SubRefund(models.Model):
     STRIPE = Payment.STRIPE
     DWOLLA = Payment.DWOLLA
     METHOD_CHOICES = Payment.METHOD_CHOICES
-
-    refund = models.ForeignKey(Refund)
-    subpayment = models.ForeignKey(SubPayment, related_name='refunds')
+    order = models.ForeignKey('Order', related_name='refunds')
+    issuer = models.ForeignKey('Person')
+    payment = models.ForeignKey('Payment', related_name='refunds')
+    timestamp = models.DateTimeField(default=timezone.now)
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)
