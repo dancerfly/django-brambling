@@ -302,6 +302,7 @@ class OrderTable(ModelTable):
     BASE_FIELDS = (
         ("Code", "code", True),
         ("Person", "person", True),
+        ("Status", "status", True),
     )
 
     SURVEY_FIELDS = (
