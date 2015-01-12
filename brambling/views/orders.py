@@ -755,7 +755,7 @@ class SummaryView(OrderMixin, TemplateView):
         self.summary_data = self.order.get_summary_data()
         self.net_balance = self.summary_data['net_balance']
         if self.net_balance == 0:
-            self.order.mark_cart_paid()
+            self.order.mark_cart_paid(Order.COMPLETED)
         else:
             self.get_forms()
             form = None
@@ -770,8 +770,8 @@ class SummaryView(OrderMixin, TemplateView):
             if 'check' in request.POST:
                 form = self.check_form
             if form and form.is_valid():
-                form.save()
-                self.order.mark_cart_paid()
+                payment = form.save()
+                self.order.mark_cart_paid(Order.COMPLETED if payment.is_confirmed else Order.PENDING)
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()

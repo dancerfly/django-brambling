@@ -573,11 +573,13 @@ class Order(AbstractDwollaModel):
 
     # TODO: Add partial_refund status.
     IN_PROGRESS = 'in_progress'
+    PENDING = 'pending'
     COMPLETED = 'completed'
     REFUNDED = 'refunded'
 
     STATUS_CHOICES = (
         (IN_PROGRESS, _('In progress')),
+        (PENDING, _('Payment pending')),
         (COMPLETED, _('Completed')),
         (REFUNDED, _('Refunded')),
     )
@@ -662,13 +664,13 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self):
+    def mark_cart_paid(self, status):
         self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
         ).update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.status = Order.COMPLETED
+        self.status = status
         self.save()
 
     def cart_expire_time(self):
