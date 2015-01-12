@@ -163,6 +163,6 @@ class Step(object):
 def get_dwolla():
     from django.conf import settings
     os.environ['DWOLLA_VERIFY_SSL'] = 'True'
-    os.environ['DWOLLA_SANDBOX'] = str(settings.DWOLLA_SANDBOX)
+    os.environ['DWOLLA_SANDBOX'] = str(getattr(settings, 'DWOLLA_SANDBOX', False))
     import dwolla
     return dwolla

@@ -13,7 +13,6 @@ from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 import requests
-import stripe
 
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
@@ -445,50 +444,21 @@ class RefundView(View):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        total_payments = Payment.objects.filter(order=self.object).aggregate(Sum('amount'))
-        total_refunds = Refund.objects.filter(order=self.object).aggregate(Sum('amount'))
-        refundable = total_payments - total_refunds
-        # To support multiple payments, we would just need to run through this
-        # with each payment. ie. we'd need to collect the total_refunds per payment,
-        # not per order.
-        if refundable > 0:
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            dwolla = get_dwolla()
-            payment = self.objects.payments.all()[0]
-            if payment.amount != total_payments:
-                raise Exception("More than one payment exists for order.")
+        dwolla = get_dwolla()
+        for payment in self.object.payments.all():
             try:
-                if payment.method == Payment.STRIPE:
-                    stripe_charge = stripe.Charge.retrieve(payment.remote_id)
-                    stripe_refund = stripe_charge.refund(
-                        amount=refundable * 100,
-                    )
-                    remote_id = stripe_refund.id
-                elif payment.method == Payment.DWOLLA:
-                    dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
-                    dwolla_refund = dwolla_user.refund(int(payment.remote_id),
-                                                       "%.2f" % refundable,
-                                                       int(request.POST.get('dwolla_pin')))
-                    remote_id = dwolla_refund['TransactionId']
+                payment.refund(payment.amount, request.user,
+                               dwolla_pin=request.POST.get('dwolla_pin'))
             except dwolla.DwollaAPIError, e:
                 messages.error(request, e.message)
-            else:
-                self.object.status = Order.REFUNDED
-                self.object.save()
-                self.object.bought_items.update(status=BoughtItem.REFUNDED)
-                Refund.objects.create(
-                    order=self.order,
-                    issuer=request.user,
-                    bought_item=self.object,
-                    amount=refundable,
-                    method=payment.method,
-                    remote_id=remote_id,
-                    payment=payment
-                )
+
+        self.object.status = Order.REFUNDED
+        self.object.save()
+        self.object.bought_items.update(status=BoughtItem.REFUNDED)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
-                              'code': self.order.code})
+                              'code': self.object.code})
         return HttpResponseRedirect(url)
 
 

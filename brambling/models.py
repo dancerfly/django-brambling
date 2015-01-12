@@ -11,13 +11,14 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import signals
+from django.db.models import signals, Sum
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+import stripe
 
 from brambling.mail import send_fancy_mail
 
@@ -536,7 +537,6 @@ class CreditCard(models.Model):
 
 @receiver(signals.pre_delete, sender=CreditCard)
 def delete_stripe_card(sender, instance, **kwargs):
-    import stripe
     from django.conf import settings
     stripe.api_key = settings.STRIPE_SECRET_KEY
     customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
@@ -758,6 +758,9 @@ class Order(AbstractDwollaModel):
                 self._eventhousing = None
         return self._eventhousing
 
+    def has_dwolla_payments(self):
+        return self.payments.filter(method=Payment.DWOLLA).exists()
+
 
 class Payment(models.Model):
     STRIPE = 'stripe'
@@ -780,6 +783,45 @@ class Payment(models.Model):
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
     is_confirmed = models.BooleanField(default=False)
+
+    def refund(self, amount, issuer, dwolla_pin=None):
+        from brambling.views.utils import get_dwolla
+
+        total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
+        refundable = self.amount - total_refunds
+        if refundable < amount:
+            raise ValueError("Not enough money available")
+
+        if refundable == 0:
+            return None
+
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        dwolla = get_dwolla()
+
+        # May raise an error
+        if self.method == Payment.STRIPE:
+            stripe_charge = stripe.Charge.retrieve(self.remote_id)
+            stripe_refund = stripe_charge.refund(
+                amount=refundable * 100,
+            )
+            remote_id = stripe_refund.id
+        elif self.method == Payment.DWOLLA:
+            dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
+            dwolla_refund = dwolla_user.refund(int(self.remote_id),
+                                               "%.2f" % refundable,
+                                               int(dwolla_pin))
+            remote_id = dwolla_refund['TransactionId']
+        else:
+            remote_id = ''
+        return Refund.objects.create(
+            order=self.order,
+            issuer=issuer,
+            payment=self,
+            amount=amount,
+            method=self.method,
+            remote_id=remote_id
+        )
+    refund.alters_data = True
 
 
 class BoughtItem(models.Model):
