@@ -1,6 +1,7 @@
 import copy
 
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 import django_filters
 import floppyforms.__future__ as forms
 from floppyforms.__future__.models import FORMFIELD_OVERRIDES
@@ -63,7 +64,11 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
 
 class OrderFilterSet(FloppyFilterSet):
+    status = django_filters.ChoiceFilter(choices=(('', _('Any status')),) + Order.STATUS_CHOICES,
+                                         initial=Order.COMPLETED)
+
     class Meta:
         model = Order
         fields = ['providing_housing', 'send_flyers', 'status']
         form = forms.Form
+OrderFilterSet.base_filters['status'].field_class = forms.ChoiceField
