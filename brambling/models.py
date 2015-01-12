@@ -665,10 +665,10 @@ class Order(AbstractDwollaModel):
     def mark_cart_paid(self):
         self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
-        ).update(status=BoughtItem.PAID)
+        ).update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.checked_out = True
+        self.status = Order.COMPLETED
         self.save()
 
     def cart_expire_time(self):
@@ -701,6 +701,7 @@ class Order(AbstractDwollaModel):
         if self.cart_is_expired():
             self.delete_cart()
         payments = self.payments.order_by('timestamp')
+        refunds = self.refunds.order_by('timestamp')
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
         bought_items = []
@@ -709,30 +710,22 @@ class Order(AbstractDwollaModel):
             bought_items.extend(items)
 
             gross_cost = sum((item['gross_cost'] for item in items))
-            gross_payments = sum((item['gross_payments'] for item in items))
             total_savings = sum((item['total_savings'] for item in items))
-            total_refunds = sum((item['total_refunds'] for item in items))
-            net_cost = gross_cost - total_refunds - total_savings
-            net_payments = gross_payments - total_refunds
-            net_balance = net_cost - net_payments
+            net_cost = gross_cost - total_savings
             attendees.append({
                 'attendee': k,
                 'bought_items': items,
                 'gross_cost': gross_cost,
-                'gross_payments': gross_payments,
                 'total_savings': total_savings,
-                'total_refunds': total_refunds,
                 'net_cost': net_cost,
-                'net_payments': net_payments,
-                'net_balance': net_balance,
             })
 
         gross_cost = sum((item.item_option.price for item in bought_items_qs))
         gross_payments = sum((payment.amount for payment in payments))
         total_savings = sum((attendee['total_savings']
                              for attendee in attendees))
-        total_refunds = sum((attendee['total_refunds']
-                             for attendee in attendees))
+        total_refunds = sum((refund.amount
+                             for refund in refunds))
         net_cost = gross_cost - total_refunds - total_savings
         net_payments = gross_payments - total_refunds
         net_balance = net_cost - net_payments
@@ -823,30 +816,16 @@ class BoughtItem(models.Model):
 
     def get_summary_data(self):
         gross_cost = self.item_option.price
-        payments = self.subpayments.order_by('payment__timestamp')
         discounts = self.discounts.order_by('timestamp')
-        refunds = self.refunds.order_by('timestamp')
         total_savings = sum((discount.savings() for discount in discounts))
-        gross_payments = sum((payment.amount for payment in payments))
-        total_refunds = sum((refund.amount for refund in refunds))
-        net_cost = gross_cost - total_refunds - total_savings
-        net_payments = gross_payments - total_refunds
-        net_balance = net_cost - net_payments
+        net_cost = gross_cost - total_savings
 
         return {
             'bought_item': self,
-            'payments': payments,
             'discounts': discounts,
-            'refunds': refunds,
             'gross_cost': gross_cost,
-            'gross_payments': gross_payments,
             'total_savings': total_savings,
-            'total_refunds': total_refunds,
             'net_cost': net_cost,
-            'net_payments': net_payments,
-            'net_balance': net_balance,
-            'uses_dwolla': any((payment.payment.method == Payment.DWOLLA
-                                for payment in payments)),
         }
 
 

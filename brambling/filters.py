@@ -63,10 +63,7 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
 
 class OrderFilterSet(FloppyFilterSet):
-    checked_out = django_filters.BooleanFilter(initial=True)
-
     class Meta:
         model = Order
-        fields = ['providing_housing', 'send_flyers', 'checked_out']
+        fields = ['providing_housing', 'send_flyers', 'status']
         form = forms.Form
-OrderFilterSet.base_filters['checked_out'].field_class = forms.NullBooleanField

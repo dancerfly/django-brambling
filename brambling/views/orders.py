@@ -46,7 +46,7 @@ class ShopStep(OrderStep):
         order = self.workflow.order
         if not order:
             return False
-        return (order.checked_out or
+        return (order.status == Order.COMPLETED or
                 (order.cart_start_time is not None and
                  order.bought_items.filter(status=BoughtItem.RESERVED,
                                            item_option__item__category=Item.PASS).exists()))
@@ -307,7 +307,7 @@ class OrderMixin(object):
                                 event=self.event,
                                 person__isnull=True,
                                 code=order_kwargs['code'],
-                                checked_out=False
+                                status=Order.IN_PROGRESS
                             )
                         except Order.DoesNotExist:
                             pass
@@ -468,8 +468,9 @@ class ChooseItemsView(OrderMixin, TemplateView):
         return super(ChooseItemsView, self).dispatch(*args, **kwargs)
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order is not None and self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status == Order.COMPLETED:
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get_context_data(self, **kwargs):
         context = super(ChooseItemsView, self).get_context_data(**kwargs)
@@ -499,8 +500,9 @@ class AttendeesView(OrderMixin, TemplateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order is not None and self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status == Order.COMPLETED:
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
         try:
@@ -539,8 +541,9 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order is not None and self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status == Order.COMPLETED:
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
@@ -607,8 +610,9 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     current_step_slug = 'housing'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order is not None and self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status == Order.COMPLETED:
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
         if not self.event.collect_housing_data:
@@ -675,8 +679,9 @@ class SurveyDataView(OrderMixin, UpdateView):
     form_class = SurveyDataForm
 
     def get_workflow_class(self):
-        return (SurveyWorkflow if self.order is not None and self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status == Order.COMPLETED:
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get_object(self):
         return self.order
@@ -693,8 +698,9 @@ class HostingView(OrderMixin, UpdateView):
     current_step_slug = 'hosting'
 
     def get_workflow_class(self):
-        return (HostingWorkflow if self.order is not None and self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status == Order.COMPLETED:
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get_object(self):
         if not self.event.collect_housing_data:
