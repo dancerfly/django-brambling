@@ -11,7 +11,7 @@ def boughtitem_status_forward(apps, schema_editor):
 
 def boughtitem_status_backward(apps, schema_editor):
     BoughtItem = apps.get_model("brambling", "BoughtItem")
-    BoughtItem.objects.filter(status='bought').update(status='paid`')
+    BoughtItem.objects.filter(status='bought').update(status='paid')
 
 
 def order_status_forward(apps, schema_editor):
