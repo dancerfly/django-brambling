@@ -37,8 +37,9 @@ class PersonAdmin(UserAdmin):
             'dance_styles',
         )}),
         ('Financial Transactions', {'fields': (
-            ('stripe_customer_id', 'default_card'),
+            ('stripe_customer_id', 'stripe_test_customer_id', 'default_card'),
             ('dwolla_user_id', 'dwolla_access_token'),
+            ('dwolla_test_user_id', 'dwolla_test_access_token'),
         )})
     )
 
@@ -49,7 +50,7 @@ class PersonAdmin(UserAdmin):
 class EventAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': ('name', 'slug'),
+            'fields': ('name', 'slug', 'api_type'),
         }),
         ("Details", {
             'classes': ('grp-collapse grp-closed',),
@@ -90,6 +91,9 @@ class EventAdmin(admin.ModelAdmin):
                 ("dwolla_user_id", "dwolla_access_token"),
                 ("stripe_user_id", "stripe_access_token"),
                 ("stripe_refresh_token", "stripe_publishable_key"),
+                ("dwolla_test_user_id", "dwolla_test_access_token"),
+                ("stripe_test_user_id", "stripe_test_access_token"),
+                ("stripe_test_refresh_token", "stripe_test_publishable_key"),
                 "check_payment_allowed",
                 ("check_payable_to", "check_postmark_cutoff"),
                 "check_recipient",
@@ -105,6 +109,7 @@ class EventAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ('owner',)
     filter_horizontal = ("dance_styles", "dates", "housing_dates", "editors")
+    radio_fields = {'api_type': admin.HORIZONTAL}
 
 
 admin.site.register(Person, PersonAdmin)
