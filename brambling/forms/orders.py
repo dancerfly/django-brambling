@@ -10,7 +10,7 @@ from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event)
-from brambling.utils.payment import dwolla_charge
+from brambling.utils.payment import dwolla_charge, stripe_prep
 
 from localflavor.us.forms import USZipCodeField
 
@@ -337,7 +337,6 @@ class AddCardForm(forms.Form):
     api_type = Event.TEST
 
     def __init__(self, user, *args, **kwargs):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         self.user = user
         super(AddCardForm, self).__init__(*args, **kwargs)
 
@@ -351,6 +350,7 @@ class AddCardForm(forms.Form):
 
     def add_card(self, token):
         user = self.user
+        stripe_prep(self.api_type)
         if not user.stripe_customer_id:
             customer = stripe.Customer.create(
                 email=user.email,
@@ -389,14 +389,10 @@ class AddCardForm(forms.Form):
 
 
 class BasePaymentForm(forms.Form):
-    def __init__(self, order, bought_items, *args, **kwargs):
+    def __init__(self, order, amount, *args, **kwargs):
         self.api_type = order.event.api_type
-        stripe.api_key = order.event.stripe_access_token
         self.order = order
-        # bought_items is a list of summary dicts.
-        self.bought_items = [item for item in bought_items
-                             if item['net_balance'] > 0]
-        self.amount = sum((item['net_balance'] for item in self.bought_items))
+        self.amount = amount
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
     def get_fee(self, amount):
@@ -406,13 +402,18 @@ class BasePaymentForm(forms.Form):
     def charge(self, card_or_token, customer=None):
         if self.amount <= 0:
             return None
+        stripe_prep(self.api_type)
         # Amount is number of smallest currency units.
         amount = int(self.amount * 100)
         if customer is not None:
+            if self.api_type == Event.LIVE:
+                access_token = self.order.event.stripe_access_token
+            else:
+                access_token = self.order.event.stripe_test_access_token
             card_or_token = stripe.Token.create(
                 customer=customer,
                 card=card_or_token,
-                api_key=self.order.event.stripe_access_token,
+                api_key=access_token,
             )
         fee = self.get_fee(amount).quantize(Decimal('1.'), rounding=ROUND_DOWN)
         return stripe.Charge.create(

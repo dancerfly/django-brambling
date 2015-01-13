@@ -182,8 +182,12 @@ class StripeConnectView(View):
         if not event.editable_by(user):
             raise Http404
         if 'code' in request.GET:
+            if event.api_type == Event.LIVE:
+                secret_key = settings.STRIPE_SECRET_KEY
+            else:
+                secret_key = settings.STRIPE_TEST_SECRET_KEY
             data = {
-                'client_secret': settings.STRIPE_SECRET_KEY,
+                'client_secret': secret_key,
                 'code': request.GET['code'],
                 'grant_type': 'authorization_code',
             }
@@ -191,10 +195,16 @@ class StripeConnectView(View):
                               data=data)
             data = r.json()
             if 'access_token' in data:
-                event.stripe_publishable_key = data['stripe_publishable_key']
-                event.stripe_user_id = data['stripe_user_id']
-                event.stripe_refresh_token = data['refresh_token']
-                event.stripe_access_token = data['access_token']
+                if event.api_type == Event.LIVE:
+                    event.stripe_publishable_key = data['stripe_publishable_key']
+                    event.stripe_user_id = data['stripe_user_id']
+                    event.stripe_refresh_token = data['refresh_token']
+                    event.stripe_access_token = data['access_token']
+                else:
+                    event.stripe_test_publishable_key = data['stripe_publishable_key']
+                    event.stripe_test_user_id = data['stripe_user_id']
+                    event.stripe_test_refresh_token = data['refresh_token']
+                    event.stripe_test_access_token = data['access_token']
                 event.save()
                 messages.success(request, 'Stripe account connected!')
             else:
@@ -441,16 +451,22 @@ class RefundView(View):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        has_errors = False
+        has_refunds = False
         for payment in self.object.payments.all():
             try:
                 payment.refund(payment.amount, request.user,
                                dwolla_pin=request.POST.get('dwolla_pin'))
             except Exception as e:
                 messages.error(request, e.message)
+                has_errors = True
+            else:
+                has_refunds = True
 
-        self.object.status = Order.REFUNDED
-        self.object.save()
-        self.object.bought_items.update(status=BoughtItem.REFUNDED)
+        if has_refunds and not has_errors:
+            self.object.status = Order.REFUNDED
+            self.object.save()
+            self.object.bought_items.update(status=BoughtItem.REFUNDED)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,

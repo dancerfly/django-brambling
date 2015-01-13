@@ -192,22 +192,24 @@
 				<tbody>
 					{# Stripe: #}
 					{% if form.STRIPE_APPLICATION_ID %}
+						{% with event=form.instance %}
 						<tr>
 							<th>
 								<i class="fa fa-fw fa-credit-card"></i>
 								Stripe
 								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 3.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if form.instance.uses_stripe %}
-								<td>Enabled ({{ form.instance.stripe_user_id }})</td>
+							{% if event.uses_stripe %}
+								<td>Enabled ({% if event.api_type == event.LIVE %}{{ event.stripe_user_id }}{% else %}{{ event.stripe_test_user_id }}{% endif %})</td>
 								<td>{% formrow form.disconnect_stripe with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
-									<a href='https://connect.stripe.com/oauth/authorize?client_id={{ form.STRIPE_APPLICATION_ID }}&response_type=code&scope=read_write&state={{ form.instance.slug }}' class='btn btn-info btn-xs'>Connect</i></a>
+									<a href='https://connect.stripe.com/oauth/authorize?client_id={{ form.STRIPE_APPLICATION_ID }}&response_type=code&scope=read_write&state={{ event.slug }}' class='btn btn-info btn-xs'>Connect</i></a>
 								</td>
 							{% endif %}
 						</tr>
+						{% endwith %}
 					{% endif %}
 
 					{# Dwolla: #}

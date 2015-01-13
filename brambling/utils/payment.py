@@ -1,10 +1,12 @@
 from django.conf import settings
 from dwolla import constants, transactions, oauth
-
-constants.debug = settings.DEBUG
+import stripe
 
 TEST = 'test'
 LIVE = 'live'
+
+stripe.api_version = '2015-01-11'
+constants.debug = settings.DEBUG
 
 
 def dwolla_prep(api_type):
@@ -113,3 +115,10 @@ def dwolla_event_oauth_url(event, request):
     scope = "Send|AccountInfoFull|Transactions"
     redirect_url = request.build_absolute_uri(event.get_dwolla_connect_url() + "?api=" + event.api_type)
     return oauth.genauthurl(redirect_url, scope=scope)
+
+
+def stripe_prep(api_type):
+    if api_type == LIVE:
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+    else:
+        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY

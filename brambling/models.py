@@ -21,7 +21,7 @@ from django_countries.fields import CountryField
 import stripe
 
 from brambling.mail import send_fancy_mail
-from brambling.utils.payment import dwolla_refund
+from brambling.utils.payment import dwolla_refund, stripe_prep
 
 
 DEFAULT_DANCE_STYLES = (
@@ -850,7 +850,7 @@ class Payment(models.Model):
         if refundable == 0:
             return None
 
-        stripe.api_key = settings.STRIPE_SECRET_KEY
+        stripe_prep(self.api_type)
 
         # May raise an error
         if self.method == Payment.STRIPE:

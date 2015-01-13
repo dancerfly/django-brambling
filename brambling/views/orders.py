@@ -801,7 +801,7 @@ class SummaryView(OrderMixin, TemplateView):
     def get_forms(self):
         kwargs = {
             'order': self.order,
-            'bought_items': self.summary_data['bought_items'],
+            'amount': self.net_balance,
         }
         choose_data = None
         new_data = None
@@ -840,6 +840,9 @@ class SummaryView(OrderMixin, TemplateView):
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
+            'STRIPE_TEST_PUBLISHABLE_KEY': getattr(settings,
+                                                   'STRIPE_TEST_PUBLISHABLE_KEY',
+                                                   ''),
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order

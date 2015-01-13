@@ -1,6 +1,6 @@
 <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
 <script>
-	Stripe.setPublishableKey('{{ STRIPE_PUBLISHABLE_KEY }}');
+	Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
 
 	$(function(){
 		$('#card-submit').on('click', function(e){
