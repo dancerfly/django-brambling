@@ -10,6 +10,7 @@ from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event)
+from brambling.utils.payment import dwolla_charge
 
 from localflavor.us.forms import USZipCodeField
 
@@ -489,31 +490,22 @@ class DwollaPaymentForm(BasePaymentForm):
 
     def _post_clean(self):
         if 'dwolla_pin' in self.cleaned_data:
-            from brambling.views.utils import get_dwolla
-            dwolla = get_dwolla()
-
-            try:
-                if self.amount <= 0:
-                    self._charge = None
-                else:
-                    if self.user.is_authenticated():
-                        user_access_token = self.user.dwolla_access_token
-                    else:
-                        user_access_token = self.order.dwolla_access_token
-                    dwolla_user = dwolla.DwollaUser(user_access_token)
+            self._charge = None
+            if self.amount > 0:
+                try:
                     fee = self.get_fee(self.amount).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-                    charge_id = dwolla_user.send_funds(float(self.amount),
-                                                       self.order.event.dwolla_user_id,
-                                                       self.cleaned_data['dwolla_pin'],
-                                                       facil_amount=float(fee))
-                    # Charge id returned by send_funds is the transaction ID
-                    # for the user; the event has a different transaction ID.
-                    # But we can use this one to get that one.
-                    event_user = dwolla.DwollaUser(self.order.event.dwolla_access_token)
-                    self._charge = event_user.get_transaction(charge_id)['Id']
 
-            except dwolla.DwollaAPIError, e:
-                self.add_error(None, e.message)
+                    charge_id = dwolla_charge(
+                        user_or_order=self.user if self.user.is_authenticated() else self.order,
+                        amount=float(self.amount),
+                        event=self.order.event,
+                        pin=self.cleaned_data['dwolla_pin'],
+                        fee=float(fee)
+                    )
+                    self._charge = charge_id
+
+                except Exception as e:
+                    self.add_error(None, e.message)
 
     def save(self):
         return Payment.objects.create(order=self.order,

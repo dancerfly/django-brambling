@@ -1,11 +1,11 @@
-from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect
 from django.utils.http import is_safe_url
 from django.views.generic import View
+from dwolla import oauth, accounts
 
 from brambling.models import Event, Order
-from brambling.views.utils import get_dwolla
+from brambling.utils.payment import dwolla_prep, LIVE
 
 
 class DwollaConnectView(View):
@@ -20,24 +20,28 @@ class DwollaConnectView(View):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        dwolla = get_dwolla()
-        client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                        settings.DWOLLA_APPLICATION_SECRET)
         redirect_url = self.object.get_dwolla_connect_url()
+        api_type = request.GET['api']
         qs = request.GET.copy()
         del qs['code']
         if qs:
             redirect_url += "?"
             for k, v in qs.items():
                 redirect_url += k + "=" + v
-        token = client.get_oauth_token(request.GET['code'],
-                                       redirect_uri=request.build_absolute_uri(redirect_url))
-
-        self.object.dwolla_access_token = token
+        dwolla_prep(api_type)
+        token = oauth.get(request.GET['code'],
+                          redirect_uri=request.build_absolute_uri(redirect_url))
 
         # Now get account info.
-        dwolla_user = dwolla.DwollaUser(token)
-        self.object.dwolla_user_id = dwolla_user.get_account_info()['Id']
+        account_info = accounts.full(token)
+
+        if api_type == LIVE:
+            self.object.dwolla_user_id = account_info['Id']
+            self.object.dwolla_access_token = token
+        else:
+            self.object.dwolla_test_user_id = account_info['Id']
+            self.object.dwolla_test_access_token = token
+
         self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())

@@ -2,7 +2,6 @@ from collections import OrderedDict
 from datetime import timedelta
 from functools import wraps
 from itertools import ifilter
-import os
 
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Min
@@ -158,11 +157,3 @@ class Step(object):
 
     def get_errors(self):
         return []
-
-
-def get_dwolla():
-    from django.conf import settings
-    os.environ['DWOLLA_VERIFY_SSL'] = 'True'
-    os.environ['DWOLLA_SANDBOX'] = str(getattr(settings, 'DWOLLA_SANDBOX', False))
-    import dwolla
-    return dwolla

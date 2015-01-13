@@ -21,6 +21,7 @@ from django_countries.fields import CountryField
 import stripe
 
 from brambling.mail import send_fancy_mail
+from brambling.utils.payment import dwolla_refund
 
 
 DEFAULT_DANCE_STYLES = (
@@ -841,8 +842,6 @@ class Payment(models.Model):
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
     def refund(self, amount, issuer, dwolla_pin=None):
-        from brambling.views.utils import get_dwolla
-
         total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
         refundable = self.amount - total_refunds
         if refundable < amount:
@@ -852,7 +851,6 @@ class Payment(models.Model):
             return None
 
         stripe.api_key = settings.STRIPE_SECRET_KEY
-        dwolla = get_dwolla()
 
         # May raise an error
         if self.method == Payment.STRIPE:
@@ -862,11 +860,12 @@ class Payment(models.Model):
             )
             remote_id = stripe_refund.id
         elif self.method == Payment.DWOLLA:
-            dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
-            dwolla_refund = dwolla_user.refund(int(self.remote_id),
-                                               "%.2f" % refundable,
-                                               int(dwolla_pin))
-            remote_id = dwolla_refund['TransactionId']
+            remote_id = dwolla_refund(
+                event=self.event,
+                payment_id=int(self.remote_id),
+                amount="%.2f" % refundable,
+                pin=int(dwolla_pin),
+            )
         else:
             remote_id = ''
         return Refund.objects.create(

@@ -18,9 +18,10 @@ from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing)
+from brambling.utils.payment import dwolla_can_connect, dwolla_customer_oauth_url
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, clear_expired_carts,
-                                   Workflow, Step, get_dwolla)
+                                   Workflow, Step)
 
 
 ORDER_CODE_SESSION_KEY = '_brambling_order_code'
@@ -842,19 +843,14 @@ class SummaryView(OrderMixin, TemplateView):
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        if (getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and
-                not dwolla_obj.dwolla_user_id):
-            dwolla = get_dwolla()
-            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                            settings.DWOLLA_APPLICATION_SECRET)
+        if dwolla_can_connect(dwolla_obj, self.event.api_type):
             kwargs = {
                 'event_slug': self.event.slug,
             }
             if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
-            redirect_url = dwolla_obj.get_dwolla_connect_url() + "?next_url=" + next_url
-            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
-                                                                "Send|AccountInfoFull")
+            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+                dwolla_obj, self.event.api_type, self.request, next_url)
         context.update(self.summary_data)
         return context

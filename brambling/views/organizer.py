@@ -23,11 +23,12 @@ from brambling.models import (Event, Item, Discount, Payment,
                               BoughtItemDiscount, BoughtItem,
                               Refund, Person)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
-from brambling.views.utils import (get_event_or_404, get_dwolla,
+from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
 from brambling.utils.model_tables import AttendeeTable, OrderTable
+from brambling.utils.payment import dwolla_can_connect, dwolla_event_oauth_url
 
 
 class EventCreateView(CreateView):
@@ -165,22 +166,9 @@ class EventUpdateView(UpdateView):
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'owner': self.object.owner,
         })
-        can_connect = (
-            not self.object.uses_dwolla() and
-            (
-                (self.object.api_type == Event.LIVE and
-                 getattr(settings, 'DWOLLA_APPLICATION_KEY', None)) or
-                (self.object.api_type == Event.TEST and
-                 getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', None))
-            )
-        )
-        if can_connect:
-            dwolla = get_dwolla()
-            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                            settings.DWOLLA_APPLICATION_SECRET)
-            redirect_url = self.object.get_dwolla_connect_url()
-            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
-                                                                "Send|AccountInfoFull|Transactions")
+        if dwolla_can_connect(self.object, self.object.api_type):
+            context['dwolla_oauth_url'] = dwolla_event_oauth_url(
+                self.object, self.request)
         return context
 
 
@@ -453,12 +441,11 @@ class RefundView(View):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        dwolla = get_dwolla()
         for payment in self.object.payments.all():
             try:
                 payment.refund(payment.amount, request.user,
                                dwolla_pin=request.POST.get('dwolla_pin'))
-            except dwolla.DwollaAPIError, e:
+            except Exception as e:
                 messages.error(request, e.message)
 
         self.object.status = Order.REFUNDED
