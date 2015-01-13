@@ -50,7 +50,7 @@ class DwollaConnectView(View):
 class EventDwollaConnectView(DwollaConnectView):
     def get_object(self):
         try:
-            return Event.objects.get(slug=self.kwargs['slugs'])
+            return Event.objects.get(slug=self.kwargs['slug'])
         except Event.DoesNotExist:
             raise Http404
 
