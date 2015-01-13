@@ -9,7 +9,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
-                              Order)
+                              Order, Event)
 
 from localflavor.us.forms import USZipCodeField
 
@@ -187,7 +187,6 @@ class HostingForm(MemoModelForm):
             help_text="You will still be able to modify it later.")
     zip_code = USZipCodeField(widget=forms.TextInput)
 
-
     class Meta:
         model = EventHousing
         exclude = ('event', 'home', 'order')
@@ -334,6 +333,7 @@ class HostingForm(MemoModelForm):
 class AddCardForm(forms.Form):
     token = forms.CharField(required=True,
                             error_messages={'required': "No token was provided. Please try again."})
+    api_type = Event.TEST
 
     def __init__(self, user, *args, **kwargs):
         stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -377,6 +377,7 @@ class AddCardForm(forms.Form):
             exp_year=card.exp_year,
             last4=card.last4,
             brand=card.brand,
+            api_type=self.api_type
         )
 
         if user and user.default_card_id is None:
@@ -388,6 +389,7 @@ class AddCardForm(forms.Form):
 
 class BasePaymentForm(forms.Form):
     def __init__(self, order, bought_items, *args, **kwargs):
+        self.api_type = order.event.api_type
         stripe.api_key = order.event.stripe_access_token
         self.order = order
         # bought_items is a list of summary dicts.
@@ -426,7 +428,8 @@ class BasePaymentForm(forms.Form):
                                       method=Payment.STRIPE,
                                       remote_id=charge.id,
                                       card=creditcard,
-                                      is_confirmed=True)
+                                      is_confirmed=True,
+                                      api_type=self.api_type)
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -517,7 +520,8 @@ class DwollaPaymentForm(BasePaymentForm):
                                       amount=self.amount,
                                       method=Payment.DWOLLA,
                                       remote_id=self._charge,
-                                      is_confirmed=True)
+                                      is_confirmed=True,
+                                      api_type=self.api_type)
 
 
 class CheckPaymentForm(BasePaymentForm):
@@ -525,4 +529,5 @@ class CheckPaymentForm(BasePaymentForm):
         return Payment.objects.create(order=self.order,
                                       amount=self.amount,
                                       method=Payment.CHECK,
-                                      is_confirmed=False)
+                                      is_confirmed=False,
+                                      api_type=self.api_type)

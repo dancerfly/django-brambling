@@ -118,12 +118,21 @@ class AbstractDwollaModel(models.Model):
     # Token obtained via OAuth.
     dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
     dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_test_user_id = models.CharField(max_length=20, blank=True, default='')
+    dwolla_test_access_token = models.CharField(max_length=50, blank=True, default='')
 
-    def connected_to_dwolla(self):
+    def connected_to_dwolla_live(self):
         return bool(
             self.dwolla_user_id and
             getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
             getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
+        )
+
+    def connected_to_dwolla_test(self):
+        return bool(
+            self.dwolla_test_user_id and
+            getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
+            getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
         )
 
     def get_dwolla_connect_url(self):
@@ -210,6 +219,14 @@ class Event(AbstractDwollaModel):
         (PUBLIC, _("List publicly")),
         (LINK, _("Visible to anyone with the link")),
     )
+
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
+
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
                             validators=[RegexValidator("[a-z0-9-]+")],
@@ -245,6 +262,10 @@ class Event(AbstractDwollaModel):
     is_published = models.BooleanField(default=False)
     # If an event is "frozen", it can no longer be edited or unpublished.
     is_frozen = models.BooleanField(default=False)
+    # Unpublished events can use test APIs, so that event organizers
+    # and developers can easily run through things without accidentally
+    # charging actual money.
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
     owner = models.ForeignKey('Person',
                               related_name='owner_events')
@@ -266,6 +287,11 @@ class Event(AbstractDwollaModel):
     stripe_access_token = models.CharField(max_length=32, blank=True, default='')
     stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
     stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
+    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
 
     # This is a secret value set by admins
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
@@ -314,14 +340,22 @@ class Event(AbstractDwollaModel):
         return pass_class_count >= 1
 
     def uses_stripe(self):
+        if self.api_type == Event.LIVE:
+            return bool(
+                getattr(settings, 'STRIPE_SECRET_KEY', False) and
+                getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
+                self.stripe_user_id
+            )
         return bool(
-            getattr(settings, 'STRIPE_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
-            self.stripe_user_id
+            getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
+            getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
+            self.stripe_test_user_id
         )
 
     def uses_dwolla(self):
-        return self.connected_to_dwolla()
+        if self.api_type == Event.LIVE:
+            return self.connected_to_dwolla_live()
+        return self.connected_to_dwolla_test()
 
     def uses_checks(self):
         return self.check_payment_allowed
@@ -490,6 +524,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
+    stripe_test_customer_id = models.CharField(max_length=36, blank=True)
     default_card = models.OneToOneField('CreditCard', blank=True, null=True,
                                         related_name='default_for',
                                         on_delete=models.SET_NULL)
@@ -518,7 +553,14 @@ class CreditCard(models.Model):
         ('Diners Club', 'Diners Club'),
         ('Unknown', 'Unknown'),
     )
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, 'Live'),
+        (TEST, 'Test'),
+    )
     stripe_card_id = models.CharField(max_length=40)
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
     person = models.ForeignKey(Person, related_name='cards', blank=True, null=True)
     added = models.DateTimeField(auto_now_add=True)
 
@@ -538,9 +580,15 @@ class CreditCard(models.Model):
 @receiver(signals.pre_delete, sender=CreditCard)
 def delete_stripe_card(sender, instance, **kwargs):
     from django.conf import settings
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-    customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
-    customer.cards.retrieve(instance.stripe_card_id).delete()
+    customer = None
+    if instance.stripe_api == CreditCard.LIVE and instance.person.stripe_customer_id:
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
+    if instance.stripe_api == CreditCard.TEST and instance.person.stripe_test_customer_id:
+        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
+    if customer is not None:
+        customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
 class Order(AbstractDwollaModel):
@@ -776,6 +824,13 @@ class Payment(models.Model):
         (CHECK, 'Check'),
         (FAKE, 'Fake')
     )
+
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
     order = models.ForeignKey('Order', related_name='payments')
     amount = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0.01)])
     timestamp = models.DateTimeField(default=timezone.now)
@@ -783,6 +838,7 @@ class Payment(models.Model):
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
     is_confirmed = models.BooleanField(default=False)
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
     def refund(self, amount, issuer, dwolla_pin=None):
         from brambling.views.utils import get_dwolla
@@ -819,7 +875,8 @@ class Payment(models.Model):
             payment=self,
             amount=amount,
             method=self.method,
-            remote_id=remote_id
+            remote_id=remote_id,
+            api_type=self.api_type
         )
     refund.alters_data = True
 
@@ -905,6 +962,13 @@ class Refund(models.Model):
     STRIPE = Payment.STRIPE
     DWOLLA = Payment.DWOLLA
     METHOD_CHOICES = Payment.METHOD_CHOICES
+
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
     order = models.ForeignKey('Order', related_name='refunds')
     issuer = models.ForeignKey('Person')
     payment = models.ForeignKey('Payment', related_name='refunds')
@@ -912,6 +976,7 @@ class Refund(models.Model):
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
 
 class Attendee(AbstractNamedModel):

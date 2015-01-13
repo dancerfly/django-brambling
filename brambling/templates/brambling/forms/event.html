@@ -211,14 +211,14 @@
 					{% endif %}
 
 					{# Dwolla: #}
-					{% if form.instance.connected_to_dwolla or dwolla_oauth_url %}
+					{% if form.instance.uses_dwolla or dwolla_oauth_url %}
 						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla
 								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if form.instance.connected_to_dwolla %}
+							{% if form.instance.uses_dwolla %}
 								<td>Enabled ({{ form.instance.dwolla_user_id }})</td>
 								<td>{% formrow form.disconnect_dwolla with label="Disconnect" %}</td>
 							{% else %}

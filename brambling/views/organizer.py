@@ -165,7 +165,16 @@ class EventUpdateView(UpdateView):
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'owner': self.object.owner,
         })
-        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.connected_to_dwolla():
+        can_connect = (
+            not self.object.uses_dwolla() and
+            (
+                (self.object.api_type == Event.LIVE and
+                 getattr(settings, 'DWOLLA_APPLICATION_KEY', None)) or
+                (self.object.api_type == Event.TEST and
+                 getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', None))
+            )
+        )
+        if can_connect:
             dwolla = get_dwolla()
             client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
                                             settings.DWOLLA_APPLICATION_SECRET)
