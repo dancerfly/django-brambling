@@ -587,7 +587,7 @@ def delete_stripe_card(sender, instance, **kwargs):
         customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
     if instance.stripe_api == CreditCard.TEST and instance.person.stripe_test_customer_id:
         stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
+        customer = stripe.Customer.retrieve(instance.person.stripe_test_customer_id)
     if customer is not None:
         customer.cards.retrieve(instance.stripe_card_id).delete()
 

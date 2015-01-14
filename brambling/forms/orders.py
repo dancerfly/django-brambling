@@ -351,7 +351,14 @@ class AddCardForm(forms.Form):
     def add_card(self, token):
         user = self.user
         stripe_prep(self.api_type)
-        if not user.stripe_customer_id:
+
+        if self.api_type == Event.LIVE:
+            customer_attr = 'stripe_customer_id'
+        else:
+            customer_attr = 'stripe_test_customer_id'
+        customer_id = getattr(user, customer_attr)
+
+        if not customer_id:
             customer = stripe.Customer.create(
                 email=user.email,
                 description=user.get_full_name(),
@@ -359,10 +366,10 @@ class AddCardForm(forms.Form):
                     'brambling_id': user.id
                 },
             )
-            user.stripe_customer_id = customer.id
+            setattr(user, customer_attr, customer.id)
             user.save()
         else:
-            customer = stripe.Customer.retrieve(user.stripe_customer_id)
+            customer = stripe.Customer.retrieve(customer_id)
         self.customer = customer
         return customer.cards.create(card=token)
 
@@ -403,13 +410,15 @@ class BasePaymentForm(forms.Form):
         if self.amount <= 0:
             return None
         stripe_prep(self.api_type)
+        if self.api_type == Event.LIVE:
+            access_token = self.order.event.stripe_access_token
+        else:
+            access_token = self.order.event.stripe_test_access_token
+        stripe.api_key = access_token
         # Amount is number of smallest currency units.
         amount = int(self.amount * 100)
+
         if customer is not None:
-            if self.api_type == Event.LIVE:
-                access_token = self.order.event.stripe_access_token
-            else:
-                access_token = self.order.event.stripe_test_access_token
             card_or_token = stripe.Token.create(
                 customer=customer,
                 card=card_or_token,
@@ -419,7 +428,6 @@ class BasePaymentForm(forms.Form):
         return stripe.Charge.create(
             amount=amount,
             currency=self.order.event.currency,
-            customer=customer,
             card=card_or_token,
             application_fee=fee,
         )
@@ -467,14 +475,19 @@ class SavedCardPaymentForm(BasePaymentForm):
 
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['card'].queryset = self.order.person.cards.all()
+        self.fields['card'].queryset = self.order.person.cards.filter(
+            api_type=self.api_type)
         self.fields['card'].initial = self.order.person.default_card
 
     def _post_clean(self):
         self.card = self.cleaned_data['card']
+        if self.api_type == Event.LIVE:
+            customer_id = self.order.person.stripe_customer_id
+        else:
+            customer_id = self.order.person.stripe_test_customer_id
         try:
             self._charge = self.charge(self.card.stripe_card_id,
-                                       self.order.person.stripe_customer_id)
+                                       customer_id)
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
 
