@@ -334,7 +334,7 @@ class HostingForm(MemoModelForm):
 class AddCardForm(forms.Form):
     token = forms.CharField(required=True,
                             error_messages={'required': "No token was provided. Please try again."})
-    api_type = Event.TEST
+    api_type = Event.LIVE
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
