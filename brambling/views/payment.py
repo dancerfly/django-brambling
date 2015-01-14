@@ -32,8 +32,8 @@ class DwollaConnectView(View):
         dwolla_prep(api_type)
         oauth_tokens = oauth.get(request.GET['code'],
                                  redirect=request.build_absolute_uri(redirect_url))
-        if 'access' in oauth_tokens:
-            token = oauth_tokens['access']
+        if 'access_token' in oauth_tokens:
+            token = oauth_tokens['access_token']
 
             # Now get account info.
             account_info = accounts.full(token)
@@ -46,10 +46,11 @@ class DwollaConnectView(View):
                 self.object.dwolla_test_access_token = token
 
             self.object.save()
+            messages.success("Dwolla account connected!")
         elif 'error_description' in oauth_tokens:
             messages.error(request, oauth_tokens['error_description'])
         else:
-            messages.error("Unknown error during dwolla connection.")
+            messages.error(request, "Unknown error during dwolla connection.")
 
         return HttpResponseRedirect(self.get_success_url())
 

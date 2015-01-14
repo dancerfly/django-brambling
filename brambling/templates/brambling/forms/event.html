@@ -214,14 +214,15 @@
 
 					{# Dwolla: #}
 					{% if form.instance.uses_dwolla or dwolla_oauth_url %}
+						{% with event=form.instance %}
 						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla
 								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if form.instance.uses_dwolla %}
-								<td>Enabled ({{ form.instance.dwolla_user_id }})</td>
+							{% if event.uses_dwolla %}
+								<td>Enabled ({% if event.api_type == event.LIVE %}{{ event.dwolla_user_id }}{% else %}{{ event.dwolla_test_user_id }}{% endif %})</td>
 								<td>{% formrow form.disconnect_dwolla with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>
@@ -230,6 +231,7 @@
 								</td>
 							{% endif %}
 						</tr>
+						{% endwith %}
 					{% endif %}
 
 					{# By Mail/Check: #}
