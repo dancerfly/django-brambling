@@ -14,7 +14,7 @@
 	</p>
 	<p>Checks must be postmarked no later than <strong>{{ event.check_postmark_cutoff|date:"F jS, Y" }}</strong>. If you do not complete payment by that date, the event organizer reserves the right to revoke your passes.</p>
 
-{% elif time_until_check_cutoff.days = 0 %}
+{% elif time_until_check_cutoff.days == 0 %}
 
 	<p>Checks should be made out to <strong>{{ event.check_payable_to }}</strong> and include your order code (<strong>{{ order.code }}</strong>) in the memo line. Mail them to:</p>
 	<p>
