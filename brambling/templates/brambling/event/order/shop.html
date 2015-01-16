@@ -146,9 +146,10 @@
 												{% endif %}
 												<!-- Wrapper for slides -->
 												<div class="carousel-inner text-center">
-													{% for image in images %}
+													{% adjust_bulk images "image" 'fit' width=598 height=598 as adjusted_list %}
+													{% for images, image in adjusted_list %}
 														<div class="item{% if forloop.first %} active{% endif %}">
-															<img src="{% adjust image.image 'fit' width=598 height=598 %}">
+															<img src="{{ image }}">
 														</div>
 													{% endfor %}
 												</div>
