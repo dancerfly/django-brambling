@@ -319,10 +319,10 @@ class OrderMixin(object):
 
     def create_order(self):
         person = self.request.user if self.request.user.is_authenticated() else None
-        code = get_random_string(8,ORDER_CODE_ALLOWED_CHARS)
+        code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
 
         while Order.objects.filter(event=self.event, code=code).exists():
-            code = get_random_string(8,ORDER_CODE_ALLOWED_CHARS)
+            code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
         order = Order.objects.create(event=self.event, person=person, code=code)
 
         if not self.request.user.is_authenticated():
