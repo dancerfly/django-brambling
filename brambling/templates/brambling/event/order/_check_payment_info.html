@@ -12,7 +12,7 @@
 		{{ event.check_city }}, {{ event.check_state_or_province }} {{ event.check_zip }}
 		{{ event.check_country }}
 	</p>
-	<p>Checks must be postmarked no later than <strong>{{ event.check_postmark_cutoff|date:"F jS, Y" }}</strong>. If you do not complete payment by that date, the event organizer reserves the right to revoke your passes.</p>
+	<p>Checks must be postmarked no later than <strong>{{ event.check_postmark_cutoff|date:"F jS, Y" }}</strong>. If your payment is not postmarked by that date, the event organizer reserves the right to revoke your passes.</p>
 
 {% elif time_until_check_cutoff.days == 0 %}
 
@@ -24,11 +24,10 @@
 		{{ event.check_city }}, {{ event.check_state_or_province }} {{ event.check_zip }}
 		{{ event.check_country }}
 	</p>
-	<p>Checks must be postmarked no later than <strong>today</strong>. If you do not complete payment today, the event organizer reserves the right to revoke your passes.</p>
+	<p>Checks must be postmarked no later than <strong>today</strong>. If your payment is not postmarked by today, the event organizer reserves the right to revoke your passes.</p>
 
 {% else %}
 	
-	<p>The organizer requires that checks be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}.</p>
-	<p>Because it is past that date, the event organizer reserves the right to revoke your passes.</p>
+	<p>The organizer requires that checks be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}. If you've already sent in your payment, great! If not, contact the event organizer. They reserve the right to revoke your passes if you have not yet sent in your payment.</p>
 
 {% endif %}
