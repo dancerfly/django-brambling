@@ -46,7 +46,7 @@ class DwollaConnectView(View):
                 self.object.dwolla_test_access_token = token
 
             self.object.save()
-            messages.success("Dwolla account connected!")
+            messages.success(request, "Dwolla account connected!")
         elif 'error_description' in oauth_tokens:
             messages.error(request, oauth_tokens['error_description'])
         else:
