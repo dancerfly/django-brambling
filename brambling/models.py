@@ -525,7 +525,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
-    stripe_test_customer_id = models.CharField(max_length=36, blank=True)
+    stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
     default_card = models.OneToOneField('CreditCard', blank=True, null=True,
                                         related_name='default_for',
                                         on_delete=models.SET_NULL)

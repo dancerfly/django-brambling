@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='person',
             name='stripe_test_customer_id',
-            field=models.CharField(max_length=36, blank=True),
+            field=models.CharField(default=b'', max_length=36, blank=True),
             preserve_default=True,
         ),
         migrations.AddField(
