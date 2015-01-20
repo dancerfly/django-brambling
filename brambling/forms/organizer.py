@@ -49,7 +49,7 @@ class EventForm(forms.ModelForm):
                    'stripe_access_token', 'stripe_publishable_key',
                    'dwolla_user_id', 'dwolla_access_token', 'editors',
                    'is_published', 'is_frozen', 'country', 'currency',
-                   'application_fee_percent', 'check_country')
+                   'application_fee_percent', 'check_country', 'api_type',)
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
