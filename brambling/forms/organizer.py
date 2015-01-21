@@ -59,7 +59,10 @@ class EventForm(forms.ModelForm):
         self.fields['end_date'].initial = getattr(self.instance,
                                                   'end_date',
                                                   datetime.date.today)
-        self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
+        if self.instance.api_type == Event.LIVE:
+            self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
+        else:
+            self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_TEST_APPLICATION_ID', None)
         if not self.instance.uses_stripe():
             del self.fields['disconnect_stripe']
         if not self.instance.uses_dwolla():
