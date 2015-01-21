@@ -20,20 +20,24 @@
 				</div>
 				<ul class='list-group'>
 					<li class='list-group-item'>
-						Gross sales
-						<strong class='pull-right text-info'>{{ gross_sales|format_money:event.currency }}</strong>
+						Payments received
+						<strong class='pull-right text-info'>{{ confirmed_payments|format_money:event.currency }}</strong>
+					</li>
+					<li class='list-group-item'>
+						Payments pending
+						<strong class='pull-right text-info'>{{ pending_payments|format_money:event.currency }}</strong>
 					</li>
 					<li class='list-group-item'>
 						Discounts
 						<strong class='pull-right text-danger'>{{ total_discounts|format_money:event.currency }}</strong>
 					</li>
 					<li class='list-group-item'>
-						Payments outstanding
-						<strong class='pull-right{% if payments_outstanding %} text-danger{% endif %}'>{{ payments_outstanding|format_money:event.currency }}</strong>
+						Refunds
+						<strong class='pull-right text-danger'>{{ total_refunds|format_money:event.currency }}</strong>
 					</li>
-					<li class='list-group-item list-group-item-success'>
+					<li class='list-group-item {% if net_pending > 0 %}list-group-item-success{% endif %}{% if net_pending < 0 %}list-group-item-danger{% endif %}'>
 						<strong>Net total</strong>
-						<strong class='pull-right text-success'>{{ payments_received|format_money:event.currency }}</strong>
+						<strong class='pull-right {% if net_pending > 0 %}text-success{% endif %}{% if net_pending < 0 %}text-danger{% endif %}'>{{ net_pending|format_money:event.currency }}</strong>
 					</li>
 				</ul>
 			</div>

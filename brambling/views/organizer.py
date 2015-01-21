@@ -87,17 +87,24 @@ class EventSummaryView(TemplateView):
         return super(EventSummaryView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        # For the summary, we only display completed order information.
+        # We can show detailed information on a more detailed finances
+        # page.
         context = super(EventSummaryView, self).get_context_data(**kwargs)
 
         itemoptions = ItemOption.objects.filter(
             item__event=self.event
-        ).select_related('item').annotate(Count('boughtitem'))
+        ).select_related('item')
 
         gross_sales = 0
         itemoption_map = {}
 
         for itemoption in itemoptions:
             itemoption_map[itemoption.pk] = itemoption
+            itemoption.boughtitem__count = BoughtItem.objects.filter(
+                item_option=itemoption,
+                order__status__in=(Order.PENDING, Order.COMPLETED)
+            ).count()
             gross_sales += itemoption.price * itemoption.boughtitem__count
 
         discounts = list(Discount.objects.filter(
@@ -116,7 +123,19 @@ class EventSummaryView(TemplateView):
             total_discounts += discount.savings()
         total_discounts = min(total_discounts, gross_sales)
 
-        total_payments = Payment.objects.filter(order__event=self.event).aggregate(sum=Sum('amount'))['sum'] or 0
+        total_refunds = Refund.objects.filter(
+            order__event=self.event,
+        ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+        confirmed_payments = Payment.objects.filter(
+            order__event=self.event,
+            is_confirmed=True,
+        ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+        pending_payments = Payment.objects.filter(
+            order__event=self.event,
+            is_confirmed=False,
+        ).aggregate(sum=Sum('amount'))['sum'] or 0
 
         context.update({
             'event': self.event,
@@ -126,10 +145,13 @@ class EventSummaryView(TemplateView):
             'itemoptions': itemoptions,
             'discounts': discounts,
 
-            'gross_sales': gross_sales,
+            'confirmed_payments': confirmed_payments,
+            'pending_payments': pending_payments,
             'total_discounts': total_discounts,
-            'payments_received': total_payments,
-            'payments_outstanding': gross_sales - total_discounts - total_payments
+            'total_refunds': total_refunds,
+
+            'net_confirmed': confirmed_payments - total_discounts - total_refunds,
+            'net_pending': confirmed_payments + pending_payments - total_discounts - total_refunds,
         })
 
         if self.event.collect_housing_data:
