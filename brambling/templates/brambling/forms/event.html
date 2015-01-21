@@ -191,7 +191,7 @@
 				</thead>
 				<tbody>
 					{# Stripe: #}
-					{% if form.STRIPE_APPLICATION_ID %}
+					{% if form.instance.uses_stripe or stripe_oauth_url %}
 						{% with event=form.instance %}
 						<tr>
 							<th>
@@ -205,7 +205,7 @@
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
-									<a href='https://connect.stripe.com/oauth/authorize?client_id={{ form.STRIPE_APPLICATION_ID }}&response_type=code&scope=read_write&state={{ event.slug }}' class='btn btn-info btn-xs'>Connect</i></a>
+									<a href='{{ stripe_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
 								</td>
 							{% endif %}
 						</tr>

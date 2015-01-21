@@ -31,7 +31,8 @@ from brambling.views.utils import (get_event_or_404,
                                    clear_expired_carts,
                                    ajax_required)
 from brambling.utils.model_tables import AttendeeTable, OrderTable
-from brambling.utils.payment import dwolla_can_connect, dwolla_event_oauth_url
+from brambling.utils.payment import (dwolla_can_connect, dwolla_event_oauth_url,
+                                     stripe_can_connect, stripe_event_oauth_url)
 
 
 class EventCreateView(CreateView):
@@ -171,6 +172,9 @@ class EventUpdateView(UpdateView):
         })
         if dwolla_can_connect(self.object, self.object.api_type):
             context['dwolla_oauth_url'] = dwolla_event_oauth_url(
+                self.object, self.request)
+        if stripe_can_connect(self.object, self.object.api_type):
+            context['stripe_oauth_url'] = stripe_event_oauth_url(
                 self.object, self.request)
         return context
 

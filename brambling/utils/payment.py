@@ -1,4 +1,7 @@
+import urllib
+
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from dwolla import constants, transactions, oauth
 import stripe
 
@@ -122,3 +125,34 @@ def stripe_prep(api_type):
         stripe.api_key = settings.STRIPE_SECRET_KEY
     else:
         stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+
+
+def stripe_can_connect(obj, api_type):
+    if api_type == LIVE:
+        return bool(
+            getattr(settings, 'STRIPE_APPLICATION_ID', False) and
+            getattr(settings, 'STRIPE_SECRET_KEY', False) and
+            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
+            not obj.stripe_user_id
+        )
+    return bool(
+        getattr(settings, 'STRIPE_TEST_APPLICATION_ID', False) and
+        getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
+        getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
+        not obj.stripe_test_user_id
+    )
+
+
+def stripe_event_oauth_url(event, request):
+    stripe_prep(event.api_type)
+    if event.api_type == LIVE:
+        client_id = getattr(settings, 'STRIPE_APPLICATION_ID', None)
+    else:
+        client_id = getattr(settings, 'STRIPE_TEST_APPLICATION_ID', None)
+    if not client_id:
+        return ''
+    redirect_uri = request.build_absolute_uri(reverse('brambling_stripe_connect'))
+    base_url = "https://connect.stripe.com/oauth/authorize?client_id={client_id}&response_type=code&scope=read_write&state={state}&redirect_uri={redirect_uri}"
+    return base_url.format(client_id=client_id,
+                           state=event.slug,
+                           redirect_uri=urllib.quote(redirect_uri))
