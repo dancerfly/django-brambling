@@ -1,3 +1,6 @@
+import logging
+import pprint
+
 from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -208,6 +211,9 @@ class StripeConnectView(View):
                 event.save()
                 messages.success(request, 'Stripe account connected!')
             else:
+                logger = logging.getLogger('brambling.stripe')
+                logger.debug("Error connecting event {} ({}) to stripe. Data: {}".format(
+                    event.pk, event.name, pprint.pformat(data)))
                 messages.error(request, 'Something went wrong. Please try again.')
 
         return HttpResponseRedirect(reverse('brambling_event_update',
