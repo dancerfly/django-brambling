@@ -3,6 +3,8 @@
 		<p><strong>Warning:</strong> This connection is not secure. Never submit real credit card data over an insecure connection. You may see this error if this site is in testing mode. If not, please contact a site administrator.</p>
 		<p>If you are testing this site, you may use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a>.</p>
 	</div>
+{% elif event.api_type == event.TEST %}
+	<p>This event is in test mode; use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a>.</p>
 {% endif %}
 
 <div class='row'>

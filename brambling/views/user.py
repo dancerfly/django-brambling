@@ -12,7 +12,7 @@ from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
 from brambling.mail import send_confirmation_email
-from brambling.views.utils import get_dwolla
+from brambling.utils.payment import dwolla_can_connect, dwolla_customer_oauth_url, LIVE
 
 
 class SignUpView(CreateView):
@@ -92,13 +92,9 @@ class PersonView(UpdateView):
         context.update({
             'cards': self.request.user.cards.order_by('-added'),
         })
-        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.dwolla_user_id:
-            dwolla = get_dwolla()
-            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                            settings.DWOLLA_APPLICATION_SECRET)
-            redirect_url = self.request.user.get_dwolla_connect_url()
-            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
-                                                                "Send|AccountInfoFull")
+        if dwolla_can_connect(self.object, LIVE):
+            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+                self.request.user, LIVE, self.request)
         return context
 
 

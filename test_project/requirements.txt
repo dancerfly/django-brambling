@@ -12,8 +12,11 @@ django-daguerre==2.1.2
 six==1.5.2
 django-floppyforms==1.2.0
 django-localflavor==1.0
-stripe==1.14.0
-requests==2.2.1
-dwolla==1.6.3
+stripe==1.20.1
+requests==2.5.1
+dwolla==2.0.3
 # our own django-zenaida - @master until we reach a peggable point.
 https://github.com/littleweaver/django-zenaida/tarball/master
+
+# Required by dwolla
+mock==1.0.1

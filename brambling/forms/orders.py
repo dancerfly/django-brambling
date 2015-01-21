@@ -9,7 +9,8 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
-                              Order)
+                              Order, Event)
+from brambling.utils.payment import dwolla_charge, stripe_prep
 
 from localflavor.us.forms import USZipCodeField
 
@@ -187,7 +188,6 @@ class HostingForm(MemoModelForm):
             help_text="You will still be able to modify it later.")
     zip_code = USZipCodeField(widget=forms.TextInput)
 
-
     class Meta:
         model = EventHousing
         exclude = ('event', 'home', 'order')
@@ -334,9 +334,9 @@ class HostingForm(MemoModelForm):
 class AddCardForm(forms.Form):
     token = forms.CharField(required=True,
                             error_messages={'required': "No token was provided. Please try again."})
+    api_type = Event.LIVE
 
     def __init__(self, user, *args, **kwargs):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         self.user = user
         super(AddCardForm, self).__init__(*args, **kwargs)
 
@@ -350,7 +350,15 @@ class AddCardForm(forms.Form):
 
     def add_card(self, token):
         user = self.user
-        if not user.stripe_customer_id:
+        stripe_prep(self.api_type)
+
+        if self.api_type == Event.LIVE:
+            customer_attr = 'stripe_customer_id'
+        else:
+            customer_attr = 'stripe_test_customer_id'
+        customer_id = getattr(user, customer_attr)
+
+        if not customer_id:
             customer = stripe.Customer.create(
                 email=user.email,
                 description=user.get_full_name(),
@@ -358,10 +366,10 @@ class AddCardForm(forms.Form):
                     'brambling_id': user.id
                 },
             )
-            user.stripe_customer_id = customer.id
+            setattr(user, customer_attr, customer.id)
             user.save()
         else:
-            customer = stripe.Customer.retrieve(user.stripe_customer_id)
+            customer = stripe.Customer.retrieve(customer_id)
         self.customer = customer
         return customer.cards.create(card=token)
 
@@ -377,6 +385,7 @@ class AddCardForm(forms.Form):
             exp_year=card.exp_year,
             last4=card.last4,
             brand=card.brand,
+            api_type=self.api_type
         )
 
         if user and user.default_card_id is None:
@@ -387,13 +396,10 @@ class AddCardForm(forms.Form):
 
 
 class BasePaymentForm(forms.Form):
-    def __init__(self, order, bought_items, *args, **kwargs):
-        stripe.api_key = order.event.stripe_access_token
+    def __init__(self, order, amount, *args, **kwargs):
+        self.api_type = order.event.api_type
         self.order = order
-        # bought_items is a list of summary dicts.
-        self.bought_items = [item for item in bought_items
-                             if item['net_balance'] > 0]
-        self.amount = sum((item['net_balance'] for item in self.bought_items))
+        self.amount = amount
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
     def get_fee(self, amount):
@@ -403,19 +409,25 @@ class BasePaymentForm(forms.Form):
     def charge(self, card_or_token, customer=None):
         if self.amount <= 0:
             return None
+        stripe_prep(self.api_type)
+        if self.api_type == Event.LIVE:
+            access_token = self.order.event.stripe_access_token
+        else:
+            access_token = self.order.event.stripe_test_access_token
+        stripe.api_key = access_token
         # Amount is number of smallest currency units.
         amount = int(self.amount * 100)
+
         if customer is not None:
             card_or_token = stripe.Token.create(
                 customer=customer,
                 card=card_or_token,
-                api_key=self.order.event.stripe_access_token,
+                api_key=access_token,
             )
         fee = self.get_fee(amount).quantize(Decimal('1.'), rounding=ROUND_DOWN)
         return stripe.Charge.create(
             amount=amount,
             currency=self.order.event.currency,
-            customer=customer,
             card=card_or_token,
             application_fee=fee,
         )
@@ -426,7 +438,8 @@ class BasePaymentForm(forms.Form):
                                       method=Payment.STRIPE,
                                       remote_id=charge.id,
                                       card=creditcard,
-                                      is_confirmed=True)
+                                      is_confirmed=True,
+                                      api_type=self.api_type)
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -462,14 +475,19 @@ class SavedCardPaymentForm(BasePaymentForm):
 
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['card'].queryset = self.order.person.cards.all()
+        self.fields['card'].queryset = self.order.person.cards.filter(
+            api_type=self.api_type)
         self.fields['card'].initial = self.order.person.default_card
 
     def _post_clean(self):
         self.card = self.cleaned_data['card']
+        if self.api_type == Event.LIVE:
+            customer_id = self.order.person.stripe_customer_id
+        else:
+            customer_id = self.order.person.stripe_test_customer_id
         try:
             self._charge = self.charge(self.card.stripe_card_id,
-                                       self.order.person.stripe_customer_id)
+                                       customer_id)
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
 
@@ -486,38 +504,30 @@ class DwollaPaymentForm(BasePaymentForm):
 
     def _post_clean(self):
         if 'dwolla_pin' in self.cleaned_data:
-            from brambling.views.utils import get_dwolla
-            dwolla = get_dwolla()
-
-            try:
-                if self.amount <= 0:
-                    self._charge = None
-                else:
-                    if self.user.is_authenticated():
-                        user_access_token = self.user.dwolla_access_token
-                    else:
-                        user_access_token = self.order.dwolla_access_token
-                    dwolla_user = dwolla.DwollaUser(user_access_token)
+            self._charge = None
+            if self.amount > 0:
+                try:
                     fee = self.get_fee(self.amount).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-                    charge_id = dwolla_user.send_funds(float(self.amount),
-                                                       self.order.event.dwolla_user_id,
-                                                       self.cleaned_data['dwolla_pin'],
-                                                       facil_amount=float(fee))
-                    # Charge id returned by send_funds is the transaction ID
-                    # for the user; the event has a different transaction ID.
-                    # But we can use this one to get that one.
-                    event_user = dwolla.DwollaUser(self.order.event.dwolla_access_token)
-                    self._charge = event_user.get_transaction(charge_id)['Id']
 
-            except dwolla.DwollaAPIError, e:
-                self.add_error(None, e.message)
+                    charge_id = dwolla_charge(
+                        user_or_order=self.user if self.user.is_authenticated() else self.order,
+                        amount=float(self.amount),
+                        event=self.order.event,
+                        pin=self.cleaned_data['dwolla_pin'],
+                        fee=float(fee)
+                    )
+                    self._charge = charge_id
+
+                except Exception as e:
+                    self.add_error(None, e.message)
 
     def save(self):
         return Payment.objects.create(order=self.order,
                                       amount=self.amount,
                                       method=Payment.DWOLLA,
                                       remote_id=self._charge,
-                                      is_confirmed=True)
+                                      is_confirmed=True,
+                                      api_type=self.api_type)
 
 
 class CheckPaymentForm(BasePaymentForm):
@@ -525,4 +535,5 @@ class CheckPaymentForm(BasePaymentForm):
         return Payment.objects.create(order=self.order,
                                       amount=self.amount,
                                       method=Payment.CHECK,
-                                      is_confirmed=False)
+                                      is_confirmed=False,
+                                      api_type=self.api_type)

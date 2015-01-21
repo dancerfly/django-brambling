@@ -49,7 +49,7 @@ class EventForm(forms.ModelForm):
                    'stripe_access_token', 'stripe_publishable_key',
                    'dwolla_user_id', 'dwolla_access_token', 'editors',
                    'is_published', 'is_frozen', 'country', 'currency',
-                   'application_fee_percent', 'check_country')
+                   'application_fee_percent', 'check_country', 'api_type',)
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
@@ -62,7 +62,7 @@ class EventForm(forms.ModelForm):
         self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
         if not self.instance.uses_stripe():
             del self.fields['disconnect_stripe']
-        if not self.instance.connected_to_dwolla():
+        if not self.instance.uses_dwolla():
             del self.fields['disconnect_dwolla']
         self.request = request
         if self.instance.pk is None:
