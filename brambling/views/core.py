@@ -41,7 +41,7 @@ class UserDashboardView(TemplateView):
         # So you've paid for something or you're going to.
         registered_events = list(Event.objects.filter(
             order__person=user,
-            order__bought_items__status__in=(BoughtItem.PAID, BoughtItem.RESERVED),
+            order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date'))
         re_dict = dict((e.pk, e) for e in registered_events)
@@ -58,7 +58,7 @@ class UserDashboardView(TemplateView):
         # So you've paid for something, even if it was later refunded.
         past_events = Event.objects.filter(
             order__person=user,
-            order__bought_items__status__in=(BoughtItem.PAID, BoughtItem.REFUNDED),
+            order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__lt=today).order_by('-start_date')
 

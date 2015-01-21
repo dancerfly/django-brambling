@@ -40,6 +40,27 @@
 {% block main %}
 	{{ block.super }}
 
+	<h2>Order {{ order.code }} ({{ order.get_status_display }}) {% if order.status == order.COMPLETED %}<a class='pull-right btn btn-success' data-toggle="modal" data-target=".refund-{{ order.code }}">Refund order</a>{% endif %}</h2>
+	<h3>{% if order.person %}<a href="mailto:{{ order.person.email }}">{{ order.person.get_full_name }} &lt;{{ order.person.email }}&gt;</a>{% else %}<a href="mailto:{{ order.email }}">{{ order.email }}</a>{% endif %}</h3>
+
+	<div class="modal fade refund-{{ order.code }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ order.code }}" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-body">
+					<form action='{% url 'brambling_event_refund' event_slug=event.slug code=order.code %}' method='post' class='form-inline'>
+						{% csrf_token %}
+						<h4 id="Label{{ bought_item.item_option.item.pk }}">Are you sure you want to refund order {{ order.code }}?</h4>
+						{% if order.has_dwolla_payments %}
+							<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
+						{% endif %}
+						<button type='submit' class='btn btn-success btn-block'>Yes, refund</button>
+						<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Nav tabs -->
 	<ul class="nav nav-tabs" role="tablist">
 	  <li{% if not payment_form.is_bound and not discount_form.is_bound %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>

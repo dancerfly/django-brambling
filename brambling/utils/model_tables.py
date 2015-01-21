@@ -246,6 +246,7 @@ class AttendeeTable(ModelTable):
     ORDER_FIELD_OPTIONS = (
         ("Order Code", "order_code", True),
         ("Order Placed By", "order_placed_by", True),
+        ("Order Status", "order_status", True),
     )
 
     #: A list of miscellaneous fields.
@@ -278,6 +279,9 @@ class AttendeeTable(ModelTable):
     def order_code(self, obj):
         return obj.order.code
 
+    def order_status(self, obj):
+        return obj.order.get_status_display()
+
     def order_placed_by(self, obj):
         person = obj.order.person
         if person:
@@ -302,6 +306,7 @@ class OrderTable(ModelTable):
     BASE_FIELDS = (
         ("Code", "code", True),
         ("Person", "person", True),
+        ("Status", "status", True),
     )
 
     SURVEY_FIELDS = (

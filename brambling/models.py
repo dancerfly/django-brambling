@@ -11,13 +11,14 @@ from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import signals
+from django.db.models import signals, Sum
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+import stripe
 
 from brambling.mail import send_fancy_mail
 
@@ -536,7 +537,6 @@ class CreditCard(models.Model):
 
 @receiver(signals.pre_delete, sender=CreditCard)
 def delete_stripe_card(sender, instance, **kwargs):
-    import stripe
     from django.conf import settings
     stripe.api_key = settings.STRIPE_SECRET_KEY
     customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
@@ -571,6 +571,19 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
+    # TODO: Add partial_refund status.
+    IN_PROGRESS = 'in_progress'
+    PENDING = 'pending'
+    COMPLETED = 'completed'
+    REFUNDED = 'refunded'
+
+    STATUS_CHOICES = (
+        (IN_PROGRESS, _('In progress')),
+        (PENDING, _('Payment pending')),
+        (COMPLETED, _('Completed')),
+        (REFUNDED, _('Refunded')),
+    )
+
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -594,7 +607,7 @@ class Order(AbstractDwollaModel):
 
     providing_housing = models.BooleanField(default=False)
 
-    checked_out = models.BooleanField(default=False)
+    status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
     class Meta:
         unique_together = ('event', 'code')
@@ -651,13 +664,13 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self):
+    def mark_cart_paid(self, status):
         self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
-        ).update(status=BoughtItem.PAID)
+        ).update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.checked_out = True
+        self.status = status
         self.save()
 
     def cart_expire_time(self):
@@ -690,6 +703,7 @@ class Order(AbstractDwollaModel):
         if self.cart_is_expired():
             self.delete_cart()
         payments = self.payments.order_by('timestamp')
+        refunds = self.refunds.order_by('timestamp')
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
         bought_items = []
@@ -698,30 +712,22 @@ class Order(AbstractDwollaModel):
             bought_items.extend(items)
 
             gross_cost = sum((item['gross_cost'] for item in items))
-            gross_payments = sum((item['gross_payments'] for item in items))
             total_savings = sum((item['total_savings'] for item in items))
-            total_refunds = sum((item['total_refunds'] for item in items))
-            net_cost = gross_cost - total_refunds - total_savings
-            net_payments = gross_payments - total_refunds
-            net_balance = net_cost - net_payments
+            net_cost = gross_cost - total_savings
             attendees.append({
                 'attendee': k,
                 'bought_items': items,
                 'gross_cost': gross_cost,
-                'gross_payments': gross_payments,
                 'total_savings': total_savings,
-                'total_refunds': total_refunds,
                 'net_cost': net_cost,
-                'net_payments': net_payments,
-                'net_balance': net_balance,
             })
 
         gross_cost = sum((item.item_option.price for item in bought_items_qs))
         gross_payments = sum((payment.amount for payment in payments))
         total_savings = sum((attendee['total_savings']
                              for attendee in attendees))
-        total_refunds = sum((attendee['total_refunds']
-                             for attendee in attendees))
+        total_refunds = sum((refund.amount
+                             for refund in refunds))
         net_cost = gross_cost - total_refunds - total_savings
         net_payments = gross_payments - total_refunds
         net_balance = net_cost - net_payments
@@ -752,6 +758,9 @@ class Order(AbstractDwollaModel):
                 self._eventhousing = None
         return self._eventhousing
 
+    def has_dwolla_payments(self):
+        return self.payments.filter(method=Payment.DWOLLA).exists()
+
 
 class Payment(models.Model):
     STRIPE = 'stripe'
@@ -775,17 +784,44 @@ class Payment(models.Model):
     card = models.ForeignKey('CreditCard', blank=True, null=True)
     is_confirmed = models.BooleanField(default=False)
 
+    def refund(self, amount, issuer, dwolla_pin=None):
+        from brambling.views.utils import get_dwolla
 
-class SubPayment(models.Model):
-    """
-    Represents a portion of a payment assigned to a particular bought item.
-    """
-    payment = models.ForeignKey(Payment, related_name='subpayments')
-    bought_item = models.ForeignKey('BoughtItem', related_name='subpayments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
+        total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
+        refundable = self.amount - total_refunds
+        if refundable < amount:
+            raise ValueError("Not enough money available")
 
-    class Meta:
-        unique_together = ('payment', 'bought_item')
+        if refundable == 0:
+            return None
+
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        dwolla = get_dwolla()
+
+        # May raise an error
+        if self.method == Payment.STRIPE:
+            stripe_charge = stripe.Charge.retrieve(self.remote_id)
+            stripe_refund = stripe_charge.refund(
+                amount=refundable * 100,
+            )
+            remote_id = stripe_refund.id
+        elif self.method == Payment.DWOLLA:
+            dwolla_user = dwolla.DwollaUser(self.event.dwolla_access_token)
+            dwolla_refund = dwolla_user.refund(int(self.remote_id),
+                                               "%.2f" % refundable,
+                                               int(dwolla_pin))
+            remote_id = dwolla_refund['TransactionId']
+        else:
+            remote_id = ''
+        return Refund.objects.create(
+            order=self.order,
+            issuer=issuer,
+            payment=self,
+            amount=amount,
+            method=self.method,
+            remote_id=remote_id
+        )
+    refund.alters_data = True
 
 
 class BoughtItem(models.Model):
@@ -796,12 +832,12 @@ class BoughtItem(models.Model):
     # for display, but they don't really guarantee anything.
     RESERVED = 'reserved'
     UNPAID = 'unpaid'
-    PAID = 'paid'
+    BOUGHT = 'bought'
     REFUNDED = 'refunded'
     STATUS_CHOICES = (
         (RESERVED, _('Reserved')),
         (UNPAID, _('Unpaid')),
-        (PAID, _('Paid')),
+        (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
     )
     item_option = models.ForeignKey(ItemOption)
@@ -816,7 +852,6 @@ class BoughtItem(models.Model):
     # by a single person could be assigned to multiple attendees.
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
-    payments = models.ManyToManyField(Payment, through=SubPayment)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
@@ -825,30 +860,16 @@ class BoughtItem(models.Model):
 
     def get_summary_data(self):
         gross_cost = self.item_option.price
-        payments = self.subpayments.order_by('payment__timestamp')
         discounts = self.discounts.order_by('timestamp')
-        refunds = self.refunds.order_by('timestamp')
         total_savings = sum((discount.savings() for discount in discounts))
-        gross_payments = sum((payment.amount for payment in payments))
-        total_refunds = sum((refund.amount for refund in refunds))
-        net_cost = gross_cost - total_refunds - total_savings
-        net_payments = gross_payments - total_refunds
-        net_balance = net_cost - net_payments
+        net_cost = gross_cost - total_savings
 
         return {
             'bought_item': self,
-            'payments': payments,
             'discounts': discounts,
-            'refunds': refunds,
             'gross_cost': gross_cost,
-            'gross_payments': gross_payments,
             'total_savings': total_savings,
-            'total_refunds': total_refunds,
             'net_cost': net_cost,
-            'net_payments': net_payments,
-            'net_balance': net_balance,
-            'uses_dwolla': any((payment.payment.method == Payment.DWOLLA
-                                for payment in payments)),
         }
 
 
@@ -881,20 +902,13 @@ class BoughtItemDiscount(models.Model):
 
 
 class Refund(models.Model):
-    order = models.ForeignKey('Order', related_name='refunds')
-    issuer = models.ForeignKey('Person')
-    bought_item = models.ForeignKey(BoughtItem, related_name='refunds')
-    timestamp = models.DateTimeField(default=timezone.now)
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-
-
-class SubRefund(models.Model):
     STRIPE = Payment.STRIPE
     DWOLLA = Payment.DWOLLA
     METHOD_CHOICES = Payment.METHOD_CHOICES
-
-    refund = models.ForeignKey(Refund)
-    subpayment = models.ForeignKey(SubPayment, related_name='refunds')
+    order = models.ForeignKey('Order', related_name='refunds')
+    issuer = models.ForeignKey('Person')
+    payment = models.ForeignKey('Payment', related_name='refunds')
+    timestamp = models.DateTimeField(default=timezone.now)
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     method = models.CharField(max_length=6, choices=METHOD_CHOICES)
     remote_id = models.CharField(max_length=40, blank=True)

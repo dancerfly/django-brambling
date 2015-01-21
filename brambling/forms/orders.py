@@ -9,7 +9,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Payment, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
-                              SubPayment, Order)
+                              Order)
 
 from localflavor.us.forms import USZipCodeField
 
@@ -421,19 +421,12 @@ class BasePaymentForm(forms.Form):
         )
 
     def save_payment(self, charge, creditcard):
-        payment = Payment.objects.create(order=self.order,
-                                         amount=self.amount,
-                                         method=Payment.STRIPE,
-                                         remote_id=charge.id,
-                                         card=creditcard,
-                                         is_confirmed=True)
-        SubPayment.objects.bulk_create((
-            SubPayment(payment=payment,
-                       bought_item=item['bought_item'],
-                       amount=item['net_balance'])
-            for item in self.bought_items
-        ))
-        return payment
+        return Payment.objects.create(order=self.order,
+                                      amount=self.amount,
+                                      method=Payment.STRIPE,
+                                      remote_id=charge.id,
+                                      card=creditcard,
+                                      is_confirmed=True)
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -520,30 +513,16 @@ class DwollaPaymentForm(BasePaymentForm):
                 self.add_error(None, e.message)
 
     def save(self):
-        payment = Payment.objects.create(order=self.order,
-                                         amount=self.amount,
-                                         method=Payment.DWOLLA,
-                                         remote_id=self._charge,
-                                         is_confirmed=True)
-        SubPayment.objects.bulk_create((
-            SubPayment(payment=payment,
-                       bought_item=item['bought_item'],
-                       amount=item['net_balance'])
-            for item in self.bought_items
-        ))
-        return payment
+        return Payment.objects.create(order=self.order,
+                                      amount=self.amount,
+                                      method=Payment.DWOLLA,
+                                      remote_id=self._charge,
+                                      is_confirmed=True)
 
 
 class CheckPaymentForm(BasePaymentForm):
     def save(self):
-        payment = Payment.objects.create(order=self.order,
-                                         amount=self.amount,
-                                         method=Payment.CHECK,
-                                         is_confirmed=False)
-        SubPayment.objects.bulk_create((
-            SubPayment(payment=payment,
-                       bought_item=item['bought_item'],
-                       amount=item['net_balance'])
-            for item in self.bought_items
-        ))
-        return payment
+        return Payment.objects.create(order=self.order,
+                                      amount=self.amount,
+                                      method=Payment.CHECK,
+                                      is_confirmed=False)
