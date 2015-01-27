@@ -56,7 +56,7 @@
 				<div class='form-group'>
 					<label class='control-label'>Country *</label>
 					<select class="chosen-select" disabled>
-						<option selected="selected">United States</option>
+						<option selected="selected">{{ event.get_country_display }}</option>
 					</select>
 				</div>
 			</div>
@@ -66,7 +66,7 @@
 		<div class='form-group'>
 			<label class='control-label'>Currency *</label>
 			<select class="chosen-select" disabled>
-				<option selected="selected">USD</option>
+				<option selected="selected">{{ event.currency }}</option>
 			</select>
 		</div>
 

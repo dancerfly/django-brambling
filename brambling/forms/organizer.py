@@ -69,6 +69,11 @@ class EventForm(forms.ModelForm):
         if not request.user == self.instance.owner:
             del self.fields['editors']
 
+        if self.instance.pk is not None:
+            timezone = self.instance.timezone
+            if (timezone, timezone) not in self.fields['timezone'].choices:
+                self.fields['timezone'].choices += ((timezone, timezone),)
+
     def clean_editors(self):
         editors = self.cleaned_data['editors']
         if not editors:
