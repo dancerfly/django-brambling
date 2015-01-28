@@ -18,9 +18,9 @@
 			</div>
 			<div class="col-sm-6">
 				<ul class="nav nav-pills masthead-pills text-jumbo" role="tablist">
-					<li class="active"><a href="#signup" class="masthead-link" role="tab" data-toggle="tab">Sign Up</a></li>
+					<li class="active"><a href="#signup" id="toggleToSignup" class="masthead-link" role="tab" data-toggle="tab">Sign Up</a></li>
 					<li>or</li>
-					<li><a href="#login" class="masthead-link" role="tab" data-toggle="tab">Log In</a></li>
+					<li><a href="#login" id="toggleToLogin" class="masthead-link" role="tab" data-toggle="tab">Log In</a></li>
 				</ul>
 				<div class="tab-content">
 					<form id="signup" class="masthead-form tab-pane fade in active" action="{% url "brambling_signup" %}" method="post">
@@ -101,4 +101,17 @@
 {% block javascripts %}
 	{{ block.super }}
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tab.js" %}"></script>
+	<script>
+		$(function() {
+			$('#toggleToLogin').click(function() {
+				$('#id_username').val($('#id_email').val());
+				$('#id_password').val($('#id_password1').val());
+			});
+			$('#toggleToSignup').click(function() {
+				$('#id_email').val($('#id_username').val());
+				$('#id_password1').val($('#id_password').val());
+			});
+		});
+	</script>
+
 {% endblock javascripts %}
