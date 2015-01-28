@@ -21,10 +21,10 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm)
-from brambling.models import (Event, Item, Discount, Payment,
+from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Refund, Person)
+                              Person)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
@@ -123,16 +123,19 @@ class EventSummaryView(TemplateView):
             total_discounts += discount.savings()
         total_discounts = min(total_discounts, gross_sales)
 
-        total_refunds = Refund.objects.filter(
+        total_refunds = Transaction.objects.filter(
+            transaction_type=Transaction.REFUND,
             order__event=self.event,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
 
-        confirmed_payments = Payment.objects.filter(
+        confirmed_payments = Transaction.objects.filter(
+            transaction_type=Transaction.PURCHASE,
             order__event=self.event,
             is_confirmed=True,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
 
-        pending_payments = Payment.objects.filter(
+        pending_payments = Transaction.objects.filter(
+            transaction_type=Transaction.PURCHASE,
             order__event=self.event,
             is_confirmed=False,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
@@ -485,7 +488,7 @@ class RefundView(View):
         self.object = self.get_object()
         has_errors = False
         has_refunds = False
-        for payment in self.object.payments.all():
+        for payment in self.object.transactions.all():
             try:
                 payment.refund(payment.amount, request.user,
                                dwolla_pin=request.POST.get('dwolla_pin'))
@@ -619,16 +622,17 @@ class TogglePaymentConfirmationView(View):
         try:
             self.order = Order.objects.get(event=self.event,
                                            code=self.kwargs['code'])
-            return Payment.objects.get(order=self.order,
-                                       pk=self.kwargs['payment_pk'])
-        except (Order.DoesNotExist, Payment.DoesNotExist):
+            return Transaction.objects.get(transaction_type=Transaction.PURCHASE,
+                                           order=self.order,
+                                           pk=self.kwargs['payment_pk'])
+        except (Order.DoesNotExist, Transaction.DoesNotExist):
             raise Http404
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.is_confirmed = not self.object.is_confirmed
         self.object.save()
-        all_confirmed = not self.order.payments.filter(is_confirmed=False).exists()
+        all_confirmed = not self.order.transactions.filter(is_confirmed=False).exists()
         self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
         self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})

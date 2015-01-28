@@ -7,7 +7,7 @@ import stripe
 from zenaida.forms import MemoModelForm
 
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
-                              HousingCategory, CreditCard, Payment, Home,
+                              HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event)
 from brambling.utils.payment import dwolla_charge, stripe_prep
@@ -433,13 +433,16 @@ class BasePaymentForm(forms.Form):
         )
 
     def save_payment(self, charge, creditcard):
-        return Payment.objects.create(order=self.order,
-                                      amount=self.amount,
-                                      method=Payment.STRIPE,
-                                      remote_id=charge.id,
-                                      card=creditcard,
-                                      is_confirmed=True,
-                                      api_type=self.api_type)
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            order=self.order,
+            amount=self.amount,
+            method=Transaction.STRIPE,
+            remote_id=charge.id,
+            card=creditcard,
+            is_confirmed=True,
+            api_type=self.api_type
+        )
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -522,18 +525,24 @@ class DwollaPaymentForm(BasePaymentForm):
                     self.add_error(None, e.message)
 
     def save(self):
-        return Payment.objects.create(order=self.order,
-                                      amount=self.amount,
-                                      method=Payment.DWOLLA,
-                                      remote_id=self._charge,
-                                      is_confirmed=True,
-                                      api_type=self.api_type)
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            order=self.order,
+            amount=self.amount,
+            method=Transaction.DWOLLA,
+            remote_id=self._charge,
+            is_confirmed=True,
+            api_type=self.api_type
+        )
 
 
 class CheckPaymentForm(BasePaymentForm):
     def save(self):
-        return Payment.objects.create(order=self.order,
-                                      amount=self.amount,
-                                      method=Payment.CHECK,
-                                      is_confirmed=False,
-                                      api_type=self.api_type)
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            order=self.order,
+            amount=self.amount,
+            method=Transaction.CHECK,
+            is_confirmed=False,
+            api_type=self.api_type
+        )

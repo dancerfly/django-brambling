@@ -8,7 +8,7 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage, Payment, Invite)
+                              Date, ItemImage, Transaction, Invite)
 
 from localflavor.us.forms import USZipCodeField
 
@@ -269,12 +269,12 @@ class AttendeeFilterSetForm(forms.Form):
 
 class ManualPaymentForm(forms.ModelForm):
     class Meta:
-        model = Payment
+        model = Transaction
         fields = ('amount', 'method')
 
     def __init__(self, order, *args, **kwargs):
         super(ManualPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['method'].choices = Payment.METHOD_CHOICES[2:]
+        self.fields['method'].choices = Transaction.METHOD_CHOICES[2:]
         self.order = order
         self.instance.order = order
 

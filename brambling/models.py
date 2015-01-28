@@ -751,7 +751,7 @@ class Order(AbstractDwollaModel):
     def get_summary_data(self):
         if self.cart_is_expired():
             self.delete_cart()
-        payments = self.payments.order_by('timestamp')
+        payments = self.transactions.order_by('timestamp')
         refunds = self.refunds.order_by('timestamp')
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
@@ -780,7 +780,7 @@ class Order(AbstractDwollaModel):
         net_cost = gross_cost - total_refunds - total_savings
         net_payments = gross_payments - total_refunds
         net_balance = net_cost - net_payments
-        unconfirmed_check_payments = any((payment.method == Payment.CHECK and
+        unconfirmed_check_payments = any((payment.method == Transaction.CHECK and
                                           not payment.is_confirmed
                                           for payment in payments))
         return {
@@ -808,10 +808,10 @@ class Order(AbstractDwollaModel):
         return self._eventhousing
 
     def has_dwolla_payments(self):
-        return self.payments.filter(method=Payment.DWOLLA).exists()
+        return self.transactions.filter(method=Transaction.DWOLLA).exists()
 
 
-class Payment(models.Model):
+class Transaction(models.Model):
     STRIPE = 'stripe'
     DWOLLA = 'dwolla'
     CASH = 'cash'
@@ -832,14 +832,29 @@ class Payment(models.Model):
         (LIVE, _('Live')),
         (TEST, _('Test')),
     )
-    order = models.ForeignKey('Order', related_name='payments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0.01)])
+
+    PURCHASE = 'purchase'
+    REFUND = 'refund'
+    OTHER = 'other'
+    TRANSACTION_TYPE_CHOICES = (
+        (PURCHASE, _('Purchase')),
+        (REFUND, _('Refunded purchase')),
+        (OTHER, _('Other')),
+    )
+    amount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    application_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    processing_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     timestamp = models.DateTimeField(default=timezone.now)
-    method = models.CharField(max_length=6, choices=METHOD_CHOICES)
-    remote_id = models.CharField(max_length=40, blank=True)
-    card = models.ForeignKey('CreditCard', blank=True, null=True)
+    created_by = models.ForeignKey(Person)
+    method = models.CharField(max_length=7, choices=METHOD_CHOICES)
+    transaction_type = models.CharField(max_length=5, choices=TRANSACTION_TYPE_CHOICES)
     is_confirmed = models.BooleanField(default=False)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
+
+    related_transaction = models.ForeignKey('self', blank=True, null=True)
+    order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
+    remote_id = models.CharField(max_length=40, blank=True)
+    card = models.ForeignKey('CreditCard', blank=True, null=True)
 
     def refund(self, amount, issuer, dwolla_pin=None):
         total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
@@ -853,13 +868,13 @@ class Payment(models.Model):
         stripe_prep(self.api_type)
 
         # May raise an error
-        if self.method == Payment.STRIPE:
+        if self.method == Transaction.STRIPE:
             stripe_charge = stripe.Charge.retrieve(self.remote_id)
             stripe_refund = stripe_charge.refund(
                 amount=refundable * 100,
             )
             remote_id = stripe_refund.id
-        elif self.method == Payment.DWOLLA:
+        elif self.method == Transaction.DWOLLA:
             remote_id = dwolla_refund(
                 event=self.event,
                 payment_id=int(self.remote_id),
@@ -868,14 +883,16 @@ class Payment(models.Model):
             )
         else:
             remote_id = ''
-        return Refund.objects.create(
-            order=self.order,
-            issuer=issuer,
-            payment=self,
-            amount=amount,
+        return Transaction.objects.create(
+            transaction_type='refund',
+            amount=-1 * amount,
+            created_by=issuer,
             method=self.method,
+            is_confirmed=True,
+            api_type=self.api_type,
+            related_transaction=self,
+            order=self.order,
             remote_id=remote_id,
-            api_type=self.api_type
         )
     refund.alters_data = True
 
@@ -955,27 +972,6 @@ class BoughtItemDiscount(models.Model):
                    if discount.discount_type == Discount.FLAT
                    else discount.amount / 100 * item_option.price,
                    item_option.price)
-
-
-class Refund(models.Model):
-    STRIPE = Payment.STRIPE
-    DWOLLA = Payment.DWOLLA
-    METHOD_CHOICES = Payment.METHOD_CHOICES
-
-    LIVE = 'live'
-    TEST = 'test'
-    API_CHOICES = (
-        (LIVE, _('Live')),
-        (TEST, _('Test')),
-    )
-    order = models.ForeignKey('Order', related_name='refunds')
-    issuer = models.ForeignKey('Person')
-    payment = models.ForeignKey('Payment', related_name='refunds')
-    timestamp = models.DateTimeField(default=timezone.now)
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-    method = models.CharField(max_length=6, choices=METHOD_CHOICES)
-    remote_id = models.CharField(max_length=40, blank=True)
-    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
 
 class Attendee(AbstractNamedModel):
