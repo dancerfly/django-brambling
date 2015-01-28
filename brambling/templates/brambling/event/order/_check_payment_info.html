@@ -28,6 +28,6 @@
 
 {% else %}
 	
-	<p>The organizer requires that checks be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}. If you've already sent in your payment, great! If not, contact the event organizer. They reserve the right to revoke your passes if you have not yet sent in your payment.</p>
+	<p>The organizer of this event has not yet received your check. If you've already sent in your payment, great! If you haven't, you should contact the event organizer, because they require that checks be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}, and they reserve the right to revoke your passes if you have not yet sent in your payment.</p>
 
 {% endif %}
