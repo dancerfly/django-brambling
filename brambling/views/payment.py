@@ -26,9 +26,8 @@ class DwollaConnectView(View):
         qs = request.GET.copy()
         del qs['code']
         if qs:
-            redirect_url += "?"
-            for k, v in qs.items():
-                redirect_url += k + "=" + v
+            redirect_url += "?" + "&".join([k + "=" + v
+                                            for k, v in qs.iteritems()])
         dwolla_prep(api_type)
         oauth_tokens = oauth.get(request.GET['code'],
                                  redirect=request.build_absolute_uri(redirect_url))

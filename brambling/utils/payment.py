@@ -108,7 +108,7 @@ def dwolla_customer_oauth_url(user_or_order, api_type, request, next_url=""):
     scope = "Send|AccountInfoFull"
     redirect_url = user_or_order.get_dwolla_connect_url() + "?api=" + api_type
     if next_url:
-        redirect_url += "&next_url" + next_url
+        redirect_url += "&next_url=" + next_url
     redirect_url = request.build_absolute_uri(redirect_url)
     return oauth.genauthurl(redirect_url, scope=scope)
 
