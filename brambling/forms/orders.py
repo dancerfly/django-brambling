@@ -430,9 +430,17 @@ class BasePaymentForm(forms.Form):
             currency=self.order.event.currency,
             card=card_or_token,
             application_fee=fee,
+            expand=['balance_transaction']
         )
 
     def save_payment(self, charge, creditcard):
+        application_fee = 0
+        processing_fee = 0
+        for fee in charge.balance_transaction.fee_details:
+            if fee.type == 'application_fee':
+                application_fee = Decimal(fee.amount) / 100
+            elif fee.type == 'stripe_fee':
+                processing_fee = Decimal(fee.amount) / 100
         return Transaction.objects.create(
             transaction_type=Transaction.PURCHASE,
             order=self.order,
@@ -441,7 +449,9 @@ class BasePaymentForm(forms.Form):
             remote_id=charge.id,
             card=creditcard,
             is_confirmed=True,
-            api_type=self.api_type
+            api_type=self.api_type,
+            application_fee=application_fee,
+            processing_fee=processing_fee,
         )
 
 
