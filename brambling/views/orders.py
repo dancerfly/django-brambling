@@ -17,8 +17,10 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
-                              Attendee, EventHousing)
-from brambling.utils.payment import dwolla_can_connect, dwolla_customer_oauth_url
+                              Attendee, EventHousing, Event)
+from brambling.utils.payment import (dwolla_can_connect,
+                                     dwolla_customer_oauth_url,
+                                     dwolla_is_connected)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
                                    ajax_required, clear_expired_carts,
                                    Workflow, Step)
@@ -856,5 +858,10 @@ class SummaryView(OrderMixin, TemplateView):
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
                 dwolla_obj, self.event.api_type, self.request, next_url)
+        if dwolla_is_connected(dwolla_obj, self.event.api_type):
+            context.update({
+                'dwolla_is_connected': True,
+                'dwolla_user_id': dwolla_obj.dwolla_user_id if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_user_id
+            })
         context.update(self.summary_data)
         return context
