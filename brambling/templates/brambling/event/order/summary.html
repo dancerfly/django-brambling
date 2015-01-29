@@ -129,6 +129,7 @@
 			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
 		{% if event.uses_dwolla %}
+			{% if dwolla_is_connected or dwolla_oauth_url %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -136,12 +137,8 @@
 					</h4>
 				</div>
 				<div class="panel-body">
-					{% if user.dwolla_user_id or order.dwolla_user_id %}
-						{% if user.dwolla_user_id %}
-							<p>Connected account: {{ user.dwolla_user_id }}</p>
-						{% else %}
-							<p>Connected account: {{ order.dwolla_user_id }}</p>
-						{% endif %}
+					{% if dwolla_is_connected %}
+						<p>Connected account: {{dwolla_user_id }}</p>
 						<form novalidate action="" method="post">
 							{% csrf_token %}
 							<input name='dwolla' value='1' type='hidden'>
@@ -161,6 +158,7 @@
 					{% endif %}
 				</div>
 			</div>
+			{% endif %}
 		{% endif %}
 		{% if event.uses_checks %}
 			<div class="panel panel-default">
