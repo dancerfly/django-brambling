@@ -49,11 +49,11 @@ def dwolla_charge(user_or_order, amount, event, pin, fee):
     # But we can use this one to get that one.
 
     event_charge = transactions.info(
-        tid=user_charge_id,
+        tid=str(user_charge_id),
         alternate_token=event_access_token
     )
 
-    return event_charge['Id']
+    return event_charge
 
 
 def dwolla_refund(event, payment_id, amount, pin):

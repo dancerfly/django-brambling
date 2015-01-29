@@ -522,27 +522,34 @@ class DwollaPaymentForm(BasePaymentForm):
                 try:
                     fee = self.get_fee(self.amount).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
-                    charge_id = dwolla_charge(
+                    self._charge = dwolla_charge(
                         user_or_order=self.user if self.user.is_authenticated() else self.order,
                         amount=float(self.amount),
                         event=self.order.event,
                         pin=self.cleaned_data['dwolla_pin'],
                         fee=float(fee)
                     )
-                    self._charge = charge_id
-
                 except Exception as e:
                     self.add_error(None, e.message)
 
     def save(self):
+        application_fee = 0
+        processing_fee = 0
+        for fee in self._charge['Fees']:
+            if fee['Type'] == 'Facilitator Fee':
+                application_fee = Decimal(fee['Amount'])
+            elif fee['Type'] == 'Dwolla Fee':
+                processing_fee = Decimal(fee['Amount'])
         return Transaction.objects.create(
             transaction_type=Transaction.PURCHASE,
             order=self.order,
             amount=self.amount,
             method=Transaction.DWOLLA,
-            remote_id=self._charge,
+            remote_id=self._charge['Id'],
             is_confirmed=True,
-            api_type=self.api_type
+            api_type=self.api_type,
+            application_fee=application_fee,
+            processing_fee=processing_fee,
         )
 
 
