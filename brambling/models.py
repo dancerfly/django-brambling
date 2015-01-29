@@ -856,6 +856,9 @@ class Transaction(models.Model):
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
 
+    class Meta:
+        get_latest_by = 'timestamp'
+
     def refund(self, amount, issuer, dwolla_pin=None):
         total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
         refundable = self.amount - total_refunds
