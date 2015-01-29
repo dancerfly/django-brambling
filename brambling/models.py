@@ -845,7 +845,7 @@ class Transaction(models.Model):
     application_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     processing_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     timestamp = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(Person)
+    created_by = models.ForeignKey(Person, blank=True, null=True)
     method = models.CharField(max_length=7, choices=METHOD_CHOICES)
     transaction_type = models.CharField(max_length=5, choices=TRANSACTION_TYPE_CHOICES)
     is_confirmed = models.BooleanField(default=False)
