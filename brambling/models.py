@@ -1,5 +1,6 @@
 # encoding: utf8
 from datetime import timedelta
+from decimal import Decimal
 import itertools
 import operator
 
@@ -858,6 +859,48 @@ class Transaction(models.Model):
 
     class Meta:
         get_latest_by = 'timestamp'
+
+    @classmethod
+    def from_stripe_charge(cls, charge, **kwargs):
+        # charge is expected to be a stripe charge with
+        # balance_transaction expanded.
+        application_fee = 0
+        processing_fee = 0
+        for fee in charge.balance_transaction.fee_details:
+            if fee.type == 'application_fee':
+                application_fee = Decimal(fee.amount) / 100
+            elif fee.type == 'stripe_fee':
+                processing_fee = Decimal(fee.amount) / 100
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            amount=Decimal(charge.amount) / 100,
+            method=Transaction.STRIPE,
+            remote_id=charge.id,
+            is_confirmed=True,
+            application_fee=application_fee,
+            processing_fee=processing_fee,
+            **kwargs
+        )
+
+    @classmethod
+    def from_dwolla_charge(cls, charge, **kwargs):
+        application_fee = 0
+        processing_fee = 0
+        for fee in charge['Fees']:
+            if fee['Type'] == 'Facilitator Fee':
+                application_fee = Decimal(str(fee['Amount']))
+            elif fee['Type'] == 'Dwolla Fee':
+                processing_fee = Decimal(str(fee['Amount']))
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            amount=charge['Amount'],
+            method=Transaction.DWOLLA,
+            remote_id=charge['Id'],
+            is_confirmed=True,
+            application_fee=application_fee,
+            processing_fee=processing_fee,
+            **kwargs
+        )
 
     def refund(self, amount, issuer, dwolla_pin=None):
         total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
