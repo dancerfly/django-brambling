@@ -6,7 +6,7 @@ import stripe
 from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory
 from brambling.utils.payment import (stripe_prep, stripe_charge,
-                                     stripe_is_connected)
+                                     stripe_is_connected, stripe_refund)
 
 
 class StripeTestCase(TestCase):
@@ -34,6 +34,13 @@ class StripeTestCase(TestCase):
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         # (42.15 * 0.029) + 0.30 = 1.52
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
+
+        refund = stripe_refund(event, txn.remote_id, txn.amount)
+
+        refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn)
+        self.assertEqual(refund_txn.amount, -1 * txn.amount)
+        self.assertEqual(refund_txn.application_fee, -1 * txn.application_fee)
+        self.assertEqual(refund_txn.processing_fee, -1 * txn.processing_fee)
 
     def test_charge__customer(self):
         event = EventFactory(api_type=Event.TEST,
@@ -63,3 +70,10 @@ class StripeTestCase(TestCase):
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         # (42.15 * 0.029) + 0.30 = 1.52
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
+
+        refund = stripe_refund(event, txn.remote_id, txn.amount)
+
+        refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn)
+        self.assertEqual(refund_txn.amount, -1 * txn.amount)
+        self.assertEqual(refund_txn.application_fee, -1 * txn.application_fee)
+        self.assertEqual(refund_txn.processing_fee, -1 * txn.processing_fee)

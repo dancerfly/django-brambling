@@ -71,14 +71,13 @@ def dwolla_refund(event, payment_id, amount, pin):
         access_token = event.dwolla_access_token
     else:
         access_token = event.dwolla_test_access_token
-    refund = transactions.refund(
-        tid=payment_id,
+    return transactions.refund(
+        tid=int(payment_id),
         fundingsource="Balance",
-        amount=amount,
+        amount="%.2f" % amount,
         alternate_token=access_token,
-        alternate_pin=pin
+        alternate_pin=int(pin)
     )
-    return refund['TransactionId']
 
 
 def dwolla_can_connect(obj, api_type):
@@ -156,6 +155,30 @@ def stripe_charge(card_or_token, amount, event, customer=None):
         application_fee=int(get_fee(event, amount) * 100),
         expand=['balance_transaction']
     )
+
+
+def stripe_refund(event, payment_id, amount):
+    stripe_prep(event.api_type)
+    if event.api_type == LIVE:
+        access_token = event.stripe_access_token
+    else:
+        access_token = event.stripe_test_access_token
+    stripe.api_key = access_token
+    charge = stripe.Charge.retrieve(payment_id)
+    refund = charge.refunds.create(
+        amount=int(amount*100),
+        refund_application_fee=True,
+        expand=['balance_transaction'],
+    )
+    try:
+        application_fee = stripe.ApplicationFee.all(charge=charge).data[0]
+        application_fee_refund = application_fee.refunds.data[0]
+    except IndexError:
+        raise Exception("No application fee refund found.")
+    return {
+        'refund': refund,
+        'application_fee_refund': application_fee_refund,
+    }
 
 
 def stripe_can_connect(obj, api_type):

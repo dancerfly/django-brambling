@@ -22,7 +22,7 @@ from django_countries.fields import CountryField
 import stripe
 
 from brambling.mail import send_fancy_mail
-from brambling.utils.payment import dwolla_refund, stripe_prep
+from brambling.utils.payment import dwolla_refund, stripe_refund
 
 
 DEFAULT_DANCE_STYLES = (
@@ -852,7 +852,7 @@ class Transaction(models.Model):
     is_confirmed = models.BooleanField(default=False)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
-    related_transaction = models.ForeignKey('self', blank=True, null=True)
+    related_transaction = models.ForeignKey('self', blank=True, null=True, related_name='related_transaction_set')
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
@@ -883,6 +883,26 @@ class Transaction(models.Model):
         )
 
     @classmethod
+    def from_stripe_refund(cls, refund, related_transaction, **kwargs):
+        application_fee_refund = refund['application_fee_refund']
+        refund = refund['refund']
+        processing_fee = 0
+        for fee in refund.balance_transaction.fee_details:
+            if fee.type == 'stripe_fee':
+                processing_fee = Decimal(fee.amount) / 100
+        return Transaction.objects.create(
+            transaction_type=Transaction.REFUND,
+            method=Transaction.STRIPE,
+            amount=-1 * Decimal(refund.amount) / 100,
+            is_confirmed=True,
+            related_transaction=related_transaction,
+            remote_id=refund.id,
+            application_fee=-1 * Decimal(application_fee_refund.amount) / 100,
+            processing_fee=processing_fee,
+            **kwargs
+        )
+
+    @classmethod
     def from_dwolla_charge(cls, charge, **kwargs):
         application_fee = 0
         processing_fee = 0
@@ -902,43 +922,58 @@ class Transaction(models.Model):
             **kwargs
         )
 
+    @classmethod
+    def from_dwolla_refund(cls, refund, related_transaction, **kwargs):
+        # Dwolla refunds don't AFAICT refund fees.
+        return Transaction.objects.create(
+            transaction_type=Transaction.REFUND,
+            method=Transaction.DWOLLA,
+            amount=-1 * refund['Amount'],
+            is_confirmed=True,
+            related_transaction=related_transaction,
+            remote_id=refund['TransactionId'],
+            **kwargs
+        )
+
     def refund(self, amount, issuer, dwolla_pin=None):
-        total_refunds = self.refunds.aggregate(Sum('amount'))['amount__sum'] or 0
-        refundable = self.amount - total_refunds
+        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum'] or 0
+        refundable = self.amount + total_refunds
         if refundable < amount:
             raise ValueError("Not enough money available")
 
         if refundable == 0:
             return None
 
-        stripe_prep(self.api_type)
+        refund_kwargs = {
+            'order': self.order,
+            'related_transaction': self,
+            'api_type': self.api_type,
+            'created_by': issuer,
+        }
 
         # May raise an error
         if self.method == Transaction.STRIPE:
-            stripe_charge = stripe.Charge.retrieve(self.remote_id)
-            stripe_refund = stripe_charge.refund(
-                amount=refundable * 100,
+            refund = stripe_refund(
+                event=self.order.event,
+                payment_id=self.remote_id,
+                amount=refundable,
             )
-            remote_id = stripe_refund.id
+            return Transaction.from_stripe_refund(refund, **refund_kwargs)
         elif self.method == Transaction.DWOLLA:
-            remote_id = dwolla_refund(
-                event=self.event,
-                payment_id=int(self.remote_id),
-                amount="%.2f" % refundable,
-                pin=int(dwolla_pin),
+            refund = dwolla_refund(
+                event=self.order.event,
+                payment_id=self.remote_id,
+                amount=refundable,
+                pin=dwolla_pin,
             )
-        else:
-            remote_id = ''
+            return Transaction.from_dwolla_refund(refund, **refund_kwargs)
         return Transaction.objects.create(
-            transaction_type='refund',
-            amount=-1 * amount,
-            created_by=issuer,
-            method=self.method,
+            transaction_type=Transaction.REFUND,
+            amount=-1 * refundable,
             is_confirmed=True,
-            api_type=self.api_type,
-            related_transaction=self,
-            order=self.order,
-            remote_id=remote_id,
+            remote_id='',
+            method=self.method,
+            **refund_kwargs
         )
     refund.alters_data = True
 

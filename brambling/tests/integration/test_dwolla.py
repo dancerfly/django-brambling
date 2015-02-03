@@ -6,7 +6,7 @@ from django.test import TestCase
 from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
 from brambling.utils.payment import (dwolla_prep, dwolla_is_connected,
-                                     dwolla_charge)
+                                     dwolla_charge, dwolla_refund)
 
 
 CHARGE_DATA = {
@@ -56,3 +56,13 @@ class DwollaChargeTestCase(TestCase):
         self.assertEqual(Decimal(txn.application_fee), Decimal('1.05'))
         # 0.25
         self.assertEqual(Decimal(txn.processing_fee), Decimal('0.25'))
+
+        refund = dwolla_refund(event, txn.remote_id, txn.amount, settings.DWOLLA_TEST_EVENT_PIN)
+
+        self.assertIsInstance(refund, dict)
+        self.assertEqual(refund["Amount"], txn.amount)
+
+        refund_txn = Transaction.from_dwolla_refund(refund, txn)
+        self.assertEqual(refund_txn.amount, txn.amount)
+        self.assertEqual(refund_txn.application_fee, 0)
+        self.assertEqual(refund_txn.processing_fee, 0)
