@@ -636,3 +636,26 @@ class TogglePaymentConfirmationView(View):
         self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
         self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})
+
+
+class FinancesView(ListView):
+    model = Transaction
+    context_object_name = 'transactions'
+    template_name = 'brambling/event/organizer/finances.html'
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        return super(FinancesView, self).get_queryset().filter(
+            event=self.event,
+            api_type=self.event.api_type,
+        ).select_related('created_by', 'order').order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = super(FinancesView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        return context

@@ -1,0 +1,42 @@
+{% extends 'brambling/event/organizer/__base.html' %}
+
+{% load floppyforms zenaida %}
+
+{% block title %}Finances – {{ block.super }}{% endblock %}
+
+{% block main %}
+    {{ block.super }}
+    {% include "brambling/event/_empty_shop_alert.html" %}
+
+
+    <div class="scroll-x">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Created by</th>
+                    <th>Method</th>
+                    <th>Type</th>
+                    <th>Order</th>
+                    <th>Amount</th>
+                    <th>Dancerfly Fee</th>
+                    <th>Payment Fee</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.timestamp|date:"F jS, Y H:M:S" }}</td>
+                        <td>{% if transaction.created_by %}{{ transaction.created_by.get_full_name }}{% endif %}</td>
+                        <td>{{ transaction.get_method_display }}</td>
+                        <td>{{ transaction.get_transaction_type_display }}</td>
+                        <td>{% if transaction.order %}<a href="{% url 'brambling_event_order_detail' event_slug=event.slug code=transaction.order.code %}">{{ transaction.order.code }}</a>{% endif %}</td>
+                        <td>{{ transaction.amount|format_money:event.currency }}</td>
+                        <td>{{ transaction.application_fee|format_money:event.currency }}</td>
+                        <td>{{ transaction.processing_fee|format_money:event.currency }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

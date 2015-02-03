@@ -851,6 +851,7 @@ class Transaction(models.Model):
     transaction_type = models.CharField(max_length=5, choices=TRANSACTION_TYPE_CHOICES)
     is_confirmed = models.BooleanField(default=False)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
+    event = models.ForeignKey(Event)
 
     related_transaction = models.ForeignKey('self', blank=True, null=True, related_name='related_transaction_set')
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
