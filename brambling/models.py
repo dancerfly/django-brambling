@@ -752,8 +752,8 @@ class Order(AbstractDwollaModel):
     def get_summary_data(self):
         if self.cart_is_expired():
             self.delete_cart()
-        payments = self.transactions.filter(transaction_type='purchase').order_by('timestamp')
-        refunds = self.transactions.filter(transaction_type='refund').order_by('timestamp')
+        payments = self.transactions.filter(transaction_type=Transaction.PURCHASE).order_by('timestamp')
+        refunds = self.transactions.filter(transaction_type=Transaction.REFUND).order_by('timestamp')
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
         bought_items = []
@@ -776,8 +776,8 @@ class Order(AbstractDwollaModel):
         gross_payments = sum((payment.amount for payment in payments))
         total_savings = sum((attendee['total_savings']
                              for attendee in attendees))
-        total_refunds = sum((refund.amount
-                             for refund in refunds))
+        total_refunds = abs(sum((refund.amount
+                                 for refund in refunds)))
         net_cost = gross_cost - total_refunds - total_savings
         net_payments = gross_payments - total_refunds
         net_balance = net_cost - net_payments
@@ -950,6 +950,7 @@ class Transaction(models.Model):
             'related_transaction': self,
             'api_type': self.api_type,
             'created_by': issuer,
+            'event': self.event,
         }
 
         # May raise an error

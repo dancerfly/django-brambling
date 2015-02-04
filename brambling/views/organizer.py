@@ -486,10 +486,11 @@ class RefundView(View):
         self.object = self.get_object()
         has_errors = False
         has_refunds = False
-        for payment in self.object.transactions.all():
+        purchases = self.object.transactions.filter(transaction_type=Transaction.PURCHASE)
+        for purchase in purchases:
             try:
-                payment.refund(payment.amount, request.user,
-                               dwolla_pin=request.POST.get('dwolla_pin'))
+                purchase.refund(purchase.amount, request.user,
+                                dwolla_pin=request.POST.get('dwolla_pin'))
             except Exception as e:
                 messages.error(request, e.message)
                 has_errors = True
