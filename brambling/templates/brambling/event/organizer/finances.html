@@ -26,7 +26,7 @@
             <tbody>
                 {% for transaction in transactions %}
                     <tr>
-                        <td>{{ transaction.timestamp|date:"F jS, Y H:M:S" }}</td>
+                        <td>{{ transaction.timestamp|date:"F jS, Y H:i:s" }}</td>
                         <td>{% if transaction.created_by %}{{ transaction.created_by.get_full_name }}{% endif %}</td>
                         <td>{{ transaction.get_method_display }}</td>
                         <td>{{ transaction.get_transaction_type_display }}</td>

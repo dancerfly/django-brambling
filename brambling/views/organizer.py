@@ -111,34 +111,32 @@ class EventSummaryView(TemplateView):
             event=self.event
         ).annotate(used_count=Count('boughtitemdiscount')))
 
-        bought_item_discounts = BoughtItemDiscount.objects.filter(
-            discount__in=discounts
-        ).select_related('bought_item', 'discount')
-
-        total_discounts = 0
-
-        for discount in bought_item_discounts:
-            if discount.bought_item.item_option_id in itemoption_map:
-                discount.bought_item.item_option = itemoption_map[discount.bought_item.item_option_id]
-            total_discounts += discount.savings()
-        total_discounts = min(total_discounts, gross_sales)
-
-        total_refunds = Transaction.objects.filter(
-            transaction_type=Transaction.REFUND,
-            order__event=self.event,
-        ).aggregate(sum=Sum('amount'))['sum'] or 0
-
-        confirmed_payments = Transaction.objects.filter(
+        confirmed_purchases = Transaction.objects.filter(
             transaction_type=Transaction.PURCHASE,
-            order__event=self.event,
+            event=self.event,
             is_confirmed=True,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
 
-        pending_payments = Transaction.objects.filter(
+        pending_purchases = Transaction.objects.filter(
             transaction_type=Transaction.PURCHASE,
-            order__event=self.event,
+            event=self.event,
             is_confirmed=False,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+        refunds = Transaction.objects.filter(
+            transaction_type=Transaction.REFUND,
+            event=self.event,
+        ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+        sums = Transaction.objects.filter(
+            event=self.event,
+        ).aggregate(
+            amount=Sum('amount'),
+            application_fee=Sum('application_fee'),
+            processing_fee=Sum('processing_fee'),
+        )
+
+        fees = (sums['application_fee'] or 0) + (sums['processing_fee'] or 0)
 
         context.update({
             'event': self.event,
@@ -148,13 +146,13 @@ class EventSummaryView(TemplateView):
             'itemoptions': itemoptions,
             'discounts': discounts,
 
-            'confirmed_payments': confirmed_payments,
-            'pending_payments': pending_payments,
-            'total_discounts': total_discounts,
-            'total_refunds': total_refunds,
+            'confirmed_purchases': confirmed_purchases,
+            'pending_purchases': pending_purchases,
 
-            'net_confirmed': confirmed_payments - total_discounts - total_refunds,
-            'net_pending': confirmed_payments + pending_payments - total_discounts - total_refunds,
+            'refunds': refunds,
+            'fees': -1 * fees,
+
+            'net_total': (sums['amount'] or 0) - fees,
         })
 
         if self.event.collect_housing_data:
