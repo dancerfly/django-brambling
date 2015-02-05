@@ -162,7 +162,11 @@
 				</div>
 			</div>
 		{% endif %}
-		{% if event.uses_checks %}
+
+		{# Payment by check: #}
+		{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}
+		{% if event.uses_checks and time_until_check_cutoff.days >= 0 %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -180,6 +184,7 @@
 				</div>
 			</div>
 		{% endif %}
+
 	{% elif order.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}

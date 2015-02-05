@@ -13,5 +13,5 @@
 	</p>
 	<p>Checks must be postmarked no later than <strong>{% if time_until_check_cutoff.days == 0%}today{% else %}{{ event.check_postmark_cutoff|date:"F jS, Y" }}{% endif %}</strong>. If your payment is not postmarked by {% if time_until_check_cutoff.days == 0%}today{% else %}that date{% endif %}, the event organizer reserves the right to revoke your passes.</p>
 {% else %}
-	<p>The organizer of this event has not yet received your check. Checks should be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}. The event organizer reserves the right to revoke your passes if you have not sent in your payment.</p>
+	<p>Payment was due to be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}. The event organizer reserves the right to revoke your passes if you have not sent in your payment.</p>
 {% endif %}
