@@ -9,6 +9,12 @@
 					return this.defaultValue;
 				});
 			}
+		});
+		$('#id_check_recipient').focus(function() {
+			$this = $(this);
+			if ($this.val()=='') {
+				$this.val($('#id_check_payable_to').val());
+			}
 		})
 	});
 </script>
