@@ -29,7 +29,7 @@ class StripeTestCase(TestCase):
         self.assertEqual(charge.balance_transaction.object, "balance_transaction")
         self.assertEqual(len(charge.balance_transaction.fee_details), 2)
 
-        txn = Transaction.from_stripe_charge(charge, api_type=event.api_type)
+        txn = Transaction.from_stripe_charge(charge, api_type=event.api_type, event=event)
         # 42.15 * 0.025 = 1.05
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         # (42.15 * 0.029) + 0.30 = 1.52
@@ -37,7 +37,7 @@ class StripeTestCase(TestCase):
 
         refund = stripe_refund(event, txn.remote_id, txn.amount)
 
-        refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn)
+        refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn, event=event)
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
         self.assertEqual(refund_txn.application_fee, -1 * txn.application_fee)
         self.assertEqual(refund_txn.processing_fee, -1 * txn.processing_fee)
@@ -65,7 +65,7 @@ class StripeTestCase(TestCase):
         self.assertEqual(charge.balance_transaction.object, "balance_transaction")
         self.assertEqual(len(charge.balance_transaction.fee_details), 2)
 
-        txn = Transaction.from_stripe_charge(charge, api_type=event.api_type)
+        txn = Transaction.from_stripe_charge(charge, api_type=event.api_type, event=event)
         # 42.15 * 0.025 = 1.05
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         # (42.15 * 0.029) + 0.30 = 1.52
@@ -73,7 +73,7 @@ class StripeTestCase(TestCase):
 
         refund = stripe_refund(event, txn.remote_id, txn.amount)
 
-        refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn)
+        refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn, event=event)
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
         self.assertEqual(refund_txn.application_fee, -1 * txn.application_fee)
         self.assertEqual(refund_txn.processing_fee, -1 * txn.processing_fee)

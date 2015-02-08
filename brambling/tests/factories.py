@@ -1,6 +1,6 @@
 import factory
 
-from brambling.models import Event, Person, Order
+from brambling.models import Event, Person, Order, CreditCard
 
 
 def lazy_setting(setting):
@@ -8,6 +8,19 @@ def lazy_setting(setting):
         from django.conf import settings
         return getattr(settings, setting)
     return wrapped
+
+
+class CardFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = CreditCard
+
+    stripe_card_id = 'FAKE_CARD'
+    api_type = Event.TEST
+    exp_month = 11
+    exp_year = 99
+    fingerprint = 'FAKE_FINGERPRINT'
+    last4 = '4242'
+    brand = 'Visa'
 
 
 class PersonFactory(factory.DjangoModelFactory):
