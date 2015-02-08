@@ -4,7 +4,7 @@ from django.conf import settings
 from django.test import TestCase
 
 from brambling.models import Event, Transaction
-from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
+from brambling.tests.factories import EventFactory, PersonFactory
 from brambling.utils.payment import (dwolla_prep, dwolla_is_connected,
                                      dwolla_charge, dwolla_refund)
 
@@ -51,7 +51,7 @@ class DwollaChargeTestCase(TestCase):
         self.assertEqual(charge["Type"], "money_received")
         self.assertEqual(len(charge['Fees']), 2)
 
-        txn = Transaction.from_dwolla_charge(charge)
+        txn = Transaction.from_dwolla_charge(charge, event=event)
         # 42.15 * 0.025 = 1.05
         self.assertEqual(Decimal(txn.application_fee), Decimal('1.05'))
         # 0.25
@@ -62,7 +62,7 @@ class DwollaChargeTestCase(TestCase):
         self.assertIsInstance(refund, dict)
         self.assertEqual(refund["Amount"], txn.amount)
 
-        refund_txn = Transaction.from_dwolla_refund(refund, txn)
-        self.assertEqual(refund_txn.amount, txn.amount)
+        refund_txn = Transaction.from_dwolla_refund(refund, txn, event=event)
+        self.assertEqual(refund_txn.amount, -1 * txn.amount)
         self.assertEqual(refund_txn.application_fee, 0)
         self.assertEqual(refund_txn.processing_fee, 0)

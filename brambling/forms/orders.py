@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db.models import Q
 import floppyforms.__future__ as forms
 import stripe
@@ -402,11 +400,12 @@ class BasePaymentForm(forms.Form):
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
     def save_payment(self, charge, creditcard):
-        return Transaction.from_stripe(
+        return Transaction.from_stripe_charge(
             charge,
             card=creditcard,
             api_type=self.api_type,
-            order=self.order)
+            order=self.order,
+            event=self.order.event)
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -420,7 +419,7 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
     def _post_clean(self):
         kwargs = {
             'amount': self.amount,
-            'event': self.event,
+            'event': self.order.event,
         }
         try:
             if self.cleaned_data.get('save_card'):
@@ -460,7 +459,7 @@ class SavedCardPaymentForm(BasePaymentForm):
             self._charge = stripe_charge(
                 self.card.stripe_card_id,
                 amount=self.amount,
-                event=self.event,
+                event=self.order.event,
                 customer=customer_id
             )
         except stripe.error.CardError, e:
@@ -492,10 +491,11 @@ class DwollaPaymentForm(BasePaymentForm):
                     self.add_error(None, e.message)
 
     def save(self):
-        return Transaction.from_dwolla(
+        return Transaction.from_dwolla_charge(
             self._charge,
             api_type=self.api_type,
-            order=self.order)
+            order=self.order,
+            event=self.order.event)
 
 
 class CheckPaymentForm(BasePaymentForm):
@@ -506,5 +506,6 @@ class CheckPaymentForm(BasePaymentForm):
             amount=self.amount,
             method=Transaction.CHECK,
             is_confirmed=False,
-            api_type=self.api_type
+            api_type=self.api_type,
+            event=self.order.event
         )
