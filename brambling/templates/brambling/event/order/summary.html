@@ -39,7 +39,7 @@
 		<div class="alert alert-warning">
 			<p>Your passes are reserved, but the organizer has not yet received your payment by mail.</p>
 			{% include "brambling/event/order/_check_payment_info.html" %}
-			<p>If you believe this is in error, please contact the event organizer directly.</p>
+			<p>If you mailed your check more than a week ago or believe this is in error, please contact the event organizer directly.</p>
 		</div>
 	{% else %}
 		<div class="alert alert-success">
@@ -226,6 +226,7 @@
 			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
 		{% if event.uses_dwolla %}
+			{% if dwolla_is_connected or dwolla_oauth_url %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -233,12 +234,8 @@
 					</h4>
 				</div>
 				<div class="panel-body">
-					{% if user.dwolla_user_id or order.dwolla_user_id %}
-						{% if user.dwolla_user_id %}
-							<p>Connected account: {{ user.dwolla_user_id }}</p>
-						{% else %}
-							<p>Connected account: {{ order.dwolla_user_id }}</p>
-						{% endif %}
+					{% if dwolla_is_connected %}
+						<p>Connected account: {{dwolla_user_id }}</p>
 						<form novalidate action="" method="post">
 							{% csrf_token %}
 							<input name='dwolla' value='1' type='hidden'>
@@ -258,8 +255,13 @@
 					{% endif %}
 				</div>
 			</div>
+			{% endif %}
 		{% endif %}
-		{% if event.uses_checks %}
+
+		{# Payment by check: #}
+		{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}
+		{% if event.uses_checks and time_until_check_cutoff.days >= 0 %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -277,6 +279,7 @@
 				</div>
 			</div>
 		{% endif %}
+
 	{% elif order.has_cart %}
 		<form novalidate action="" method="post">
 			{% csrf_token %}

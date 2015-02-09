@@ -7,13 +7,14 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0001_initial'),
+        ('brambling', '0014_auto_20150203_2227'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='order',
-            name='send_flyers_zip',
-            field=models.CharField(max_length=12, verbose_name=b'zip code', blank=True),
+            model_name='transaction',
+            name='event',
+            field=models.ForeignKey(to='brambling.Event'),
+            preserve_default=True,
         ),
     ]

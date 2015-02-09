@@ -47,6 +47,7 @@ from brambling.views.organizer import (
     OrderDetailView,
     RefundView,
     TogglePaymentConfirmationView,
+    FinancesView,
 )
 from brambling.views.payment import (
     EventDwollaConnectView,
@@ -209,6 +210,9 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/attendees/$',
         AttendeeFilterView.as_view(),
         name="brambling_event_attendees"),
+    url(r'^(?P<event_slug>[\w-]+)/finances/$',
+        FinancesView.as_view(),
+        name="brambling_event_finances"),
     url(r'^(?P<event_slug>[\w-]+)/orders/$',
         OrderFilterView.as_view(),
         name="brambling_event_orders"),

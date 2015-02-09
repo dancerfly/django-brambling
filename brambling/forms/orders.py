@@ -1,16 +1,13 @@
-from decimal import Decimal, ROUND_DOWN
-
-from django.conf import settings
 from django.db.models import Q
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
-                              HousingCategory, CreditCard, Payment, Home,
+                              HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event)
-from brambling.utils.payment import dwolla_charge, stripe_prep
+from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
 
 from localflavor.us.forms import USZipCodeField
 
@@ -402,44 +399,13 @@ class BasePaymentForm(forms.Form):
         self.amount = amount
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
-    def get_fee(self, amount):
-        """Returns a percentage """
-        return self.order.event.application_fee_percent / 100 * amount
-
-    def charge(self, card_or_token, customer=None):
-        if self.amount <= 0:
-            return None
-        stripe_prep(self.api_type)
-        if self.api_type == Event.LIVE:
-            access_token = self.order.event.stripe_access_token
-        else:
-            access_token = self.order.event.stripe_test_access_token
-        stripe.api_key = access_token
-        # Amount is number of smallest currency units.
-        amount = int(self.amount * 100)
-
-        if customer is not None:
-            card_or_token = stripe.Token.create(
-                customer=customer,
-                card=card_or_token,
-                api_key=access_token,
-            )
-        fee = self.get_fee(amount).quantize(Decimal('1.'), rounding=ROUND_DOWN)
-        return stripe.Charge.create(
-            amount=amount,
-            currency=self.order.event.currency,
-            card=card_or_token,
-            application_fee=fee,
-        )
-
     def save_payment(self, charge, creditcard):
-        return Payment.objects.create(order=self.order,
-                                      amount=self.amount,
-                                      method=Payment.STRIPE,
-                                      remote_id=charge.id,
-                                      card=creditcard,
-                                      is_confirmed=True,
-                                      api_type=self.api_type)
+        return Transaction.from_stripe_charge(
+            charge,
+            card=creditcard,
+            api_type=self.api_type,
+            order=self.order,
+            event=self.order.event)
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -451,12 +417,16 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             del self.fields['save_card']
 
     def _post_clean(self):
+        kwargs = {
+            'amount': self.amount,
+            'event': self.order.event,
+        }
         try:
             if self.cleaned_data.get('save_card'):
                 self.card = self.add_card(self.cleaned_data['token'])
-                self._charge = self.charge(self.card.id, self.customer)
+                self._charge = stripe_charge(self.card.id, customer=self.customer, **kwargs)
             else:
-                self._charge = self.charge(self.cleaned_data['token'])
+                self._charge = stripe_charge(self.cleaned_data['token'], **kwargs)
                 self.card = self._charge.card
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
@@ -486,8 +456,12 @@ class SavedCardPaymentForm(BasePaymentForm):
         else:
             customer_id = self.order.person.stripe_test_customer_id
         try:
-            self._charge = self.charge(self.card.stripe_card_id,
-                                       customer_id)
+            self._charge = stripe_charge(
+                self.card.stripe_card_id,
+                amount=self.amount,
+                event=self.order.event,
+                customer=customer_id
+            )
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
 
@@ -507,33 +481,31 @@ class DwollaPaymentForm(BasePaymentForm):
             self._charge = None
             if self.amount > 0:
                 try:
-                    fee = self.get_fee(self.amount).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-
-                    charge_id = dwolla_charge(
+                    self._charge = dwolla_charge(
                         user_or_order=self.user if self.user.is_authenticated() else self.order,
                         amount=float(self.amount),
                         event=self.order.event,
-                        pin=self.cleaned_data['dwolla_pin'],
-                        fee=float(fee)
+                        pin=self.cleaned_data['dwolla_pin']
                     )
-                    self._charge = charge_id
-
                 except Exception as e:
                     self.add_error(None, e.message)
 
     def save(self):
-        return Payment.objects.create(order=self.order,
-                                      amount=self.amount,
-                                      method=Payment.DWOLLA,
-                                      remote_id=self._charge,
-                                      is_confirmed=True,
-                                      api_type=self.api_type)
+        return Transaction.from_dwolla_charge(
+            self._charge,
+            api_type=self.api_type,
+            order=self.order,
+            event=self.order.event)
 
 
 class CheckPaymentForm(BasePaymentForm):
     def save(self):
-        return Payment.objects.create(order=self.order,
-                                      amount=self.amount,
-                                      method=Payment.CHECK,
-                                      is_confirmed=False,
-                                      api_type=self.api_type)
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            order=self.order,
+            amount=self.amount,
+            method=Transaction.CHECK,
+            is_confirmed=False,
+            api_type=self.api_type,
+            event=self.order.event
+        )
