@@ -44,10 +44,13 @@ class EventForm(forms.ModelForm):
         model = Event
         # TODO: When multiple countries are supported, remove 'country'
         # and 'check_country' from excludes:
-        exclude = ('dates', 'housing_dates', 'owner',
+        exclude = ('dates', 'housing_dates', 'owner', 'editors',
                    'stripe_user_id', 'stripe_refresh_token',
                    'stripe_access_token', 'stripe_publishable_key',
-                   'dwolla_user_id', 'dwolla_access_token', 'editors',
+                   'stripe_test_user_id', 'stripe_test_refresh_token',
+                   'stripe_test_access_token', 'stripe_test_publishable_key',
+                   'dwolla_user_id', 'dwolla_access_token',
+                   'dwolla_test_user_id', 'dwolla_test_access_token',
                    'is_published', 'is_frozen', 'country', 'currency',
                    'application_fee_percent', 'check_country', 'api_type',)
 
@@ -106,13 +109,23 @@ class EventForm(forms.ModelForm):
     def save(self):
         created = self.instance.pk is None
         if self.cleaned_data.get('disconnect_stripe'):
-            self.instance.stripe_user_id = ''
-            self.instance.stripe_access_token = ''
-            self.instance.stripe_refresh_token = ''
-            self.instance.stripe_publishable_key = ''
+            if self.instance.api_type == Event.LIVE:
+                self.instance.stripe_user_id = ''
+                self.instance.stripe_access_token = ''
+                self.instance.stripe_refresh_token = ''
+                self.instance.stripe_publishable_key = ''
+            else:
+                self.instance.stripe_test_user_id = ''
+                self.instance.stripe_test_access_token = ''
+                self.instance.stripe_test_refresh_token = ''
+                self.instance.stripe_test_publishable_key = ''
         if self.cleaned_data.get('disconnect_dwolla'):
-            self.instance.dwolla_user_id = ''
-            self.instance.dwolla_access_token = ''
+            if self.instance.api_type == Event.LIVE:
+                self.instance.dwolla_user_id = ''
+                self.instance.dwolla_access_token = ''
+            else:
+                self.instance.dwolla_test_user_id = ''
+                self.instance.dwolla_test_access_token = ''
         instance = super(EventForm, self).save()
         if {'start_date', 'end_date'} & set(self.changed_data) or created:
             cd = self.cleaned_data
