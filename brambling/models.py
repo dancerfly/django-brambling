@@ -714,10 +714,12 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self, status):
-        self.bought_items.filter(
+    def mark_cart_paid(self, status, payment):
+        bought_items = self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
-        ).update(status=BoughtItem.BOUGHT)
+        )
+        payment.bought_items = bought_items
+        bought_items.update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
         self.status = status
@@ -752,8 +754,11 @@ class Order(AbstractDwollaModel):
     def get_summary_data(self):
         if self.cart_is_expired():
             self.delete_cart()
-        payments = self.transactions.filter(transaction_type=Transaction.PURCHASE).order_by('timestamp')
-        refunds = self.transactions.filter(transaction_type=Transaction.REFUND).order_by('timestamp')
+        transactions = self.transactions.prefetch_related('bought_items').order_by('timestamp')
+        payments = [t for t in transactions
+                    if t.transaction_type == Transaction.PURCHASE]
+        refunds = [t for t in transactions
+                   if t.transaction_type == Transaction.REFUND]
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
         bought_items = []

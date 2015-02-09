@@ -71,7 +71,7 @@
 					</tfoot>
 					<tbody>
 						{% for payment in payments %}
-							<tr>
+							<tr title="{% for bought_item in payment.bought_items.all %}{{ bought_item.item_option.name }} – {{ bought_item.attendee }}, {% endfor %}">
 								<td>{{ payment.get_method_display }}{% if payment.card %}: {{ payment.card|default:"" }}{% endif %}</td>
 								<td>{% block payment_is_confirmed %}{% if payment.is_confirmed %}<i class='fa fa-check text-success'></i>{% else %}<i class='fa fa-ban text-danger'></i>{% endif %}{% endblock %}</td>
 								<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>

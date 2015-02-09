@@ -17,7 +17,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
-                              Attendee, EventHousing, Event)
+                              Attendee, EventHousing, Event, Transaction)
 from brambling.utils.payment import (dwolla_can_connect,
                                      dwolla_customer_oauth_url,
                                      dwolla_is_connected)
@@ -759,7 +759,17 @@ class SummaryView(OrderMixin, TemplateView):
         self.summary_data = self.order.get_summary_data()
         self.net_balance = self.summary_data['net_balance']
         if self.net_balance == 0:
-            self.order.mark_cart_paid(Order.COMPLETED)
+            valid = True
+            payment = Transaction.objects.create(
+                amount=0,
+                method=Transaction.FAKE,
+                transaction_type=Transaction.PURCHASE,
+                is_confirmed=True,
+                api_type=self.event.api_type,
+                event=self.event,
+                order=self.order,
+            )
+            self.order.mark_cart_paid(Order.COMPLETED, payment)
         else:
             self.get_forms()
             form = None
@@ -774,8 +784,10 @@ class SummaryView(OrderMixin, TemplateView):
             if 'check' in request.POST:
                 form = self.check_form
             if form and form.is_valid():
+                valid = True
                 payment = form.save()
-                self.order.mark_cart_paid(Order.COMPLETED if payment.is_confirmed else Order.PENDING)
+                self.order.mark_cart_paid(Order.COMPLETED if payment.is_confirmed else Order.PENDING,
+                                          payment)
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()
@@ -791,13 +803,14 @@ class SummaryView(OrderMixin, TemplateView):
                     del session_orders[str(self.event.pk)]
                     self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
 
-                if not self.order.person:
-                    url = reverse('brambling_event_order_summary', kwargs={
-                        'event_slug': self.event.slug,
-                        'code': self.order.code
-                    })
-                    return HttpResponseRedirect(url)
-                return HttpResponseRedirect('')
+        if valid:
+            if not self.order.person:
+                url = reverse('brambling_event_order_summary', kwargs={
+                    'event_slug': self.event.slug,
+                    'code': self.order.code
+                })
+                return HttpResponseRedirect(url)
+            return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
