@@ -3,3 +3,4 @@
 /test_project/test_project/media/
 /test_project/db.sqlite3
 .sass-cache
+/.tox/

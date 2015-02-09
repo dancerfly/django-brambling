@@ -56,7 +56,8 @@ def get_event_admin_nav(event, request):
         ('brambling_item_list', 'Items', 'fa-list', {'event_slug': event.slug}),
         ('brambling_discount_list', 'Discounts', 'fa-gift', {'event_slug': event.slug}),
         ('brambling_event_attendees', 'Attendees', 'fa-users', {'event_slug': event.slug}),
-        ('brambling_event_orders', 'Orders', 'fa-money', {'event_slug': event.slug}),
+        ('brambling_event_orders', 'Orders', 'fa-envelope', {'event_slug': event.slug}),
+        ('brambling_event_finances', 'Finances', 'fa-money', {'event_slug': event.slug}),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
             for view_name, label, icon, kwargs in items]

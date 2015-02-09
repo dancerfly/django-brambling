@@ -21,10 +21,10 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm)
-from brambling.models import (Event, Item, Discount, Payment,
+from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Refund, Person)
+                              Person)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
@@ -111,31 +111,32 @@ class EventSummaryView(TemplateView):
             event=self.event
         ).annotate(used_count=Count('boughtitemdiscount')))
 
-        bought_item_discounts = BoughtItemDiscount.objects.filter(
-            discount__in=discounts
-        ).select_related('bought_item', 'discount')
-
-        total_discounts = 0
-
-        for discount in bought_item_discounts:
-            if discount.bought_item.item_option_id in itemoption_map:
-                discount.bought_item.item_option = itemoption_map[discount.bought_item.item_option_id]
-            total_discounts += discount.savings()
-        total_discounts = min(total_discounts, gross_sales)
-
-        total_refunds = Refund.objects.filter(
-            order__event=self.event,
-        ).aggregate(sum=Sum('amount'))['sum'] or 0
-
-        confirmed_payments = Payment.objects.filter(
-            order__event=self.event,
+        confirmed_purchases = Transaction.objects.filter(
+            transaction_type=Transaction.PURCHASE,
+            event=self.event,
             is_confirmed=True,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
 
-        pending_payments = Payment.objects.filter(
-            order__event=self.event,
+        pending_purchases = Transaction.objects.filter(
+            transaction_type=Transaction.PURCHASE,
+            event=self.event,
             is_confirmed=False,
         ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+        refunds = Transaction.objects.filter(
+            transaction_type=Transaction.REFUND,
+            event=self.event,
+        ).aggregate(sum=Sum('amount'))['sum'] or 0
+
+        sums = Transaction.objects.filter(
+            event=self.event,
+        ).aggregate(
+            amount=Sum('amount'),
+            application_fee=Sum('application_fee'),
+            processing_fee=Sum('processing_fee'),
+        )
+
+        fees = (sums['application_fee'] or 0) + (sums['processing_fee'] or 0)
 
         context.update({
             'event': self.event,
@@ -145,13 +146,13 @@ class EventSummaryView(TemplateView):
             'itemoptions': itemoptions,
             'discounts': discounts,
 
-            'confirmed_payments': confirmed_payments,
-            'pending_payments': pending_payments,
-            'total_discounts': total_discounts,
-            'total_refunds': total_refunds,
+            'confirmed_purchases': confirmed_purchases,
+            'pending_purchases': pending_purchases,
 
-            'net_confirmed': confirmed_payments - total_discounts - total_refunds,
-            'net_pending': confirmed_payments + pending_payments - total_discounts - total_refunds,
+            'refunds': refunds,
+            'fees': -1 * fees,
+
+            'net_total': (sums['amount'] or 0) - fees,
         })
 
         if self.event.collect_housing_data:
@@ -485,10 +486,11 @@ class RefundView(View):
         self.object = self.get_object()
         has_errors = False
         has_refunds = False
-        for payment in self.object.payments.all():
+        purchases = self.object.transactions.filter(transaction_type=Transaction.PURCHASE)
+        for purchase in purchases:
             try:
-                payment.refund(payment.amount, request.user,
-                               dwolla_pin=request.POST.get('dwolla_pin'))
+                purchase.refund(purchase.amount, request.user,
+                                dwolla_pin=request.POST.get('dwolla_pin'))
             except Exception as e:
                 messages.error(request, e.message)
                 has_errors = True
@@ -619,16 +621,40 @@ class TogglePaymentConfirmationView(View):
         try:
             self.order = Order.objects.get(event=self.event,
                                            code=self.kwargs['code'])
-            return Payment.objects.get(order=self.order,
-                                       pk=self.kwargs['payment_pk'])
-        except (Order.DoesNotExist, Payment.DoesNotExist):
+            return Transaction.objects.get(transaction_type=Transaction.PURCHASE,
+                                           order=self.order,
+                                           pk=self.kwargs['payment_pk'])
+        except (Order.DoesNotExist, Transaction.DoesNotExist):
             raise Http404
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.is_confirmed = not self.object.is_confirmed
         self.object.save()
-        all_confirmed = not self.order.payments.filter(is_confirmed=False).exists()
+        all_confirmed = not self.order.transactions.filter(is_confirmed=False).exists()
         self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
         self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})
+
+
+class FinancesView(ListView):
+    model = Transaction
+    context_object_name = 'transactions'
+    template_name = 'brambling/event/organizer/finances.html'
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        return super(FinancesView, self).get_queryset().filter(
+            event=self.event,
+            api_type=self.event.api_type,
+        ).select_related('created_by', 'order').order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = super(FinancesView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        return context

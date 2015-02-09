@@ -54,16 +54,6 @@
 								<td class='text-right text-success'>({{ discount.savings|format_money:event.currency }})</td>
 							</tr>
 						{% endfor %}
-						{% for refund in item.refunds %}
-							<tr{% if is_active %} class='active'{% endif %}>
-								<td></td>
-								<td>Refund</td>
-								<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-								<td></td>
-								<td>{% block refund_actions %}{% endblock %}</td>
-								<td class='text-right text-success'>({{ refund.amount|format_money:event.currency }})</td>
-							</tr>
-						{% endfor %}
 					{% endfor %}
 				</tbody>
 			</table>
@@ -120,7 +110,7 @@
 					<td></td>
 					<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
 					<td></td>
-					<td class='text-right'>{{ refund.amount|format_money:event.currency }}</td>
+					<td class='text-right'>{{ refund.amount|absolute_value|format_money:event.currency }}</td>
 				</tr>
 			{% endfor %}
 		</tbody>
@@ -143,7 +133,7 @@
 		<tbody>
 			<tr>
 				<th>Net cost</th>
-				<th class='text-right{% if net_cost > 0 %} text-danger{% endif %}'>{{ net_cost|format_money:event.currency }}</th>
+				<th class='text-right{% if net_cost > 0 %} text-danger{% endif %}'>{{ net_cost|absolute_value|format_money:event.currency }}</th>
 			</tr>
 			<tr>
 				<th>Net payments</th>
