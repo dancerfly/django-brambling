@@ -848,7 +848,7 @@ class Transaction(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(Person, blank=True, null=True)
     method = models.CharField(max_length=7, choices=METHOD_CHOICES)
-    transaction_type = models.CharField(max_length=5, choices=TRANSACTION_TYPE_CHOICES)
+    transaction_type = models.CharField(max_length=8, choices=TRANSACTION_TYPE_CHOICES)
     is_confirmed = models.BooleanField(default=False)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
     event = models.ForeignKey(Event)

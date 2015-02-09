@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transaction',
             name='transaction_type',
-            field=models.CharField(default='purchase', max_length=5, choices=[(b'purchase', 'Purchase'), (b'refund', 'Refunded purchase'), (b'other', 'Other')]),
+            field=models.CharField(default='purchase', max_length=8, choices=[(b'purchase', 'Purchase'), (b'refund', 'Refunded purchase'), (b'other', 'Other')]),
             preserve_default=False,
         ),
         migrations.AlterField(
