@@ -857,6 +857,7 @@ class Transaction(models.Model):
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
+    bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
 
     class Meta:
         get_latest_by = 'timestamp'
