@@ -9,6 +9,15 @@
 					return this.defaultValue;
 				});
 			}
-		})
-	});
+		});
+        var $payable_to = $('#id_check_payable_to'),
+            $recipient = $('#id_check_recipient'),
+            recipient_val = '';
+        $payable_to.on('keyup', function(e) {
+            if ($recipient.val() === recipient_val) {
+                recipient_val = $payable_to.val();
+                $recipient.val(recipient_val);
+            }
+        });
+    });
 </script>
