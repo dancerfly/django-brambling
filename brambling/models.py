@@ -942,7 +942,18 @@ class Transaction(models.Model):
             **kwargs
         )
 
-    def refund(self, amount, issuer, dwolla_pin=None):
+    def can_refund(self):
+        refunded = self.related_transaction_set.filter(
+            transaction_type=Transaction.REFUND
+        ).aggregate(refunded=Sum('amount'))['refunded'] or 0
+        return self.amount + refunded > 0
+
+    def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
+        if amount is None:
+            amount = self.amount
+        if bought_items is None:
+            bought_items = self.bought_items.all()
+
         total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum'] or 0
         refundable = self.amount + total_refunds
         if refundable < amount:
@@ -966,7 +977,7 @@ class Transaction(models.Model):
                 payment_id=self.remote_id,
                 amount=refundable,
             )
-            return Transaction.from_stripe_refund(refund, **refund_kwargs)
+            txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
         elif self.method == Transaction.DWOLLA:
             refund = dwolla_refund(
                 event=self.order.event,
@@ -974,15 +985,19 @@ class Transaction(models.Model):
                 amount=refundable,
                 pin=dwolla_pin,
             )
-            return Transaction.from_dwolla_refund(refund, **refund_kwargs)
-        return Transaction.objects.create(
-            transaction_type=Transaction.REFUND,
-            amount=-1 * refundable,
-            is_confirmed=True,
-            remote_id='',
-            method=self.method,
-            **refund_kwargs
-        )
+            txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
+        else:
+            txn = Transaction.objects.create(
+                transaction_type=Transaction.REFUND,
+                amount=-1 * refundable,
+                is_confirmed=True,
+                remote_id='',
+                method=self.method,
+                **refund_kwargs
+            )
+        txn.bought_items = bought_items
+        bought_items.update(status=BoughtItem.REFUNDED)
+        return txn
     refund.alters_data = True
 
 

@@ -469,42 +469,25 @@ class RefundView(View):
         if not self.event.editable_by(self.request.user):
             raise Http404
         try:
-            return Order.objects.get(event=self.event,
-                                     code=self.kwargs['code'])
-        except Order.DoesNotExist:
+            return Transaction.objects.get(
+                event=self.event,
+                order__code=self.kwargs['code'],
+                pk=self.kwargs['pk']
+            )
+        except Transaction.DoesNotExist:
             raise Http404
 
-    def get_context_data(self, **kwargs):
-        context = super(AttendeeFilterView, self).get_context_data(**kwargs)
-        context.update({
-            'event': self.event,
-            'event_admin_nav': get_event_admin_nav(self.event, self.request)
-        })
-        return context
-
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        has_errors = False
-        has_refunds = False
-        purchases = self.object.transactions.filter(transaction_type=Transaction.PURCHASE)
-        for purchase in purchases:
-            try:
-                purchase.refund(purchase.amount, request.user,
-                                dwolla_pin=request.POST.get('dwolla_pin'))
-            except Exception as e:
-                messages.error(request, e.message)
-                has_errors = True
-            else:
-                has_refunds = True
-
-        if has_refunds and not has_errors:
-            self.object.status = Order.REFUNDED
-            self.object.save()
-            self.object.bought_items.update(status=BoughtItem.REFUNDED)
+        txn = self.get_object()
+        try:
+            txn.refund(issuer=request.user,
+                       dwolla_pin=request.POST.get('dwolla_pin'))
+        except Exception as e:
+            messages.error(request, e.message)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
-                              'code': self.object.code})
+                              'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
 
 

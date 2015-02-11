@@ -12,6 +12,25 @@
 {% endblock %}
 
 {% block payment_actions %}
+	{% if payment.can_refund %}<a data-toggle="modal" data-target=".refund-{{ payment.pk }}"><i class='fa fa-fw fa-refresh'></i></a>{% endif %}
+
+	<div class="modal fade refund-{{ payment.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ payment.pk }}" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-body">
+					<form action='{% url 'brambling_event_refund' event_slug=event.slug code=order.code pk=payment.pk %}' method='post' class='form-inline'>
+						{% csrf_token %}
+						<h4 id="Label{{ bought_item.item_option.item.pk }}">Are you sure you want to refund {{ payment.amount|format_money:event.currency }} and all related purchases?</h4>
+						{% if order.has_dwolla_payments %}
+							<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
+						{% endif %}
+						<button type='submit' class='btn btn-success btn-block'>Yes, refund</button>
+						<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}
 
 
