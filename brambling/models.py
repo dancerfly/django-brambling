@@ -759,12 +759,11 @@ class Order(AbstractDwollaModel):
                     if t.transaction_type == Transaction.PURCHASE]
         refunds = [t for t in transactions
                    if t.transaction_type == Transaction.REFUND]
+        payment_items = [t.bought_items.select_related('item_option__item') for t in payments]
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
-        bought_items = []
         for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
             items = [item.get_summary_data() for item in g]
-            bought_items.extend(items)
 
             gross_cost = sum((item['gross_cost'] for item in items))
             total_savings = sum((item['total_savings'] for item in items))
@@ -776,6 +775,9 @@ class Order(AbstractDwollaModel):
                 'total_savings': total_savings,
                 'net_cost': net_cost,
             })
+        unpaid_items = [item for item in bought_items_qs
+                        if item.status == BoughtItem.UNPAID or
+                        item.status == BoughtItem.RESERVED]
 
         gross_cost = sum((item.item_option.price for item in bought_items_qs))
         gross_payments = sum((payment.amount for payment in payments))
@@ -791,7 +793,8 @@ class Order(AbstractDwollaModel):
                                           for payment in payments))
         return {
             'attendees': attendees,
-            'bought_items': bought_items,
+            'payment_items': payment_items,
+            'unpaid_items': unpaid_items,
             'payments': payments,
             'refunds': refunds,
             'gross_cost': gross_cost,

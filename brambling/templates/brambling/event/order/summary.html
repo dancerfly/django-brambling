@@ -56,6 +56,52 @@
 				<table class='table'>
 					<thead>
 						<tr>
+							<th>Item</th>
+							<th class='text-right'>Cost</th>
+						</tr>
+					</thead>
+					<tfoot>
+						<tr class='active'>
+							<th>Gross cost</th>
+							<td class='text-right'><strong>{{ gross_cost|format_money:event.currency }}</strong></td
+						</tr>
+					</tfoot>
+					<tbody>
+						{% for items in payment_items %}
+							{% for item in items %}
+								{% with summary_data=item.get_summary_data %}
+								<tr>
+									<td>{{ item.item_option.name }} ({{ item.item_option.item.name }})</td>
+									<td class='text-right'>{{ summary_data.gross_cost|format_money:event.currency }}</td>
+								</tr>
+								{% for discount in summary_data.discounts %}
+									<tr>
+										<td><em>{{ discount.name }}</em></td>
+										<td class='text-right'><em>{{ discount.savings|format_money:event.currency }}</em></td>
+									</tr>
+								{% endfor %}
+								{% endwith %}
+							{% endfor %}
+						{% endfor %}
+						{% for item in unpaid_items %}
+							{% with summary_data=item.get_summary_data %}
+							<tr>
+								<td>{{ item.item_option.name }} ({{ item.item_option.item.name }})</td>
+								<td class='text-right'>{{ summary_data.gross_cost|format_money:event.currency }}</td>
+							</tr>
+							{% for discount in summary_data.discounts %}
+								<tr>
+									<td><em>{{ discount.name }}</em></td>
+									<td class='text-right'><em>{{ discount.savings|format_money:event.currency }}</em></td>
+								</tr>
+							{% endfor %}
+							{% endwith %}
+						{% endfor %}
+					</tbody>
+				</table>
+				<table class='table'>
+					<thead>
+						<tr>
 							<th class="col-sm-4">Payments</th>
 							<th class='col-sm-2'>Received</th>
 							<th class="col-sm-3">Timestamp</th>
