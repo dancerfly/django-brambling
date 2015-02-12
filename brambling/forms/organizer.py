@@ -277,6 +277,7 @@ class ManualPaymentForm(forms.ModelForm):
         self.fields['method'].choices = Transaction.METHOD_CHOICES[2:]
         self.order = order
         self.instance.order = order
+        self.instance.event = order.event
 
 
 class ManualDiscountForm(forms.Form):
