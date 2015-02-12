@@ -175,8 +175,10 @@ if USE_DEBUG_TOOLBAR:
 
 if ACCEPT_FEEDBACK:
     MIDDLEWARE_CLASSES += (
-        'zenaida.contrib.feedback.middleware.FeedbackMiddleware',
+        'talkback.middleware.TalkbackMiddleware',
     )
     INSTALLED_APPS += (
+        # TODO: Remove zenaida.contrib.feedback in the next release:
         'zenaida.contrib.feedback',
+        'talkback',
     )
