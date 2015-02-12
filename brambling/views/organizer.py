@@ -576,11 +576,12 @@ class OrderDetailView(DetailView):
             raise Http404
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
-        self.payment_form = ManualPaymentForm(order=self.order)
+        self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.discount_form = ManualDiscountForm(order=self.order)
         if self.request.method == 'POST':
             if 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
+                                                      user=self.request.user,
                                                       data=self.request.POST)
             elif 'is_discount_form' in self.request.POST:
                 self.discount_form = ManualDiscountForm(order=self.order,

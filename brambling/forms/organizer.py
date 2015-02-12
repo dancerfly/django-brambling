@@ -272,12 +272,17 @@ class ManualPaymentForm(forms.ModelForm):
         model = Transaction
         fields = ('amount', 'method')
 
-    def __init__(self, order, *args, **kwargs):
+    def __init__(self, order, user, *args, **kwargs):
         super(ManualPaymentForm, self).__init__(*args, **kwargs)
         self.fields['method'].choices = Transaction.METHOD_CHOICES[2:]
         self.order = order
-        self.instance.order = order
-        self.instance.event = order.event
+        txn = self.instance
+        txn.order = order
+        txn.event = order.event
+        txn.transaction_type = Transaction.PURCHASE
+        txn.created_by = user
+        txn.is_confirmed = True
+        txn.api_type = txn.event.api_type
 
 
 class ManualDiscountForm(forms.Form):
