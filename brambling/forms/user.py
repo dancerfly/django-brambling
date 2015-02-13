@@ -11,8 +11,7 @@ import floppyforms.__future__ as forms
 
 from brambling.mail import send_confirmation_email
 from brambling.models import Person, Home, DanceStyle, Invite
-
-from localflavor.us.forms import USZipCodeField
+from brambling.utils.international import clean_postal_code
 
 
 class FloppyAuthenticationForm(AuthenticationForm):
@@ -183,7 +182,6 @@ class HomeForm(forms.ModelForm):
                                 widget=forms.Textarea,
                                 label='List more residents',
                                 required=False)
-    zip_code = USZipCodeField(widget=forms.TextInput)
 
     class Meta:
         model = Home
@@ -207,6 +205,17 @@ class HomeForm(forms.ModelForm):
         for resident in residents:
             validator(resident)
         return residents
+
+    def clean(self):
+        cleaned_data = super(HomeForm, self).clean()
+        country = cleaned_data['country']
+        code = cleaned_data['zip_code']
+        try:
+            cleaned_data['zip_code'] = clean_postal_code(country, code)
+        except ValidationError, e:
+            del cleaned_data['zip_code']
+            self.add_error('zip_code', e)
+        return cleaned_data
 
     def save(self, commit=True):
         created = self.instance.pk is None

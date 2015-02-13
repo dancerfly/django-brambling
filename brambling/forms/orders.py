@@ -11,8 +11,6 @@ from brambling.models import (Date, EventHousing, EnvironmentalFactor,
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
 
-from localflavor.us.forms import USZipCodeField
-
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
