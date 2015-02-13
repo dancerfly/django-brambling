@@ -7,7 +7,18 @@
 	</header>
 	<div class="panel-body">
 		{% formrow form.name %}
-		{% formrow form.slug %}
+		{% if form.slug %}
+			{% formrow form.slug %}
+		{% else %}
+			<div class="form-group">
+				<label class="control-label" for="id_slug">
+				Slug
+				 <span class="required">*</span>
+				</label>
+				<input class="form-control" type="text" value="{{ event.slug }}" disabled>
+				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+			</div>
+		{% endif %}
 		{% formrow form.website_url %}
 		{% formrow form.description %}
 		{% formrow form.banner_image %}
