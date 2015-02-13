@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 import floppyforms.__future__ as forms
 import stripe
@@ -7,6 +8,7 @@ from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event)
+from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
 
 from localflavor.us.forms import USZipCodeField
@@ -139,8 +141,6 @@ class AttendeeHousingDataForm(MemoModelForm):
 
 
 class SurveyDataForm(forms.ModelForm):
-    send_flyers_zip = USZipCodeField(label="Zip code", widget=forms.TextInput, required=False)
-
     class Meta:
         model = Order
         fields = (
@@ -163,6 +163,17 @@ class SurveyDataForm(forms.ModelForm):
             self.fields['send_flyers_zip'].required = True
         return send_flyers
 
+    def clean(self):
+        cleaned_data = super(SurveyDataForm, self).clean()
+        country = cleaned_data['send_flyers_country']
+        code = cleaned_data['send_flyers_zip']
+        try:
+            cleaned_data['send_flyers_zip'] = clean_postal_code(country, code)
+        except ValidationError, e:
+            del cleaned_data['send_flyers_zip']
+            self.add_error('send_flyers_zip', e)
+        return cleaned_data
+
 
 class HousingSlotForm(forms.ModelForm):
     def clean_spaces_max(self):
@@ -183,7 +194,6 @@ class HostingForm(MemoModelForm):
     save_as_defaults = forms.BooleanField(initial=True, required=False,
             label="Remember this information for future events.",
             help_text="You will still be able to modify it later.")
-    zip_code = USZipCodeField(widget=forms.TextInput)
 
     class Meta:
         model = EventHousing
@@ -268,6 +278,17 @@ class HostingForm(MemoModelForm):
             self.slot_forms.append(HousingSlotForm(instance=instance,
                                                    data=data,
                                                    prefix='{}-{}'.format(self.prefix, night.pk)))
+
+    def clean(self):
+        cleaned_data = super(HostingForm, self).clean()
+        country = cleaned_data['country']
+        code = cleaned_data['zip_code']
+        try:
+            cleaned_data['zip_code'] = clean_postal_code(country, code)
+        except ValidationError, e:
+            del cleaned_data['zip_code']
+            self.add_error('zip_code', e)
+        return cleaned_data
 
     def is_valid(self):
         valid = super(HostingForm, self).is_valid()

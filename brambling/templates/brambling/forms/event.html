@@ -51,7 +51,7 @@
 			<div class="col-sm-3">
 				{% formrow form.state_or_province %}
 			</div>
-			{# TODO: When multiple countries are supported, make this a real form row: #}
+			{# TODO: When changing countries is supported, make this a real form row: #}
 			<div class="col-sm-4">
 				<div class='form-group'>
 					<label class='control-label'>Country *</label>
@@ -248,7 +248,7 @@
 							<a href='#CheckConfig' data-toggle="collapse" class="btn btn-xs btn-info"><i class="fa fa-cog"></i> Configure</a>
 						</td>
 					</tr>
-					<tr class="collapse active {% if form.instance.uses_checks %}in{% endif %}" id="CheckConfig">
+					<tr class="collapse active {% if form.instance.uses_checks or form.has_check_errors %}in{% endif %}" id="CheckConfig">
 						<td colspan="3">
 							{% formrow form.check_payment_allowed with label="Enable Payment by Check" %}
 
@@ -264,15 +264,22 @@
 							{% formrow form.check_recipient with label="Mail addressed to" %}
 							{% formrow form.check_address with label="Address" %}
 							{% formrow form.check_address_2 using "brambling/forms/rows/no_label.html" %}
+							{% formrow form.check_city with label="City" %}
 							<div class="row">
-								<div class="col-sm-5">
-									{% formrow form.check_city with label="City" %}
+								<div class="col-sm-4">
+									{% formrow form.check_state_or_province with label="State / province" %}
 								</div>
-								<div class="col-sm-3">
-									{% formrow form.check_state_or_province with label="State or province" %}
+								{# TODO: When changing countries is supported, make this a real form row: #}
+								<div class="col-sm-4">
+									<div class='form-group'>
+										<label class='control-label'>Country *</label>
+										<select class="chosen-select" disabled>
+											<option selected="selected">{{ event.get_check_country_display }}</option>
+										</select>
+									</div>
 								</div>
 								<div class="col-sm-4">
-									{% formrow form.check_zip with label="Zip Code"%}
+									{% formrow form.check_zip with label="Zip / Postal Code"%}
 								</div>
 							</div>{# /.row #}
 							{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}

@@ -1,6 +1,5 @@
 import datetime
 
-from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
@@ -9,8 +8,7 @@ import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               Date, ItemImage, Transaction, Invite)
-
-from localflavor.us.forms import USZipCodeField
+from brambling.utils.international import clean_postal_code
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
@@ -38,7 +36,6 @@ class EventForm(forms.ModelForm):
         ('Pacific/Honolulu', 'Pacific/Honolulu'),
 
     ))
-    check_zip = USZipCodeField(required=False, widget=forms.TextInput)
 
     class Meta:
         model = Event
@@ -101,7 +98,19 @@ class EventForm(forms.ModelForm):
         if cleaned_data['start_date'] > cleaned_data['end_date']:
             raise ValidationError("End date must be before or equal to "
                                   "the start date.")
+        country = self.instance.check_country
+        code = cleaned_data['check_zip']
+        try:
+            cleaned_data['check_zip'] = clean_postal_code(country, code)
+        except ValidationError, e:
+            del cleaned_data['check_zip']
+            self.add_error('check_zip', e)
         return cleaned_data
+
+    def has_check_errors(self):
+        return any((f in self.errors
+                    for f in self.fields
+                    if f[:6] == ('check_')))
 
     def save(self):
         created = self.instance.pk is None

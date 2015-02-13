@@ -239,7 +239,7 @@ class Event(AbstractDwollaModel):
     website_url = models.URLField(blank=True)
     banner_image = models.ImageField(blank=True)
     city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
     country = CountryField(default='US')
     timezone = models.CharField(max_length=40, default='UTC')
     currency = models.CharField(max_length=10, default='USD')
@@ -307,8 +307,8 @@ class Event(AbstractDwollaModel):
     check_address = models.CharField(max_length=200, blank=True)
     check_address_2 = models.CharField(max_length=200, blank=True)
     check_city = models.CharField(max_length=50, blank=True)
-    check_state_or_province = models.CharField(max_length=50, blank=True)
-    check_zip = models.CharField(max_length=12, blank=True)
+    check_state_or_province = models.CharField(max_length=50, blank=True, verbose_name='state / province')
+    check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
     check_country = CountryField(default='US')
 
     def __unicode__(self):
@@ -651,8 +651,8 @@ class Order(AbstractDwollaModel):
     send_flyers_address = models.CharField(max_length=200, verbose_name='address', blank=True)
     send_flyers_address_2 = models.CharField(max_length=200, verbose_name='address line 2', blank=True)
     send_flyers_city = models.CharField(max_length=50, verbose_name='city', blank=True)
-    send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state or province', blank=True)
-    send_flyers_zip = models.CharField(max_length=12, verbose_name="zip code", blank=True)
+    send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    send_flyers_zip = models.CharField(max_length=12, verbose_name="zip / postal code", blank=True)
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
@@ -1129,8 +1129,8 @@ class Home(models.Model):
     address = models.CharField(max_length=200)
     address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
-    zip_code = models.CharField(max_length=12, blank=True)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
+    zip_code = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
@@ -1180,8 +1180,8 @@ class EventHousing(models.Model):
     address = models.CharField(max_length=200)
     address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
-    zip_code = models.CharField(max_length=12, blank=True)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
+    zip_code = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
