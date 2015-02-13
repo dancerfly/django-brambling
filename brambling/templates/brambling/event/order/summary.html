@@ -161,26 +161,28 @@
 			{% endif %}
 		{% endif %}
 
-		{# Payment by check: #}
-		{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+		{# Payment by check #}
 		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}
-		{% if event.uses_checks and time_until_check_cutoff.days >= 0 %}
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">
-						Pay with check
-					</h4>
-				</div>
-				<div class="panel-body">
-					{% include "brambling/event/order/_check_payment_info.html" %}
-					<form novalidate action="" method="post">
-						{% csrf_token %}
-						<input name='check' value='1' type='hidden'>
+		{% if event.uses_checks and event.check_postmark_cutoff %}
+			{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+			{% if time_until_check_cutoff.days >= 0 %}
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							Pay with check
+						</h4>
+					</div>
+					<div class="panel-body">
+						{% include "brambling/event/order/_check_payment_info.html" %}
+						<form novalidate action="" method="post">
+							{% csrf_token %}
+							<input name='check' value='1' type='hidden'>
 
-						<button type="submit" class="btn btn-primary">Complete Order ({{ net_balance|format_money:event.currency }})</button>
-					</form>
+							<button type="submit" class="btn btn-primary">Complete Order ({{ net_balance|format_money:event.currency }})</button>
+						</form>
+					</div>
 				</div>
-			</div>
+			{% endif %}
 		{% endif %}
 
 	{% elif order.has_cart %}
