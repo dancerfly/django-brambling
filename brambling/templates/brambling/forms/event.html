@@ -197,7 +197,7 @@
 							<th>
 								<i class="fa fa-fw fa-credit-card"></i>
 								Stripe
-								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 3.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
+								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
 							</th>
 							{% if event.uses_stripe %}
 								<td>Enabled ({% if event.api_type == event.LIVE %}{{ event.stripe_user_id }}{% else %}{{ event.stripe_test_user_id }}{% endif %})</td>
