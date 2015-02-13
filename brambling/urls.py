@@ -70,6 +70,9 @@ from brambling.views.utils import split_view
 urlpatterns = patterns('',
     url(r'^favicon\.ico$', RedirectView.as_view(url=static('brambling/favicon.ico'))),
 
+    url(r'faq/', TemplateView.as_view(template_name='brambling/faq.html'), name='brambling_faq'),
+    url(r'pricing/', TemplateView.as_view(template_name='brambling/pricing.html'), name='brambling_pricing'),
+
     url(r'^$',
         split_view(lambda r, *a, **k: r.user.is_authenticated(),
                    UserDashboardView.as_view(),

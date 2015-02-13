@@ -1,0 +1,29 @@
+{% extends "brambling/layouts/12_xs.html" %}
+
+{% block title %}Pricing – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<h2>Pricing</h2>
+
+	<h1><a href="#beta-note">1.5%</a> <small>for online payments</small></h1>
+
+	<p><em class='text-muted'>Dancerfly is currently in beta. Once the beta ends, our facilitation fee for online payments will be 2.5%</em></p>
+
+	<p>Payment processors may charge additional fees. We currently support three payment methods: <a href="http://stripe.com/">Stripe</a> (credit cards), <a href="http://dwolla.com/">Dwolla</a>, and mailed checks. Any combination of these payment methods can be enabled for your event.</p>
+
+	<p>You must register for an account with Stripe or Dwolla if you choose to use them. Sales will go directly to you with the processing and facilitation fees automatically subtracted.The fee for these processors is as follows:</p>
+
+	<h3>Stripe</h3>
+	<ul>
+		<li><a href="http://stripe.com/us/pricing/">2.9% + 30¢</a> in the US</li>
+		<li><a href="https://stripe.com/global">Available in 18 countries</a></li>
+	</ul>
+
+	<h3>Dwolla</h3>
+	<ul>
+		<li><a href="http://dwolla.com/fees/">25¢ for transactions over $10, no fee under</a></li>
+		<li><a href="https://www.dwolla.com/global">Currently US only</a></li>
+	</ul>
+
+	<p>We don't officially charge a fee on checks; however, events primarily driven by check payments have in the past voluntarily paid the usual fee to help support the platform.</p>
+{% endblock %}
