@@ -1,0 +1,53 @@
+{% extends "brambling/layouts/12_xs.html" %}
+
+{% block title %}About – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<h2>About Dancerfly</h2>
+
+	<p>
+		Dancerfly is a solid, easy-to-use event registration platform built <strong>by&nbsp;dancers, for&nbsp;dancers</strong>.
+		Leave selling tickets to us; you go focus on making the rest of your event amazing!
+	</p>
+
+	<p>
+		What we offer includes:
+	</p>
+
+	<ul>
+		<li>Payment on our site with <a href="{% url 'brambling_pricing' %}">credit card, Dwolla, or check</a></li>
+		<li>Mobile-friendly design</li>
+		<li>Discount codes</li>
+		<li>Customizable attendee data downloads</li>
+		<li>Housing management</li>
+		<li>Multiple managers per event</li>
+		<li>Simple refunds</li>
+		<li>Optional account creation</li>
+		<li>Discoverability based on dance style</li>
+		<li><a href="{% url 'brambling_global' %}">International support</a></li>
+		<li>A knowledgeable, professional, responsive support team</li>
+	</ul>
+
+	<p>
+		If you're interested in using Dancerfly for your event, or if you have questions, email us at <a href="mailto:hello@littleweaverweb.com">hello@littleweaverweb.com</a>.
+	</p>
+
+	<p>
+		Let us know if there are any specific features that you need.
+		We may already support them – and if not, we’re always looking to improve the platform!
+	</p>
+
+	<p>
+		Thanks for checking us out.
+		And however you handle registration – best of luck with your event!
+	</p>
+
+	<h4>Little Weaver Web Collective</h4>
+	<p>
+		<i class='fa fa-fw fa-globe text-muted'></i> <a href="http://littleweaverweb.com/">littleweaverweb.com</a>
+		<br />
+		<i class='fa fa-fw fa-paper-plane-o text-muted'></i> <a href="mailto:hello@littleweaverweb.com">hello@littleweaverweb.com</a>
+		<br />
+		<i class='fa fa-fw fa-github-alt text-muted'></i> <a href="http://github.com/littleweaver/">github.com/littleweaver</a>
+	</p>
+{% endblock %}
