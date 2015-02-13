@@ -210,7 +210,7 @@ class RegistrationWorkflow(Workflow):
 
 
 class ShopWorkflow(Workflow):
-    step_classes = [ShopStep, AttendeeStep, HousingStep, PaymentStep]
+    step_classes = [ShopStep, AttendeeStep, HousingStep, HostingStep, PaymentStep]
 
 
 class SurveyWorkflow(Workflow):
@@ -703,7 +703,7 @@ class HostingView(OrderMixin, UpdateView):
 
     def get_workflow_class(self):
         if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return ShopWorkflow
+            return HostingWorkflow
         return RegistrationWorkflow
 
     def get_object(self):
