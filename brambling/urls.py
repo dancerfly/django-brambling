@@ -72,6 +72,7 @@ urlpatterns = patterns('',
 
     url(r'faq/', TemplateView.as_view(template_name='brambling/faq.html'), name='brambling_faq'),
     url(r'pricing/', TemplateView.as_view(template_name='brambling/pricing.html'), name='brambling_pricing'),
+    url(r'global/', TemplateView.as_view(template_name='brambling/global.html'), name='brambling_global'),
 
     url(r'^$',
         split_view(lambda r, *a, **k: r.user.is_authenticated(),
