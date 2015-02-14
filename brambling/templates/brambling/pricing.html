@@ -1,0 +1,39 @@
+{% extends "brambling/layouts/12_xs.html" %}
+
+{% block title %}Pricing – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<h2>Pricing</h2>
+
+	<h1><small>We charge</small> 1.5% <small>of online payments.</small></h1>
+
+	<p><em class='text-muted'>After the current beta ends, this will go up to 2.5%.</em></p>
+
+	<p>
+		<strong>Payment processors may charge additional fees.</strong>
+		We currently support three payment methods: <a href="http://stripe.com/">Stripe</a> (credit cards), <a href="http://dwolla.com/">Dwolla</a>, and mailed checks.
+		Any combination of these payment methods can be enabled for your event.
+		Processing fees are as follows:
+	</p>
+
+	<h4>Stripe <a href="http://stripe.com/us/pricing/">2.9% + 30¢ on all transactions</a></h4>
+	<h4>Dwolla <a href="http://dwolla.com/fees/">25¢ for transactions over $10</a></h4>
+
+	<p>
+		You must register for an account with Stripe or Dwolla if you choose to use them.
+		Sales will go directly to you with the processing and facilitation fees automatically subtracted.
+		We don't charge fees on check payments.
+	</p>
+
+	<p>
+		We do not allow events to pass fees on to their attendees.
+		This is because of a strong feeling on our part that the user's
+		experience is more pleasant if there aren't any hidden costs.
+	</p>
+
+	<p>
+		If you have any questions, or if you believe you have a compelling reason
+		to request a different rate / payment arrangement for your event, please
+		get in touch with us via email at <a href="hello@littleweaverweb.com">hello@littleweaverweb.com</a>.
+	</p>
+{% endblock %}

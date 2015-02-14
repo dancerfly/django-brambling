@@ -1,4 +1,11 @@
 <footer>
+	<ul class='list-inline'>
+		<li><a href="{% url 'brambling_about' %}">About</a></li>
+		<li><a href="{% url 'brambling_pricing' %}">Pricing</a></li>
+		<li><a href="{% url 'brambling_global' %}">Global</a></li>
+		<li><a href="{% url 'brambling_event_root' event_slug='demo-event' %}">Demo</a></li>
+		<li><a href="{% url 'brambling_faq' %}">FAQ</a></li>
+	</ul>
 	<p>
 		<a href="/" class="dancerfly-brand">Dancerfly</a> is a dance event registration service by <a href="http://littleweaverweb.com">Little Weaver Web Collective</a>.
 	</p>

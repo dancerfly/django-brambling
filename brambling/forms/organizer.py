@@ -14,6 +14,9 @@ from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
 
 
+STATIC_SLUGS = frozenset(('demo-event',))
+
+
 class EventForm(forms.ModelForm):
     start_date = forms.DateField()
     end_date = forms.DateField()
@@ -70,6 +73,9 @@ class EventForm(forms.ModelForm):
             timezone = self.instance.timezone
             if (timezone, timezone) not in self.fields['timezone'].choices:
                 self.fields['timezone'].choices += ((timezone, timezone),)
+
+        if self.instance.slug in STATIC_SLUGS:
+            del self.fields['slug']
 
     def clean_editors(self):
         editors = self.cleaned_data['editors']
