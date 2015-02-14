@@ -208,13 +208,14 @@ class HomeForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(HomeForm, self).clean()
-        country = cleaned_data['country']
-        code = cleaned_data['zip_code']
-        try:
-            cleaned_data['zip_code'] = clean_postal_code(country, code)
-        except ValidationError, e:
-            del cleaned_data['zip_code']
-            self.add_error('zip_code', e)
+        if 'country' in cleaned_data and 'zip_code' in cleaned_data:
+            country = cleaned_data['country']
+            code = cleaned_data['zip_code']
+            try:
+                cleaned_data['zip_code'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['zip_code']
+                self.add_error('zip_code', e)
         return cleaned_data
 
     def save(self, commit=True):

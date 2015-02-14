@@ -98,13 +98,14 @@ class EventForm(forms.ModelForm):
         if cleaned_data['start_date'] > cleaned_data['end_date']:
             raise ValidationError("End date must be before or equal to "
                                   "the start date.")
-        country = self.instance.check_country
-        code = cleaned_data['check_zip']
-        try:
-            cleaned_data['check_zip'] = clean_postal_code(country, code)
-        except ValidationError, e:
-            del cleaned_data['check_zip']
-            self.add_error('check_zip', e)
+        if 'check_zip' in cleaned_data:
+            country = self.instance.check_country
+            code = cleaned_data['check_zip']
+            try:
+                cleaned_data['check_zip'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['check_zip']
+                self.add_error('check_zip', e)
         return cleaned_data
 
     def has_check_errors(self):

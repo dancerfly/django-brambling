@@ -19,15 +19,21 @@ class PostalCodeTestCase(TestCase):
         with self.assertRaises(ValidationError):
             clean_postal_code('GB', '12345')
 
-    def test_uk_postal__valid1(self):
+    def test_gb_postal__empty(self):
+        clean_postal_code('US', '')
+
+    def test_us_postal__valid1(self):
         clean_postal_code('US', '16801')
 
-    def test_uk_postal__valid2(self):
+    def test_us_postal__valid2(self):
         clean_postal_code('US', '16801-2345')
 
-    def test_uk_postal__invalid1(self):
+    def test_us_postal__invalid1(self):
         with self.assertRaises(ValidationError):
             clean_postal_code('US', 'ABCDEF')
+
+    def test_us_postal__empty(self):
+        clean_postal_code('US', '')
 
     def test_unhandled_country(self):
         clean_postal_code('12', ';[]32adf,,,')

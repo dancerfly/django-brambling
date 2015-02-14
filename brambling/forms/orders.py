@@ -163,13 +163,14 @@ class SurveyDataForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(SurveyDataForm, self).clean()
-        country = cleaned_data['send_flyers_country']
-        code = cleaned_data['send_flyers_zip']
-        try:
-            cleaned_data['send_flyers_zip'] = clean_postal_code(country, code)
-        except ValidationError, e:
-            del cleaned_data['send_flyers_zip']
-            self.add_error('send_flyers_zip', e)
+        if 'send_flyers_country' in cleaned_data and 'send_flyers_zip' in cleaned_data:
+            country = cleaned_data['send_flyers_country']
+            code = cleaned_data['send_flyers_zip']
+            try:
+                cleaned_data['send_flyers_zip'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['send_flyers_zip']
+                self.add_error('send_flyers_zip', e)
         return cleaned_data
 
 
@@ -279,13 +280,14 @@ class HostingForm(MemoModelForm):
 
     def clean(self):
         cleaned_data = super(HostingForm, self).clean()
-        country = cleaned_data['country']
-        code = cleaned_data['zip_code']
-        try:
-            cleaned_data['zip_code'] = clean_postal_code(country, code)
-        except ValidationError, e:
-            del cleaned_data['zip_code']
-            self.add_error('zip_code', e)
+        if 'country' in cleaned_data and 'zip_code' in cleaned_data:
+            country = cleaned_data['country']
+            code = cleaned_data['zip_code']
+            try:
+                cleaned_data['zip_code'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['zip_code']
+                self.add_error('zip_code', e)
         return cleaned_data
 
     def is_valid(self):
