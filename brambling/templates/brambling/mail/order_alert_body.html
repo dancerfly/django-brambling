@@ -1,9 +1,9 @@
-<p>You've gotten a new order! Here are the quick details:</p>
+{% load zenaida %}<p>You've gotten a new order! Here are the quick details:</p>
 
 <ul>
 	<li><strong>Order code:</strong> {{ order.code }}</li>
-	<li><strong>Net cost:</strong> {{ net_cost }}</li>
-	<li><strong>Net payments:</strong> {{ net_payments }}</li>
+	<li><strong>Net cost:</strong> {{ net_cost|format_money:event.currency }}</li>
+	<li><strong>Net payments:</strong> {{ net_payments|format_money:event.currency }}</li>
 </ul>
 
 {% if unconfirmed_check_payments %}

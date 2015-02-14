@@ -779,10 +779,11 @@ class SummaryView(OrderMixin, TemplateView):
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()
-                send_order_receipt(self.order, self.summary_data,
+                summary_data = self.order.get_summary_data()
+                send_order_receipt(self.order, summary_data,
                                    get_current_site(self.request),
                                    secure=self.request.is_secure())
-                send_order_alert(self.order, self.summary_data,
+                send_order_alert(self.order, summary_data,
                                  get_current_site(self.request),
                                  secure=self.request.is_secure())
 
