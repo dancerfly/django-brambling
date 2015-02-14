@@ -102,8 +102,9 @@
 										</div>
 									{% endfor %}
 
-									<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+									<p><button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
 								</form>
+								{% include 'brambling/_stripe_note.html' %}
 							</div>
 						</div>
 					</div>
@@ -132,8 +133,9 @@
 					</div>
 				{% endfor %}
 
-				<button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+				<p><button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
 			</form>
+			{% include 'brambling/_stripe_note.html' %}
 
 			{% if has_cards %}
 							</div>
@@ -141,7 +143,6 @@
 					</div>
 				</div>
 			{% endif %}
-			{% include 'brambling/_stripe_note.html' %}
 		{% endif %}
 		{% if event.uses_dwolla %}
 			{% if dwolla_is_connected or dwolla_oauth_url %}
