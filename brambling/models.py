@@ -1069,7 +1069,7 @@ class Attendee(AbstractNamedModel):
 
     HOUSING_STATUS_CHOICES = (
         (NEED, 'Needs housing'),
-        (HAVE, 'Already arranged'),
+        (HAVE, 'Already arranged / hosting not required'),
         (HOME, 'Staying at own home'),
     )
     # Internal tracking data

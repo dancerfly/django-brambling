@@ -48,7 +48,7 @@ class AttendeeBasicDataForm(forms.ModelForm):
             self.fields['housing_status'].label = "Housing"
             self.fields['housing_status'].choices = (
                 (Attendee.NEED, 'Request housing'),
-                (Attendee.HAVE, 'Already arranged'),
+                (Attendee.HAVE, 'Already arranged / hosting not required'),
                 (Attendee.HOME, 'Staying at own home'),
             )
             self.fields['housing_status'].initial = ''
