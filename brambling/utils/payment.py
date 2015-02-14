@@ -164,12 +164,16 @@ def stripe_refund(event, payment_id, amount):
     else:
         access_token = event.stripe_test_access_token
     stripe.api_key = access_token
+    # Retrieving the charge and refunding it uses the access token.
     charge = stripe.Charge.retrieve(payment_id)
     refund = charge.refunds.create(
         amount=int(amount*100),
         refund_application_fee=True,
         expand=['balance_transaction'],
     )
+
+    # Retrieving the application fee data requires the application api token.
+    stripe_prep(event.api_type)
     try:
         application_fee = stripe.ApplicationFee.all(charge=charge).data[0]
         application_fee_refund = application_fee.refunds.data[0]

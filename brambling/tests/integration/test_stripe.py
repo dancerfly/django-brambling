@@ -15,6 +15,7 @@ class StripeTestCase(TestCase):
                              application_fee_percent=2.5)
         self.assertTrue(stripe_is_connected(event, Event.TEST))
         stripe_prep(Event.TEST)
+        stripe.api_key = event.stripe_test_access_token
 
         token = stripe.Token.create(
             card={
