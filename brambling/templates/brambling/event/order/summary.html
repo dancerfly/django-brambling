@@ -11,7 +11,22 @@
 		var discountReload = true;
 	</script>
 	{% include 'brambling/event/order/_use_discount_js.html' %}
-	{% if event.uses_stripe %}{% include "brambling/_stripe_js.html" %}{% endif %}
+	{% if event.uses_stripe %}
+		{% include "brambling/_stripe_js.html" %}
+		<script>
+			function set_stripe_key() {
+				if ($('#id_save_card').prop('checked')) {
+					Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+				} else {
+					Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ event.stripe_test_publishable_key }}{% else %}{{ event.stripe_publishable_key }}{% endif %}')
+				}
+			}
+			$('#id_save_card').on('change', function(e) {
+				set_stripe_key();
+			});
+			$(set_stripe_key);
+		</script>
+	{% endif %}
 {% endblock %}
 
 {% block next_step_button %}

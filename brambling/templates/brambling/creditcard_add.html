@@ -7,6 +7,8 @@
 {% block javascripts %}
 	{{ block.super }}
 	{% include "brambling/_stripe_js.html" %}
+	Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+
 {% endblock %}
 
 {% block main %}
