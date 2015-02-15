@@ -178,7 +178,7 @@
 												{{ option.name }}
 												<span class='fa fa-plus pull-right visible-xs'></span>
 											</div>
-											<div class='col-xs-8 col-sm-3 text-left text-right-sm'>{% if option.total_number %}{{ option.remaining }} / {{ option.total_number }} left{% else %}&nbsp;{% endif %}</div>
+											<div class='col-xs-8 col-sm-3 text-left text-right-sm'>{% if option.total_number and option.remaining_display != option.HIDDEN %}{% if option.remaining_display == option.TOTAL_AND_REMAINING %}{{ option.remaining }} / {{ option.total_number }} left{% elif option.remaining_display == option.TOTAL %}{{ option.total_number }} total{% else %}{{ option.remaining }} left{% endif %}{% else %}&nbsp;{% endif %}</div>
 											<div class='col-xs-4 col-sm-2 text-right'>{{ option.price|format_money:event.currency }}</div>
 											<div class='col-sm-1 text-right hidden-xs'><span class='fa fa-plus'></span></div>
 										</div>
