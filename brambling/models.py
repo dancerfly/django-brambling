@@ -398,12 +398,23 @@ class ItemImage(models.Model):
 
 
 class ItemOption(models.Model):
+    TOTAL_AND_REMAINING = 'both'
+    TOTAL = 'total'
+    REMAINING = 'remaining'
+    HIDDEN = 'hidden'
+    REMAINING_DISPLAY_CHOICES = (
+        (TOTAL_AND_REMAINING, _('Remaining / Total')),
+        (TOTAL, _('Total only')),
+        (REMAINING, _('Remaining only')),
+        (HIDDEN, _("Don't display")),
+    )
     item = models.ForeignKey(Item, related_name='options')
     name = models.CharField(max_length=30)
     price = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
     total_number = models.PositiveSmallIntegerField(blank=True, null=True, help_text="Leave blank for unlimited.")
     available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
+    remaining_display = models.CharField(max_length=9, default=TOTAL_AND_REMAINING, choices=REMAINING_DISPLAY_CHOICES)
     order = models.PositiveSmallIntegerField()
 
     class Meta:

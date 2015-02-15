@@ -5,15 +5,25 @@
 
 {% block rows %}
 	<div class='row'>
-		<div class='col-md-12'>{% formrow form.name %}</div>
-	</div>
-	<div class='row'>
-		<div class='col-md-3 col-xs-6'>
+		<div class='col-sm-6'>{% formrow form.name %}</div>
+		<div class='col-sm-6'>
 			{% formrow form.price with append=event.currency %}
 		</div>
-		<div class='col-md-3 col-xs-6'>{% formrow form.total_number %}</div>
-		<div class='col-md-3 col-xs-6'>{% formrow form.available_start %}</div>
-		<div class='col-md-3 col-xs-6'>{% formrow form.available_end %}</div>
+	</div>
+	<div class='row'>
+		<div class='col-xs-6'>{% formrow form.available_start %}</div>
+		<div class='col-xs-6'>{% formrow form.available_end %}</div>
+	</div>
+
+	<div class="checkbox">
+		<label for="{{ form.prefix }}-toggleLimits">
+			<input type="checkbox" id="{{ form.prefix }}-toggleLimits"{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} checked{% endif %}> Limit number of items available
+		</label>
+	</div>
+
+	<div id="{{ form.prefix }}-limitRow" class='row collapse{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} in{% endif %}'>
+		<div class='col-xs-6'>{% formrow form.total_number %}</div>
+		<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
 	</div>
 	<div class='row js-hide'>
 		<div class='col-md-6'>{% formrow form.order %}</div>

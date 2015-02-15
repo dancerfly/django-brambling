@@ -187,6 +187,26 @@
 				sortableHandle: '.panel-heading',
 				sortableField: 'order'
 			});
+
+			// Handle limit row display/hide on itemoption forms.
+			{% for form in itemoption_formset.forms %}
+				$('#{{ form.prefix }}-toggleLimits').on('change', function() {
+					var total_number = $("#id_{{ form.prefix }}-total_number");
+					if (this.checked) {
+						if (total_number.val() === '') {
+							total_number.val(100);
+						}
+						$("#{{ form.prefix }}-limitRow").collapse('show');
+					} else {
+						$("#id_{{ form.prefix }}-total_number").val('');
+						$("#{{ form.prefix }}-limitRow").collapse('hide');
+					}
+				})
+				$("#{{ form.prefix }}-limitRow").collapse({
+					toggle: false
+				});
+				$(function() {$('#{{ form.prefix }}-toggleLimits').trigger('change')});
+			{% endfor %}
 		}());
 	</script>
 {% endblock %}
