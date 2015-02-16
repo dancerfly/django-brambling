@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from brambling.models import Person, Event
+from brambling.models import (Person, Event, DanceStyle,
+                              EnvironmentalFactor, DietaryRestriction,
+                              HousingCategory)
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
 
 
@@ -113,3 +115,7 @@ class EventAdmin(admin.ModelAdmin):
 
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Event, EventAdmin)
+admin.site.register(DanceStyle)
+admin.site.register(EnvironmentalFactor)
+admin.site.register(DietaryRestriction)
+admin.site.register(HousingCategory)

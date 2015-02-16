@@ -144,12 +144,18 @@ class AbstractDwollaModel(models.Model):
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
+    class Meta:
+        ordering = ('name',)
+
     def __unicode__(self):
         return smart_text(self.name)
 
 
 class EnvironmentalFactor(models.Model):
     name = models.CharField(max_length=30)
+
+    class Meta:
+        ordering = ('name',)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -158,12 +164,19 @@ class EnvironmentalFactor(models.Model):
 class DietaryRestriction(models.Model):
     name = models.CharField(max_length=20)
 
+    class Meta:
+        ordering = ('name',)
+
     def __unicode__(self):
         return smart_text(self.name)
 
 
 class HousingCategory(models.Model):
     name = models.CharField(max_length=20)
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'housing categories'
 
     def __unicode__(self):
         return smart_text(self.name)
