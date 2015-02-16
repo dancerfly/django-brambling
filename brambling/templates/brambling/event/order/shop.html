@@ -171,18 +171,28 @@
 						</header>
 						<div class='list-group relative'>
 							{% for option in options.list %}
-								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if code_in_url %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% endif %}'{% endif %} href='javascript://' class="list-group-item">
-									{# <div class="scroll-x"> #}
-										<div class='row'>
-											<div class='col-xs-12 col-sm-6'>
-												{{ option.name }}
-												<span class='fa fa-plus pull-right visible-xs'></span>
-											</div>
-											<div class='col-xs-8 col-sm-3 text-left text-right-sm'>{% if option.total_number %}{{ option.remaining }} / {{ option.total_number }} left{% else %}&nbsp;{% endif %}</div>
-											<div class='col-xs-4 col-sm-2 text-right'>{{ option.price|format_money:event.currency }}</div>
-											<div class='col-sm-1 text-right hidden-xs'><span class='fa fa-plus'></span></div>
+								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if code_in_url %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% endif %}'{% endif %} href='javascript://' class="list-group-item {% if option.remaining <= 0 %} disabled{% endif %}">
+									<div class='row'>
+										<div class='col-xs-12 col-sm-6'>
+											{{ option.name }}
+											<span class='fa fa-plus pull-right visible-xs'></span>
 										</div>
-									{# </div> #}
+										<div class='col-xs-8 col-sm-3 text-left text-right-sm'>
+											{% if option.total_number and option.remaining_display != option.HIDDEN %}
+												{% if option.remaining_display == option.TOTAL_AND_REMAINING %}
+													{{ option.remaining }} / {{ option.total_number }} left
+												{% elif option.remaining_display == option.TOTAL %}
+													{{ option.total_number }} total
+												{% else %}
+													{{ option.remaining }} left
+												{% endif %}
+											{% else %}
+												&nbsp;
+											{% endif %}
+										</div>
+										<div class='col-xs-4 col-sm-2 text-right'>{{ option.price|format_money:event.currency }}</div>
+										<div class='col-sm-1 text-right hidden-xs'>{% if option.remaining > 0 %}<span class='fa fa-plus'></span>{% endif %}</div>
+									</div>
 								</a>
 							{% endfor %}
 							{% if user.is_authenticated and not user.confirmed_email %}
