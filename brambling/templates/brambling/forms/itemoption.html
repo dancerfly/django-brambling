@@ -21,7 +21,7 @@
 		</label>
 	</div>
 
-	<div id="{{ form.prefix }}-limitRow" class='row collapse{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} in{% endif %}'>
+	<div id="{{ form.prefix }}-limitRow" class='row limitRow collapse{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} in{% endif %}'>
 		<div class='col-xs-6'>{% formrow form.total_number %}</div>
 		<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
 	</div>

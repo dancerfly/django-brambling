@@ -189,24 +189,23 @@
 			});
 
 			// Handle limit row display/hide on itemoption forms.
-			{% for form in itemoption_formset.forms %}
-				$('#{{ form.prefix }}-toggleLimits').on('change', function() {
-					var total_number = $("#id_{{ form.prefix }}-total_number");
-					if (this.checked) {
-						if (total_number.val() === '') {
-							total_number.val(100);
-						}
-						$("#{{ form.prefix }}-limitRow").collapse('show');
-					} else {
-						$("#id_{{ form.prefix }}-total_number").val('');
-						$("#{{ form.prefix }}-limitRow").collapse('hide');
+			$('.item-options-list').on('change', 'input[type=checkbox]', function() {
+				var prefix = this.id.substr(0, this.id.length - 13),
+					total_number = $("#id_" + prefix + "-total_number");
+				if (this.checked) {
+					if (total_number.val() === '') {
+						total_number.val(100);
 					}
-				})
-				$("#{{ form.prefix }}-limitRow").collapse({
-					toggle: false
-				});
-				$(function() {$('#{{ form.prefix }}-toggleLimits').trigger('change')});
-			{% endfor %}
+					$("#" + prefix + "-limitRow").collapse('show');
+				} else {
+					$("#id_" + prefix + "-total_number").val('');
+					$("#" + prefix + "-limitRow").collapse('hide');
+				}
+			});
+			$('.item-options-list').on('row_added.formset', function(e, row) {
+				$(row).find('.limitRow').collapse({toggle: false});
+				$(row).find('input[type=checkbox]').trigger('change');
+			});
 		}());
 	</script>
 {% endblock %}
