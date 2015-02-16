@@ -49,6 +49,9 @@ class Cell(object):
     def __unicode__(self):
         return unicode(self.value)
 
+    def __repr__(self):
+        return u"{}: {}".format(self.field, self.value)
+
     def is_boolean(self):
         return isinstance(self.value, bool)
 
@@ -59,6 +62,8 @@ class Row(object):
         self.obj = obj
 
     def __getitem__(self, key):
+        if isinstance(key, int):
+            return Cell(*self.data.items()[key])
         return Cell(key, self.data[key])
 
     def __iter__(self):
@@ -200,7 +205,7 @@ class ModelTable(object):
     def render_csv_response(self):
         pseudo_buffer = Echo()
         writer = csv.writer(pseudo_buffer)
-        response = StreamingHttpResponse((writer.writerow(row)
+        response = StreamingHttpResponse((writer.writerow([cell.value for cell in row])
                                           for row in itertools.chain((self.header_row(),), self)),
                                          content_type="text/csv")
         response['Content-Disposition'] = 'attachment; filename="export.csv"'
