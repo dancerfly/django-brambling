@@ -1300,7 +1300,7 @@ class Invite(models.Model):
         unique_together = (('email', 'content_id', 'kind'),)
 
     def send(self, site, body_template_name='brambling/mail/invite_{kind}_body.html',
-             subject_template_name='brambling/mail/invite_{kind}_subject.html',
+             subject_template_name='brambling/mail/invite_{kind}_subject.txt',
              content=None, secure=False):
         context = {
             'invite': self,

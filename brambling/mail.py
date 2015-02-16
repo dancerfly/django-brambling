@@ -30,7 +30,7 @@ def send_fancy_mail(recipient_list, subject_template, body_template, context,
 def send_confirmation_email(person, site, secure=False,
                             generator=token_generators['email_confirm'],
                             subject_template="brambling/mail/email_confirm_subject.txt",
-                            body_template="brambling/mail/email_confirm_body.txt"):
+                            body_template="brambling/mail/email_confirm_body.html"):
     if person.email == person.confirmed_email:
         return
     context = {

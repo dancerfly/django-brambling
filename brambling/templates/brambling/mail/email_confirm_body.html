@@ -1,0 +1,13 @@
+<p>{{ person.get_full_name }},</p>
+
+<p>Thanks for signing up for Dancerfly!</p>
+
+<p>Before you can register for events you need to confirm your email address by clicking the link below.</p>
+
+<p><a href="{{ protocol }}://{{ site.domain }}{% url 'brambling_email_confirm' pkb64=pkb64 token=token %}">{{ protocol }}://{{ site.domain }}{% url 'brambling_email_confirm' pkb64=pkb64 token=token %}</a></p>
+
+<p>If you can't click the link, copy and paste it into your browser's navigation bar.</p>
+
+<p>Happy dancing!</p>
+
+<p><a href="http://littleweaverweb.com/">Little Weaver Web Collective</a></p>
