@@ -2,9 +2,9 @@
 
 <p>Thanks for signing up for Dancerfly!</p>
 
-<p>Before you can register for events you need to confirm your email address. Click the link below:</p>
+<p>Before you can register for events you need to confirm your email address by clicking the link below.</p>
 
-<p>{{ protocol }}://{{ site.domain }}{% url "brambling_email_confirm" pkb64=pkb64 token=token %}</p>
+<p><a href="{{ protocol }}://{{ site.domain }}{% url 'brambling_email_confirm' pkb64=pkb64 token=token %}">Click here to confirm your email address.</a></p>
 
 <p>Happy dancing!</p>
 
