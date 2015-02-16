@@ -55,7 +55,6 @@ class EventAdmin(admin.ModelAdmin):
         ("Details", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
-                ('name', 'slug'),
                 ('has_dances', 'has_classes'),
                 'privacy', 'is_published',
                 ('website_url', 'banner_image'),
