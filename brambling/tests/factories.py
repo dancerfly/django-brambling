@@ -1,6 +1,6 @@
 import factory
 
-from brambling.models import Event, Person, Order, CreditCard
+from brambling.models import Event, Person, Order, CreditCard, Invite
 
 
 def lazy_setting(setting):
@@ -26,6 +26,9 @@ class CardFactory(factory.DjangoModelFactory):
 class PersonFactory(factory.DjangoModelFactory):
     class Meta:
         model = Person
+
+    given_name = factory.Sequence(lambda n: "User{}".format(n))
+    surname = "Test"
 
     email = factory.Sequence(lambda n: "test{}@test.com".format(n))
     confirmed_email = factory.LazyAttribute(lambda obj: obj.email)
@@ -62,3 +65,13 @@ class OrderFactory(factory.DjangoModelFactory):
     status = Order.IN_PROGRESS
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
+
+
+class InviteFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Invite
+
+    code = factory.Sequence(lambda n: "invite{}".format(n))
+    email = "test@test.com"
+    user = factory.SubFactory(PersonFactory)
+    kind = Invite.EDITOR
