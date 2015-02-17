@@ -172,3 +172,10 @@ class InviteDeleteView(View):
         invite.delete()
         messages.success(request, "Invitation for {} canceled.".format(invite.email))
         return HttpResponseRedirect(url)
+
+
+class ExceptionView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise Http404
+        raise Exception("You did it now!")
