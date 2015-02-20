@@ -191,7 +191,7 @@
 											{% endif %}
 										</div>
 										<div class='col-xs-4 col-sm-2 text-right'>{{ option.price|format_money:event.currency }}</div>
-										<div class='col-sm-1 text-right hidden-xs'>{% if option.remaining > 0 %}<span class='fa fa-plus'></span>{% endif %}</div>
+										<div class='col-sm-1 text-right hidden-xs'>{% if not option.total_number or option.remaining > 0 %}<span class='fa fa-plus'></span>{% endif %}</div>
 									</div>
 								</a>
 							{% endfor %}
