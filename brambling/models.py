@@ -251,7 +251,8 @@ class Event(AbstractDwollaModel):
                                       " Dashes, 0-9, and lower-case a-z only.",
                             unique=True)
     description = models.TextField(blank=True)
-    website_url = models.URLField(blank=True)
+    website_url = models.URLField(blank=True, verbose_name="website URL")
+    facebook_url = models.URLField(blank=True, verbose_name="facebook event URL")
     banner_image = models.ImageField(blank=True)
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50, verbose_name='state / province')

@@ -13,6 +13,7 @@
 		<script>
 			$(function(){
 				$('a[target]').on('click', function(e){
+					if ($(this).attr('target') === '_blank') return true;
 					e.preventDefault();
 					$.post($(this).attr('target'), function(data){
 						// For now, just reload the page.
@@ -235,8 +236,15 @@
 							{{ event.description|linebreaks }}
 						</div>
 						{% if event.website_url %}
-							<a href="{{ event.website_url }}" class="btn btn-primary">
-								More information <i class="fa fa-fw fa-chevron-right"></i>
+							<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+								<i class="fa fa-fw fa-globe"></i>
+								Website
+							</a>
+						{% endif %}
+						{% if event.facebook_url %}
+							<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+								<i class="fa fa-fw fa-facebook"></i>
+								Facebook event
 							</a>
 						{% endif %}
 					</div>
