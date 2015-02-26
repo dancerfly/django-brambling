@@ -1,8 +1,10 @@
+import datetime
 from decimal import Decimal, ROUND_DOWN
 import urllib
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 from dwolla import constants, transactions, oauth
 import stripe
 
@@ -29,19 +31,60 @@ def dwolla_prep(api_type):
         constants.client_secret = settings.DWOLLA_TEST_APPLICATION_SECRET
 
 
+def dwolla_set_tokens(dwolla_obj, api_type, data):
+    expires = timezone.now() + datetime.timedelta(seconds=data['expires_in'])
+    refresh_expires = timezone.now() + datetime.timedelta(seconds=data['refresh_expires_in'])
+
+    if api_type == LIVE:
+        dwolla_obj.dwolla_access_token = data['access_token']
+        dwolla_obj.dwolla_access_token_expires = expires
+        dwolla_obj.dwolla_refresh_token = data['refresh_token']
+        dwolla_obj.dwolla_refresh_token_expires = refresh_expires
+    else:
+        dwolla_obj.dwolla_test_access_token = data['access_token']
+        dwolla_obj.dwolla_test_access_token_expires = expires
+        dwolla_obj.dwolla_test_refresh_token = data['refresh_token']
+        dwolla_obj.dwolla_test_refresh_token_expires = refresh_expires
+
+
+def dwolla_get_token(dwolla_obj, api_type):
+    if api_type == LIVE:
+        expires = dwolla_obj.dwolla_access_token_expires
+        refresh_expires = dwolla_obj.dwolla_refresh_token_expires
+    else:
+        expires = dwolla_obj.dwolla_test_access_token_expires
+        refresh_expires = dwolla_obj.dwolla_test_refresh_token_expires
+    now = timezone.now()
+    if expires < now:
+        if refresh_expires < now:
+            dwolla_obj.clear_dwolla_data(api_type)
+            dwolla_obj.save()
+            raise ValueError("Token is expired and can't be refreshed.")
+        if api_type == LIVE:
+            refresh_token = dwolla_obj.dwolla_refresh_token
+        else:
+            refresh_token = dwolla_obj.dwolla_test_refresh_token
+        oauth_data = oauth.refresh(refresh_token)
+        dwolla_set_tokens(dwolla_obj, api_type, oauth_data)
+        dwolla_obj.save()
+    if api_type == LIVE:
+        access_token = dwolla_obj.dwolla_access_token
+    else:
+        access_token = dwolla_obj.dwolla_test_access_token
+    return access_token
+
+
 def dwolla_charge(user_or_order, amount, event, pin):
     """
     Charges to dwolla and returns a charge transaction.
     """
     dwolla_prep(event.api_type)
+    access_token = dwolla_get_token(user_or_order, event.api_type)
+    event_access_token = dwolla_get_token(event, event.api_type)
     if event.api_type == LIVE:
-        access_token = user_or_order.dwolla_access_token
         destination = event.dwolla_user_id
-        event_access_token = event.dwolla_access_token
     else:
-        access_token = user_or_order.dwolla_test_access_token
         destination = event.dwolla_test_user_id
-        event_access_token = event.dwolla_test_access_token
 
     user_charge_id = transactions.send(
         destinationid=destination,
@@ -67,10 +110,7 @@ def dwolla_refund(event, payment_id, amount, pin):
     Returns id of refund transaction.
     """
     dwolla_prep(event.api_type)
-    if event.api_type == LIVE:
-        access_token = event.dwolla_access_token
-    else:
-        access_token = event.dwolla_test_access_token
+    access_token = dwolla_get_token(event, event.api_type)
     return transactions.refund(
         tid=int(payment_id),
         fundingsource="Balance",
