@@ -4,6 +4,7 @@ import urllib
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.utils import timezone
 from dwolla import constants, transactions, oauth
 import stripe
@@ -48,6 +49,10 @@ def dwolla_set_tokens(dwolla_obj, api_type, data):
 
 
 def dwolla_get_token(dwolla_obj, api_type):
+    """
+    Gets a working dwolla access token for the correct api,
+    refreshing if necessary.
+    """
     if api_type == LIVE:
         expires = dwolla_obj.dwolla_access_token_expires
         refresh_expires = dwolla_obj.dwolla_refresh_token_expires
@@ -72,6 +77,41 @@ def dwolla_get_token(dwolla_obj, api_type):
     else:
         access_token = dwolla_obj.dwolla_test_access_token
     return access_token
+
+
+def dwolla_update_tokens(days):
+    """
+    Refreshes all tokens expiring within the next <days> days.
+    """
+    start = timezone.now()
+    end = start + datetime.timedelta(days=days)
+    count = 0
+    test_count = 0
+    from brambling.models import Event, Person, Order
+    for api_type in (LIVE, TEST):
+        dwolla_prep(api_type)
+        if api_type == LIVE:
+            field = 'dwolla_refresh_token'
+            access_expires = 'dwolla_access_token_expires'
+        else:
+            field = 'dwolla_test_refresh_token'
+            access_expires = 'dwolla_test_access_token_expires'
+        kwargs = {
+            field + '_expires__range': (start, end),
+            access_expires + '__lt': start,
+        }
+        for model in (Event, Person, Order):
+            qs = model.objects.filter(**kwargs)
+            for item in qs:
+                refresh_token = getattr(item, field)
+                oauth_data = oauth.refresh(refresh_token)
+                dwolla_set_tokens(item, api_type, oauth_data)
+                item.save()
+                if api_type == LIVE:
+                    count += 1
+                else:
+                    test_count += 1
+    return count, test_count
 
 
 def dwolla_charge(user_or_order, amount, event, pin):
