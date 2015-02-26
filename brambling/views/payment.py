@@ -1,6 +1,9 @@
+import datetime
+
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect
+from django.utils import timezone
 from django.utils.http import is_safe_url
 from django.views.generic import View
 from dwolla import oauth, accounts
@@ -36,13 +39,21 @@ class DwollaConnectView(View):
 
             # Now get account info.
             account_info = accounts.full(token)
+            expires = timezone.now() + datetime.timedelta(seconds=oauth_tokens['expires_in'])
+            refresh_expires = timezone.now() + datetime.timedelta(seconds=oauth_tokens['refresh_expires_in'])
 
             if api_type == LIVE:
                 self.object.dwolla_user_id = account_info['Id']
                 self.object.dwolla_access_token = token
+                self.object.dwolla_access_token_expires = expires
+                self.object.dwolla_refresh_token = oauth_tokens['refresh_token']
+                self.object.dwolla_refresh_token_expires = refresh_expires
             else:
                 self.object.dwolla_test_user_id = account_info['Id']
                 self.object.dwolla_test_access_token = token
+                self.object.dwolla_test_access_token_expires = expires
+                self.object.dwolla_test_refresh_token = oauth_tokens['refresh_token']
+                self.object.dwolla_test_refresh_token_expires = refresh_expires
 
             self.object.save()
             messages.success(request, "Dwolla account connected!")

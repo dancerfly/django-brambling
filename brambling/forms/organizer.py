@@ -130,8 +130,7 @@ class EventForm(forms.ModelForm):
             self.instance.stripe_refresh_token = ''
             self.instance.stripe_publishable_key = ''
         if self.cleaned_data.get('disconnect_dwolla'):
-            self.instance.dwolla_user_id = ''
-            self.instance.dwolla_access_token = ''
+            self.instance.clear_dwolla_data(self.instance.api_type)
         instance = super(EventForm, self).save()
         if {'start_date', 'end_date'} & set(self.changed_data) or created:
             cd = self.cleaned_data
