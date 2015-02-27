@@ -8,6 +8,7 @@ from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
@@ -316,9 +317,12 @@ def item_form(request, *args, **kwargs):
         image_formset = ItemImageFormSet(data=request.POST, files=request.FILES, instance=item, prefix='image')
         formset = ItemOptionFormSet(event, request.POST, instance=item, prefix='option')
         # Always run all.
-        form.is_valid()
-        image_formset.is_valid()
-        formset.is_valid()
+        with timezone.override(event.timezone):
+            # Clean as the event's timezone - datetimes
+            # input correctly.
+            form.is_valid()
+            image_formset.is_valid()
+            formset.is_valid()
         if form.is_valid() and image_formset.is_valid() and formset.is_valid():
             form.save()
             image_formset.save()
