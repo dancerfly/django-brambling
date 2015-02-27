@@ -9,10 +9,15 @@
 
     <form action="" method="get">
         <div class='text-right form-inline'>
+            <div class='form-group'>
+                <label class='sr-only' for='search'>Search</label>
+                <input class='form-control' type='search' name='search' placeholder='Search…'{% if request.GET.search %} value="{{ request.GET.search }}"{% endif %}>
+            </div>
             <button class="btn btn-default" data-toggle="modal" data-target="#filterModal" type='button'>
                 <i class="fa fa-filter"></i>
                 Change columns and filters
             </button>
+            <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i><span class="sr-only"> Search</span></button>
             <button type="submit" class="btn btn-primary" name="format" value="csv"><i class="fa fa-download"></i> Download CSV</button>
         </div>
         <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-hidden="true">
