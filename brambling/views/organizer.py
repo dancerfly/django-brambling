@@ -456,8 +456,7 @@ class AttendeeFilterView(FilterView):
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            table = self.get_table(self.get_queryset())
-            return table.render_csv_response()
+            return context['table'].render_csv_response()
         else:
             # Default to the template.
             return super(AttendeeFilterView, self).render_to_response(context, *args, **kwargs)
@@ -541,8 +540,7 @@ class OrderFilterView(FilterView):
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            table = self.get_table(self.get_queryset())
-            return table.render_csv_response()
+            return context['table'].render_csv_response()
         else:
             # Default to the template.
             return super(OrderFilterView, self).render_to_response(context, *args, **kwargs)
