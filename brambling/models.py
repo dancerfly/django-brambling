@@ -152,8 +152,7 @@ class AbstractDwollaModel(models.Model):
 
     def clear_dwolla_data(self, api_type):
         prefix = "dwolla_" if api_type == LIVE else "dwolla_test_"
-        for field in ('user_id', 'access_token', 'access_token_expires',
-                      'refresh_token'):
+        for field in ('user_id', 'access_token', 'refresh_token'):
             setattr(self, prefix + field, '')
         for field in ('refresh_token_expires', 'access_token_expires'):
             setattr(self, prefix + field, None)
