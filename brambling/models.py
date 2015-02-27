@@ -134,6 +134,7 @@ class AbstractDwollaModel(models.Model):
     def connected_to_dwolla_live(self):
         return bool(
             self.dwolla_user_id and
+            self.dwolla_refresh_token_expires is not None and
             self.dwolla_refresh_token_expires < timezone.now() and
             getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
             getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
@@ -142,6 +143,7 @@ class AbstractDwollaModel(models.Model):
     def connected_to_dwolla_test(self):
         return bool(
             self.dwolla_test_user_id and
+            self.dwolla_test_refresh_token_expires is not None and
             self.dwolla_test_refresh_token_expires < timezone.now() and
             getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
             getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
