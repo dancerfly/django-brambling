@@ -39,30 +39,8 @@
 	</div>
 	{% if upcoming_events %}
 			<h2 class="margin-leader-dbl">Upcoming Events on Dancerfly</h2>
-			{% for event in upcoming_events|slice:"3" %}
-				<div class="media margin-leader-dbl event-listing">
-					<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
-						<div class="media-object relative margin-leader-tiny">
-							<div class="{% if event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
-								<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
-								<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
-							</div>
-							{% if event.banner_image %}
-								{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-								<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
-							{% endif %}
-						</div>
-					</a>
-					<div class="media-body">
-						<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
-						<h4 class="text-muted">{{ event.tagline }}</h4>
-						<p>
-							{% include "brambling/event/_when.html" %}
-							{% include "brambling/event/_where.html" %}
-						</p>
-						<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
-					</div>
-				</div>
+			{% for event in upcoming_events|slice:"5" %}
+				{% include "brambling/_event_list_item.html" %}
 			{% endfor %}
 	{% endif %}
 {% endblock %}
