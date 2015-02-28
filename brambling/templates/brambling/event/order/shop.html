@@ -216,49 +216,60 @@
 
 {% block masthead %}
 	{% include "brambling/event/order/_masthead.html" %}
-	<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
-		<div class="panel-body">
-			{% if event.description %}
-				<div class="row">
-					<div class="col-md-4">
-							<p class="text-large">
-								{% include "brambling/event/_when.html" %}
-							</p>
-							<p class="text-large">
-								{% include "brambling/event/_where.html" %}
-							</p>
-							{% for style in event.dance_styles.all %}
-								<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
-							{% endfor %}
-					</div>
-					<div class="col-md-8">
-						<div>
-							{{ event.description|linebreaks }}
+	{% if event.description or event.website_url or event.facebook_url or event.dance_styles.all %}
+		<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
+			<div class="panel-body">
+				{% if event.description %}
+					<div class="row">
+						<div class="col-md-4">
+								<p class="text-large">
+									{% include "brambling/event/_when.html" %}
+								</p>
+								<p class="text-large">
+									{% include "brambling/event/_where.html" %}
+								</p>
+								{% for style in event.dance_styles.all %}
+									<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
+								{% endfor %}
 						</div>
-						{% if event.website_url %}
-							<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
-								<i class="fa fa-fw fa-globe"></i>
-								Website
-							</a>
-						{% endif %}
-						{% if event.facebook_url %}
-							<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
-								<i class="fa fa-fw fa-facebook"></i>
-								Facebook event
-							</a>
-						{% endif %}
+						<div class="col-md-8">
+							<div>
+								{{ event.description|linebreaks }}
+							</div>
+							{% if event.website_url %}
+								<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+									<i class="fa fa-fw fa-globe"></i>
+									Website
+								</a>
+							{% endif %}
+							{% if event.facebook_url %}
+								<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+									<i class="fa fa-fw fa-facebook"></i>
+									Facebook
+								</a>
+							{% endif %}
+						</div>
 					</div>
-				</div>
-			{% else %}
-				{% if event.website_url %}
-					<a href="{{ event.website_url }}" class="btn btn-primary pull-right">
-						More information <i class="fa fa-fw fa-chevron-right"></i>
-					</a>
+				{% else %}
+					{% if event.website_url %}
+						<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+							<i class="fa fa-fw fa-globe"></i>
+							Website
+						</a>
+					{% endif %}
+					{% if event.facebook_url %}
+						<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+							<i class="fa fa-fw fa-facebook"></i>
+							Facebook
+						</a>
+					{% endif %}
+					{% if event.dance_styles.all %}
+						<h4 class="text-muted event-tags">Featuring {% for style in event.dance_styles.all %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
+					{% endif %}
 				{% endif %}
-				<h4 class="text-muted event-tags">Featuring {% for style in event.dance_styles.all %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %} dancing.</h4>
-			{% endif %}
+			</div>
 		</div>
-	</div>
+	{% endif %}	
 {% endblock masthead %}
 
 

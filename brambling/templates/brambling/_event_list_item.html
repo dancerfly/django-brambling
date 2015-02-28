@@ -33,11 +33,24 @@
 				{% endif %}
 			</a>
 			{% if event in admin_events %}
-				<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">Manage Event <i class="fa fa-cog"></i></a>
+				<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">
+					<i class="fa fa-cog"></i>
+					Manage Event
+				</a>
 			{% endif %}
 			{% if event.website_url %}
-				<a href="{{ event.website_url }}" class="btn btn-default-dark" target="_blank">Event website <i class='fa fa-fw fa-external-link'></i></a>
+				<a target="_blank" href="{{ event.website_url }}" class="btn btn-default-dark">
+					<i class="fa fa-fw fa-globe"></i>
+					Website
+				</a>
 			{% endif %}
+			{% if event.facebook_url %}
+				<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-default-dark">
+					<i class="fa fa-fw fa-facebook"></i>
+					Facebook
+				</a>
+			{% endif %}
+
 		</div>
 
 		{% if event.order and event.order.has_cart %}
