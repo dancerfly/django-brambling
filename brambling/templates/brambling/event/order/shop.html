@@ -229,7 +229,7 @@
 									<p class="text-large">
 										{% include "brambling/event/_where.html" %}
 									</p>
-									{% for style in event.dance_styles.all %}
+									{% for style in dance_styles %}
 										<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
 									{% endfor %}
 							</div>
@@ -264,8 +264,8 @@
 								Facebook
 							</a>
 						{% endif %}
-						{% if event.dance_styles.all %}
-							<h4 class="text-muted event-tags">Featuring {% for style in event.dance_styles.all %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
+						{% if dance_styles %}
+							<h4 class="text-muted event-tags">Featuring {% for style in dance_styles %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
 						{% endif %}
 					{% endif %}
 				</div>
