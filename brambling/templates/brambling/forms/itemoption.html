@@ -1,6 +1,6 @@
 {% extends "floppyforms/layouts/bootstrap.html" %}
 
-{% load floppyforms %}
+{% load floppyforms tz %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 {% block rows %}
@@ -10,10 +10,18 @@
 			{% formrow form.price with append=event.currency %}
 		</div>
 	</div>
-	<div class='row'>
-		<div class='col-xs-6'>{% formrow form.available_start %}</div>
-		<div class='col-xs-6'>{% formrow form.available_end %}</div>
-	</div>
+	{% timezone event.timezone %}
+		<div class='row'>
+			{% get_current_timezone as TIME_ZONE_CURRENT %}
+			<div class='col-xs-6'>
+				{% formrow form.available_start %}
+				<div class='help-block'>
+					Timezone: {{ TIME_ZONE_CURRENT }}
+				</div>
+			</div>
+			<div class='col-xs-6'>{% formrow form.available_end %}</div>
+		</div>
+	{% endtimezone %}
 
 	<div class="checkbox">
 		<label for="{{ form.prefix }}-toggleLimits">

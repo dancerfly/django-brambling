@@ -24,7 +24,7 @@ from django_countries.fields import CountryField
 import stripe
 
 from brambling.mail import send_fancy_mail
-from brambling.utils.payment import dwolla_refund, stripe_refund
+from brambling.utils.payment import dwolla_refund, stripe_refund, LIVE
 
 
 DEFAULT_DANCE_STYLES = (
@@ -107,6 +107,7 @@ class AbstractNamedModel(models.Model):
             'surname': self.surname,
         }
         return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+    get_full_name.short_description = 'Name'
 
     def get_short_name(self):
         return self.given_name
@@ -122,12 +123,19 @@ class AbstractDwollaModel(models.Model):
     # Token obtained via OAuth.
     dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
     dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_access_token_expires = models.DateTimeField(blank=True, null=True)
+    dwolla_refresh_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_refresh_token_expires = models.DateTimeField(blank=True, null=True)
     dwolla_test_user_id = models.CharField(max_length=20, blank=True, default='')
     dwolla_test_access_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_test_access_token_expires = models.DateTimeField(blank=True, null=True)
+    dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
     def connected_to_dwolla_live(self):
         return bool(
             self.dwolla_user_id and
+            self.dwolla_refresh_token_expires > timezone.now() and
             getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
             getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
         )
@@ -135,12 +143,20 @@ class AbstractDwollaModel(models.Model):
     def connected_to_dwolla_test(self):
         return bool(
             self.dwolla_test_user_id and
+            self.dwolla_test_refresh_token_expires > timezone.now() and
             getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
             getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
         )
 
     def get_dwolla_connect_url(self):
         raise NotImplementedError
+
+    def clear_dwolla_data(self, api_type):
+        prefix = "dwolla_" if api_type == LIVE else "dwolla_test_"
+        for field in ('user_id', 'access_token', 'refresh_token'):
+            setattr(self, prefix + field, '')
+        for field in ('refresh_token_expires', 'access_token_expires'):
+            setattr(self, prefix + field, None)
 
 
 class DanceStyle(models.Model):

@@ -11,7 +11,7 @@ class PersonAdmin(UserAdmin):
 
     form = PersonChangeForm
     add_form = PersonCreationForm
-    list_display = ('email', 'is_active',)
+    list_display = ('get_full_name', 'email', 'email_confirmed', 'is_active',)
     list_filter = ('is_active',)
 
     add_fieldsets = (
@@ -45,8 +45,12 @@ class PersonAdmin(UserAdmin):
         )})
     )
 
-    search_fields = ('email',)
+    search_fields = ('email', 'given_name', 'middle_name', 'surname')
     ordering = ('-created_timestamp',)
+
+    def email_confirmed(self, obj):
+        return obj.email == obj.confirmed_email
+    email_confirmed.boolean = True
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -89,10 +93,12 @@ class EventAdmin(admin.ModelAdmin):
         ("Payment Methods", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
-                ("dwolla_user_id", "dwolla_access_token"),
+                ("dwolla_user_id", "dwolla_access_token", "dwolla_access_token_expires"),
+                ("dwolla_refresh_token", "dwolla_refresh_token_expires"),
                 ("stripe_user_id", "stripe_access_token"),
                 ("stripe_refresh_token", "stripe_publishable_key"),
-                ("dwolla_test_user_id", "dwolla_test_access_token"),
+                ("dwolla_test_user_id", "dwolla_test_access_token", "dwolla_test_access_token_expires"),
+                ("dwolla_test_refresh_token", "dwolla_test_refresh_token_expires"),
                 ("stripe_test_user_id", "stripe_test_access_token"),
                 ("stripe_test_refresh_token", "stripe_test_publishable_key"),
                 "check_payment_allowed",
