@@ -11,7 +11,7 @@ class PersonAdmin(UserAdmin):
 
     form = PersonChangeForm
     add_form = PersonCreationForm
-    list_display = ('email', 'is_active',)
+    list_display = ('get_full_name', 'email', 'email_confirmed', 'is_active',)
     list_filter = ('is_active',)
 
     add_fieldsets = (
@@ -45,8 +45,12 @@ class PersonAdmin(UserAdmin):
         )})
     )
 
-    search_fields = ('email',)
+    search_fields = ('email', 'given_name', 'middle_name', 'surname')
     ordering = ('-created_timestamp',)
+
+    def email_confirmed(self, obj):
+        return obj.email == obj.confirmed_email
+    email_confirmed.boolean = True
 
 
 class EventAdmin(admin.ModelAdmin):

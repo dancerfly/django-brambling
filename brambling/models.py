@@ -107,6 +107,7 @@ class AbstractNamedModel(models.Model):
             'surname': self.surname,
         }
         return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+    get_full_name.short_description = 'Name'
 
     def get_short_name(self):
         return self.given_name
