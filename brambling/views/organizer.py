@@ -3,6 +3,7 @@ import pprint
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum
 from django.http import Http404, HttpResponseRedirect, JsonResponse
@@ -22,6 +23,7 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm)
+from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -652,6 +654,23 @@ class TogglePaymentConfirmationView(View):
         self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
         self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})
+
+
+class SendReceiptView(View):
+    def get(self, request, *args, **kwargs):
+        event = get_event_or_404(self.kwargs['event_slug'])
+        if not event.editable_by(self.request.user):
+            raise Http404
+        try:
+            order = Order.objects.get(event=event,
+                                      code=self.kwargs['code'])
+        except Order.DoesNotExist:
+            raise Http404
+        send_order_receipt(order, order.get_summary_data(),
+                           get_current_site(request),
+                           event=event, secure=request.is_secure())
+        messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
+        return HttpResponseRedirect(reverse('brambling_event_order_detail', kwargs={'event_slug': event.slug, 'code': order.code}))
 
 
 class FinancesView(ListView):
