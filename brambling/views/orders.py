@@ -782,6 +782,7 @@ class SummaryView(OrderMixin, TemplateView):
                 summary_data = self.order.get_summary_data()
                 send_order_receipt(self.order, summary_data,
                                    get_current_site(self.request),
+                                   event=self.event,
                                    secure=self.request.is_secure())
                 send_order_alert(self.order, summary_data,
                                  get_current_site(self.request),
