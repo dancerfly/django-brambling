@@ -1284,8 +1284,8 @@ class InviteManager(models.Manager):
         while True:
             code = get_random_string(
                 length=20,
-                allowed_chars='abcdefghijklmnopqrstuvwxyz'
-                              'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-~'
+                allowed_chars='abcdefghijkmnpqrstuvwxyz'
+                              'ABCDEFGHJKLMNPQRSTUVWXYZ23456789-~'
             )
             if not Invite.objects.filter(code=code):
                 break
