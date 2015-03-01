@@ -381,11 +381,14 @@ def discount_form(request, *args, **kwargs):
         discount = None
     if request.method == 'POST':
         form = DiscountForm(event, request.POST, instance=discount)
-        if form.is_valid():
-            form.save()
-            url = reverse('brambling_discount_list',
-                          kwargs={'event_slug': event.slug})
-            return HttpResponseRedirect(url)
+        with timezone.override(event.timezone):
+            # Clean as the event's timezone - datetimes
+            # input correctly.
+            if form.is_valid():
+                form.save()
+                url = reverse('brambling_discount_list',
+                              kwargs={'event_slug': event.slug})
+                return HttpResponseRedirect(url)
     else:
         form = DiscountForm(event, instance=discount)
     context = {

@@ -1,6 +1,6 @@
 {% extends 'brambling/event/organizer/__base.html' %}
 
-{% load floppyforms zenaida staticfiles %}
+{% load floppyforms zenaida staticfiles tz %}
 
 {% block title %}Order {{ order.code }} – {{ block.super }}{% endblock %}
 
@@ -38,6 +38,7 @@
 {% endblock %}
 
 {% block main %}
+	{% timezone event.timezone %}
 	{{ block.super }}
 
 	<h2>Order {{ order.code }} ({{ order.get_status_display }}) {% if order.status == order.COMPLETED %}<a class='pull-right btn btn-success' data-toggle="modal" data-target=".refund-{{ order.code }}">Refund order</a>{% endif %}</h2>
@@ -101,5 +102,6 @@
 			</div>
 		</div>
 	</div>
+	{% endtimezone %}
 {% endblock %}
 
