@@ -1,11 +1,13 @@
 import logging
+import operator
 import pprint
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -427,37 +429,64 @@ class DiscountListView(ListView):
         return context
 
 
-class AttendeeFilterView(FilterView):
-    filterset_class = AttendeeFilterSet
-    template_name = 'brambling/event/organizer/attendees.html'
-    context_object_name = 'attendees'
+class ModelTableView(FilterView):
+    search_fields = None
+    model_table = None
+    form_prefix = 'column'
 
-    def get_filterset(self, filterset_class):
-        kwargs = self.get_filterset_kwargs(filterset_class)
-        return filterset_class(self.event, **kwargs)
-
-    def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
-        if not self.event.editable_by(self.request.user):
-            raise Http404
-        qs = Attendee.objects.filter(
-            order__event=self.event).distinct()
-        return qs
+    def get_table_kwargs(self, queryset):
+        kwargs = {
+            'queryset': queryset,
+            'form_prefix': self.form_prefix,
+        }
+        if self.request.GET:
+            kwargs['data'] = self.request.GET
+        return kwargs
 
     def get_table(self, queryset):
-        if self.request.GET:
-            return AttendeeTable(self.event, queryset, data=self.request.GET, form_prefix="column")
-        else:
-            return AttendeeTable(self.event, queryset, form_prefix="column")
+        if not self.model_table:
+            raise ValueError("model_table cannot be None")
+        return self.model_table(**self.get_table_kwargs(queryset))
 
     def get_context_data(self, **kwargs):
-        context = super(AttendeeFilterView, self).get_context_data(**kwargs)
-        context.update({
-            'table': self.get_table(self.object_list),
-            'event': self.event,
-            'event_admin_nav': get_event_admin_nav(self.event, self.request)
-        })
+        context = super(ModelTableView, self).get_context_data(**kwargs)
+        context['table'] = self.get_table(self.object_list)
         return context
+
+    def get_queryset(self):
+        queryset = super(ModelTableView, self).get_queryset()
+
+        # Originally from django.contrib.admin.options
+        def construct_search(field_name):
+            if field_name.startswith('^'):
+                return "%s__istartswith" % field_name[1:]
+            elif field_name.startswith('='):
+                return "%s__iexact" % field_name[1:]
+            elif field_name.startswith('@'):
+                return "%s__search" % field_name[1:]
+            else:
+                return "%s__icontains" % field_name
+
+        use_distinct = False
+        search_fields = self.search_fields
+        search_term = self.request.GET.get('search', '')
+        opts = self.model._meta
+        if search_fields and search_term:
+            orm_lookups = [construct_search(str(search_field))
+                           for search_field in search_fields]
+            for bit in search_term.split():
+                or_queries = [Q(**{orm_lookup: bit})
+                              for orm_lookup in orm_lookups]
+                queryset = queryset.filter(reduce(operator.or_, or_queries))
+            if not use_distinct:
+                for search_spec in orm_lookups:
+                    if lookup_needs_distinct(opts, search_spec):
+                        use_distinct = True
+                        break
+
+        if use_distinct:
+            queryset = queryset.distinct()
+        return queryset
 
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
@@ -465,11 +494,45 @@ class AttendeeFilterView(FilterView):
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            table = self.get_table(self.get_queryset())
-            return table.render_csv_response()
+            return context['table'].render_csv_response()
         else:
             # Default to the template.
-            return super(AttendeeFilterView, self).render_to_response(context, *args, **kwargs)
+            return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
+
+
+class AttendeeFilterView(ModelTableView):
+    filterset_class = AttendeeFilterSet
+    template_name = 'brambling/event/organizer/attendees.html'
+    context_object_name = 'attendees'
+    search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
+                     'email', 'order__email', 'order__person__email')
+    model = Attendee
+    model_table = AttendeeTable
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        qs = super(AttendeeFilterView, self).get_queryset()
+        return qs.filter(order__event=self.event).distinct()
+
+    def get_filterset_kwargs(self, filterset_class):
+        kwargs = super(AttendeeFilterView, self).get_filterset_kwargs(filterset_class)
+        kwargs['event'] = self.event
+        return kwargs
+
+    def get_table_kwargs(self, queryset):
+        kwargs = super(AttendeeFilterView, self).get_table_kwargs(queryset)
+        kwargs['event'] = self.event
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(AttendeeFilterView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+        })
+        return context
 
 
 class RefundView(View):
@@ -500,44 +563,33 @@ class RefundView(View):
         return HttpResponseRedirect(url)
 
 
-class OrderFilterView(FilterView):
+class OrderFilterView(ModelTableView):
     filterset_class = OrderFilterSet
     template_name = 'brambling/event/organizer/orders.html'
     context_object_name = 'orders'
+    search_fields = ('code', 'email', 'person__email')
+    model = Order
+    model_table = OrderTable
 
     def get_queryset(self):
         self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
-        qs = Order.objects.filter(event=self.event)
-        return qs
+        qs = super(OrderFilterView, self).get_queryset()
+        return qs.filter(event=self.event)
 
-    def get_table(self, queryset):
-        if self.request.GET:
-            return OrderTable(self.event, queryset, data=self.request.GET, form_prefix="column")
-        else:
-            return OrderTable(self.event, queryset, form_prefix="column")
+    def get_table_kwargs(self, queryset):
+        kwargs = super(OrderFilterView, self).get_table_kwargs(queryset)
+        kwargs['event'] = self.event
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super(OrderFilterView, self).get_context_data(**kwargs)
         context.update({
-            'table': self.get_table(self.object_list),
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request)
         })
         return context
-
-    def render_to_response(self, context, *args, **kwargs):
-        "Return a response in the requested format."
-
-        format_ = self.request.GET.get('format', default='html')
-
-        if format_ == 'csv':
-            table = self.get_table(self.get_queryset())
-            return table.render_csv_response()
-        else:
-            # Default to the template.
-            return super(OrderFilterView, self).render_to_response(context, *args, **kwargs)
 
 
 class OrganizerApplyDiscountView(ApplyDiscountView):
