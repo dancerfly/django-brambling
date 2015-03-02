@@ -5,11 +5,13 @@ import pprint
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.utils import lookup_needs_distinct
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum, Q
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
@@ -23,6 +25,7 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm)
+from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -318,9 +321,12 @@ def item_form(request, *args, **kwargs):
         image_formset = ItemImageFormSet(data=request.POST, files=request.FILES, instance=item, prefix='image')
         formset = ItemOptionFormSet(event, request.POST, instance=item, prefix='option')
         # Always run all.
-        form.is_valid()
-        image_formset.is_valid()
-        formset.is_valid()
+        with timezone.override(event.timezone):
+            # Clean as the event's timezone - datetimes
+            # input correctly.
+            form.is_valid()
+            image_formset.is_valid()
+            formset.is_valid()
         if form.is_valid() and image_formset.is_valid() and formset.is_valid():
             form.save()
             image_formset.save()
@@ -379,11 +385,14 @@ def discount_form(request, *args, **kwargs):
         discount = None
     if request.method == 'POST':
         form = DiscountForm(event, request.POST, instance=discount)
-        if form.is_valid():
-            form.save()
-            url = reverse('brambling_discount_list',
-                          kwargs={'event_slug': event.slug})
-            return HttpResponseRedirect(url)
+        with timezone.override(event.timezone):
+            # Clean as the event's timezone - datetimes
+            # input correctly.
+            if form.is_valid():
+                form.save()
+                url = reverse('brambling_discount_list',
+                              kwargs={'event_slug': event.slug})
+                return HttpResponseRedirect(url)
     else:
         form = DiscountForm(event, instance=discount)
     context = {
@@ -532,34 +541,25 @@ class RefundView(View):
         if not self.event.editable_by(self.request.user):
             raise Http404
         try:
-            return Order.objects.get(event=self.event,
-                                     code=self.kwargs['code'])
-        except Order.DoesNotExist:
+            return Transaction.objects.get(
+                event=self.event,
+                order__code=self.kwargs['code'],
+                pk=self.kwargs['pk']
+            )
+        except Transaction.DoesNotExist:
             raise Http404
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        has_errors = False
-        has_refunds = False
-        purchases = self.object.transactions.filter(transaction_type=Transaction.PURCHASE)
-        for purchase in purchases:
-            try:
-                purchase.refund(purchase.amount, request.user,
-                                dwolla_pin=request.POST.get('dwolla_pin'))
-            except Exception as e:
-                messages.error(request, e.message)
-                has_errors = True
-            else:
-                has_refunds = True
-
-        if has_refunds and not has_errors:
-            self.object.status = Order.REFUNDED
-            self.object.save()
-            self.object.bought_items.update(status=BoughtItem.REFUNDED)
+        txn = self.get_object()
+        try:
+            txn.refund(issuer=request.user,
+                       dwolla_pin=request.POST.get('dwolla_pin'))
+        except Exception as e:
+            messages.error(request, e.message)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
-                              'code': self.object.code})
+                              'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
 
 
@@ -692,6 +692,23 @@ class TogglePaymentConfirmationView(View):
         self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
         self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})
+
+
+class SendReceiptView(View):
+    def get(self, request, *args, **kwargs):
+        event = get_event_or_404(self.kwargs['event_slug'])
+        if not event.editable_by(self.request.user):
+            raise Http404
+        try:
+            order = Order.objects.get(event=event,
+                                      code=self.kwargs['code'])
+        except Order.DoesNotExist:
+            raise Http404
+        send_order_receipt(order, order.get_summary_data(),
+                           get_current_site(request),
+                           event=event, secure=request.is_secure())
+        messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
+        return HttpResponseRedirect(reverse('brambling_event_order_detail', kwargs={'event_slug': event.slug, 'code': order.code}))
 
 
 class FinancesView(ListView):

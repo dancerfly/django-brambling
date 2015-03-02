@@ -12,6 +12,7 @@ import floppyforms.__future__ as forms
 from brambling.mail import send_confirmation_email
 from brambling.models import Person, Home, DanceStyle, Invite
 from brambling.utils.international import clean_postal_code
+from brambling.utils.payment import LIVE
 
 
 class FloppyAuthenticationForm(AuthenticationForm):
@@ -167,8 +168,7 @@ class PersonForm(BasePersonForm):
     def save(self, commit=True):
         self.instance.modified_directly = True
         if self.cleaned_data.get('disconnect_dwolla'):
-            self.instance.dwolla_user_id = ''
-            self.instance.dwolla_access_token = ''
+            self.instance.clear_dwolla_data(LIVE)
         if self.cleaned_data.get('new_password1'):
             self.instance.set_password(self.cleaned_data['new_password1'])
         person = super(PersonForm, self).save(commit)

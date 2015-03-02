@@ -1,6 +1,6 @@
 {% extends 'brambling/event/organizer/__base.html' %}
 
-{% load floppyforms zenaida %}
+{% load floppyforms zenaida tz %}
 
 {% block title %}Finances – {{ block.super }}{% endblock %}
 
@@ -13,7 +13,7 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Timestamp</th>
+                    <th>Timestamp <span class='text-muted'>{{ event.timezone }}</span></th>
                     <th>Created by</th>
                     <th>Method</th>
                     <th>Type</th>
@@ -24,6 +24,7 @@
                 </tr>
             </thead>
             <tbody>
+                {% timezone event.timezone %}
                 {% for transaction in transactions %}
                     <tr>
                         <td>{{ transaction.timestamp|date:"F jS, Y H:i:s" }}</td>
@@ -36,6 +37,7 @@
                         <td>{{ transaction.processing_fee|format_money:event.currency }}</td>
                     </tr>
                 {% endfor %}
+                {% endtimezone %}
             </tbody>
         </table>
     </div>

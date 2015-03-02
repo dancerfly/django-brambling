@@ -6,7 +6,7 @@ from django.views.generic import View
 from dwolla import oauth, accounts
 
 from brambling.models import Event, Order
-from brambling.utils.payment import dwolla_prep, LIVE
+from brambling.utils.payment import dwolla_prep, LIVE, dwolla_set_tokens
 
 
 class DwollaConnectView(View):
@@ -39,10 +39,10 @@ class DwollaConnectView(View):
 
             if api_type == LIVE:
                 self.object.dwolla_user_id = account_info['Id']
-                self.object.dwolla_access_token = token
             else:
                 self.object.dwolla_test_user_id = account_info['Id']
-                self.object.dwolla_test_access_token = token
+
+            dwolla_set_tokens(self.object, api_type, oauth_tokens)
 
             self.object.save()
             messages.success(request, "Dwolla account connected!")

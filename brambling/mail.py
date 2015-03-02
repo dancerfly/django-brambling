@@ -45,13 +45,13 @@ def send_confirmation_email(person, site, secure=False,
     send_fancy_mail([person.email], subject_template, body_template, context)
 
 
-def send_order_receipt(order, summary_data, site, secure=False,
+def send_order_receipt(order, summary_data, site, secure=False, event=None,
                        subject_template="brambling/mail/order_receipt_subject.txt",
                        body_template="brambling/mail/order_receipt_body.html"):
     context = {
         'order': order,
         'person': order.person,
-        'event': order.event,
+        'event': event or order.event,
         'site': site,
         'protocol': 'https' if secure else 'http',
     }

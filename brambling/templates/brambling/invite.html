@@ -4,25 +4,45 @@
 
 {% block title %}Accept invitation – {{ block.super }}{% endblock %}
 {% block main %}
+	{% comment %}
+	If the person is already logged in, the invitation is currently automatically accepted.
+	{% endcomment %}
 	{% if invite %}
-		<h2>Accept invitation from {{ invite.user.get_full_name }}</h2>
-		<ul class="nav nav-pills" role="tablist">
-			<li class="active"><a href="#login" role="tab" data-toggle="tab">Log In</a></li>
-			<li><a href="#signup" role="tab" data-toggle="tab">Sign Up</a></li>
-		</ul>
-		<div class="tab-content">
-			<form id="login" class="tab-pane fade in active" action="{% url 'login' %}?next={{ request.path }}" method="post">
+		<h2>
+			You've been invited
+			{% if invite.kind == invite.HOME %}
+				to edit a home!
+			{% else %}
+				to edit an event!
+			{% endif %}
+		</h2>
+		<p>
+			This invitation was sent by <strong>{{ invite.user.get_full_name }}</strong> to <strong>{{ invite.email }}</strong>.
+			{% if invited_person_exists %}
+				Log in to accept the invitation!
+			{% else %}
+				Create an account to accept the invitation!
+			{% endif %}
+		</p>
+		{% if request.user.is_authenticated %}
+			<div class='alert alert-warning'>
+				<p>You are currently logged in as <strong>{{ request.user.email }}</strong>. You can only accept this invitation as <strong>{{ invite.email }}</strong>. If you believe this invitation was sent to the wrong email address, please get in touch with <strong>{{ invite.user.get_full_name }}</strong> directly to request a new invitation.</p>
+			</div>
+		{% endif %}
+		{% if invited_person_exists %}
+			<form id="login" action="{% url 'login' %}?next={{ request.path }}" method="post">
 				{% csrf_token %}
 				{% form login_form %}
-				<button class="btn btn-primary-light" type="submit">Log in</button>
+				<button class="btn btn-primary-light" type="submit">{% if request.user.is_authenticated %}Yes, log in as {{ invite.email }}{% else %}Log in{% endif %}</button>
 				<a class='btn btn-link' href="{% url 'password_reset' %}">Forgot your password?</a>
 			</form>
-			<form id="signup" class="tab-pane fade" action="{% url "brambling_signup" %}?next={{ request.path }}" method="post">
+		{% else %}
+			<form id="signup" action="{% url "brambling_signup" %}?next={{ request.path }}" method="post">
 				{% csrf_token %}
 				{% form signup_form using "brambling/forms/signup.html" %}
-				<button class="btn btn-primary-light">Sign Up</button>
+				<button class="btn btn-primary-light">{% if request.user.is_authenticated %}Yes, create a new account as {{ invite.email }}{% else %}Sign up{% endif %}</button>
 			</form>
-		</div>
+		{% endif %}
 	{% else %}
 		<p>Sorry, but the invitation link you followed is no longer valid. It may have expired, been revoked, or been claimed already. If you know who sent the invitation, please ask them to resend it. Good luck!</p>
 	{% endif %}
