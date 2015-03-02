@@ -67,6 +67,14 @@ h1, h2, .h2, h3, .h3
 .btn-default-dark
 	+button-variant($btn-default-color, darken($btn-default-bg,10%), $btn-default-border)
 
+//// Background
+
+.bg-primary-light
+	background-color: lighten($panel-primary-heading-bg,5%)
+	color: $panel-primary-text
+tfoot.bg-primary-light
+	border-top: 2px solid $panel-primary-border
+
 //// &c.
 
 .collapser:before

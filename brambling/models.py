@@ -757,10 +757,12 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self, status):
-        self.bought_items.filter(
+    def mark_cart_paid(self, status, payment):
+        bought_items = self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
-        ).update(status=BoughtItem.BOUGHT)
+        )
+        payment.bought_items = bought_items
+        bought_items.update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
         self.status = status
@@ -795,14 +797,16 @@ class Order(AbstractDwollaModel):
     def get_summary_data(self):
         if self.cart_is_expired():
             self.delete_cart()
-        payments = self.transactions.filter(transaction_type=Transaction.PURCHASE).order_by('timestamp')
-        refunds = self.transactions.filter(transaction_type=Transaction.REFUND).order_by('timestamp')
+        transactions = self.transactions.prefetch_related('bought_items').order_by('timestamp')
+        payments = [t for t in transactions
+                    if t.transaction_type == Transaction.PURCHASE]
+        refunds = [t for t in transactions
+                   if t.transaction_type == Transaction.REFUND]
+        payment_items = [t.bought_items.select_related('item_option__item') for t in payments]
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
-        bought_items = []
         for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
             items = [item.get_summary_data() for item in g]
-            bought_items.extend(items)
 
             gross_cost = sum((item['gross_cost'] for item in items))
             total_savings = sum((item['total_savings'] for item in items))
@@ -814,6 +818,9 @@ class Order(AbstractDwollaModel):
                 'total_savings': total_savings,
                 'net_cost': net_cost,
             })
+        unpaid_items = [item for item in bought_items_qs
+                        if item.status == BoughtItem.UNPAID or
+                        item.status == BoughtItem.RESERVED]
 
         gross_cost = sum((item.item_option.price for item in bought_items_qs))
         gross_payments = sum((payment.amount for payment in payments))
@@ -829,7 +836,8 @@ class Order(AbstractDwollaModel):
                                           for payment in payments))
         return {
             'attendees': attendees,
-            'bought_items': bought_items,
+            'payment_items': payment_items,
+            'unpaid_items': unpaid_items,
             'payments': payments,
             'refunds': refunds,
             'gross_cost': gross_cost,
@@ -900,6 +908,7 @@ class Transaction(models.Model):
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
+    bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
 
     class Meta:
         get_latest_by = 'timestamp'
@@ -979,7 +988,18 @@ class Transaction(models.Model):
             **kwargs
         )
 
-    def refund(self, amount, issuer, dwolla_pin=None):
+    def can_refund(self):
+        refunded = self.related_transaction_set.filter(
+            transaction_type=Transaction.REFUND
+        ).aggregate(refunded=Sum('amount'))['refunded'] or 0
+        return self.amount + refunded > 0
+
+    def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
+        if amount is None:
+            amount = self.amount
+        if bought_items is None:
+            bought_items = self.bought_items.all()
+
         total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum'] or 0
         refundable = self.amount + total_refunds
         if refundable < amount:
@@ -1003,7 +1023,7 @@ class Transaction(models.Model):
                 payment_id=self.remote_id,
                 amount=refundable,
             )
-            return Transaction.from_stripe_refund(refund, **refund_kwargs)
+            txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
         elif self.method == Transaction.DWOLLA:
             refund = dwolla_refund(
                 event=self.order.event,
@@ -1011,15 +1031,19 @@ class Transaction(models.Model):
                 amount=refundable,
                 pin=dwolla_pin,
             )
-            return Transaction.from_dwolla_refund(refund, **refund_kwargs)
-        return Transaction.objects.create(
-            transaction_type=Transaction.REFUND,
-            amount=-1 * refundable,
-            is_confirmed=True,
-            remote_id='',
-            method=self.method,
-            **refund_kwargs
-        )
+            txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
+        else:
+            txn = Transaction.objects.create(
+                transaction_type=Transaction.REFUND,
+                amount=-1 * refundable,
+                is_confirmed=True,
+                remote_id='',
+                method=self.method,
+                **refund_kwargs
+            )
+        txn.bought_items = bought_items
+        bought_items.update(status=BoughtItem.REFUNDED)
+        return txn
     refund.alters_data = True
 
 
