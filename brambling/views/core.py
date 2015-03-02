@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from brambling.models import Event, BoughtItem, Invite, Home, Order
+from brambling.models import Event, BoughtItem, Invite, Home, Order, Person
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
@@ -119,13 +119,19 @@ class InviteAcceptView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(InviteAcceptView, self).get_context_data(**kwargs)
+        if self.invite:
+            invited_person_exists = Person.objects.filter(email=self.invite.email).exists()
+        else:
+            invited_person_exists = False
         context.update({
             'invite': self.invite,
+            'invited_person_exists': invited_person_exists,
             'signup_form': SignUpForm(self.request),
             'login_form': FloppyAuthenticationForm(),
         })
-        context['signup_form'].initial['email'] = self.invite.email
-        context['login_form'].initial['username'] = self.invite.email
+        if self.invite:
+            context['signup_form'].initial['email'] = self.invite.email
+            context['login_form'].initial['username'] = self.invite.email
         return context
 
 
