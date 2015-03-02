@@ -48,6 +48,7 @@ from brambling.views.organizer import (
     OrderDetailView,
     RefundView,
     TogglePaymentConfirmationView,
+    SendReceiptView,
     FinancesView,
 )
 from brambling.views.payment import (
@@ -238,6 +239,9 @@ urlpatterns = patterns('',
     url(r'^(?P<event_slug>[\w-]+)/orders/(?P<code>[a-zA-Z0-9]{8})/confirm/(?P<payment_pk>\d+)/$',
         TogglePaymentConfirmationView.as_view(),
         name="brambling_event_toggle_payment_confirmation"),
+    url(r'^(?P<event_slug>[\w-]+)/orders/(?P<code>[a-zA-Z0-9]{8})/send_receipt/$',
+        SendReceiptView.as_view(),
+        name="brambling_event_send_receipt"),
 
     url(r'^(?P<event_slug>[\w-]+)/discount/$',
         DiscountListView.as_view(),

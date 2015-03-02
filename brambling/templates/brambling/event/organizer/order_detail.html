@@ -41,7 +41,14 @@
 	{% timezone event.timezone %}
 	{{ block.super }}
 
-	<h2>Order {{ order.code }} ({{ order.get_status_display }}) {% if order.status == order.COMPLETED %}<a class='pull-right btn btn-success' data-toggle="modal" data-target=".refund-{{ order.code }}">Refund order</a>{% endif %}</h2>
+	<h2>Order {{ order.code }} ({{ order.get_status_display }})
+		{% if order.status == order.COMPLETED %}
+			<div class='pull-right form-inline'>
+				<a class='btn btn-success' data-toggle="modal" data-target=".refund-{{ order.code }}">Refund order</a>
+				<a class='btn btn-success' href="{% url 'brambling_event_send_receipt' event_slug=event.slug code=order.code %}"><i class='fa fa-paper-plane'></i> Send receipt</a>
+			</div>
+		{% endif %}
+	</h2>
 	<h3>{% if order.person %}<a href="mailto:{{ order.person.email }}">{{ order.person.get_full_name }} &lt;{{ order.person.email }}&gt;</a>{% else %}<a href="mailto:{{ order.email }}">{{ order.email }}</a>{% endif %}</h3>
 
 	<div class="modal fade refund-{{ order.code }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ order.code }}" aria-hidden="true">
