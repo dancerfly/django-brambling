@@ -178,7 +178,5 @@ if ACCEPT_FEEDBACK:
         'talkback.middleware.TalkbackMiddleware',
     )
     INSTALLED_APPS += (
-        # TODO: Remove zenaida.contrib.feedback in the next release:
-        'zenaida.contrib.feedback',
         'talkback',
     )
