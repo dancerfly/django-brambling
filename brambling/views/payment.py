@@ -23,31 +23,36 @@ class DwollaConnectView(View):
         self.object = self.get_object()
         redirect_url = self.object.get_dwolla_connect_url()
         api_type = request.GET['api']
-        qs = request.GET.copy()
-        del qs['code']
-        if qs:
-            redirect_url += "?" + "&".join([k + "=" + v
-                                            for k, v in qs.iteritems()])
-        dwolla_prep(api_type)
-        oauth_tokens = oauth.get(request.GET['code'],
-                                 redirect=request.build_absolute_uri(redirect_url))
-        if 'access_token' in oauth_tokens:
-            token = oauth_tokens['access_token']
+        if 'code' in request.GET:
+            qs = request.GET.copy()
+            del qs['code']
+            if qs:
+                redirect_url += "?" + "&".join([k + "=" + v
+                                                for k, v in qs.iteritems()])
+            dwolla_prep(api_type)
+            oauth_tokens = oauth.get(request.GET['code'],
+                                     redirect=request.build_absolute_uri(redirect_url))
+            if 'access_token' in oauth_tokens:
+                token = oauth_tokens['access_token']
 
-            # Now get account info.
-            account_info = accounts.full(token)
+                # Now get account info.
+                account_info = accounts.full(token)
 
-            if api_type == LIVE:
-                self.object.dwolla_user_id = account_info['Id']
+                if api_type == LIVE:
+                    self.object.dwolla_user_id = account_info['Id']
+                else:
+                    self.object.dwolla_test_user_id = account_info['Id']
+
+                dwolla_set_tokens(self.object, api_type, oauth_tokens)
+
+                self.object.save()
+                messages.success(request, "Dwolla account connected!")
+            elif 'error_description' in oauth_tokens:
+                messages.error(request, oauth_tokens['error_description'])
             else:
-                self.object.dwolla_test_user_id = account_info['Id']
-
-            dwolla_set_tokens(self.object, api_type, oauth_tokens)
-
-            self.object.save()
-            messages.success(request, "Dwolla account connected!")
-        elif 'error_description' in oauth_tokens:
-            messages.error(request, oauth_tokens['error_description'])
+                messages.error(request, "Unknown error during dwolla connection.")
+        elif 'error_description' in request.GET:
+            messages.error(request, request.GET['error_description'])
         else:
             messages.error(request, "Unknown error during dwolla connection.")
 
