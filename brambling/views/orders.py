@@ -773,6 +773,7 @@ class SummaryView(OrderMixin, TemplateView):
         else:
             self.get_forms()
             form = None
+            valid = False
             if 'choose_card' in request.POST:
                 # Get a choose form.
                 form = self.choose_card_form
