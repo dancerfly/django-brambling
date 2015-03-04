@@ -40,8 +40,12 @@ class PersonAdmin(UserAdmin):
         )}),
         ('Financial Transactions', {'fields': (
             ('stripe_customer_id', 'stripe_test_customer_id', 'default_card'),
-            ('dwolla_user_id', 'dwolla_access_token'),
-            ('dwolla_test_user_id', 'dwolla_test_access_token'),
+            "dwolla_user_id",
+            ("dwolla_access_token", "dwolla_access_token_expires"),
+            ("dwolla_refresh_token", "dwolla_refresh_token_expires"),
+            "dwolla_test_user_id",
+            ("dwolla_test_access_token", "dwolla_test_access_token_expires"),
+            ("dwolla_test_refresh_token", "dwolla_test_refresh_token_expires"),
         )})
     )
 
@@ -93,11 +97,13 @@ class EventAdmin(admin.ModelAdmin):
         ("Payment Methods", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
-                ("dwolla_user_id", "dwolla_access_token", "dwolla_access_token_expires"),
+                "dwolla_user_id",
+                ("dwolla_access_token", "dwolla_access_token_expires"),
                 ("dwolla_refresh_token", "dwolla_refresh_token_expires"),
                 ("stripe_user_id", "stripe_access_token"),
                 ("stripe_refresh_token", "stripe_publishable_key"),
-                ("dwolla_test_user_id", "dwolla_test_access_token", "dwolla_test_access_token_expires"),
+                "dwolla_test_user_id",
+                ("dwolla_test_access_token", "dwolla_test_access_token_expires"),
                 ("dwolla_test_refresh_token", "dwolla_test_refresh_token_expires"),
                 ("stripe_test_user_id", "stripe_test_access_token"),
                 ("stripe_test_refresh_token", "stripe_test_publishable_key"),
