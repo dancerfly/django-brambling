@@ -4,7 +4,6 @@ import urllib
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db.models import Q
 from django.utils import timezone
 from dwolla import constants, transactions, oauth
 import stripe
@@ -17,7 +16,7 @@ constants.debug = settings.DEBUG
 
 
 def get_fee(event, amount):
-    fee = Decimal(event.application_fee_percent / 100 * amount)
+    fee = event.application_fee_percent / 100 * Decimal(str(amount))
     return fee.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
 
