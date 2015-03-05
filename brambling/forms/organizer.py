@@ -242,7 +242,7 @@ class DiscountForm(forms.ModelForm):
 
     class Meta:
         model = Discount
-        exclude = ('event', 'items')
+        exclude = ('event',)
 
     def __init__(self, event, *args, **kwargs):
         self.event = event

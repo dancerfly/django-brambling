@@ -262,7 +262,7 @@ class Event(AbstractDwollaModel):
 
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
-                            validators=[RegexValidator("[a-z0-9-]+")],
+                            validators=[RegexValidator("^[a-z0-9-]+$")],
                             help_text="URL-friendly version of the event name."
                                       " Dashes, 0-9, and lower-case a-z only.",
                             unique=True)
@@ -472,7 +472,7 @@ class Discount(models.Model):
         (PERCENT, _('Percent')),
     )
     name = models.CharField(max_length=40)
-    code = models.CharField(max_length=20, validators=[RegexValidator(CODE_REGEX)],
+    code = models.CharField(max_length=20, validators=[RegexValidator("^{}$".format(CODE_REGEX))],
                             help_text="Allowed characters: 0-9, a-z, A-Z, space, and '\"~")
     item_options = models.ManyToManyField(ItemOption)
     available_start = models.DateTimeField(default=timezone.now)
