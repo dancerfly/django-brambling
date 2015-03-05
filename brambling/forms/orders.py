@@ -33,7 +33,8 @@ class AttendeeBasicDataForm(forms.ModelForm):
         additional_items = self.order.bought_items.filter(
             Q(attendee__isnull=True) | Q(attendee=event_pass.attendee_id)
         ).exclude(item_option__item__category=Item.PASS)
-        if additional_items:
+        self.has_additional_items = bool(additional_items)
+        if self.has_additional_items:
             self.fields['additional_items'].queryset = additional_items
             if self.instance.pk:
                 self.fields['additional_items'].initial = self.order.bought_items.filter(
@@ -65,8 +66,13 @@ class AttendeeBasicDataForm(forms.ModelForm):
         self.instance.event_pass = self.event_pass
         self.instance.basic_completed = True
         instance = super(AttendeeBasicDataForm, self).save()
-        if self.cleaned_data.get('additional_items'):
-            self.cleaned_data['additional_items'].update(attendee=instance)
+        if self.has_additional_items:
+            old_additional = self.order.bought_items.filter(
+                                 attendee=self.event_pass.attendee
+                             ).exclude(item_option__item__category=Item.PASS)
+            old_additional.update(attendee=None)
+            if self.cleaned_data.get('additional_items'):
+                self.cleaned_data['additional_items'].update(attendee=instance)
         self.event_pass.attendee = instance
         self.event_pass.save()
         return instance
