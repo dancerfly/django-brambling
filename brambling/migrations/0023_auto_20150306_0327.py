@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('form_type', models.CharField(max_length=8, choices=[('attendee', 'Attendee'), ('order', 'Order')])),
                 ('name', models.CharField(max_length=50)),
                 ('index', models.PositiveSmallIntegerField(default=0)),
-                ('event', models.ForeignKey(to='brambling.Event')),
+                ('event', models.ForeignKey(to='brambling.Event', related_name='forms')),
             ],
             options={
                 'ordering': ('index',),
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('field_type', models.CharField(default='text', max_length=8, choices=[('text', 'Text'), ('textarea', 'Paragraph text'), ('boolean', 'Checkbox')])),
                 ('name', models.CharField(max_length=30)),
-                ('default', models.CharField(max_length=255)),
+                ('default', models.CharField(max_length=255, blank=True)),
                 ('required', models.BooleanField(default=False)),
                 ('index', models.PositiveSmallIntegerField(default=0)),
                 ('form', models.ForeignKey(related_name='fields', to='brambling.CustomForm')),

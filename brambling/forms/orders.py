@@ -60,6 +60,8 @@ class AttendeeBasicDataForm(forms.ModelForm):
             fields = form.get_fields()
             self.fields.update(fields)
             self.custom_form_fields |= set(fields)
+            if self.instance.pk:
+                self.initial.update(form.get_data(self.instance))
 
     def custom_fields(self):
         return [field for field in self

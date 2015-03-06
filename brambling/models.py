@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from decimal import Decimal
 import itertools
+import json
 import operator
 
 from django.conf import settings
@@ -1399,15 +1400,34 @@ class CustomForm(models.Model):
             for field in self.fields.all()
         ))
 
+    def get_data(self, related_obj):
+        related_ct = ContentType.objects.get_for_model(related_obj)
+        related_id = related_obj.pk
+        entries = CustomFormEntry.objects.filter(
+            related_ct=related_ct,
+            related_id=related_id,
+            form_field__form=self,
+        )
+        raw_data = {
+            entry.form_field_id: entry.get_value()
+            for entry in entries
+        }
+        return {
+            self._field_name(field): raw_data[field.pk]
+            for field in self.fields.all()
+            if field.pk in raw_data
+        }
+
     def save_data(self, cleaned_data, related_obj):
         related_ct = ContentType.objects.get_for_model(related_obj)
         related_id = related_obj.pk
         for field in self.fields.all():
+            value = json.dumps(cleaned_data.get(self._field_name(field)))
             CustomFormEntry.objects.update_or_create(
                 related_ct=related_ct,
                 related_id=related_id,
                 form_field=field,
-                defaults={'value': cleaned_data.get(self._field_name(field))},
+                defaults={'value': value},
             )
 
 
@@ -1427,7 +1447,7 @@ class CustomFormField(models.Model):
     name = models.CharField(max_length=30)
     # Choices will be a comma-separated value field, not a relation.
     #choices = models.CharField(max_length=255)
-    default = models.CharField(max_length=255)
+    default = models.CharField(max_length=255, blank=True)
     required = models.BooleanField(default=False)
     index = models.PositiveSmallIntegerField(default=0)
 
@@ -1461,3 +1481,12 @@ class CustomFormEntry(models.Model):
 
     class Meta:
         unique_together = (('related_ct', 'related_id', 'form_field'),)
+
+    def set_value(self, value):
+        self.value = json.dumps(value)
+
+    def get_value(self):
+        try:
+            return json.loads(self.value)
+        except:
+            return ''
