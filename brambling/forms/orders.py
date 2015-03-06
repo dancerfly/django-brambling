@@ -7,7 +7,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
-                              Order, Event)
+                              Order, Event, CustomForm)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
 
@@ -54,6 +54,17 @@ class AttendeeBasicDataForm(forms.ModelForm):
             self.fields['housing_status'].initial = ''
             self.fields['phone'].help_text = 'Required if requesting housing'
 
+        self.custom_forms = self.order.event.forms.filter(form_type=CustomForm.ATTENDEE).prefetch_related('fields')
+        self.custom_form_fields = set()
+        for form in self.custom_forms:
+            fields = form.get_fields()
+            self.fields.update(fields)
+            self.custom_form_fields |= set(fields)
+
+    def custom_fields(self):
+        return [field for field in self
+                if field.name in self.custom_form_fields]
+
     def clean_housing_status(self):
         housing_status = self.cleaned_data['housing_status']
         if housing_status == Attendee.NEED and not self.cleaned_data['phone']:
@@ -69,6 +80,9 @@ class AttendeeBasicDataForm(forms.ModelForm):
             self.cleaned_data['additional_items'].update(attendee=instance)
         self.event_pass.attendee = instance
         self.event_pass.save()
+
+        for form in self.custom_forms:
+            form.save_data(self.cleaned_data, self.instance)
         return instance
 
 

@@ -9,6 +9,8 @@ import operator
 from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
@@ -18,9 +20,11 @@ from django.db.models import signals, Sum
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+import floppyforms.__future__ as forms
 import stripe
 
 from brambling.mail import send_fancy_mail
@@ -1361,3 +1365,99 @@ class Invite(models.Model):
         )
         self.is_sent = True
         self.save()
+
+
+class CustomForm(models.Model):
+    ATTENDEE = 'attendee'
+    ORDER = 'order'
+
+    FORM_TYPE_CHOICES = (
+        (ATTENDEE, _('Attendee')),
+        (ORDER, _('Order')),
+
+    )
+    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES)
+    event = models.ForeignKey(Event, related_name="forms")
+    # TODO: Add fk/m2m to BoughtItem to limit people the form is
+    # displayed to.
+    name = models.CharField(max_length=50)
+    index = models.PositiveSmallIntegerField(default=0)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('index',)
+
+    def _field_name(self, field):
+        return "custom_{}_{}".format(self.pk, field.pk)
+
+    def get_fields(self):
+        # Returns field definition dict that can be added to a form
+        return SortedDict((
+            (self._field_name(field), field.formfield())
+            for field in self.fields.all()
+        ))
+
+    def save_data(self, cleaned_data, related_obj):
+        related_ct = ContentType.objects.get_for_model(related_obj)
+        related_id = related_obj.pk
+        for field in self.fields.all():
+            CustomFormEntry.objects.update_or_create(
+                related_ct=related_ct,
+                related_id=related_id,
+                form_field=field,
+                defaults={'value': cleaned_data.get(self._field_name(field))},
+            )
+
+
+class CustomFormField(models.Model):
+    TEXT = 'text'
+    TEXTAREA = 'textarea'
+    BOOLEAN = 'boolean'
+
+    FIELD_TYPE_CHOICES = (
+        (TEXT, _('Text')),
+        (TEXTAREA, _('Paragraph text')),
+        (BOOLEAN, _('Checkbox')),
+    )
+    field_type = models.CharField(max_length=8, choices=FIELD_TYPE_CHOICES, default=TEXT)
+
+    form = models.ForeignKey(CustomForm, related_name='fields')
+    name = models.CharField(max_length=30)
+    # Choices will be a comma-separated value field, not a relation.
+    #choices = models.CharField(max_length=255)
+    default = models.CharField(max_length=255)
+    required = models.BooleanField(default=False)
+    index = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ('index',)
+
+    def formfield(self):
+        kwargs = {
+            'required': self.required,
+            'initial': self.default,
+            'label': self.name,
+        }
+        if self.field_type == self.TEXT:
+            field_class = forms.CharField
+        elif self.field_type == self.TEXTAREA:
+            field_class = forms.CharField
+            kwargs['widget'] = forms.Textarea
+        elif self.field_type == self.BOOLEAN:
+            field_class = forms.BooleanField
+
+        return field_class(**kwargs)
+
+
+class CustomFormEntry(models.Model):
+    related_ct = models.ForeignKey(ContentType)
+    related_id = models.IntegerField()
+    related_obj = GenericForeignKey('related_ct', 'related_id')
+
+    form_field = models.ForeignKey(CustomFormField)
+    value = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = (('related_ct', 'related_id', 'form_field'),)
