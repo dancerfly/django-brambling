@@ -1,0 +1,33 @@
+{% extends 'brambling/event/organizer/__base.html' %}
+
+{% load zenaida %}
+
+{% block title %}Forms – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	{% include "brambling/event/_empty_shop_alert.html" %}
+
+	<p><a class="btn btn-primary" href="{% url 'brambling_form_create' event_slug=event.slug %}">Create form</a></p>
+	{% if custom_forms %}
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Index</th>
+				</tr>
+			</thead>
+			<tbody>
+			{% for custom_form in custom_forms %}
+				<tr>
+					<td><a href="{% url 'brambling_form_update' event_slug=event.slug pk=custom_form.pk %}">{{ custom_form.name }}</a></td>
+					<td>{{ custom_form.get_form_type_display }}</td>
+					<td>{{ custom_form.index }}</td>
+				</tr>
+			{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+{% endblock %}

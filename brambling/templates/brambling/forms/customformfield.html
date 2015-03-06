@@ -1,0 +1,19 @@
+{% extends "floppyforms/layouts/bootstrap.html" %}
+
+{% load floppyforms tz %}
+{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+{% block rows %}
+	{% formrow form.name %}
+	{% formrow form.field_type %}
+	{% formrow form.default %}
+	{% formrow form.required %}
+	<div class='row js-hide'>
+		<div class='col-md-6'>{% formrow form.order %}</div>
+		<div class='col-md-6'>{% formrow form.DELETE %}</div>
+	</div>
+
+	{% for field in form.hidden_fields %}
+		{% formfield field %}
+	{% endfor %}
+{% endblock %}

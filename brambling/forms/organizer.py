@@ -7,7 +7,8 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage, Transaction, Invite)
+                              Date, ItemImage, Transaction, Invite, CustomForm,
+                              CustomFormField)
 from brambling.utils.international import clean_postal_code
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
@@ -263,6 +264,29 @@ class DiscountForm(forms.ModelForm):
             self.instance.validate_unique()
         except ValidationError as e:
             self._update_errors(e)
+
+
+class CustomFormForm(forms.ModelForm):
+    class Meta:
+        model = CustomForm
+        exclude = ('event',)
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(CustomFormForm, self).__init__(*args, **kwargs)
+
+    def _post_clean(self):
+        super(CustomFormForm, self)._post_clean()
+        self.instance.event = self.event
+
+
+CustomFormFieldFormSet = forms.inlineformset_factory(
+    CustomForm,
+    CustomFormField,
+    extra=0,
+    min_num=1,
+    exclude=(),
+)
 
 
 class AttendeeFilterSetForm(forms.Form):
