@@ -6034,6 +6034,10 @@ h1, h2, .h2, h3, .h3 {
   font-weight: 700;
 }
 
+.text-small {
+  font-size: 12px;
+}
+
 .text-large {
   font-size: 18px;
 }
@@ -6336,6 +6340,10 @@ footer a {
 
 .margin-trailer-0 {
   margin-bottom: 0;
+}
+
+.margin-trailer-tiny {
+  margin-bottom: 4px;
 }
 
 .margin-trailer-dbl {

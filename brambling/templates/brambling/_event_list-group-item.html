@@ -1,13 +1,23 @@
 <div class="list-group-item">
 	<div class="row">
 		<div class="col-sm-9">
-			<p>
-				<a href="{{ event.get_absolute_url }}">{{ event.name }}</a><br />
-				<small class="text-muted">
-					{% include "brambling/event/_when.html" %}<br class="hidden-xs hidden-sm" />
+			<a href="{{ event.get_absolute_url }}">{{ event.name }}</a><br />
+			<div class="media text-muted margin-leader-0 text-small">
+				<div class="media-left">
+					<i class="fa fa-clock-o fa-fw"></i>
+				</div>
+				<div class="media-body">
+					{% include "brambling/event/_when.html" %}
+				</div>
+			</div>
+			<div class="media text-muted margin-leader-0 text-small margin-trailer-tiny">
+				<div class="media-left">
+					<i class="fa fa-map-marker fa-fw"></i>
+				</div>
+				<div class="media-body">
 					{% include "brambling/event/_where.html" %}
-				</small>
-			</p>
+				</div>
+			</div>
 		</div>{# /.col-sm-9 #}
 		<div class="col-sm-3 hidden-xs">
 			<div class="btn-group-vertical pull-right">

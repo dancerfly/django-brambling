@@ -223,15 +223,25 @@
 					{% if event.description %}
 						<div class="row">
 							<div class="col-md-4">
-									<p class="text-large">
+								<div class="media text-large">
+									<div class="media-left">
+										<i class="fa fa-clock-o fa-fw"></i>
+									</div>
+									<div class="media-body">
 										{% include "brambling/event/_when.html" %}
-									</p>
-									<p class="text-large">
+									</div>
+								</div>
+								<div class="media text-large">
+									<div class="media-left">
+										<i class="fa fa-map-marker fa-fw"></i>
+									</div>
+									<div class="media-body">
 										{% include "brambling/event/_where.html" %}
-									</p>
-									{% for style in dance_styles %}
-										<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
-									{% endfor %}
+									</div>
+								</div>
+								{% for style in dance_styles %}
+									<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
+								{% endfor %}
 							</div>
 							<div class="col-md-8">
 								<div>
@@ -270,7 +280,7 @@
 					{% endif %}
 				</div>
 			</div>
-		{% endif %}	
+		{% endif %}
 	{% endwith %}
 {% endblock masthead %}
 
