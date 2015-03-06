@@ -6551,6 +6551,10 @@ footer a {
   padding: 3px 10px;
 }
 
+.modal-title {
+  margin-right: 20px;
+}
+
 .panel-title {
   font-family: "St Ryde", Georgia, "Times New Roman", Times, serif;
   font-weight: 700;
