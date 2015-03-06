@@ -16,8 +16,14 @@
 	<div class="media-body">
 		<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
 		<p>
-			{% include "brambling/event/_when.html" %}
-			{% include "brambling/event/_where.html" %}
+			<span class="visible-inline-block">
+				<i class="fa fa-clock-o fa-fw"></i>
+				{% include "brambling/event/_when.html" %}
+			</span>
+			<span class="visible-inline-block">
+				<i class="fa fa-map-marker fa-fw"></i>
+				{% include "brambling/event/_where.html" %}
+			</span>
 		</p>
 		<p>
 		{% if event.description %}

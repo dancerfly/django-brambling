@@ -23,8 +23,8 @@
 						<a class="a-uncolored" href="{{ event_url }}">{{ event.name }}</a>
 					</h1>
 					<p class="text-large margin-trailer-0">
-						{% include "brambling/event/_when.html" %}
-						{% include "brambling/event/_where.html" %}
+						<i class="fa fa-clock-o fa-fw"></i>{% include "brambling/event/_when.html" %}
+						<i class="fa fa-map-marker fa-fw"></i>{% include "brambling/event/_where.html" %}
 					</p>
 				{% endif %}
 			</div>{# /.relative-bottom.relative-left.relative-right #}

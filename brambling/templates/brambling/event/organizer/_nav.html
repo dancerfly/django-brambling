@@ -5,10 +5,22 @@
 				{{ event.name }}
 			</a>
 		</h4>
-		<small class="text-muted">
-			{% include "brambling/event/_when.html" %}<br />
-			{% include "brambling/event/_where.html" %}
-		</small>
+		<div class="media text-muted margin-leader-0 text-small">
+			<div class="media-left">
+				<i class="fa fa-clock-o fa-fw"></i>
+			</div>
+			<div class="media-body">
+				{% include "brambling/event/_when.html" %}
+			</div>
+		</div>
+		<div class="media text-muted margin-leader-0 text-small">
+			<div class="media-left">
+				<i class="fa fa-map-marker fa-fw"></i>
+			</div>
+			<div class="media-body">
+				{% include "brambling/event/_where.html" %}
+			</div>
+		</div>
 	</div>
 	<div class="list-group">
 		{% for item in event_admin_nav %}
