@@ -6378,6 +6378,10 @@ footer a {
   border-top-right-radius: 0;
 }
 
+.visible-inline-block {
+  display: inline-block;
+}
+
 .relative {
   position: relative;
 }

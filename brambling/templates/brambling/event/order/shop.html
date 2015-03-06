@@ -239,9 +239,18 @@
 										{% include "brambling/event/_where.html" %}
 									</div>
 								</div>
-								{% for style in dance_styles %}
-									<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
-								{% endfor %}
+								{% if dance_styles %}
+									<div class="media text-large">
+										<div class="media-left">
+											<i class="fa fa-fw"></i>
+										</div>
+										<div class="media-body">
+											{% for style in dance_styles %}
+												<h4 class="text-muted">{{ style }}</h4>
+											{% endfor %}
+										</div>
+									</div>
+								{% endif %}
 							</div>
 							<div class="col-md-8">
 								<div>
