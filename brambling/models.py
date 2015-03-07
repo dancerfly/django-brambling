@@ -10,7 +10,7 @@ import operator
 from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
@@ -707,6 +707,8 @@ class Order(AbstractDwollaModel):
 
     status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
     class Meta:
         unique_together = ('event', 'code')
 
@@ -1190,6 +1192,8 @@ class Attendee(AbstractNamedModel):
 
     other_needs = models.TextField(blank=True)
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
     def __unicode__(self):
         return self.get_full_name()
 
@@ -1390,13 +1394,10 @@ class CustomForm(models.Model):
     class Meta:
         ordering = ('index',)
 
-    def _field_name(self, field):
-        return "custom_{}_{}".format(self.pk, field.pk)
-
     def get_fields(self):
         # Returns field definition dict that can be added to a form
         return SortedDict((
-            (self._field_name(field), field.formfield())
+            (field.key, field.formfield())
             for field in self.fields.all()
         ))
 
@@ -1413,7 +1414,7 @@ class CustomForm(models.Model):
             for entry in entries
         }
         return {
-            self._field_name(field): raw_data[field.pk]
+            field.key: raw_data[field.pk]
             for field in self.fields.all()
             if field.pk in raw_data
         }
@@ -1422,7 +1423,7 @@ class CustomForm(models.Model):
         related_ct = ContentType.objects.get_for_model(related_obj)
         related_id = related_obj.pk
         for field in self.fields.all():
-            value = json.dumps(cleaned_data.get(self._field_name(field)))
+            value = json.dumps(cleaned_data.get(field.key))
             CustomFormEntry.objects.update_or_create(
                 related_ct=related_ct,
                 related_id=related_id,
@@ -1453,6 +1454,10 @@ class CustomFormField(models.Model):
 
     class Meta:
         ordering = ('index',)
+
+    @property
+    def key(self):
+        return "custom_{}_{}".format(self.form_id, self.pk)
 
     def formfield(self):
         kwargs = {

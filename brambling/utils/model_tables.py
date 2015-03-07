@@ -279,7 +279,39 @@ class AttendeeTable(ModelTable):
             self.ORDER_FIELD_OPTIONS,
             self.MISCELLANEOUS_FIELD_OPTIONS,
         )
+
+        from brambling.models import CustomFormField
+        if not hasattr(self, 'custom_fields'):
+            self.custom_fields = CustomFormField.objects.filter(form__event=self.event)
+        fields += (tuple(
+            (field.name, field.key, True)
+            for field in self.custom_fields
+        ),)
+
         return reduce(tuple.__add__, fields)
+
+    def get_queryset(self):
+        qs = super(AttendeeTable, self).get_queryset()
+        return qs.prefetch_related(
+            'custom_data', 'nights', 'housing_prefer', 'ef_avoid', 'ef_cause'
+        ).select_related(
+            'order', 'order__person', 'event_pass__item_option__item'
+        )
+
+    def get_field_val(self, obj, key):
+        if key[0:7] == 'custom_':
+            if not hasattr(obj, '_custom_data'):
+                raw_data = {
+                    entry.form_field_id: entry.get_value()
+                    for entry in obj.custom_data.all()
+                }
+                obj._custom_data = {
+                    field.key: raw_data[field.pk]
+                    for field in self.custom_fields
+                    if field.pk in raw_data
+                }
+            return obj._custom_data.get(key, '')
+        return super(AttendeeTable, self).get_field_val(obj, key)
 
     # Methods to be used as fields
     def order_code(self, obj):
