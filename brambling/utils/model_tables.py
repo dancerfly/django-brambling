@@ -213,7 +213,35 @@ class ModelTable(object):
         return response
 
 
-class AttendeeTable(ModelTable):
+class CustomDataTable(ModelTable):
+    def get_custom_fields(self):
+        if not hasattr(self, 'custom_fields'):
+            self.custom_fields = self._get_custom_fields()
+        return tuple(
+            (field.name, field.key, True)
+            for field in self.custom_fields
+        )
+
+    def _get_custom_fields(self):
+        raise NotImplementedError
+
+    def get_field_val(self, obj, key):
+        if key[0:7] == 'custom_':
+            if not hasattr(obj, '_custom_data'):
+                raw_data = {
+                    entry.form_field_id: entry.get_value()
+                    for entry in obj.custom_data.all()
+                }
+                obj._custom_data = {
+                    field.key: raw_data[field.pk]
+                    for field in self.custom_fields
+                    if field.pk in raw_data
+                }
+            return obj._custom_data.get(key, '')
+        return super(CustomDataTable, self).get_field_val(obj, key)
+
+
+class AttendeeTable(CustomDataTable):
 
     #: A list of ID related fields.
     IDENTIFICATION_FIELD_OPTIONS = (
@@ -280,15 +308,16 @@ class AttendeeTable(ModelTable):
             self.MISCELLANEOUS_FIELD_OPTIONS,
         )
 
-        from brambling.models import CustomFormField
-        if not hasattr(self, 'custom_fields'):
-            self.custom_fields = CustomFormField.objects.filter(form__event=self.event)
-        fields += (tuple(
-            (field.name, field.key, True)
-            for field in self.custom_fields
-        ),)
+        fields += (self.get_custom_fields(),)
 
         return reduce(tuple.__add__, fields)
+
+    def _get_custom_fields(self):
+        from brambling.models import CustomForm, CustomFormField
+        return CustomFormField.objects.filter(
+            form__event=self.event,
+            form__form_type=CustomForm.ATTENDEE
+        ).order_by('index')
 
     def get_queryset(self):
         qs = super(AttendeeTable, self).get_queryset()
@@ -297,21 +326,6 @@ class AttendeeTable(ModelTable):
         ).select_related(
             'order', 'order__person', 'event_pass__item_option__item'
         )
-
-    def get_field_val(self, obj, key):
-        if key[0:7] == 'custom_':
-            if not hasattr(obj, '_custom_data'):
-                raw_data = {
-                    entry.form_field_id: entry.get_value()
-                    for entry in obj.custom_data.all()
-                }
-                obj._custom_data = {
-                    field.key: raw_data[field.pk]
-                    for field in self.custom_fields
-                    if field.pk in raw_data
-                }
-            return obj._custom_data.get(key, '')
-        return super(AttendeeTable, self).get_field_val(obj, key)
 
     # Methods to be used as fields
     def order_code(self, obj):
@@ -340,7 +354,7 @@ class AttendeeTable(ModelTable):
     environment_cause = comma_separated_manager("ef_cause")
 
 
-class OrderTable(ModelTable):
+class OrderTable(CustomDataTable):
     BASE_FIELDS = (
         ("Code", "code", True),
         ("Person", "person", True),
@@ -383,7 +397,16 @@ class OrderTable(ModelTable):
                     ("Hosting {} spaces".format(date.date.strftime("%m/%d/%Y")), "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")), True),
                     ("Hosting {} max".format(date.date.strftime("%m/%d/%Y")), "hosting_max_{}".format(date.date.strftime("%Y%m%d")), True),
                 )
+
+        fields += self.get_custom_fields()
         return fields
+
+    def _get_custom_fields(self):
+        from brambling.models import CustomForm, CustomFormField
+        return CustomFormField.objects.filter(
+            form__event=self.event,
+            form__form_type=CustomForm.ORDER
+        ).order_by('index')
 
     def get_field_val(self, obj, key):
         date_str = None

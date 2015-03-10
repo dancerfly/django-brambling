@@ -285,6 +285,7 @@ CustomFormFieldFormSet = forms.inlineformset_factory(
     CustomFormField,
     extra=0,
     min_num=1,
+    validate_min=True,
     exclude=(),
 )
 

@@ -15,7 +15,34 @@ from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
 
-class AttendeeBasicDataForm(forms.ModelForm):
+class CustomDataForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(CustomDataForm, self).__init__(*args, **kwargs)
+
+        self.custom_forms = self.get_custom_forms()
+        self.custom_form_fields = set()
+        for form in self.custom_forms:
+            fields = form.get_fields()
+            self.fields.update(fields)
+            self.custom_form_fields |= set(fields)
+            if self.instance.pk:
+                self.initial.update(form.get_data(self.instance))
+
+    def get_custom_forms(self):
+        raise NotImplementedError
+
+    def custom_fields(self):
+        return [field for field in self
+                if field.name in self.custom_form_fields]
+
+    def save(self):
+        instance = super(CustomDataForm, self).save()
+        for form in self.custom_forms:
+            form.save_data(self.cleaned_data, instance)
+        return instance
+
+
+class AttendeeBasicDataForm(CustomDataForm):
     additional_items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
 
     class Meta:
@@ -54,18 +81,8 @@ class AttendeeBasicDataForm(forms.ModelForm):
             self.fields['housing_status'].initial = ''
             self.fields['phone'].help_text = 'Required if requesting housing'
 
-        self.custom_forms = self.order.event.forms.filter(form_type=CustomForm.ATTENDEE).prefetch_related('fields')
-        self.custom_form_fields = set()
-        for form in self.custom_forms:
-            fields = form.get_fields()
-            self.fields.update(fields)
-            self.custom_form_fields |= set(fields)
-            if self.instance.pk:
-                self.initial.update(form.get_data(self.instance))
-
-    def custom_fields(self):
-        return [field for field in self
-                if field.name in self.custom_form_fields]
+    def get_custom_forms(self):
+        return self.order.event.forms.filter(form_type=CustomForm.ATTENDEE).prefetch_related('fields')
 
     def clean_housing_status(self):
         housing_status = self.cleaned_data['housing_status']
@@ -82,9 +99,6 @@ class AttendeeBasicDataForm(forms.ModelForm):
             self.cleaned_data['additional_items'].update(attendee=instance)
         self.event_pass.attendee = instance
         self.event_pass.save()
-
-        for form in self.custom_forms:
-            form.save_data(self.cleaned_data, self.instance)
         return instance
 
 
@@ -154,7 +168,7 @@ class AttendeeHousingDataForm(MemoModelForm):
         return instance
 
 
-class SurveyDataForm(forms.ModelForm):
+class SurveyDataForm(CustomDataForm):
     class Meta:
         model = Order
         fields = (
@@ -166,6 +180,9 @@ class SurveyDataForm(forms.ModelForm):
         widgets = {
             'send_flyers_country': forms.Select
         }
+
+    def get_custom_forms(self):
+        return self.instance.event.forms.filter(form_type=CustomForm.ORDER).prefetch_related('fields')
 
     def clean_send_flyers(self):
         send_flyers = self.cleaned_data['send_flyers']

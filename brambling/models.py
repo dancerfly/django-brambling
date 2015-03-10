@@ -1381,7 +1381,8 @@ class CustomForm(models.Model):
         (ORDER, _('Order')),
 
     )
-    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES)
+    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES,
+                                 help_text='Order forms will only display if "collect survey data" is checked in your event settings')
     event = models.ForeignKey(Event, related_name="forms")
     # TODO: Add fk/m2m to BoughtItem to limit people the form is
     # displayed to.
