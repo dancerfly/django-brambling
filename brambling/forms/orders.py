@@ -53,10 +53,10 @@ class AttendeeBasicDataForm(CustomDataForm):
         }
 
     def __init__(self, event_pass, *args, **kwargs):
-        super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
-        self.fields['liability_waiver'].required = True
         self.event_pass = event_pass
         self.order = event_pass.order
+        super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
+        self.fields['liability_waiver'].required = True
         additional_items = self.order.bought_items.filter(
             Q(attendee__isnull=True) | Q(attendee=event_pass.attendee_id)
         ).exclude(item_option__item__category=Item.PASS)
