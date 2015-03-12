@@ -10,24 +10,34 @@
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
 	<p><a class="btn btn-primary" href="{% url 'brambling_form_create' event_slug=event.slug %}">Create form</a></p>
+
 	{% if custom_forms %}
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Type</th>
-					<th>Index</th>
-				</tr>
-			</thead>
-			<tbody>
-			{% for custom_form in custom_forms %}
-				<tr>
-					<td><a href="{% url 'brambling_form_update' event_slug=event.slug pk=custom_form.pk %}">{{ custom_form.name }}</a></td>
-					<td>{{ custom_form.get_form_type_display }}</td>
-					<td>{{ custom_form.index }}</td>
-				</tr>
+		{% regroup custom_forms by get_form_type_display as form_types %}
+		<div class="row">
+			{% for form_type_group in form_types %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">{{ form_type_group.grouper }} Forms</h4>
+							<small>
+								{% if form_type_group.grouper == "Attendee" %}
+									These forms will appear once for each attendee, even if their passes are purchased in the same order.
+								{% elif form_type_group.grouper == "Order" %}
+									These forms will only appear once per order, even if the order is for multiple attendees.
+								{% endif %}
+							</small>
+						</div>
+						<div class="list-group">
+							{% for custom_form in form_type_group.list %}
+								<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug pk=custom_form.pk %}">
+									{{ custom_form.name }}
+								</a>
+							{% endfor %}
+						</div>
+					</div>{# /.panel #}
+				</div>{# /.col-md-6 #}
 			{% endfor %}
-			</tbody>
-		</table>
+		</div>
 	{% endif %}
+
 {% endblock %}
