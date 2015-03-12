@@ -684,7 +684,7 @@ class SurveyDataView(OrderMixin, UpdateView):
 
     def get_workflow_class(self):
         if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return ShopWorkflow
+            return SurveyWorkflow
         return RegistrationWorkflow
 
     def get_object(self):
