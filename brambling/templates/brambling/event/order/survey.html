@@ -68,6 +68,10 @@
 					</div>
 					{% formrow form.send_flyers_country %}
 				</div>
+
+				{% for field in form.custom_fields %}
+					{% formrow field %}
+				{% endfor %}
 			{% endform %}
 		</div>
 	</form>

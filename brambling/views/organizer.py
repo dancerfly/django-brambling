@@ -24,12 +24,13 @@ import requests
 from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
-                                       ManualPaymentForm, ManualDiscountForm)
+                                       ManualPaymentForm, ManualDiscountForm,
+                                       CustomFormForm, CustomFormFieldFormSet)
 from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Person)
+                              Person, CustomForm)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
@@ -424,6 +425,61 @@ class DiscountListView(ListView):
         context.update({
             'event': self.event,
             'cart': None,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        return context
+
+
+def custom_form_form(request, *args, **kwargs):
+    event = get_event_or_404(kwargs['event_slug'])
+    if not event.editable_by(request.user):
+        raise Http404
+    if 'pk' in kwargs:
+        custom_form = get_object_or_404(CustomForm, pk=kwargs['pk'])
+    else:
+        custom_form = CustomForm()
+    if request.method == 'POST':
+        form = CustomFormForm(event, request.POST, instance=custom_form)
+        formset = CustomFormFieldFormSet(data=request.POST, files=request.FILES, instance=custom_form, prefix='fields')
+        form.is_valid()
+        formset.is_valid()
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            url = reverse('brambling_form_list',
+                          kwargs={'event_slug': event.slug})
+            return HttpResponseRedirect(url)
+    else:
+        form = CustomFormForm(event, instance=custom_form)
+        formset = CustomFormFieldFormSet(instance=custom_form, prefix='fields')
+    context = {
+        'event': event,
+        'custom_form': form.instance,
+        'form': form,
+        'formset': formset,
+        'event_admin_nav': get_event_admin_nav(event, request),
+    }
+    return render_to_response('brambling/event/organizer/custom_form_form.html',
+                              context,
+                              context_instance=RequestContext(request))
+
+
+class CustomFormListView(ListView):
+    model = CustomForm
+    context_object_name = 'custom_forms'
+    template_name = 'brambling/event/organizer/custom_form_list.html'
+
+    def get_queryset(self):
+        self.event = get_event_or_404(self.kwargs['event_slug'])
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        qs = super(CustomFormListView, self).get_queryset()
+        return qs.filter(event=self.event).order_by('form_type', 'index')
+
+    def get_context_data(self, **kwargs):
+        context = super(CustomFormListView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context

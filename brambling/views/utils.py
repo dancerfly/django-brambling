@@ -54,6 +54,7 @@ def get_event_admin_nav(event, request):
         ('brambling_event_summary', 'Summary', 'fa-dashboard', {'slug': event.slug}),
         ('brambling_event_update', 'Settings', 'fa-cog', {'slug': event.slug}),
         ('brambling_item_list', 'Items', 'fa-list', {'event_slug': event.slug}),
+        ('brambling_form_list', 'Forms', 'fa-question', {'event_slug': event.slug}),
         ('brambling_discount_list', 'Discounts', 'fa-gift', {'event_slug': event.slug}),
         ('brambling_event_attendees', 'Attendees', 'fa-users', {'event_slug': event.slug}),
         ('brambling_event_orders', 'Orders', 'fa-ticket', {'event_slug': event.slug}),

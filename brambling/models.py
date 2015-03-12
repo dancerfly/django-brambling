@@ -4,11 +4,14 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from decimal import Decimal
 import itertools
+import json
 import operator
 
 from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
@@ -18,9 +21,11 @@ from django.db.models import signals, Sum
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+import floppyforms.__future__ as forms
 import stripe
 
 from brambling.mail import send_fancy_mail
@@ -702,6 +707,8 @@ class Order(AbstractDwollaModel):
 
     status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
     class Meta:
         unique_together = ('event', 'code')
 
@@ -1185,6 +1192,8 @@ class Attendee(AbstractNamedModel):
 
     other_needs = models.TextField(blank=True)
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
     def __unicode__(self):
         return self.get_full_name()
 
@@ -1361,3 +1370,131 @@ class Invite(models.Model):
         )
         self.is_sent = True
         self.save()
+
+
+class CustomForm(models.Model):
+    ATTENDEE = 'attendee'
+    ORDER = 'order'
+
+    FORM_TYPE_CHOICES = (
+        (ATTENDEE, _('Attendee')),
+        (ORDER, _('Order')),
+
+    )
+    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES,
+                                 help_text='Order forms will only display if "collect survey data" is checked in your event settings')
+    event = models.ForeignKey(Event, related_name="forms")
+    # TODO: Add fk/m2m to BoughtItem to limit people the form is
+    # displayed to.
+    name = models.CharField(max_length=50,
+                            help_text="For organization purposes. This will not be displayed to attendees.")
+    index = models.PositiveSmallIntegerField(default=0,
+                                             help_text="Defines display order if you have multiple forms.")
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('index',)
+
+    def get_fields(self):
+        # Returns field definition dict that can be added to a form
+        return SortedDict((
+            (field.key, field.formfield())
+            for field in self.fields.all()
+        ))
+
+    def get_data(self, related_obj):
+        related_ct = ContentType.objects.get_for_model(related_obj)
+        related_id = related_obj.pk
+        entries = CustomFormEntry.objects.filter(
+            related_ct=related_ct,
+            related_id=related_id,
+            form_field__form=self,
+        )
+        raw_data = {
+            entry.form_field_id: entry.get_value()
+            for entry in entries
+        }
+        return {
+            field.key: raw_data[field.pk]
+            for field in self.fields.all()
+            if field.pk in raw_data
+        }
+
+    def save_data(self, cleaned_data, related_obj):
+        related_ct = ContentType.objects.get_for_model(related_obj)
+        related_id = related_obj.pk
+        for field in self.fields.all():
+            value = json.dumps(cleaned_data.get(field.key))
+            CustomFormEntry.objects.update_or_create(
+                related_ct=related_ct,
+                related_id=related_id,
+                form_field=field,
+                defaults={'value': value},
+            )
+
+
+class CustomFormField(models.Model):
+    TEXT = 'text'
+    TEXTAREA = 'textarea'
+    BOOLEAN = 'boolean'
+
+    FIELD_TYPE_CHOICES = (
+        (TEXT, _('Text')),
+        (TEXTAREA, _('Paragraph text')),
+        (BOOLEAN, _('Checkbox')),
+    )
+    field_type = models.CharField(max_length=8, choices=FIELD_TYPE_CHOICES, default=TEXT)
+
+    form = models.ForeignKey(CustomForm, related_name='fields')
+    name = models.CharField(max_length=30)
+    # Choices will be a comma-separated value field, not a relation.
+    #choices = models.CharField(max_length=255)
+    default = models.CharField(max_length=255, blank=True)
+    required = models.BooleanField(default=False)
+    index = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ('index',)
+
+    @property
+    def key(self):
+        return "custom_{}_{}".format(self.form_id, self.pk)
+
+    def formfield(self):
+        kwargs = {
+            'required': self.required,
+            'initial': self.default,
+            'label': self.name,
+        }
+        if self.field_type == self.TEXT:
+            field_class = forms.CharField
+        elif self.field_type == self.TEXTAREA:
+            field_class = forms.CharField
+            kwargs['widget'] = forms.Textarea
+        elif self.field_type == self.BOOLEAN:
+            field_class = forms.BooleanField
+
+        return field_class(**kwargs)
+
+
+class CustomFormEntry(models.Model):
+    related_ct = models.ForeignKey(ContentType)
+    related_id = models.IntegerField()
+    related_obj = GenericForeignKey('related_ct', 'related_id')
+
+    form_field = models.ForeignKey(CustomFormField)
+    value = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = (('related_ct', 'related_id', 'form_field'),)
+
+    def set_value(self, value):
+        self.value = json.dumps(value)
+
+    def get_value(self):
+        try:
+            return json.loads(self.value)
+        except:
+            return ''

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from brambling.models import (Person, Event, DanceStyle,
                               EnvironmentalFactor, DietaryRestriction,
-                              HousingCategory)
+                              HousingCategory, CustomForm, CustomFormField)
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
 
 
@@ -125,8 +125,26 @@ class EventAdmin(admin.ModelAdmin):
     radio_fields = {'api_type': admin.HORIZONTAL}
 
 
+class CustomFormFieldInline(admin.TabularInline):
+    model = CustomFormField
+    extra = 0
+    min_num = 1
+    sortable_field_name = "index"
+
+
+class CustomFormAdmin(admin.ModelAdmin):
+    inlines = [CustomFormFieldInline]
+    radio_fields = {'form_type': admin.HORIZONTAL}
+    raw_id_fields = ('event',)
+    fields = ('name', 'form_type', 'event', 'index')
+    autocomplete_lookup_fields = {
+        'fk': ('event',),
+    }
+
+
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Event, EventAdmin)
+admin.site.register(CustomForm, CustomFormAdmin)
 admin.site.register(DanceStyle)
 admin.site.register(EnvironmentalFactor)
 admin.site.register(DietaryRestriction)

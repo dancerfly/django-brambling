@@ -67,6 +67,10 @@
 						{% formrow form.housing_status %}
 					{% endif %}
 
+					{% for field in form.custom_fields %}
+						{% formrow field %}
+					{% endfor %}
+
 					{% formrow form.photo_consent %}
 
 					<div class="well">

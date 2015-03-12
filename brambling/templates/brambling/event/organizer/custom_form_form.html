@@ -1,0 +1,110 @@
+{% extends 'brambling/event/organizer/__narrow.html' %}
+
+{% load floppyforms %}
+
+{% block title %}{% if custom_form.pk %}Edit {{ custom_form.name }}{% else %}Add a form{% endif %} – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	<h2>{% if custom_form.pk %}{{ custom_form.name }}{% else %}Add a form{% endif %}</h2>
+
+	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
+	<form action="{{ request.path }}" id="formForm" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+		{% form form using %}
+			{% formrow form.name %}
+			{% formrow form.form_type %}
+			{% formrow form.index %}
+		{% endform %}
+
+		<h3>Fields</h3>
+
+		{{ formset.management_form }}
+
+		<p class="text-muted">Click on a field to expand it. Drag and drop to reorder.</p>
+
+		{% if formset.non_form_errors %}
+			{% for error in formset.non_form_errors %}
+				<p class='text-danger'>{{ error }}</p>
+			{% endfor %}
+		{% endif %}
+
+		{# template for additional field forms #}
+		<div class="hidden">
+			<div class='panel panel-default field field-template'>
+				<header class='panel-heading'>
+					<div class='panel-title'>
+						<a href="#{{ formset.empty_form.prefix }}-collapse" data-toggle="collapse">
+							<i class="fa fa-fw fa-chevron-down"></i> Field <span class="count"></span>
+						</a>
+						<div class="actions pull-right"></div>
+					</div>
+				</header>
+				<div class="panel-collapse collapse in" id="{{ formset.empty_form.prefix }}-collapse">
+					<div class='panel-body'>
+						{% form formset.empty_form using "brambling/forms/customformfield.html" %}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="field-list panel-group">
+			{% for form in formset.forms %}
+				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} field'>
+					<header class='panel-heading'>
+						<div class='panel-title'>
+							<a href="#{{ form.prefix }}-collapse" title="click to expand" data-toggle="collapse">
+								<i class="fa fa-fw fa-chevron-down"></i> Field <span class="count">{{ forloop.counter }}</span>
+							</a>
+							<div class="actions pull-right"></div>
+						</div>{# /.panel-title #}
+					</header>
+						<div class="panel-collapse collapse{% if form.errors or not form.instance.pk %} in{% endif %}" id="{{ form.prefix }}-collapse">
+							<div class='panel-body'>
+								{% form form using "brambling/forms/customformfield.html" %}
+							</div>
+						</div>
+				</div>
+			{% endfor %}
+		</div>
+
+		<div class='panel panel-default'>
+			<header class='panel-heading'>
+				<div class='panel-title js-formset-add option-add'>
+				</div>{# /.panel-title #}
+			</header>
+		</div>
+
+		<button class='btn btn-primary' type="submit">Save</button>
+		{% if custom_form.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
+	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript">
+		(function () {
+			"use strict";
+
+			var fields_renumber = function () {
+				$('.field-list .field:visible').each(function(i){
+					$(this).find('.count').html(i+1);
+				});
+			};
+
+			$('.field-list').on('row_added.formset row_removed.formset reordered.formset', fields_renumber);
+
+			$('.field-list').formset({
+				prefix: '{{ formset.prefix }}',
+				deleteTrigger: '<a href="#"><i class="fa fa-times"></i></a>',
+				deleteWrapper: '.actions',
+				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add a field</a>',
+				addWrapper: '.js-formset-add.option-add',
+				formTemplate: '.field-template',
+				sortableHandle: '.panel-heading',
+				sortableField: 'index'
+			});
+		}());
+	</script>
+{% endblock %}
