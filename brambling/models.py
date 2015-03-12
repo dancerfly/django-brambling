@@ -1386,8 +1386,10 @@ class CustomForm(models.Model):
     event = models.ForeignKey(Event, related_name="forms")
     # TODO: Add fk/m2m to BoughtItem to limit people the form is
     # displayed to.
-    name = models.CharField(max_length=50)
-    index = models.PositiveSmallIntegerField(default=0)
+    name = models.CharField(max_length=50,
+                            help_text="For organization purposes. This will not be displayed to attendees.")
+    index = models.PositiveSmallIntegerField(default=0,
+                                             help_text="Defines display order if you have multiple forms.")
 
     def __unicode__(self):
         return self.name
