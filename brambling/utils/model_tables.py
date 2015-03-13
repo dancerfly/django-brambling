@@ -283,7 +283,8 @@ class AttendeeTable(CustomDataTable):
         ("Order Code", "order_code", True),
         ("Order Placed By", "order_placed_by", True),
         ("Order Balance", "order_balance", True),
-        ("Order Item Count", "order_item_count", True),
+        ("Order Current Items", "order_item_count", True),
+        ("Order Refunded Items", "order_refunded_count", True),
     )
 
     #: A list of miscellaneous fields.
@@ -335,6 +336,11 @@ class AttendeeTable(CustomDataTable):
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
 brambling_boughtitem.order_id = brambling_order.id AND
 brambling_boughtitem.status != 'refunded'
+""",
+            'order_refunded_count': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.order_id = brambling_order.id AND
+brambling_boughtitem.status = 'refunded'
 """
         })
 
@@ -373,7 +379,8 @@ class OrderTable(CustomDataTable):
         ("Code", "code", True),
         ("Person", "person", True),
         ("Balance", "balance", True),
-        ("Item Count", "item_count", True),
+        ("Current Items", "item_count", True),
+        ("Refunded Items", "refunded_count", True),
     )
 
     SURVEY_FIELDS = (
@@ -421,12 +428,17 @@ class OrderTable(CustomDataTable):
         return qs.prefetch_related(
             'custom_data',
         ).annotate(
-            balance=Sum('transactions__amount')
+            balance=Sum('transactions__amount'),
         ).extra(select={
             'item_count': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
 brambling_boughtitem.order_id = brambling_order.id AND
 brambling_boughtitem.status != 'refunded'
+""",
+            'refunded_count': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.order_id = brambling_order.id AND
+brambling_boughtitem.status = 'refunded'
 """
         })
 
