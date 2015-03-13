@@ -282,7 +282,8 @@ class AttendeeTable(CustomDataTable):
     ORDER_FIELD_OPTIONS = (
         ("Order Code", "order_code", True),
         ("Order Placed By", "order_placed_by", True),
-        ("Order Status", "order_status", True),
+        ("Order Balance", "order_balance", True),
+        ("Order Item Count", "order_item_count", True),
     )
 
     #: A list of miscellaneous fields.
@@ -327,7 +328,15 @@ class AttendeeTable(CustomDataTable):
             'custom_data', 'nights', 'housing_prefer', 'ef_avoid', 'ef_cause'
         ).select_related(
             'order', 'order__person', 'event_pass__item_option__item'
-        )
+        ).annotate(
+            order_balance=Sum('order__transactions__amount')
+        ).extra(select={
+            'order_item_count': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.order_id = brambling_order.id AND
+brambling_boughtitem.status != 'refunded'
+"""
+        })
 
     # Methods to be used as fields
     def order_code(self, obj):
@@ -350,6 +359,9 @@ class AttendeeTable(CustomDataTable):
     def pass_status(self, obj):
         return obj.event_pass.get_status_display()
 
+    def order_balance(self, obj):
+        return format_money(obj.order_balance or 0, self.event.currency)
+
     housing_nights = comma_separated_manager("nights")
     housing_preferences = comma_separated_manager("housing_prefer")
     environment_avoid = comma_separated_manager("ef_avoid")
@@ -360,8 +372,8 @@ class OrderTable(CustomDataTable):
     BASE_FIELDS = (
         ("Code", "code", True),
         ("Person", "person", True),
-        ("Paid", "paid", True),
-        ("Item count", "item_count", True),
+        ("Balance", "balance", True),
+        ("Item Count", "item_count", True),
     )
 
     SURVEY_FIELDS = (
@@ -409,7 +421,7 @@ class OrderTable(CustomDataTable):
         return qs.prefetch_related(
             'custom_data',
         ).annotate(
-            paid=Sum('transactions__amount')
+            balance=Sum('transactions__amount')
         ).extra(select={
             'item_count': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
@@ -512,5 +524,5 @@ brambling_boughtitem.status != 'refunded'
     def housing_categories(self, obj):
         return self.get_eventhousing_csm(obj, 'housing_categories')
 
-    def paid(self, obj):
-        return format_money(obj.paid, self.event.currency)
+    def balance(self, obj):
+        return format_money(obj.balance or 0, self.event.currency)
