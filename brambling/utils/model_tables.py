@@ -283,7 +283,8 @@ class AttendeeTable(CustomDataTable):
         ("Order Code", "order_code", True),
         ("Order Placed By", "order_placed_by", True),
         ("Order Balance", "order_balance", True),
-        ("Order Current Items", "order_item_count", True),
+        ("Order Pending Items", "order_pending_count", True),
+        ("Order Current Items", "order_purchased_count", True),
         ("Order Refunded Items", "order_refunded_count", True),
     )
 
@@ -332,10 +333,15 @@ class AttendeeTable(CustomDataTable):
         ).annotate(
             order_balance=Sum('order__transactions__amount')
         ).extra(select={
-            'order_item_count': """
+            'order_pending_count': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
 brambling_boughtitem.order_id = brambling_order.id AND
-brambling_boughtitem.status != 'refunded'
+brambling_boughtitem.status IN ('reserved', 'unpaid')
+""",
+            'order_purchased_count': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.order_id = brambling_order.id AND
+brambling_boughtitem.status = 'bought'
 """,
             'order_refunded_count': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
@@ -379,7 +385,8 @@ class OrderTable(CustomDataTable):
         ("Code", "code", True),
         ("Person", "person", True),
         ("Balance", "balance", True),
-        ("Current Items", "item_count", True),
+        ("Pending Items", "pending_count", True),
+        ("Current Items", "purchased_count", True),
         ("Refunded Items", "refunded_count", True),
     )
 
@@ -430,10 +437,15 @@ class OrderTable(CustomDataTable):
         ).annotate(
             balance=Sum('transactions__amount'),
         ).extra(select={
-            'item_count': """
+            'pending_count': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
 brambling_boughtitem.order_id = brambling_order.id AND
-brambling_boughtitem.status != 'refunded'
+brambling_boughtitem.status IN ('reserved', 'unpaid')
+""",
+            'purchased_count': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.order_id = brambling_order.id AND
+brambling_boughtitem.status = 'bought'
 """,
             'refunded_count': """
 SELECT COUNT(*) FROM brambling_boughtitem WHERE
