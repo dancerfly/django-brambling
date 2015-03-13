@@ -5,9 +5,11 @@ import itertools
 
 from django.contrib.admin.utils import lookup_field
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
+from django.db.models import Sum
 from django.http import StreamingHttpResponse
 from django.utils.encoding import force_text
 import floppyforms as forms
+from zenaida.templatetags.zenaida import format_money
 
 
 __all__ = ('comma_separated_manager', 'ModelTable',
@@ -358,7 +360,8 @@ class OrderTable(CustomDataTable):
     BASE_FIELDS = (
         ("Code", "code", True),
         ("Person", "person", True),
-        ("Status", "status", True),
+        ("Paid", "paid", True),
+        ("Item count", "item_count", True),
     )
 
     SURVEY_FIELDS = (
@@ -400,6 +403,20 @@ class OrderTable(CustomDataTable):
 
         fields += self.get_custom_fields()
         return fields
+
+    def get_queryset(self):
+        qs = super(OrderTable, self).get_queryset()
+        return qs.prefetch_related(
+            'custom_data',
+        ).annotate(
+            paid=Sum('transactions__amount')
+        ).extra(select={
+            'item_count': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.order_id = brambling_order.id AND
+brambling_boughtitem.status != 'refunded'
+"""
+        })
 
     def _get_custom_fields(self):
         from brambling.models import CustomForm, CustomFormField
@@ -494,3 +511,6 @@ class OrderTable(CustomDataTable):
 
     def housing_categories(self, obj):
         return self.get_eventhousing_csm(obj, 'housing_categories')
+
+    def paid(self, obj):
+        return format_money(obj.paid, self.event.currency)
