@@ -4,6 +4,10 @@
 
 {% block title %}{% if attendee.pk %}Edit {{ attendee.get_full_name }}{% else %}Add an attendee{% endif %} – {{ block.super }}{% endblock %}
 
+{% block next_step_button %}
+	<a class='btn btn-success btn-block btn-lg' href='#' data-proxy="#attendeeForm" data-on="click" data-trigger="submit"> Next step <i class='fa fa-chevron-right'></i></a>
+{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 
@@ -34,7 +38,7 @@
 				{{ event_pass.item_option.name }} ({{ event_pass.item_option.item.name }})
 			</h3>
 
-			<form action="{{ request.path }}" method="post" novalidate>
+			<form action="{{ request.path }}" method="post" id="attendeeForm" novalidate>
 				{% csrf_token %}
 				{% form form using %}
 					{% formconfig row using "floppyforms/rows/bootstrap.html" %}
