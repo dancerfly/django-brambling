@@ -493,9 +493,6 @@ brambling_boughtitem.status != 'refunded'
         })
 
         context['item_options'] = item_options
-        if self.order is not None:
-            context['discounts'] = Discount.objects.filter(
-                orderdiscount__order=self.order).distinct()
         return context
 
 
@@ -530,6 +527,10 @@ class AttendeesView(OrderMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(AttendeesView, self).get_context_data(**kwargs)
+        
+        if self.order is not None:
+            context['discounts'] = Discount.objects.filter(
+                orderdiscount__order=self.order).distinct()
 
         context.update({
             'errors': self.current_step.errors,
