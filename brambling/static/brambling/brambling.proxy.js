@@ -17,7 +17,7 @@
  *
  * E.g., To trigger form submission on form #myForm when hovering over a div:
  *
- * <div data-trigger="#myForm" data-on="mouseover" data-trigger="submit">
+ * <div data-proxy="#myForm" data-on="mouseover" data-trigger="submit">
  *     Careful! Hovering over me submits a form!
  * </div>
  *
