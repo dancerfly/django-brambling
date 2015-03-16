@@ -87,12 +87,10 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
 
 class OrderFilterSet(FloppyFilterSet):
-    status = django_filters.MultipleChoiceFilter(choices=Order.STATUS_CHOICES,
-                                                 initial=[Order.COMPLETED, Order.PENDING])
+    pending_item_count = django_filters.NumberFilter()
 
     class Meta:
         model = Order
-        fields = ['providing_housing', 'send_flyers', 'status']
+        fields = ['providing_housing', 'send_flyers', 'pending_item_count']
         form = forms.Form
         order_by = ['code', '-code']
-OrderFilterSet.base_filters['status'].field_class = forms.MultipleChoiceField
