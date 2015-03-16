@@ -59,14 +59,6 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
         super(AttendeeFilterSet, self).__init__(*args, **kwargs)
         self.event = event
-        self.filters['bought_items__item_option'].extra.update({
-            'queryset': ItemOption.objects.filter(item__event=self.event),
-            'empty_label': 'Any Items',
-        })
-        self.filters['bought_items__discounts__discount'].extra.update({
-            'queryset': Discount.objects.filter(event=self.event),
-            'empty_label': 'Any Discounts',
-        })
         if not event.collect_housing_data:
             del self.filters['housing_status']
 
@@ -74,9 +66,9 @@ class AttendeeFilterSet(django_filters.FilterSet):
     def form(self):
         if not hasattr(self, '_form'):
             if self.is_bound:
-                self._form = AttendeeFilterSetForm(self.data, prefix=self.form_prefix)
+                self._form = AttendeeFilterSetForm(data=self.data, event=self.event, prefix=self.form_prefix)
             else:
-                self._form = AttendeeFilterSetForm(prefix=self.form_prefix)
+                self._form = AttendeeFilterSetForm(event=self.event, prefix=self.form_prefix)
         return self._form
 
     class Meta:

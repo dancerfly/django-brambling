@@ -315,6 +315,17 @@ class AttendeeFilterSetForm(forms.Form):
                           choices=ORDERING_CHOICES,
                           required=False)
 
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(AttendeeFilterSetForm, self).__init__(*args, **kwargs)
+        option_qs = ItemOption.objects.filter(item__event=self.event).select_related('item')
+        self.fields['bought_items__item_option'].queryset = option_qs
+        self.fields['bought_items__item_option'].empty_label = 'Any Items'
+
+        discount_qs = Discount.objects.filter(event=self.event)
+        self.fields['bought_items__discounts__discount'].queryset = discount_qs
+        self.fields['bought_items__discounts__discount'].empty_label = 'Any Discounts'
+
 
 class ManualPaymentForm(forms.ModelForm):
     class Meta:
