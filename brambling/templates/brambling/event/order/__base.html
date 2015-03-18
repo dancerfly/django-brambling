@@ -56,12 +56,12 @@
 
 									{# TODO: this modal needs to be way more attractive. Also it'd be nice if it were a popover instead of a modal on desktop. #}
 									{% regroup order.get_groupable_cart by item_option.item as cart_list %}
-									<div class="modal fade" id="cartModal">
+									<div class="modal fade" id="cartModal" tabindex="-1" role="dialog" aria-labelledby="cartTitle" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
-													<a href="#" class="pull-right" data-dismiss="modal"><i class="fa fa-times"></i></a>
-													<h4 class="modal-title">Cart ({{ cart.count }} item{{ cart|pluralize }})</h4>
+													<a href="#" class="pull-right" data-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></a>
+													<h4 class="modal-title" id="cartTitle">Cart ({{ cart.count }} item{{ cart|pluralize }})</h4>
 												</div>
 												<table class="table">
 													{% for options in cart_list %}
