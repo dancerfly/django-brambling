@@ -290,5 +290,8 @@
 	{% endwith %}
 {% endblock masthead %}
 
+{% block next_step_button %}
+	{% include "brambling/event/order/_next_step_button.html" with button_text="Check out" %}
+{% endblock %}
 
 {% block countdown_next %}{% endblock %}
