@@ -94,7 +94,7 @@
 	<div class="row">
 		<div class="col-md-5 col-md-offset-7">
 			{% block next_step_button %}
-				{% if next_step %}
+				{% if next_step and next_step.is_accessible %}
 					{% include "brambling/event/order/_next_step_button.html" %}
 				{% endif %}
 			{% endblock %}

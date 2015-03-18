@@ -4,6 +4,10 @@
 
 {% block title %}{% if attendee.pk %}Edit {{ attendee.get_full_name }}{% else %}Add an attendee{% endif %} – {{ block.super }}{% endblock %}
 
+
+{# Don't display a next step button. The form's own button will suffice. #}
+{% block next_step_button %}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 

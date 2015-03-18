@@ -38,9 +38,8 @@
 	</script>
 {% endblock %}
 
-{% block next_step_button %}
-	<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='fa fa-chevron-right'></span></button>
-{% endblock %}
+{# Don't display a next step button. The form's own button will suffice. #}
+{% block next_step_button %}{% endblock %}
 
 {% block main %}
 	<form action="" method="post" novalidate>
@@ -74,5 +73,6 @@
 				{% endfor %}
 			{% endform %}
 		</div>
+		<button type="submit" class="btn btn-success btn-lg col-md-5 col-md-offset-7">Next step <span class='fa fa-chevron-right'></span></button>
 	</form>
 {% endblock %}
