@@ -92,9 +92,11 @@
 
 {% block after %}
 	<div class="row">
-		<div class="col-sm-4 col-sm-offset-8">
+		<div class="col-md-5 col-md-offset-7">
 			{% block next_step_button %}
-				{% include "brambling/event/order/_next_step_button.html" %}
+				{% if next_step %}
+					{% include "brambling/event/order/_next_step_button.html" %}
+				{% endif %}
 			{% endblock %}
 		</div>
 {% endblock %}
