@@ -9,25 +9,6 @@
 
 	{% if not user.is_authenticated or user.confirmed_email %}
 		{% include 'brambling/event/order/_use_discount_js.html' %}
-
-		<script>
-			$(function(){
-				$('a[target]').on('click', function(e){
-					if ($(this).attr('target') === '_blank') return true;
-					e.preventDefault();
-					$.post($(this).attr('target'), function(data){
-						// For now, just reload the page.
-						if (data.success) {
-							location.reload();
-						} else if (data.error) {
-							$('#items-list').before(
-								"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
-							);
-						}
-					});
-				})
-			});
-		</script>
 	{% endif %}
 
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>

@@ -114,5 +114,33 @@
 	{% endif %}
 
 	{{ block.super }}
+
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
+
+	{# Make the shopping cart remove button ajaxy. #}
+	<script type="text/javascript">
+		{# TODO: Rewrite this javascript not to use the `target` attribute. Probably to submit forms. #}
+		$(function(){
+			$('a[target]').on('click', function(e){
+				var $this = $(this);
+				if ($this.attr('target') === '_blank') return true;
+				$.post($this.attr('target'), function(data){
+					if (data.success) {
+						// if it's a remove button, don't reload, just remove the item
+						if ($this.is('[target*="remove"]')){
+							$this.closest('li, tr').remove();
+						// otherwise, just refresh for now
+						} else {
+							document.location.reload()
+						}
+					} else if (data.error) {
+						$('.stepbar').after(
+							"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
+						);
+					}
+				});
+				e.preventDefault();
+			})
+		});
+	</script>
 {% endblock %}
