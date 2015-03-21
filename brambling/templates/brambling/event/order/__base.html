@@ -69,11 +69,13 @@
 															<tr>
 																<td>{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }})</td>
 																<td>{{ personitem.item_option.price|format_money:event.currency }}</td>
-																<td><a target='{% if code_in_url %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a></td>
 															</tr>
 														{% endfor %}
 													{% endfor %}
 												</table>
+												<div class="modal-footer">
+													To add or remove items in your cart, return to the <a href="{% url 'brambling_event_shop' event_slug=event.slug %}">event shop</a>.
+												</div>
 											</div>
 										</div>
 									</div>
@@ -126,13 +128,8 @@
 				if ($this.attr('target') === '_blank') return true;
 				$.post($this.attr('target'), function(data){
 					if (data.success) {
-						// if it's a remove button, don't reload, just remove the item
-						if ($this.is('[target*="remove"]')){
-							$this.closest('li, tr').remove();
-						// otherwise, just refresh for now
-						} else {
-							document.location.reload()
-						}
+						// just refresh for now
+						document.location.reload()
 					} else if (data.error) {
 						$('.stepbar').after(
 							"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
