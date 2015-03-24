@@ -2,11 +2,11 @@ from collections import OrderedDict
 import datetime
 import operator
 
-from django.contrib.admin.utils import lookup_field, lookup_needs_distinct
+from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
+                                        label_for_field)
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
-from django.forms.forms import pretty_name
 import floppyforms as forms
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
@@ -126,7 +126,16 @@ class ModelTable(object):
                       obj=obj)
 
     def _label(self, field):
-        return self.label_overrides.get(field, pretty_name(field))
+        """
+        Returns a pretty name for the given field. First check is the
+        label_overrides dict. Remaining checks follow the django admin's
+        pattern (including, for example, short_description support.)
+
+        """
+        if field in self.label_overrides:
+            return self.label_overrides[field]
+
+        return label_for_field(field, self.model, self)
 
     def header_row(self):
         return Row((field, self._label(field))
