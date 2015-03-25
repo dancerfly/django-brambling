@@ -548,6 +548,21 @@ class OrderTable(CustomDataTable):
             return ''
         return super(OrderTable, self).get_field_val(obj, key)
 
+    def _add_data(self, queryset, fields):
+        use_distinct = False
+        for field in fields:
+            if field.startswith('custom_'):
+                queryset = queryset.prefetch_related('custom_data')
+            elif field == 'ef_present':
+                queryset = queryset.prefetch_related('eventhousing__ef_present')
+            elif field == 'ef_avoid':
+                queryset = queryset.prefetch_related('eventhousing__ef_avoid')
+            elif field == 'housing_categories':
+                queryset = queryset.prefetch_related('eventhousing__housing_categories')
+            elif field == 'person':
+                queryset = queryset.select_related('person')
+        return queryset, use_distinct
+
     def send_flyers_full_address(self, obj):
         if obj.send_flyers:
             return u", ".join((
