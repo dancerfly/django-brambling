@@ -56,7 +56,7 @@
             <thead>
                 <tr>
                     {% for header in table.header_row %}
-                        <th>{{ header }}</th>
+                        <th>{{ header|capfirst }}</th>
                     {% endfor %}
                 </tr>
             </thead>

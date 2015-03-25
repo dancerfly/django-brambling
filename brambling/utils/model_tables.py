@@ -7,10 +7,11 @@ from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
+from django.utils.text import capfirst
 import floppyforms as forms
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
-from brambling.models import Attendee
+from brambling.models import Attendee, Order
 
 
 __all__ = ('comma_separated_manager', 'ModelTable',
@@ -282,7 +283,7 @@ class ModelTable(object):
             list_display = self.get_list_display()
             default_fields = self.get_default_fields()
 
-            choices = [(field, self._label(field)) for field in list_display]
+            choices = [(field, capfirst(self._label(field))) for field in list_display]
             if default_fields is None:
                 initial = list_display
             else:
@@ -326,7 +327,7 @@ class CustomDataTable(ModelTable):
         raise NotImplementedError
 
     def get_field_val(self, obj, key):
-        if key[0:7] == 'custom_':
+        if key.startswith('custom_'):
             if not hasattr(obj, '_custom_data'):
                 raw_data = {
                     entry.form_field_id: entry.get_value()
@@ -444,51 +445,61 @@ class AttendeeTable(CustomDataTable):
 
 
 class OrderTable(CustomDataTable):
-    BASE_FIELDS = (
-        ("Code", "code", True),
-        ("Person", "person", True),
-        ("Status", "status", True),
+    fieldsets = (
+        (None,
+         ('code', 'person', 'status')),
     )
-
-    SURVEY_FIELDS = (
-        ("Heard Through", "heard_through", True),
-        ("Heard Through (Other)", "heard_through_other", True),
-        ("Send Flyers", "send_flyers", True),
-        ("Flyers Address", "send_flyers_full_address", True),
+    survey_fieldsets = (
+        ('Survey',
+         ('heard_through', 'heard_through_other',
+          'send_flyers', 'send_flyers_full_address')),
     )
-
-    HOUSING_FIELDS = (
-        ("Providing housing", "providing_housing", True),
-        ("Hosting Contact name", "contact_name", True),
-        ("Hosting Contact email", "contact_email", True),
-        ("Hosting Contact phone", "contact_phone", True),
-        ("Hosting Address", "hosting_full_address", True),
-        ("Hosting Public transit access", "public_transit_access", True),
-        ("Hosting Environmental Factors", "ef_present", True),
-        ("Hosting Environmental Factors Avoided", "ef_avoid", True),
-        ("Hosting People Preference", "person_prefer", True),
-        ("Hosting People Avoid", "person_avoid", True),
-        ("Hosting Home Categories", "housing_categories", True),
+    housing_fieldsets = (
+        ('Housing',
+         ('providing_housing', 'contact_name', 'contact_email',
+          'contact_phone', 'hosting_full_address', 'public_transit_access',
+          'ef_present', 'ef_avoid', 'person_prefer', 'person_avoid',
+          'housing_categories')),
     )
+    label_overrides = {
+        'heard_through_other': 'heard through (other)',
+        'send_flyers_full_address': 'flyers address',
+    }
+    search_fields = (
+        'code', 'email', 'person__given_name', 'person__middle_name',
+        'person__surname', 'person__email', 'attendees__given_name',
+        'attendees__middle_name', 'attendees__surname',
+    )
+    filterset_class = OrderFilterSet
+    model = Order
 
     def __init__(self, event, *args, **kwargs):
         self.event = event
         super(OrderTable, self).__init__(*args, **kwargs)
 
-    def get_fields(self):
-        fields = self.BASE_FIELDS
+    def get_list_display(self):
+        fieldsets = self.fieldsets
         if self.event.collect_survey_data:
-            fields += self.SURVEY_FIELDS
+            fieldsets += self.survey_fieldsets
         if self.event.collect_housing_data:
-            fields += self.HOUSING_FIELDS
+            housing_fields = self.housing_fieldsets[0][1]
             for date in self.event.housing_dates.all():
-                fields += (
-                    ("Hosting {} spaces".format(date.date.strftime("%m/%d/%Y")), "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")), True),
-                    ("Hosting {} max".format(date.date.strftime("%m/%d/%Y")), "hosting_max_{}".format(date.date.strftime("%Y%m%d")), True),
+                housing_fields += (
+                    "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")),
+                    "hosting_max_{}".format(date.date.strftime("%Y%m%d")),
                 )
+            fieldsets += (
+                ('Housing', housing_fields),
+            )
 
-        fields += self.get_custom_fields()
-        return fields
+        fieldsets += (
+            ('Custom Fields',
+             self.get_custom_fields()),
+        )
+        list_display = ()
+        for name, fields in fieldsets:
+            list_display += fields
+        return list_display
 
     def _get_custom_fields(self):
         from brambling.models import CustomForm, CustomFormField
@@ -496,6 +507,23 @@ class OrderTable(CustomDataTable):
             form__event=self.event,
             form__form_type=CustomForm.ORDER
         ).order_by('index')
+
+    def _label(self, field):
+        date_str = None
+        if field.startswith('hosting_max'):
+            date_str = field[-8:]
+            format_str = "hosting {month}/{day}/{year} max"
+        elif field.startswith('hosting_spaces'):
+            date_str = field[-8:]
+            format_str = "hosting {month}/{day}/{year} spaces"
+
+        if date_str:
+            return format_str.format(
+                year=date_str[0:4],
+                month=date_str[4:6],
+                day=date_str[6:8]
+            )
+        return super(OrderTable, self)._label(field)
 
     def get_field_val(self, obj, key):
         date_str = None
@@ -553,21 +581,27 @@ class OrderTable(CustomDataTable):
 
     def contact_name(self, obj):
         return self.get_eventhousing_attr(obj, 'contact_name')
+    contact_name.short_description = 'hosting contact name'
 
     def contact_email(self, obj):
         return self.get_eventhousing_attr(obj, 'contact_email')
+    contact_email.short_description = 'hosting contact email'
 
     def contact_phone(self, obj):
         return self.get_eventhousing_attr(obj, 'contact_phone')
+    contact_phone.short_description = 'hosting contact phone'
 
     def public_transit_access(self, obj):
         return self.get_eventhousing_attr(obj, 'public_transit_access')
+    public_transit_access.short_description = 'hosting public transit access'
 
     def person_prefer(self, obj):
         return self.get_eventhousing_attr(obj, 'person_prefer')
+    person_prefer.short_description = 'hosting people preference'
 
     def person_avoid(self, obj):
         return self.get_eventhousing_attr(obj, 'person_avoid')
+    person_avoid.short_description = 'hosting people avoid'
 
     def get_eventhousing_csm(self, obj, name):
         eventhousing = obj.get_eventhousing()
@@ -577,9 +611,12 @@ class OrderTable(CustomDataTable):
 
     def ef_present(self, obj):
         return self.get_eventhousing_csm(obj, 'ef_present')
+    ef_present.short_description = 'hosting environmental factors'
 
     def ef_avoid(self, obj):
         return self.get_eventhousing_csm(obj, 'ef_avoid')
+    ef_avoid.short_description = 'hosting environmental avoided'
 
     def housing_categories(self, obj):
         return self.get_eventhousing_csm(obj, 'housing_categories')
+    housing_categories.short_description = 'hosting home categories'
