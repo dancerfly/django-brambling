@@ -77,4 +77,10 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, to='brambling.Organization', null=True),
             preserve_default=True,
         ),
+        migrations.AlterField(
+            model_name='event',
+            name='owner',
+            field=models.ForeignKey(related_name=b'owner_events', to=settings.AUTH_USER_MODEL, blank=True, null=True),
+            preserve_default=True,
+        ),
     ]
