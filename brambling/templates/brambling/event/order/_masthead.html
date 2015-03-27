@@ -4,10 +4,10 @@
 	{% adjust event.banner_image 'fill' width=940 height=300 as banner_image %}
 {% endif %}
 
-<div class="masthead clearfix{% if banner_image %} masthead-light{% else %} masthead-brand orange-barred{% endif %}">
-	{% if banner_image %}<div class="masthead-cover-image" style="background-image: url({{ banner_image }})">{% endif %}
+<div class="masthead clearfix masthead-light">
+	<div class="masthead-cover-image"{% if banner_image %} style="background-image: url({{ banner_image }}){% endif %}">
 		<div class="relative">
-			<div id="mastheadDetails" {% if banner_image %} class="relative-bottom relative-left relative-right"{% endif %}>
+			<div id="mastheadDetails" class="relative-bottom relative-left relative-right">
 				{# Redirect to summary. They'll then end up on the last step they have access to. #}
 				{% if order and not order.person %}
 					{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code as event_url %}
@@ -35,5 +35,5 @@
 				</a>
 			{% endif %}
 		</div>{# /.relative #}
-	{% if banner_image %}</div>{# /.masthead-cover-image #}{% endif %}
+	</div>{# /.masthead-cover-image #}
 </div>{# /.masthead #}

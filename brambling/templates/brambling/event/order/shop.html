@@ -196,7 +196,7 @@
 	{% include "brambling/event/order/_masthead.html" %}
 	{% with dance_styles=event.dance_styles.all %}
 		{% if event.description or event.website_url or event.facebook_url or dance_styles %}
-			<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
+			<div class="hug panel panel-dark">
 				<div class="panel-body">
 					{% if event.description %}
 						<div class="row">
