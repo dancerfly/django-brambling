@@ -49,11 +49,7 @@ class EventForm(forms.ModelForm):
                   'city', 'state_or_province', 'timezone', 'start_time',
                   'end_time', 'dance_styles', 'has_dances', 'has_classes',
                   'liability_waiver', 'privacy', 'collect_housing_data',
-                  'collect_survey_data', 'cart_timeout',
-                  'check_payment_allowed', 'check_payable_to',
-                  'check_postmark_cutoff', 'check_recipient', 'check_address',
-                  'check_address_2', 'check_city', 'check_state_or_province',
-                  'check_zip', 'facebook_url')
+                  'collect_survey_data', 'cart_timeout',)
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)

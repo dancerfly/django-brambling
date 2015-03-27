@@ -248,8 +248,66 @@ class Date(models.Model):
         return date(self.date, 'l, F jS')
 
 
-# TODO: "meta" class for groups of events? For example, annual events?
-class Event(AbstractDwollaModel):
+class Organization(AbstractDwollaModel):
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(max_length=50,
+                            validators=[RegexValidator("^[a-z0-9-]+$")],
+                            help_text="URL-friendly version of the event name."
+                                      " Dashes, 0-9, and lower-case a-z only.",
+                            unique=True)
+    description = models.TextField(blank=True)
+    website_url = models.URLField(blank=True, verbose_name="website URL")
+    facebook_url = models.URLField(blank=True, verbose_name="facebook URL")
+    banner_image = models.ImageField(blank=True)
+    city = models.CharField(max_length=50, blank=True)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    country = CountryField(default='US', blank=True)
+    dance_styles = models.ManyToManyField(DanceStyle, blank=True)
+
+    owner = models.ForeignKey('Person',
+                              related_name='owner_orgs')
+    editors = models.ManyToManyField('Person',
+                                     related_name='editor_orgs',
+                                     blank=True, null=True)
+
+    default_event_city = models.CharField(max_length=50, blank=True)
+    default_event_state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    default_event_country = CountryField(default='US', blank=True)
+    default_event_dance_styles = models.ManyToManyField(DanceStyle, blank=True, related_name='organization_event_default_set')
+    default_event_timezone = models.CharField(max_length=40, default='UTC', blank=True)
+    default_event_currency = models.CharField(max_length=10, default='USD', blank=True)
+    # This is a secret value set by admins. It will be cached on the event model.
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+                                                          validators=[MaxValueValidator(100), MinValueValidator(0)])
+
+    # These are obtained with Stripe Connect via Oauth.
+    stripe_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
+    stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
+    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    check_payment_allowed = models.BooleanField(default=False)
+    check_payable_to = models.CharField(max_length=50, blank=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
+
+    check_recipient = models.CharField(max_length=50, blank=True)
+    check_address = models.CharField(max_length=200, blank=True)
+    check_address_2 = models.CharField(max_length=200, blank=True)
+    check_city = models.CharField(max_length=50, blank=True)
+    check_state_or_province = models.CharField(max_length=50, blank=True, verbose_name='state / province')
+    check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
+    check_country = CountryField(default='US')
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+
+class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
 
@@ -306,11 +364,10 @@ class Event(AbstractDwollaModel):
     # charging actual money.
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
-    owner = models.ForeignKey('Person',
-                              related_name='owner_events')
-    editors = models.ManyToManyField('Person',
-                                     related_name='editor_events',
-                                     blank=True, null=True)
+    organization = models.ForeignKey(Organization)
+    additional_editors = models.ManyToManyField('Person',
+                                                related_name='editor_events',
+                                                blank=True, null=True)
 
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -321,32 +378,9 @@ class Event(AbstractDwollaModel):
     cart_timeout = models.PositiveSmallIntegerField(default=15,
                                                     help_text="Minutes before a user's cart expires.")
 
-    # These are obtained with Stripe Connect via Oauth.
-    stripe_user_id = models.CharField(max_length=32, blank=True, default='')
-    stripe_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
-    stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
-
-    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
-    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
-    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
-
     # This is a secret value set by admins
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
-
-    check_payment_allowed = models.BooleanField(default=False)
-    check_payable_to = models.CharField(max_length=50, blank=True)
-    check_postmark_cutoff = models.DateField(blank=True, null=True)
-
-    check_recipient = models.CharField(max_length=50, blank=True)
-    check_address = models.CharField(max_length=200, blank=True)
-    check_address_2 = models.CharField(max_length=200, blank=True)
-    check_city = models.CharField(max_length=50, blank=True)
-    check_state_or_province = models.CharField(max_length=50, blank=True, verbose_name='state / province')
-    check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
-    check_country = CountryField(default='US')
 
     def __unicode__(self):
         return smart_text(self.name)
