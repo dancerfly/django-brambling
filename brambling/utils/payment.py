@@ -197,10 +197,10 @@ def dwolla_customer_oauth_url(user_or_order, api_type, request, next_url=""):
     return oauth.genauthurl(redirect_url, scope=scope)
 
 
-def dwolla_event_oauth_url(event, request):
-    dwolla_prep(event.api_type)
+def dwolla_organization_oauth_url(organization, request, api_type):
+    dwolla_prep(api_type)
     scope = "Send|AccountInfoFull|Transactions"
-    redirect_url = request.build_absolute_uri(event.get_dwolla_connect_url() + "?api=" + event.api_type)
+    redirect_url = request.build_absolute_uri(organization.get_dwolla_connect_url() + "?api=" + api_type)
     return oauth.genauthurl(redirect_url, scope=scope)
 
 
@@ -296,9 +296,9 @@ def stripe_is_connected(obj, api_type):
     )
 
 
-def stripe_event_oauth_url(event, request):
-    stripe_prep(event.api_type)
-    if event.api_type == LIVE:
+def stripe_organization_oauth_url(organization, request, api_type):
+    stripe_prep(api_type)
+    if api_type == LIVE:
         client_id = getattr(settings, 'STRIPE_APPLICATION_ID', None)
     else:
         client_id = getattr(settings, 'STRIPE_TEST_APPLICATION_ID', None)
@@ -307,5 +307,5 @@ def stripe_event_oauth_url(event, request):
     redirect_uri = request.build_absolute_uri(reverse('brambling_stripe_connect'))
     base_url = "https://connect.stripe.com/oauth/authorize?client_id={client_id}&response_type=code&scope=read_write&state={state}&redirect_uri={redirect_uri}"
     return base_url.format(client_id=client_id,
-                           state=event.slug,
+                           state=organization.slug,
                            redirect_uri=urllib.quote(redirect_uri))

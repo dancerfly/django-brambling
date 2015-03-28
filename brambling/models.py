@@ -306,6 +306,19 @@ class Organization(AbstractDwollaModel):
     def __unicode__(self):
         return smart_text(self.name)
 
+    def editable_by(self, user):
+        return (user.is_authenticated() and user.is_active and
+                (user.is_superuser or user.pk == self.owner_id or
+                 self.editors.filter(pk=user.pk).exists()))
+
+
+class EventQuerySet(models.QuerySet):
+    def with_dates(self):
+        return self.annotate(
+            start_date=models.Min('dates__date'),
+            end_date=models.Max('dates__date'),
+        )
+
 
 class Event(models.Model):
     PUBLIC = 'public'
@@ -382,11 +395,16 @@ class Event(models.Model):
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
 
+    objects = EventQuerySet.as_manager()
+
     def __unicode__(self):
         return smart_text(self.name)
 
     def get_absolute_url(self):
-        return reverse('brambling_event_root', kwargs={'event_slug': self.slug})
+        return reverse('brambling_event_root', kwargs={
+            'event_slug': self.slug,
+            'organization_slug': self.organization.slug,
+        })
 
     def get_dwolla_connect_url(self):
         return reverse('brambling_event_dwolla_connect',
@@ -396,9 +414,13 @@ class Event(models.Model):
         return self.liability_waiver.format(event=self.name)
 
     def editable_by(self, user):
-        return (user.is_authenticated() and user.is_active and
-                (user.is_superuser or user.pk == self.owner_id or
-                 self.editors.filter(pk=user.pk).exists()))
+        return (
+            self.organization.editable_by(user) or (
+                user.is_authenticated() and
+                user.is_active and
+                self.additional_editors.filter(pk=user.pk).exists()
+            )
+        )
 
     def viewable_by(self, user):
         if not self.is_published and not self.editable_by(user):

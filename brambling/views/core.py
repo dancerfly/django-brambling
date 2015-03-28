@@ -17,33 +17,32 @@ class UserDashboardView(TemplateView):
 
     def get_context_data(self):
         user = self.request.user
+        # TODO: This will probably cause timezone issues in some cases.
         today = timezone.now().date()
 
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             is_published=True,
-        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__gte=today).order_by('start_date')
+        ).with_dates().filter(start_date__gte=today).order_by('start_date')
 
         upcoming_events_interest = Event.objects.filter(
             privacy=Event.PUBLIC,
             dance_styles__person=user,
             is_published=True,
-        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__gte=today).order_by('start_date')
+        ).with_dates().filter(start_date__gte=today).order_by('start_date')
 
         admin_events = Event.objects.filter(
-            (Q(owner=user) | Q(editors=user)),
-        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).order_by('-last_modified')
+            Q(organization__owner=user) |
+            Q(organization__editors=user) |
+            Q(additional_editors=user)
+        ).with_dates().order_by('-last_modified')
 
         # Registered events is upcoming things you are / might be going to.
         # So you've paid for something or you're going to.
         registered_events = list(Event.objects.filter(
             order__person=user,
             order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
-        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__gte=today).order_by('start_date'))
+        ).with_dates().filter(start_date__gte=today).order_by('start_date'))
         re_dict = dict((e.pk, e) for e in registered_events)
         orders = Order.objects.filter(
             person=user,
@@ -59,8 +58,7 @@ class UserDashboardView(TemplateView):
         past_events = Event.objects.filter(
             order__person=user,
             order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
-        ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__lt=today).order_by('-start_date')
+        ).with_dates().filter(start_date__lt=today).order_by('-start_date')
 
         return {
             'upcoming_events': upcoming_events,

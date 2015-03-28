@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, Min, Max
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -31,15 +31,98 @@ from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Person, CustomForm)
+                              Person, CustomForm, Organization)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
 from brambling.utils.model_tables import AttendeeTable, OrderTable
-from brambling.utils.payment import (dwolla_can_connect, dwolla_event_oauth_url,
-                                     stripe_can_connect, stripe_event_oauth_url)
+from brambling.utils.payment import (dwolla_can_connect, dwolla_organization_oauth_url,
+                                     stripe_can_connect, stripe_organization_oauth_url,
+                                     LIVE, TEST)
+
+
+class OrganizationUpdateView(UpdateView):
+    model = Organization
+    template_name = 'brambling/organization/update.html'
+    context_object_name = 'organization'
+
+    def get_object(self):
+        obj = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        user = self.request.user
+        if not obj.editable_by(user):
+            raise Http404
+        return obj
+
+    def get_success_url(self):
+        return reverse('brambling_organization_update',
+                       kwargs={'slug': self.object.slug})
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
+
+        if dwolla_can_connect(self.object, LIVE):
+            context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
+                self.object, self.request, LIVE)
+
+        if dwolla_can_connect(self.object, TEST):
+            context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
+                self.object, self.request, TEST)
+
+        if stripe_can_connect(self.object, LIVE):
+            context['stripe_oauth_url'] = stripe_organization_oauth_url(
+                self.object, self.request, LIVE)
+
+        if stripe_can_connect(self.object, TEST):
+            context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
+                self.object, self.request, TEST)
+
+        return context
+
+
+class OrganizationDetailView(DetailView):
+    model = Organization
+    template_name = 'brambling/organization/detail.html'
+    slug_url_kwarg = 'organization_slug'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+        except Http404:
+            event = get_event_or_404(kwargs['organization_slug'])
+            return HttpResponseRedirect(event.get_absolute_url())
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationDetailView, self).get_context_data(**kwargs)
+        # TODO: This will probably cause timezone issues in some cases.
+        today = timezone.now().date()
+        upcoming_events = Event.objects.filter(
+            organization=self.object,
+            privacy=Event.PUBLIC,
+            is_published=True,
+        ).with_dates().filter(start_date__gte=today).order_by('start_date')
+
+        admin_events = Event.objects.filter(
+            Q(organization__owner=self.request.user) |
+            Q(organization__editors=self.request.user) |
+            Q(additional_editors=self.request.user),
+            organization=self.object,
+        ).with_dates().order_by('-last_modified')
+
+        registered_events = list(Event.objects.filter(
+            order__person=self.request.user,
+            order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
+        ).with_dates().filter(start_date__gte=today).order_by('start_date'))
+
+        context.update({
+            'upcoming_events': upcoming_events,
+            'admin_events': admin_events,
+            'registered_events': registered_events,
+        })
+        return context
 
 
 class EventCreateView(CreateView):
@@ -87,7 +170,7 @@ class EventSummaryView(TemplateView):
     template_name = 'brambling/event/organizer/summary.html'
 
     def get(self, request, *args, **kwargs):
-        self.event = get_event_or_404(self.kwargs['slug'])
+        self.event = get_event_or_404(self.kwargs['event_slug'])
         if not self.event.editable_by(request.user):
             raise Http404
         clear_expired_carts(self.event)
@@ -178,7 +261,7 @@ class EventUpdateView(UpdateView):
     form_class = EventForm
 
     def get_object(self):
-        obj = get_event_or_404(self.kwargs['slug'])
+        obj = get_event_or_404(self.kwargs['event_slug'])
         user = self.request.user
         if not obj.editable_by(user):
             raise Http404

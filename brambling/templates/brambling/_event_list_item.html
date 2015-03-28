@@ -39,7 +39,7 @@
 				{% endif %}
 			</a>
 			{% if event in admin_events %}
-				<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">
+				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-primary">
 					<i class="fa fa-cog"></i>
 					Manage Event
 				</a>
