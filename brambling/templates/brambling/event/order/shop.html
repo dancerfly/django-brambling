@@ -9,25 +9,6 @@
 
 	{% if not user.is_authenticated or user.confirmed_email %}
 		{% include 'brambling/event/order/_use_discount_js.html' %}
-
-		<script>
-			$(function(){
-				$('a[target]').on('click', function(e){
-					if ($(this).attr('target') === '_blank') return true;
-					e.preventDefault();
-					$.post($(this).attr('target'), function(data){
-						// For now, just reload the page.
-						if (data.success) {
-							location.reload();
-						} else if (data.error) {
-							$('#items-list').before(
-								"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
-							);
-						}
-					});
-				})
-			});
-		</script>
 	{% endif %}
 
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
@@ -109,9 +90,6 @@
 						{% endif %}
 					</div>{# /.list-group #}
 				</div>
-				{% if next_step %}
-					{% include "brambling/event/order/_next_step_button.html" with button_text="Check out" %}
-				{% endif %}
 			</div>
 			<div class="col-md-7 col-md-pull-5 margin-leader margin-leader-md-0">
 				{% for options in option_list %}
@@ -293,5 +271,8 @@
 	{% endwith %}
 {% endblock masthead %}
 
+{% block next_step_button %}
+	{% include "brambling/event/order/_next_step_button.html" with button_text="Check out" %}
+{% endblock %}
 
 {% block countdown_next %}{% endblock %}

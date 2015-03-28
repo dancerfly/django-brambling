@@ -1,6 +1,6 @@
 {% extends 'brambling/layouts/12.html' %}
 
-{% load staticfiles %}
+{% load staticfiles zenaida %}
 
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
@@ -47,8 +47,41 @@
 						{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time %}
 					</div>
 					<div class='col-md-6'>
-						{% block next_step_button %}
-							{% include "brambling/event/order/_next_step_button.html" %}
+						{% block cart %}
+							{% if order.has_cart %}
+								{% with order.get_groupable_cart as cart %}
+									<a href="#cartModal" class="btn btn-lg btn-block btn-default" data-toggle="modal" data-target="#cartModal">
+										<i class="fa fa-fw fa-shopping-cart"></i> Cart ({{ cart.count }} item{{ cart|pluralize }})
+									</a>
+
+									{# TODO: this modal needs to be way more attractive. Also it'd be nice if it were a popover instead of a modal on desktop. #}
+									{% regroup order.get_groupable_cart by item_option.item as cart_list %}
+									<div class="modal fade" id="cartModal" tabindex="-1" role="dialog" aria-labelledby="cartTitle" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<a href="#" class="pull-right" data-dismiss="modal" aria-label="Close"><i class="fa fa-times"></i></a>
+													<h4 class="modal-title" id="cartTitle">Cart ({{ cart.count }} item{{ cart|pluralize }})</h4>
+												</div>
+												<table class="table">
+													{% for options in cart_list %}
+														{% for personitem in options.list %}
+															<tr>
+																<td>{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }})</td>
+																<td>{{ personitem.item_option.price|format_money:event.currency }}</td>
+															</tr>
+														{% endfor %}
+													{% endfor %}
+												</table>
+												<div class="modal-footer">
+													To add or remove items in your cart, return to the <a href="{% url 'brambling_event_shop' event_slug=event.slug %}">event shop</a>.
+												</div>
+											</div>
+										</div>
+									</div>
+
+								{% endwith %}
+							{% endif %}
 						{% endblock %}
 					</div>
 				</div>
@@ -57,6 +90,17 @@
 			{% endif %}
 		{% endif %}
 	{% endblock countdown_next %}
+{% endblock %}
+
+{% block after %}
+	<div class="row">
+		<div class="col-md-5">
+			{% block next_step_button %}
+				{% if next_step and next_step.is_accessible %}
+					{% include "brambling/event/order/_next_step_button.html" %}
+				{% endif %}
+			{% endblock %}
+		</div>
 {% endblock %}
 
 {% block javascripts %}
@@ -72,5 +116,28 @@
 	{% endif %}
 
 	{{ block.super }}
+
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
+
+	{# Make the shopping cart remove button ajaxy. #}
+	<script type="text/javascript">
+		{# TODO: Rewrite this javascript not to use the `target` attribute. Probably to submit forms. #}
+		$(function(){
+			$('a[target]').on('click', function(e){
+				var $this = $(this);
+				if ($this.attr('target') === '_blank') return true;
+				$.post($this.attr('target'), function(data){
+					if (data.success) {
+						// just refresh for now
+						document.location.reload()
+					} else if (data.error) {
+						$('.stepbar').after(
+							"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
+						);
+					}
+				});
+				e.preventDefault();
+			})
+		});
+	</script>
 {% endblock %}
