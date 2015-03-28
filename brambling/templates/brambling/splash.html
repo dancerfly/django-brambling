@@ -37,11 +37,49 @@
 			</div>
 		</div>{# /.row #}
 	</div>
+
+	<h2>Why should you use Dancerfly?</h2>
+
+	<div class="row margin-trailer-dbl">
+		<div class="col-sm-6">
+			<h3>It's good for dancers</h3>
+			<ul class="list-unstyled text-large">
+				<li>Mobile-friendly design</li>
+				<li>Optional account creation</li>
+				<li>Discoverability based on dance style</li>
+				<li><a href="{% url 'brambling_global' %}">International support</a></li>
+				<li>A knowledgeable, professional, responsive support team</li>
+			</ul>
+		</div>
+		<div class="col-sm-3">
+			<img src="{% static "brambling/images/ContraWings.jpeg" %}" class="img-responsive">
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-3">
+			<img src="{% static "brambling/images/WatchersWings.jpeg" %}" class="img-responsive">
+		</div>
+		<div class="col-sm-6">
+			<h3>It's good for organizers</h3>
+			<ul class="list-unstyled text-large">
+				<li>Payment on our site with <a href="{% url 'brambling_pricing' %}">credit card, Dwolla, or check</a></li>
+				<li>Discount codes</li>
+				<li>Customizable attendee data downloads</li>
+				<li>Housing management</li>
+				<li>Multiple managers per event</li>
+				<li>Simple refunds</li>
+				<li>A knowledgeable, professional, responsive support team</li>
+			</ul>
+		</div>
+	</div>
+
 	{% if upcoming_events %}
+		<div class="pane pane-default">
 			<h2 class="margin-leader-dbl">Upcoming Events on Dancerfly</h2>
 			{% for event in upcoming_events|slice:"5" %}
 				{% include "brambling/_event_list_item.html" %}
 			{% endfor %}
+		</div>
 	{% endif %}
 {% endblock %}
 
