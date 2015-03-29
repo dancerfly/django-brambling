@@ -306,6 +306,11 @@ class Organization(AbstractDwollaModel):
     def __unicode__(self):
         return smart_text(self.name)
 
+    def get_absolute_url(self):
+        return reverse('brambling_organization_detail', kwargs={
+            'organization_slug': self.slug,
+        })
+
     def editable_by(self, user):
         return (user.is_authenticated() and user.is_active and
                 (user.is_superuser or user.pk == self.owner_id or

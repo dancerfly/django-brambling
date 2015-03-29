@@ -1,0 +1,33 @@
+<div class="list-group-item">
+	<div class="row">
+		<div class="col-sm-9">
+			<a href="{{ organization.get_absolute_url }}">{{ organization.name }}</a><br />
+			<div class="media text-muted margin-leader-0 text-small margin-trailer-tiny">
+				<div class="media-left">
+					<i class="fa fa-map-marker fa-fw"></i>
+				</div>
+				<div class="media-body">
+					{% include "brambling/event/_where.html" with event=organization %}
+				</div>
+			</div>
+		</div>{# /.col-sm-9 #}
+		<div class="col-sm-3 hidden-xs">
+			<div class="btn-group-vertical pull-right">
+				<a class="btn btn-default btn-sm tipped" data-placement="left" data-container="body" title="Edit Organization" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
+					<i class="fa fa-fw fa-cog"></i>
+				</a>
+				<a class="btn btn-default btn-sm tipped" data-placement="left" data-container="body" title="View Organization" href="{{ organization.get_absolute_url }}">
+					<i class="fa fa-fw fa-search"></i>
+				</a>
+			</div>
+		</div>{# /.col-sm-3.hidden-xs #}
+	</div>{# /.row #}
+	<div class="visible-xs">
+		<a class="btn btn-default btn-sm" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
+			<i class="fa fa-fw fa-cog"></i> Edit Organization
+		</a>
+		<a class="btn btn-default btn-sm" title="Visit Shop" href="{{ organization.get_absolute_url }}">
+			<i class="fa fa-fw fa-search"></i> View Organization
+		</a>
+	</div>{# /.visible-xs #}
+</div>
