@@ -6,9 +6,11 @@
 				<div class="media-left">
 					<i class="fa fa-map-marker fa-fw"></i>
 				</div>
-				<div class="media-body">
-					{% include "brambling/event/_where.html" with event=organization %}
-				</div>
+				{% if organization.city %}
+					<div class="media-body">
+						{% include "brambling/event/_where.html" with event=organization %}
+					</div>
+				{% endif %}
 			</div>
 		</div>{# /.col-sm-9 #}
 		<div class="col-sm-3 hidden-xs">
