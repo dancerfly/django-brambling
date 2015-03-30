@@ -90,7 +90,7 @@ class OrganizationForm(forms.ModelForm):
         return cpa
 
     def clean(self):
-        cleaned_data = super(EventForm, self).clean()
+        cleaned_data = super(OrganizationForm, self).clean()
         if 'check_zip' in cleaned_data:
             country = self.instance.check_country
             code = cleaned_data['check_zip']
@@ -123,7 +123,7 @@ class OrganizationForm(forms.ModelForm):
         if self.cleaned_data.get('disconnect_dwolla_test'):
             self.instance.clear_dwolla_data(TEST)
 
-        instance = super(EventForm, self).save()
+        instance = super(OrganizationForm, self).save()
 
         if self.request.user == instance.owner and self.cleaned_data['editors']:
             for editor in self.cleaned_data['editors']:
@@ -170,7 +170,7 @@ class EventForm(forms.ModelForm):
                   'liability_waiver', 'privacy', 'collect_housing_data',
                   'collect_survey_data', 'cart_timeout',)
 
-    def __init__(self, request, organization_editable_by, *args, **kwargs):
+    def __init__(self, request, organization, organization_editable_by, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
         self.fields['start_date'].initial = getattr(self.instance,
                                                     'start_date',
@@ -179,6 +179,8 @@ class EventForm(forms.ModelForm):
                                                   'end_date',
                                                   datetime.date.today)
         self.request = request
+        self.organization = organization
+        self.instance.organization = organization
         self.organization_editable_by = organization_editable_by
         if not self.organization_editable_by:
             del self.fields['editors']

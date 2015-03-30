@@ -119,6 +119,7 @@
 
 		<p>The following people have access to edit this event. Only organization owners and editors can add or remove additional editors.</p>
 
+		{% with event=form.instance %}
 		<div class="table-responsive">
 			<table class='table table-striped'>
 				<tbody>
@@ -136,18 +137,20 @@
 							{% if organization_editable_by %}<td></td>{% endif %}
 						</tr>
 					{% endfor %}
-					{% for editor in event.additional_editors.all %}
-						<tr>
-							<th>{{ editor.get_full_name }}</th>
-							<td>{{ editor.email }}</td>
-							<td><i class='fa fa-fw fa-pencil'></i> Editor (Event)</td>
-							{% if organization_editable_by %}
-								<td>
-									<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
-								</td>
-							{% endif %}
-						</tr>
-					{% endfor %}
+					{% if event.pk %}
+						{% for editor in event.additional_editors.all %}
+							<tr>
+								<th>{{ editor.get_full_name }}</th>
+								<td>{{ editor.email }}</td>
+								<td><i class='fa fa-fw fa-pencil'></i> Editor (Event)</td>
+								{% if organization_editable_by %}
+									<td>
+										<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+									</td>
+								{% endif %}
+							</tr>
+						{% endfor %}
+					{% endif %}
 					{% for invite in event.get_invites %}
 						<tr>
 							<th>{{ invite.email }}</th>
@@ -170,6 +173,7 @@
 				</tbody>
 			</table>
 		</div>
+		{% endwith %}
 
 		{% formrow form.editors with label="Invite more editors" %}
 	</div>{# /.panel-body #}

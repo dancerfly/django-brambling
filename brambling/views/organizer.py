@@ -148,9 +148,10 @@ class EventCreateView(CreateView):
         "Instantiate form with owner as current user."
         initial = dict((
             (k, getattr(self.organization, 'default_event_' + k))
-            for k in ('city', 'state_or_province', 'country', 'dance_styles',
+            for k in ('city', 'state_or_province', 'country',
                       'timezone', 'currency')
         ))
+        initial['dance_styles'] = self.organization.default_event_dance_styles.all()
         return initial
 
     def get_form_class(self):
@@ -159,6 +160,7 @@ class EventCreateView(CreateView):
     def get_form_kwargs(self):
         kwargs = super(EventCreateView, self).get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization'] = self.organization
         kwargs['organization_editable_by'] = True
         return kwargs
 
@@ -275,6 +277,7 @@ class EventUpdateView(UpdateView):
     def get_form_kwargs(self):
         kwargs = super(EventUpdateView, self).get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization'] = self.organization
         kwargs['organization_editable_by'] = self.organization_editable_by
         return kwargs
 
