@@ -316,6 +316,31 @@ class Organization(AbstractDwollaModel):
                 (user.is_superuser or user.pk == self.owner_id or
                  self.editors.filter(pk=user.pk).exists()))
 
+    def get_dwolla_connect_url(self):
+        return reverse('brambling_organization_dwolla_connect',
+                       kwargs={'organization_slug': self.slug})
+
+    def connected_to_stripe_live(self):
+        return bool(
+            getattr(settings, 'STRIPE_SECRET_KEY', False) and
+            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
+            self.stripe_user_id
+        )
+
+    def connected_to_stripe_test(self):
+        return bool(
+            getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
+            getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
+            self.stripe_test_user_id
+        )
+
+    def uses_checks(self):
+        return self.check_payment_allowed
+
+    def get_invites(self):
+        return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
+                                     content_id=self.pk)
+
 
 class EventQuerySet(models.QuerySet):
     def with_dates(self):
@@ -411,10 +436,6 @@ class Event(models.Model):
             'organization_slug': self.organization.slug,
         })
 
-    def get_dwolla_connect_url(self):
-        return reverse('brambling_event_dwolla_connect',
-                       kwargs={'slug': self.slug})
-
     def get_liability_waiver(self):
         return self.liability_waiver.format(event=self.name)
 
@@ -439,29 +460,8 @@ class Event(models.Model):
         pass_class_count = ItemOption.objects.filter(item__event=self, item__category__in=(Item.CLASS, Item.PASS)).count()
         return pass_class_count >= 1
 
-    def uses_stripe(self):
-        if self.api_type == Event.LIVE:
-            return bool(
-                getattr(settings, 'STRIPE_SECRET_KEY', False) and
-                getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
-                self.stripe_user_id
-            )
-        return bool(
-            getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
-            self.stripe_test_user_id
-        )
-
-    def uses_dwolla(self):
-        if self.api_type == Event.LIVE:
-            return self.connected_to_dwolla_live()
-        return self.connected_to_dwolla_test()
-
-    def uses_checks(self):
-        return self.check_payment_allowed
-
     def get_invites(self):
-        return Invite.objects.filter(kind=Invite.EDITOR,
+        return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
                                      content_id=self.pk)
 
 
@@ -1395,10 +1395,12 @@ class InviteManager(models.Manager):
 
 class Invite(models.Model):
     HOME = 'home'
-    EDITOR = 'editor'
+    EVENT_EDITOR = 'editor'
+    ORGANIZATION_EDITOR = 'org_editor'
     KIND_CHOICES = (
         (HOME, _("Home")),
-        (EDITOR, _("Editor")),
+        (EVENT_EDITOR, _("Event Editor")),
+        (ORGANIZATION_EDITOR, _("Organization Editor")),
     )
 
     objects = InviteManager()
@@ -1407,7 +1409,7 @@ class Invite(models.Model):
     #: User who sent the invitation.
     user = models.ForeignKey(Person)
     is_sent = models.BooleanField(default=False)
-    kind = models.CharField(max_length=6, choices=KIND_CHOICES)
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
     content_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)

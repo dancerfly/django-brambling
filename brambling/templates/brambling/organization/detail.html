@@ -66,14 +66,14 @@
 					{% include "brambling/_event_list-group-item.html" %}
 				{% endfor %}
 				{% if request.user.is_superuser %}
-					<a class="list-group-item" href="{% url 'brambling_event_create' %}">
+					<a class="list-group-item" href="{% url 'brambling_event_create' organization_slug=organization.slug %}">
 						<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
 					</a>
 				{% endif %}
 			</div>
 		</div>
 	{% elif request.user.is_superuser %}
-		<p><a href="{% url 'brambling_event_create' %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
+		<p><a href="{% url 'brambling_event_create' organization_slug=organization.slug %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
 	{% endif %}
 	{% if past_events %}
 		<div class="panel panel-default">

@@ -63,14 +63,8 @@
 			<div class="col-sm-3">
 				{% formrow form.state_or_province %}
 			</div>
-			{# TODO: When changing countries is supported, make this a real form row: #}
 			<div class="col-sm-4">
-				<div class='form-group'>
-					<label class='control-label'>Country *</label>
-					<select class="chosen-select" disabled>
-						<option selected="selected">{{ event.get_country_display }}</option>
-					</select>
-				</div>
+				{% formrow form.country %}
 			</div>
 		</div>{# /.row #}
 
@@ -123,23 +117,31 @@
 	<div class="panel-body">
 		{% formrow form.privacy %}
 
-		<p>The following people have access to edit this event. Only the event owner can add or remove editors.</p>
+		<p>The following people have access to edit this event. Only organization owners and editors can add or remove additional editors.</p>
 
 		<div class="table-responsive">
 			<table class='table table-striped'>
 				<tbody>
 					<tr>
-						<th>{{ owner.get_full_name }}</th>
-						<td>{{ owner.email }}</td>
-						<td><i class='fa fa-fw fa-lock'></i> Owner</td>
-						{% if owner == request.user %}<td></td>{% endif %}
+						<th>{{ event.organization.owner.get_full_name }}</th>
+						<td>{{ event.organization.owner.email }}</td>
+						<td><i class='fa fa-fw fa-lock'></i> Owner (Organization)</td>
+						{% if organization_editable_by %}<td></td>{% endif %}
 					</tr>
-					{% for editor in event.editors.all %}
+					{% for editor in event.organization.editors.all %}
 						<tr>
 							<th>{{ editor.get_full_name }}</th>
 							<td>{{ editor.email }}</td>
-							<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
-							{% if event.owner == request.user %}
+							<td><i class='fa fa-fw fa-pencil'></i> Editor (Organization)</td>
+							{% if organization_editable_by %}<td></td>{% endif %}
+						</tr>
+					{% endfor %}
+					{% for editor in event.additional_editors.all %}
+						<tr>
+							<th>{{ editor.get_full_name }}</th>
+							<td>{{ editor.email }}</td>
+							<td><i class='fa fa-fw fa-pencil'></i> Editor (Event)</td>
+							{% if organization_editable_by %}
 								<td>
 									<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
 								</td>
@@ -157,7 +159,7 @@
 									<i class='fa fa-fw fa-envelope'></i> Not sent
 								{% endif %}
 							</td>
-							{% if event.owner == request.user %}
+							{% if organization_editable_by %}
 								<td>
 									<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
 									<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
@@ -172,131 +174,3 @@
 		{% formrow form.editors with label="Invite more editors" %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
-
-{% if form.instance.pk %}
-	<div class='panel panel-default'>
-		<header class="panel-heading">
-			<h4 class="panel-title">Payment Options</h4>
-		</header>
-		<div class='panel-body'>
-			<p>
-				We currently offer three payment methods: Stripe (Credit Cards),
-				Dwolla, or payments by mail. You may enable any combination of
-				these payment methods for your event.
-			</p>
-			<p>
-				You must register for an account with Stripe or Dwolla if you
-				choose to use them. Sales go directly to those accounts with Dancerfly&#8217;s
-				fee automatically subtracted. Click the info icon next to each
-				payment method to learn more.
-			</p>
-			<table class="table">
-				<thead>
-					<tr>
-						<th>Method</th>
-						<th>Status</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{# Stripe: #}
-					{% if form.instance.uses_stripe or stripe_oauth_url %}
-						{% with event=form.instance %}
-						<tr>
-							<th>
-								<i class="fa fa-fw fa-credit-card"></i>
-								Stripe
-								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
-							</th>
-							{% if event.uses_stripe %}
-								<td>Enabled ({% if event.api_type == event.LIVE %}{{ event.stripe_user_id }}{% else %}{{ event.stripe_test_user_id }}{% endif %})</td>
-								<td>{% formrow form.disconnect_stripe with label="Disconnect" %}</td>
-							{% else %}
-								<td>Not Enabled</td>
-								<td>
-									<a href='{{ stripe_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
-								</td>
-							{% endif %}
-						</tr>
-						{% endwith %}
-					{% endif %}
-
-					{# Dwolla: #}
-					{% if form.instance.uses_dwolla or dwolla_oauth_url %}
-						{% with event=form.instance %}
-						<tr class="active">
-							<th>
-								<i class="fa fa-fw fa-money"></i>
-								Dwolla
-								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
-							</th>
-							{% if event.uses_dwolla %}
-								<td>Enabled ({% if event.api_type == event.LIVE %}{{ event.dwolla_user_id }}{% else %}{{ event.dwolla_test_user_id }}{% endif %})</td>
-								<td>{% formrow form.disconnect_dwolla with label="Disconnect" %}</td>
-							{% else %}
-								<td>Not Enabled</td>
-								<td>
-									<a href='{{ dwolla_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
-								</td>
-							{% endif %}
-						</tr>
-						{% endwith %}
-					{% endif %}
-
-					{# By Mail/Check: #}
-					<tr>
-						<th>
-							<i class="fa fa-fw fa-envelope"></i>
-							By Mail/Check
-							<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-html="true" data-content="Allow payments by mail. Note that Dancerfly does &lt;i&gt;not&lt;/i&gt; confirm these payments. See configuration for more details."><i class="fa fa-info-circle"></i></a>
-						</th>
-						<td>
-							{% if form.instance.uses_checks %}Enabled{% else %}Disabled{% endif %}
-						</td>
-						<td>
-							<a href='#CheckConfig' data-toggle="collapse" class="btn btn-xs btn-info"><i class="fa fa-cog"></i> Configure</a>
-						</td>
-					</tr>
-					<tr class="collapse active {% if form.instance.uses_checks or form.has_check_errors %}in{% endif %}" id="CheckConfig">
-						<td colspan="3">
-							{% formrow form.check_payment_allowed with label="Enable Payment by Check" %}
-
-							<div class="alert alert-info">
-								<strong>Note:</strong>
-								Dancerfly does not confirm shipping or receipt of checks by mail.
-								Attendees are responsible for mailing their checks and
-								organizers are responsible for marking those checks as received.
-								Dancerfly does not charge a fee on transactions by mail.
-							</div>
-
-							{% formrow form.check_payable_to with label="Checks made out to" %}
-							{% formrow form.check_recipient with label="Mail addressed to" %}
-							{% formrow form.check_address with label="Address" %}
-							{% formrow form.check_address_2 using "brambling/forms/rows/no_label.html" %}
-							{% formrow form.check_city with label="City" %}
-							<div class="row">
-								<div class="col-sm-4">
-									{% formrow form.check_state_or_province with label="State / province" %}
-								</div>
-								{# TODO: When changing countries is supported, make this a real form row: #}
-								<div class="col-sm-4">
-									<div class='form-group'>
-										<label class='control-label'>Country *</label>
-										<select class="chosen-select" disabled>
-											<option selected="selected">{{ event.get_check_country_display }}</option>
-										</select>
-									</div>
-								</div>
-								<div class="col-sm-4">
-									{% formrow form.check_zip with label="Zip / Postal Code"%}
-								</div>
-							</div>{# /.row #}
-							{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}
-
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
-{% endif %}

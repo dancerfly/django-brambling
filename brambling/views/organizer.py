@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Sum, Q, Min, Max
+from django.db.models import Count, Sum, Q
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
@@ -26,7 +26,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
                                        CustomFormForm, CustomFormFieldFormSet,
-                                       OrderNotesForm)
+                                       OrderNotesForm, OrganizationForm)
 from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -47,6 +47,7 @@ class OrganizationUpdateView(UpdateView):
     model = Organization
     template_name = 'brambling/organization/update.html'
     context_object_name = 'organization'
+    form_class = OrganizationForm
 
     def get_object(self):
         obj = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
@@ -54,6 +55,11 @@ class OrganizationUpdateView(UpdateView):
         if not obj.editable_by(user):
             raise Http404
         return obj
+
+    def get_form_kwargs(self):
+        kwargs = super(OrganizationUpdateView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
 
     def get_success_url(self):
         return reverse('brambling_organization_update',
@@ -133,23 +139,18 @@ class EventCreateView(CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.method.lower() in self.http_method_names:
-            if not request.user.is_authenticated() or not request.user.is_superuser:
+            self.organization = Organization.objects.get(slug=kwargs['organization_slug'])
+            if not self.organization.editable_by(request.user):
                 raise Http404
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         "Instantiate form with owner as current user."
-        initial = {
-            'country': 'US',
-        }
-        try:
-            data = requests.get('http://api.hostip.info/get_json.php', timeout=.5).json()
-        except requests.exceptions.Timeout:
-            pass
-        else:
-            if data['country_code'] == 'US' and ', ' in data['city']:
-                initial['city'], initial['state'] = data['city'].split(', ')
-
+        initial = dict((
+            (k, getattr(self.organization, 'default_event_' + k))
+            for k in ('city', 'state_or_province', 'country', 'dance_styles',
+                      'timezone', 'currency')
+        ))
         return initial
 
     def get_form_class(self):
@@ -158,11 +159,13 @@ class EventCreateView(CreateView):
     def get_form_kwargs(self):
         kwargs = super(EventCreateView, self).get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization_editable_by'] = True
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
-        context['owner'] = self.request.user
+        context['organization'] = self.organization
+        context['organization_editable_by'] = True
         return context
 
 
@@ -261,15 +264,18 @@ class EventUpdateView(UpdateView):
     form_class = EventForm
 
     def get_object(self):
-        obj = get_event_or_404(self.kwargs['event_slug'])
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        event = get_object_or_404(Event.objects.with_dates(), slug=self.kwargs['event_slug'], organization=self.organization)
         user = self.request.user
-        if not obj.editable_by(user):
+        if not event.editable_by(user):
             raise Http404
-        return obj
+        self.organization_editable_by = self.organization_editable_by(user)
+        return event
 
     def get_form_kwargs(self):
         kwargs = super(EventUpdateView, self).get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization_editable_by'] = self.organization_editable_by
         return kwargs
 
     def get_success_url(self):
@@ -281,7 +287,8 @@ class EventUpdateView(UpdateView):
         context.update({
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
-            'owner': self.object.owner,
+            'organization': self.organization,
+            'organization_editable_by': self.organization_editable_by,
         })
         if dwolla_can_connect(self.object, self.object.api_type):
             context['dwolla_oauth_url'] = dwolla_event_oauth_url(
