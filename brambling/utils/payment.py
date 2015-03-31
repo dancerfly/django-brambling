@@ -307,5 +307,5 @@ def stripe_organization_oauth_url(organization, request, api_type):
     redirect_uri = request.build_absolute_uri(reverse('brambling_stripe_connect'))
     base_url = "https://connect.stripe.com/oauth/authorize?client_id={client_id}&response_type=code&scope=read_write&state={state}&redirect_uri={redirect_uri}"
     return base_url.format(client_id=client_id,
-                           state=organization.slug,
+                           state="{}|{}".format(organization.slug, api_type),
                            redirect_uri=urllib.quote(redirect_uri))

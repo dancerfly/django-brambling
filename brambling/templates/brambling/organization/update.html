@@ -101,7 +101,7 @@
 										<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
 										{% if organization.owner == request.user %}
 											<td>
-												<a href="{% url 'brambling_event_remove_editor' event_slug=organization.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+												<a href="{% url 'brambling_organization_remove_editor' organization_slug=organization.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
 											</td>
 										{% endif %}
 									</tr>
