@@ -151,6 +151,9 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
+BOOTSTRAP_SASS_SUBPATH = "/gems/bootstrap-sass-3.3.4.1/assets/stylesheets/" # Not a setting, only used on next line:
+STATICFILES_DIRS = ["{}{}".format(x, BOOTSTRAP_SASS_SUBPATH) for x in os.environ['GEM_PATH'].split(":") if os.path.isdir("{}{}".format(x, BOOTSTRAP_SASS_SUBPATH))]
+
 COMPRESS_PRECOMPILERS = (
     ('text/sass', 'django_libsass.SassCompiler'),
 )
