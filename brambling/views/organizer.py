@@ -1,22 +1,22 @@
+import csv
+import itertools
 import logging
-import operator
 import pprint
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Sum, Q
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.db.models import Count, Sum
+from django.http import (Http404, HttpResponseRedirect, JsonResponse,
+                         StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_text
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
-
-from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 import requests
@@ -37,7 +37,7 @@ from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
-from brambling.utils.model_tables import AttendeeTable, OrderTable
+from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.utils.payment import (dwolla_can_connect, dwolla_event_oauth_url,
                                      stripe_can_connect, stripe_event_oauth_url)
 
@@ -486,8 +486,7 @@ class CustomFormListView(ListView):
         return context
 
 
-class ModelTableView(FilterView):
-    search_fields = None
+class ModelTableView(ListView):
     model_table = None
     form_prefix = 'column'
 
@@ -510,59 +509,29 @@ class ModelTableView(FilterView):
         context['table'] = self.get_table(self.object_list)
         return context
 
-    def get_queryset(self):
-        queryset = super(ModelTableView, self).get_queryset()
-
-        # Originally from django.contrib.admin.options
-        def construct_search(field_name):
-            if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
-            elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
-            elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
-            else:
-                return "%s__icontains" % field_name
-
-        use_distinct = False
-        search_fields = self.search_fields
-        search_term = self.request.GET.get('search', '')
-        opts = self.model._meta
-        if search_fields and search_term:
-            orm_lookups = [construct_search(str(search_field))
-                           for search_field in search_fields]
-            for bit in search_term.split():
-                or_queries = [Q(**{orm_lookup: bit})
-                              for orm_lookup in orm_lookups]
-                queryset = queryset.filter(reduce(operator.or_, or_queries))
-            if not use_distinct:
-                for search_spec in orm_lookups:
-                    if lookup_needs_distinct(opts, search_spec):
-                        use_distinct = True
-                        break
-
-        if use_distinct:
-            queryset = queryset.distinct()
-        return queryset
-
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
 
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            return context['table'].render_csv_response()
-        else:
-            # Default to the template.
-            return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
+            table = context['table']
+            pseudo_buffer = Echo()
+            writer = csv.writer(pseudo_buffer)
+            response = StreamingHttpResponse((writer.writerow([force_text(cell.value) for cell in row])
+                                              for row in itertools.chain((table.header_row(),), table)),
+                                             content_type="text/csv")
+            response['Content-Disposition'] = 'attachment; filename="export.csv"'
+            return response
+
+        # Default to the template.
+        return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
 
 
 class AttendeeFilterView(ModelTableView):
     filterset_class = AttendeeFilterSet
     template_name = 'brambling/event/organizer/attendees.html'
     context_object_name = 'attendees'
-    search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
-                     'email', 'order__email', 'order__person__email')
     model = Attendee
     model_table = AttendeeTable
 

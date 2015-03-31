@@ -1,13 +1,18 @@
 from collections import OrderedDict
-import csv
 import datetime
-import itertools
+import operator
 
-from django.contrib.admin.utils import lookup_field
+from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
+                                        label_for_field)
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
-from django.http import StreamingHttpResponse
-from django.utils.encoding import force_text
+from django.core.exceptions import ImproperlyConfigured
+from django.db.models import Q
+from django.forms.forms import pretty_name
+from django.utils.text import capfirst
 import floppyforms as forms
+
+from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
+from brambling.models import Attendee, Order
 
 
 __all__ = ('comma_separated_manager', 'ModelTable',
@@ -15,6 +20,7 @@ __all__ = ('comma_separated_manager', 'ModelTable',
 
 
 TABLE_COLUMN_FIELD = 'columns'
+SEARCH_FIELD = 'search'
 
 
 class Echo(object):
@@ -39,6 +45,7 @@ def comma_separated_manager(attr_name):
     def inner(self, obj):
         manager = getattr(obj, attr_name)
         return ", ".join([unicode(x) for x in manager.all()])
+    inner.short_description = pretty_name(attr_name)
     return inner
 
 
@@ -77,73 +84,164 @@ class Row(object):
 
 class ModelTable(object):
     """
-    A class that is responsible for taking a queryset and building a table
-    out of it, useful for allowing the customization of which columns of data
-    to display. This table can be used in a template context or rendered
-    directly as a CSV document.
+    A class that builds a customizable table representation of a model
+    queryset. This representation is searchable, filterable, and has a
+    customizable selection of fields. If data is not required, it will
+    not be queried.
 
-    It takes three arguments:
+    The class takes three optional arguments on instantiation:
 
-    1. The queryset to be displayed
+    1. Queryset
     2. Data
     3. A form prefix
 
     """
 
-    #: The fields as a list of 3-tuples of the format
-    #: ("Field Verbose Name", "field_name", default), where default is True
-    #: or False (indicating whether the field should be included by default).
-    #: `field_name` can be the name of an attribute on the model
-    #: or an attribute on the ModelTable subclass.
-    fields = ()
+    list_display = ()
+    default_fields = None
+    search_fields = ()
 
-    def __init__(self, queryset, data=None, form_prefix=None):
+    fieldsets = None
+
+    #: A dictionary mapping field names to the overriding labels
+    #: to be used for rendering this table.
+    label_overrides = {}
+
+    filterset_class = FloppyFilterSet
+    model = None
+
+    def __init__(self, queryset=None, data=None, form_prefix=None):
         # Simple assignment:
-        self.data = data or {}
         self.queryset = queryset
+        self.data = data
         self.form_prefix = form_prefix
+        self.filterset = self.get_filterset()
 
         # More complex properties:
         self.is_bound = data is not None
 
     def __iter__(self):
-        object_list = self.get_queryset()
+        fields = self.get_fields()
+        object_list = self.get_queryset(fields)
         for obj in object_list:
-            yield Row(((field[1], self.get_field_val(obj, field[1]))
-                       for field in self.get_included_fields()),
+            yield Row(((field, self.get_field_val(obj, field))
+                       for field in fields),
                       obj=obj)
 
+    def _label(self, field):
+        """
+        Returns a pretty name for the given field. First check is the
+        label_overrides dict. Remaining checks follow the django admin's
+        pattern (including, for example, short_description support.)
+
+        """
+        if field in self.label_overrides:
+            return self.label_overrides[field]
+
+        return label_for_field(field, self.model, self)
+
     def header_row(self):
-        return Row((field[1], field[0])
-                   for field in self.get_included_fields())
+        return Row((field, self._label(field))
+                   for field in self.get_fields())
+
+    def get_filterset_kwargs(self):
+        return {
+            'data': self.data,
+            'prefix': self.form_prefix,
+        }
+
+    def get_filterset(self):
+        return self.filterset_class(**self.get_filterset_kwargs())
+
+    def get_list_display(self):
+        if self.fieldsets is not None:
+            list_display = ()
+            for name, fields in self.fieldsets:
+                list_display += fields
+            return list_display
+        return self.list_display
+
+    def get_default_fields(self):
+        return self.default_fields
 
     def get_fields(self):
         """
-        Returns a full list of fields that users can select from.
-        """
-        return self.fields
-
-    def get_included_fields(self):
-        """
-        Returns a tuple of 2-tuples in the form of
-        ("Field Verbose Name", "field_name").
+        Returns a tuple of fields that are included in the table.
 
         """
-        valid = self.is_bound and self.form.is_valid()
+        valid = self.is_bound and self.column_form.is_valid()
         if valid:
-            cleaned_data = self.form.cleaned_data
+            cleaned_data = self.column_form.cleaned_data
             # Include fields which are marked True in the form:
-            fields = [field
-                      for field in self.get_fields()
-                      if field[1] in cleaned_data.get(TABLE_COLUMN_FIELD, ())]
+            fields = list(cleaned_data.get(TABLE_COLUMN_FIELD, ()))
             # Only return a list of fields if it isn't empty:
-            if not fields == []:
+            if fields:
                 return fields
-        # Otherwise default to all fields:
-        return self.get_fields()
 
-    def get_queryset(self):
-        return self.queryset
+        return self.column_form.fields[TABLE_COLUMN_FIELD].initial
+
+    def get_base_queryset(self):
+        if self.queryset is None:
+            return self.model._default_manager.all()
+        if self.queryset.model is not self.model:
+            raise ImproperlyConfigured("QuerySet model must be the same as ModelTable model.")
+        return self.queryset.all()
+
+    def _add_data(self, queryset, fields):
+        """
+        Add data to the queryset based on the selected fields.
+
+        For now, data required by filters should always be added.
+
+        """
+        use_distinct = False
+        return queryset, use_distinct
+
+    def _search(self, queryset):
+        # Originally from django.contrib.admin.options
+        def construct_search(field_name):
+            if field_name.startswith('^'):
+                return "%s__istartswith" % field_name[1:]
+            elif field_name.startswith('='):
+                return "%s__iexact" % field_name[1:]
+            elif field_name.startswith('@'):
+                return "%s__search" % field_name[1:]
+            else:
+                return "%s__icontains" % field_name
+
+        use_distinct = False
+        search_fields = self.search_fields
+        search_term = self.data.get(SEARCH_FIELD, '') if self.data else ''
+        opts = self.model._meta
+        if search_fields and search_term:
+            orm_lookups = [construct_search(str(search_field))
+                           for search_field in search_fields]
+            for bit in search_term.split():
+                or_queries = [Q(**{orm_lookup: bit})
+                              for orm_lookup in orm_lookups]
+                queryset = queryset.filter(reduce(operator.or_, or_queries))
+            if not use_distinct:
+                for search_spec in orm_lookups:
+                    if lookup_needs_distinct(opts, search_spec):
+                        use_distinct = True
+                        break
+        return queryset, use_distinct
+
+    def get_queryset(self, fields):
+        queryset = self.get_base_queryset()
+
+        queryset, use_distinct = self._add_data(queryset, fields)
+
+        queryset, ud = self._search(queryset)
+
+        if use_distinct or ud:
+            queryset = queryset.distinct()
+
+        # HACK to work around filterset qs caching
+        if hasattr(self.filterset, '_qs'):
+            del self.filterset._qs
+        self.filterset.queryset = queryset
+        return self.filterset.qs
 
     def get_field_val(self, obj, key):
         """
@@ -169,21 +267,29 @@ class ModelTable(object):
 
         return value
 
-    def get_form_class(self):
+    @property
+    def filter_form(self):
+        return self.filterset.form
+
+    def get_column_form_class(self):
         return forms.Form
 
     @property
-    def form(self):
+    def column_form(self):
         """
         Returns a form of booleans for each field in fields,
         bound with self.data if is not None.
 
         """
+        if not hasattr(self, '_column_form'):
+            list_display = self.get_list_display()
+            default_fields = self.get_default_fields()
 
-        if not hasattr(self, '_form'):
-            fields = self.get_fields()
-            choices = [(field[1], field[0]) for field in fields]
-            initial = [field[1] for field in fields if field[2]]
+            choices = [(field, capfirst(self._label(field))) for field in list_display]
+            if default_fields is None:
+                initial = list_display
+            else:
+                initial = default_fields
             field = forms.MultipleChoiceField(
                 choices=choices,
                 initial=initial,
@@ -194,39 +300,36 @@ class ModelTable(object):
                 TABLE_COLUMN_FIELD: field,
             }
 
-            Form = type(str('{}Form'.format(self.__class__.__name__)), (self.get_form_class(),), fields)
+            Form = type(str('{}Form'.format(self.__class__.__name__)), (self.get_column_form_class(),), fields)
 
-            if self.is_bound:
-                self._form = Form(self.data, prefix=self.form_prefix)
-            else:
-                self._form = Form(prefix=self.form_prefix)
+            self._column_form = Form(self.data, prefix=self.form_prefix)
 
-        return self._form
-
-    def render_csv_response(self):
-        pseudo_buffer = Echo()
-        writer = csv.writer(pseudo_buffer)
-        response = StreamingHttpResponse((writer.writerow([force_text(cell.value) for cell in row])
-                                          for row in itertools.chain((self.header_row(),), self)),
-                                         content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="export.csv"'
-        return response
+        return self._column_form
 
 
 class CustomDataTable(ModelTable):
+    def get_list_display(self):
+        list_display = super(CustomDataTable, self).get_list_display()
+        return list_display + self.get_custom_fields()
+
+    def get_default_fields(self):
+        if self.default_fields is None:
+            return None
+        return self.default_fields + self.get_custom_fields()
+
     def get_custom_fields(self):
         if not hasattr(self, 'custom_fields'):
             self.custom_fields = self._get_custom_fields()
-        return tuple(
-            (field.name, field.key, True)
-            for field in self.custom_fields
-        )
+            for field in self.custom_fields:
+                if field.key not in self.label_overrides:
+                    self.label_overrides[field.key] = field.name
+        return tuple(field.key for field in self.custom_fields)
 
     def _get_custom_fields(self):
         raise NotImplementedError
 
     def get_field_val(self, obj, key):
-        if key[0:7] == 'custom_':
+        if key.startswith('custom_'):
             if not hasattr(obj, '_custom_data'):
                 raw_data = {
                     entry.form_field_id: entry.get_value()
@@ -242,75 +345,52 @@ class CustomDataTable(ModelTable):
 
 
 class AttendeeTable(CustomDataTable):
-
-    #: A list of ID related fields.
-    IDENTIFICATION_FIELD_OPTIONS = (
-        ("ID", "pk", True),
-        ("Name", "get_full_name", True),
-        ("Given Name", "given_name", True),
-        ("Surname", "surname", True),
-        ("Middle Name", "middle_name", True),
+    fieldsets = (
+        ('Identification',
+         ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
+        ('Contact',
+         ('email', 'phone')),
+        ('Pass',
+         ('pass_type', 'pass_status')),
+        ('Housing',
+         ('housing_status', 'housing_nights', 'housing_preferences',
+          'environment_avoid', 'environment_cause', 'person_prefer',
+          'person_avoid', 'other_needs')),
+        ('Order',
+         ('order_code', 'order_placed_by', 'order_status')),
+        ('Miscellaneous',
+         ('liability_waiver', 'photo_consent')),
     )
 
-    #: A list of contact related fields.
-    CONTACT_FIELD_OPTIONS = (
-        ("Email Address", "email", True),
-        ("Phone Number", "phone", True),
-    )
-
-    #: A list of pass fields.
-    PASS_FIELD_OPTIONS = (
-        ("Pass Type", "pass_type", True),
-        ("Pass Status", "pass_status", True),
-    )
-
-    #: A list of housing related fields.
-    HOUSING_FIELD_OPTIONS = (
-        ("Housing Status", "housing_status", True),
-        ("Housing Nights", "housing_nights", True),
-        ("Housing Environment Preference", "housing_preferences", True),
-        ("Housing Environment Avoid", "environment_avoid", True),
-        ("Attendee May Cause/Do", "environment_cause", True),
-        ("Housing People Preference", "person_prefer", True),
-        ("Housing People Avoid", "person_avoid", True),
-        ("Other Housing Needs", "other_needs", True),
-    )
-
-    #: A list of order related fields.
-    ORDER_FIELD_OPTIONS = (
-        ("Order Code", "order_code", True),
-        ("Order Placed By", "order_placed_by", True),
-        ("Order Status", "order_status", True),
-    )
-
-    #: A list of miscellaneous fields.
-    MISCELLANEOUS_FIELD_OPTIONS = (
-        ("Liability Waiver Signed", "liability_waiver", True),
-        ("Consent to be Photographed", "photo_consent", True),
-    )
+    label_overrides = {
+        'pk': 'ID',
+        'get_full_name': 'Name',
+        'housing_nights': 'Housing nights',
+        'housing_preferences': 'Housing environment preference',
+        'environment_avoid': 'Housing Environment Avoid',
+        'environment_cause': 'Attendee May Cause/Do',
+        'person_prefer': 'Housing People Preference',
+        'person_avoid': 'Housing People Avoid',
+        'other_needs': 'Other Housing Needs',
+        'order__code': 'Order Code',
+        'order_placed_by': 'Order Placed By',
+        'order_status': 'Order Status',
+        'liability_waiver': 'Liability Waiver Signed',
+        'photo_consent': 'Consent to be Photographed',
+    }
+    search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
+                     'email', 'order__email', 'order__person__email')
+    filterset_class = AttendeeFilterSet
+    model = Attendee
 
     def __init__(self, event, *args, **kwargs):
         self.event = event
         super(AttendeeTable, self).__init__(*args, **kwargs)
 
-    def get_fields(self):
-        fields = (
-            self.IDENTIFICATION_FIELD_OPTIONS,
-            self.CONTACT_FIELD_OPTIONS,
-            self.PASS_FIELD_OPTIONS,
-        )
-        if self.event.collect_housing_data:
-            fields += (
-                self.HOUSING_FIELD_OPTIONS,
-            )
-        fields += (
-            self.ORDER_FIELD_OPTIONS,
-            self.MISCELLANEOUS_FIELD_OPTIONS,
-        )
-
-        fields += (self.get_custom_fields(),)
-
-        return reduce(tuple.__add__, fields)
+    def get_filterset_kwargs(self):
+        kwargs = super(AttendeeTable, self).get_filterset_kwargs()
+        kwargs['event'] = self.event
+        return kwargs
 
     def _get_custom_fields(self):
         from brambling.models import CustomForm, CustomFormField
@@ -319,13 +399,26 @@ class AttendeeTable(CustomDataTable):
             form__form_type=CustomForm.ATTENDEE
         ).order_by('index')
 
-    def get_queryset(self):
-        qs = super(AttendeeTable, self).get_queryset()
-        return qs.prefetch_related(
-            'custom_data', 'nights', 'housing_prefer', 'ef_avoid', 'ef_cause'
-        ).select_related(
-            'order', 'order__person', 'event_pass__item_option__item'
-        )
+    def _add_data(self, queryset, fields):
+        use_distinct = False
+        for field in fields:
+            if field.startswith('custom_'):
+                queryset = queryset.prefetch_related('custom_data')
+            elif field == 'housing_nights':
+                queryset = queryset.prefetch_related('nights')
+            elif field == 'housing_preferences':
+                queryset = queryset.prefetch_related('housing_prefer')
+            elif field == 'environment_avoid':
+                queryset = queryset.prefetch_related('ef_avoid')
+            elif field == 'environment_cause':
+                queryset = queryset.prefetch_related('ef_cause')
+            elif field == 'order_code' or field == 'order_status':
+                queryset = queryset.select_related('order')
+            elif field == 'order_placed_by':
+                queryset = queryset.select_related('order__person')
+            elif field == 'pass_type' or field == 'pass_status':
+                queryset = queryset.select_related('event_pass__item_option__item')
+        return queryset, use_distinct
 
     # Methods to be used as fields
     def order_code(self, obj):
@@ -338,7 +431,7 @@ class AttendeeTable(CustomDataTable):
         person = obj.order.person
         if person:
             return "{} ({})".format(person.get_full_name(), person.email)
-        return ""
+        return obj.order.email
 
     def pass_type(self, obj):
         return "{}: {}".format(
@@ -355,51 +448,61 @@ class AttendeeTable(CustomDataTable):
 
 
 class OrderTable(CustomDataTable):
-    BASE_FIELDS = (
-        ("Code", "code", True),
-        ("Person", "person", True),
-        ("Status", "status", True),
+    fieldsets = (
+        (None,
+         ('code', 'person', 'status')),
     )
-
-    SURVEY_FIELDS = (
-        ("Heard Through", "heard_through", True),
-        ("Heard Through (Other)", "heard_through_other", True),
-        ("Send Flyers", "send_flyers", True),
-        ("Flyers Address", "send_flyers_full_address", True),
+    survey_fieldsets = (
+        ('Survey',
+         ('heard_through', 'heard_through_other',
+          'send_flyers', 'send_flyers_full_address')),
     )
-
-    HOUSING_FIELDS = (
-        ("Providing housing", "providing_housing", True),
-        ("Hosting Contact name", "contact_name", True),
-        ("Hosting Contact email", "contact_email", True),
-        ("Hosting Contact phone", "contact_phone", True),
-        ("Hosting Address", "hosting_full_address", True),
-        ("Hosting Public transit access", "public_transit_access", True),
-        ("Hosting Environmental Factors", "ef_present", True),
-        ("Hosting Environmental Factors Avoided", "ef_avoid", True),
-        ("Hosting People Preference", "person_prefer", True),
-        ("Hosting People Avoid", "person_avoid", True),
-        ("Hosting Home Categories", "housing_categories", True),
+    housing_fieldsets = (
+        ('Housing',
+         ('providing_housing', 'contact_name', 'contact_email',
+          'contact_phone', 'hosting_full_address', 'public_transit_access',
+          'ef_present', 'ef_avoid', 'person_prefer', 'person_avoid',
+          'housing_categories')),
     )
+    label_overrides = {
+        'heard_through_other': 'heard through (other)',
+        'send_flyers_full_address': 'flyers address',
+    }
+    search_fields = (
+        'code', 'email', 'person__given_name', 'person__middle_name',
+        'person__surname', 'person__email', 'attendees__given_name',
+        'attendees__middle_name', 'attendees__surname',
+    )
+    filterset_class = OrderFilterSet
+    model = Order
 
     def __init__(self, event, *args, **kwargs):
         self.event = event
         super(OrderTable, self).__init__(*args, **kwargs)
 
-    def get_fields(self):
-        fields = self.BASE_FIELDS
+    def get_list_display(self):
+        fieldsets = self.fieldsets
         if self.event.collect_survey_data:
-            fields += self.SURVEY_FIELDS
+            fieldsets += self.survey_fieldsets
         if self.event.collect_housing_data:
-            fields += self.HOUSING_FIELDS
+            housing_fields = self.housing_fieldsets[0][1]
             for date in self.event.housing_dates.all():
-                fields += (
-                    ("Hosting {} spaces".format(date.date.strftime("%m/%d/%Y")), "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")), True),
-                    ("Hosting {} max".format(date.date.strftime("%m/%d/%Y")), "hosting_max_{}".format(date.date.strftime("%Y%m%d")), True),
+                housing_fields += (
+                    "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")),
+                    "hosting_max_{}".format(date.date.strftime("%Y%m%d")),
                 )
+            fieldsets += (
+                ('Housing', housing_fields),
+            )
 
-        fields += self.get_custom_fields()
-        return fields
+        fieldsets += (
+            ('Custom Fields',
+             self.get_custom_fields()),
+        )
+        list_display = ()
+        for name, fields in fieldsets:
+            list_display += fields
+        return list_display
 
     def _get_custom_fields(self):
         from brambling.models import CustomForm, CustomFormField
@@ -407,6 +510,23 @@ class OrderTable(CustomDataTable):
             form__event=self.event,
             form__form_type=CustomForm.ORDER
         ).order_by('index')
+
+    def _label(self, field):
+        date_str = None
+        if field.startswith('hosting_max'):
+            date_str = field[-8:]
+            format_str = "hosting {month}/{day}/{year} max"
+        elif field.startswith('hosting_spaces'):
+            date_str = field[-8:]
+            format_str = "hosting {month}/{day}/{year} spaces"
+
+        if date_str:
+            return format_str.format(
+                year=date_str[0:4],
+                month=date_str[4:6],
+                day=date_str[6:8]
+            )
+        return super(OrderTable, self)._label(field)
 
     def get_field_val(self, obj, key):
         date_str = None
@@ -430,6 +550,21 @@ class OrderTable(CustomDataTable):
                     return getattr(slot, field, '')
             return ''
         return super(OrderTable, self).get_field_val(obj, key)
+
+    def _add_data(self, queryset, fields):
+        use_distinct = False
+        for field in fields:
+            if field.startswith('custom_'):
+                queryset = queryset.prefetch_related('custom_data')
+            elif field == 'ef_present':
+                queryset = queryset.prefetch_related('eventhousing__ef_present')
+            elif field == 'ef_avoid':
+                queryset = queryset.prefetch_related('eventhousing__ef_avoid')
+            elif field == 'housing_categories':
+                queryset = queryset.prefetch_related('eventhousing__housing_categories')
+            elif field == 'person':
+                queryset = queryset.select_related('person')
+        return queryset, use_distinct
 
     def send_flyers_full_address(self, obj):
         if obj.send_flyers:
@@ -464,21 +599,27 @@ class OrderTable(CustomDataTable):
 
     def contact_name(self, obj):
         return self.get_eventhousing_attr(obj, 'contact_name')
+    contact_name.short_description = 'hosting contact name'
 
     def contact_email(self, obj):
         return self.get_eventhousing_attr(obj, 'contact_email')
+    contact_email.short_description = 'hosting contact email'
 
     def contact_phone(self, obj):
         return self.get_eventhousing_attr(obj, 'contact_phone')
+    contact_phone.short_description = 'hosting contact phone'
 
     def public_transit_access(self, obj):
         return self.get_eventhousing_attr(obj, 'public_transit_access')
+    public_transit_access.short_description = 'hosting public transit access'
 
     def person_prefer(self, obj):
         return self.get_eventhousing_attr(obj, 'person_prefer')
+    person_prefer.short_description = 'hosting people preference'
 
     def person_avoid(self, obj):
         return self.get_eventhousing_attr(obj, 'person_avoid')
+    person_avoid.short_description = 'hosting people avoid'
 
     def get_eventhousing_csm(self, obj, name):
         eventhousing = obj.get_eventhousing()
@@ -488,9 +629,12 @@ class OrderTable(CustomDataTable):
 
     def ef_present(self, obj):
         return self.get_eventhousing_csm(obj, 'ef_present')
+    ef_present.short_description = 'hosting environmental factors'
 
     def ef_avoid(self, obj):
         return self.get_eventhousing_csm(obj, 'ef_avoid')
+    ef_avoid.short_description = 'hosting environmental avoided'
 
     def housing_categories(self, obj):
         return self.get_eventhousing_csm(obj, 'housing_categories')
+    housing_categories.short_description = 'hosting home categories'
