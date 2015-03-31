@@ -56,7 +56,7 @@
 								{% for options in cart_list %}
 									{% for personitem in options.list %}
 										<li class='list-group-item'>
-											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if code_in_url %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if code_in_url %}{% url "brambling_event_shop_remove" event_slug=event.slug organization_slug=event.organization.slug pk=personitem.pk code=order.code %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug organization_slug=event.organization.slug pk=personitem.pk %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
 										</li>
 									{% endfor %}
 								{% endfor %}
@@ -150,7 +150,7 @@
 						</header>
 						<div class='list-group relative'>
 							{% for option in options.list %}
-								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if code_in_url %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% endif %}'{% endif %} href='javascript://' class="list-group-item {% if option.total_number and option.remaining <= 0 %} disabled{% endif %}">
+								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if code_in_url %}{% url "brambling_event_shop_add" event_slug=event.slug organization_slug=event.organization.slug pk=option.pk code=order.code %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug organization_slug=event.organization.slug pk=option.pk %}{% endif %}'{% endif %} href='javascript://' class="list-group-item {% if option.total_number and option.remaining <= 0 %} disabled{% endif %}">
 									<div class='row'>
 										<div class='col-xs-12 col-sm-6'>
 											{{ option.name }}

@@ -3,6 +3,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
@@ -35,7 +36,10 @@ class OrderStep(Step):
 
     @property
     def url(self):
-        kwargs = {'event_slug': self.workflow.event.slug}
+        kwargs = {
+            'event_slug': self.workflow.event.slug,
+            'organization_slug': self.event.organization.slug,
+        }
         if self.workflow.order.person_id is None:
             kwargs['code'] = self.workflow.order.code
         return reverse(self.view_name, kwargs=kwargs)
@@ -229,7 +233,9 @@ class OrderMixin(object):
         if request.user.is_authenticated() and not request.user.is_active:
             return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
 
-        self.event = get_event_or_404(kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.with_dates().select_related('organization'),
+                                       slug=kwargs['event_slug'],
+                                       organization__slug=kwargs['organization_slug'])
         if not self.event.viewable_by(request.user):
             raise Http404
 
@@ -251,7 +257,10 @@ class OrderMixin(object):
                     not self.current_step.is_accessible()):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
-                        url_kwargs = {'event_slug': kwargs['event_slug']}
+                        url_kwargs = {
+                            'event_slug': kwargs['event_slug'],
+                            'organization_slug': kwargs['organization_slug'],
+                        }
                         if kwargs.get('code'):
                             url_kwargs['code'] = kwargs['code']
                         return HttpResponseRedirect(reverse(step.view_name, kwargs=url_kwargs))
@@ -349,7 +358,10 @@ class OrderMixin(object):
             view_name = self.current_step.view_name
         else:
             view_name = self.current_step.next_step.view_name
-        kwargs = {'event_slug': self.event.slug}
+        kwargs = {
+            'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
+        }
         if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.kwargs['code']
         return reverse(view_name, kwargs=kwargs)
@@ -521,7 +533,8 @@ class AttendeesView(OrderMixin, TemplateView):
         else:
             kwargs = {
                 'event_slug': self.event.slug,
-                'pk': unassigned_pass.pk
+                'organization_slug': self.event.organization.slug,
+                'pk': unassigned_pass.pk,
             }
             if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
@@ -645,6 +658,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     def get_success_url(self):
         kwargs = {
             'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
         }
         if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.order.code
@@ -724,6 +738,7 @@ class HostingView(OrderMixin, UpdateView):
     def get_success_url(self):
         kwargs = {
             'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
         }
         if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.order.code
@@ -810,6 +825,7 @@ class SummaryView(OrderMixin, TemplateView):
             if not self.order.person:
                 url = reverse('brambling_event_order_summary', kwargs={
                     'event_slug': self.event.slug,
+                    'organization_slug': self.event.organization.slug,
                     'code': self.order.code
                 })
                 return HttpResponseRedirect(url)
@@ -868,6 +884,7 @@ class SummaryView(OrderMixin, TemplateView):
         if dwolla_can_connect(dwolla_obj, self.event.api_type):
             kwargs = {
                 'event_slug': self.event.slug,
+                'organization_slug': self.event.organization.slug,
             }
             if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
