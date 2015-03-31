@@ -103,7 +103,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
 
 import os
 MEDIA_URL = '/media/'
@@ -152,7 +152,7 @@ STATICFILES_FINDERS = (
 )
 
 COMPRESS_PRECOMPILERS = (
-    ('text/sass', 'sass -r bootstrap-sass --compass "{infile}" {outfile}'),
+    ('text/sass', 'django_libsass.SassCompiler'),
 )
 
 
