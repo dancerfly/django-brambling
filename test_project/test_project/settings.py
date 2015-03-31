@@ -22,6 +22,7 @@ SECRET_KEY = 'NOT_SECRET'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 USE_DEBUG_TOOLBAR = DEBUG
+COMPRESS_ENABLED = True
 
 TEMPLATE_DEBUG = True
 
