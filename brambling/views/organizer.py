@@ -25,7 +25,8 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
-                                       CustomFormForm, CustomFormFieldFormSet)
+                                       CustomFormForm, CustomFormFieldFormSet,
+                                       OrderNotesForm)
 from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -690,6 +691,7 @@ class OrderDetailView(DetailView):
                                        code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.discount_form = ManualDiscountForm(order=self.order)
+        self.notes_form = OrderNotesForm(instance=self.order)
         if self.request.method == 'POST':
             if 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
@@ -698,15 +700,29 @@ class OrderDetailView(DetailView):
             elif 'is_discount_form' in self.request.POST:
                 self.discount_form = ManualDiscountForm(order=self.order,
                                                         data=self.request.POST)
+            elif 'is_notes_form' in self.request.POST:
+                self.notes_form = OrderNotesForm(instance=self.order,
+                                                 data=self.request.POST)
+        return self.payment_form, self.discount_form, self.notes_form
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
+        if self.payment_form.is_bound:
+            active = 'payment'
+        elif self.discount_form.is_bound:
+            active = 'discount'
+        elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
+            active = 'notes'
+        else:
+            active = 'summary'
         context.update({
             'payment_form': self.payment_form,
             'discount_form': self.discount_form,
+            'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'active': active,
         })
         context.update(self.order.get_summary_data())
         return context
@@ -716,13 +732,13 @@ class OrderDetailView(DetailView):
         return super(OrderDetailView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.get_forms()
-        if self.payment_form.is_bound and self.payment_form.is_valid():
-            self.payment_form.save()
-            return HttpResponseRedirect(request.path)
-        if self.discount_form.is_bound and self.discount_form.is_valid():
-            self.discount_form.save()
-            return HttpResponseRedirect(request.path)
+        for form in self.get_forms():
+            if form.is_bound and form.is_valid():
+                form.save()
+                path = request.path
+                if 'active' in request.GET:
+                    path += '?active=' + request.GET['active']
+                return HttpResponseRedirect(path)
         return super(OrderDetailView, self).get(request, *args, **kwargs)
 
 

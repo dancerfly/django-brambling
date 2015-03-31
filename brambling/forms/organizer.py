@@ -8,7 +8,7 @@ import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               Date, ItemImage, Transaction, Invite, CustomForm,
-                              CustomFormField)
+                              CustomFormField, Order)
 from brambling.utils.international import clean_postal_code
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
@@ -355,3 +355,9 @@ class ManualDiscountForm(forms.Form):
 
     def save(self):
         self.order.add_discount(self.cleaned_data['discount'], force=True)
+
+
+class OrderNotesForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ('notes',)
