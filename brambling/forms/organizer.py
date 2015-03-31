@@ -1,6 +1,5 @@
 import datetime
 
-from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
@@ -8,10 +7,15 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage, Payment, Invite)
+                              Date, ItemImage, Transaction, Invite, CustomForm,
+                              CustomFormField, Order)
+from brambling.utils.international import clean_postal_code
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
+
+
+STATIC_SLUGS = frozenset(('demo-event',))
 
 
 class EventForm(forms.ModelForm):
@@ -39,11 +43,17 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        exclude = ('dates', 'housing_dates', 'owner',
-                   'stripe_user_id', 'stripe_refresh_token',
-                   'stripe_access_token', 'stripe_publishable_key',
-                   'dwolla_user_id', 'dwolla_access_token', 'editors',
-                   'is_published', 'is_frozen', 'country', 'currency')
+        # TODO: When multiple countries are supported, add 'country'
+        # and 'check_country' and 'currency' to fields.
+        fields = ('name', 'slug', 'description', 'website_url', 'banner_image',
+                  'city', 'state_or_province', 'timezone', 'start_time',
+                  'end_time', 'dance_styles', 'has_dances', 'has_classes',
+                  'liability_waiver', 'privacy', 'collect_housing_data',
+                  'collect_survey_data', 'cart_timeout',
+                  'check_payment_allowed', 'check_payable_to',
+                  'check_postmark_cutoff', 'check_recipient', 'check_address',
+                  'check_address_2', 'check_city', 'check_state_or_province',
+                  'check_zip', 'facebook_url')
 
     def __init__(self, request, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
@@ -53,16 +63,23 @@ class EventForm(forms.ModelForm):
         self.fields['end_date'].initial = getattr(self.instance,
                                                   'end_date',
                                                   datetime.date.today)
-        self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
         if not self.instance.uses_stripe():
             del self.fields['disconnect_stripe']
-        if not self.instance.connected_to_dwolla():
+        if not self.instance.uses_dwolla():
             del self.fields['disconnect_dwolla']
         self.request = request
         if self.instance.pk is None:
             self.instance.owner = request.user
         if not request.user == self.instance.owner:
             del self.fields['editors']
+
+        if self.instance.pk is not None:
+            timezone = self.instance.timezone
+            if (timezone, timezone) not in self.fields['timezone'].choices:
+                self.fields['timezone'].choices += ((timezone, timezone),)
+
+        if self.instance.slug in STATIC_SLUGS:
+            del self.fields['slug']
 
     def clean_editors(self):
         editors = self.cleaned_data['editors']
@@ -76,23 +93,51 @@ class EventForm(forms.ModelForm):
             validator(editor)
         return editors
 
+    def clean_check_payment_allowed(self):
+        cpa = self.cleaned_data['check_payment_allowed']
+        if cpa:
+            # TODO: When multiple countries are supported, add 'check_country' to this list:
+            for field in ('check_payable_to', 'check_postmark_cutoff',
+                          'check_recipient', 'check_address',
+                          'check_city', 'check_zip', 'check_state_or_province'):
+                self.fields[field].required = True
+        return cpa
+
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
         if cleaned_data['start_date'] > cleaned_data['end_date']:
             raise ValidationError("End date must be before or equal to "
                                   "the start date.")
+        if 'check_zip' in cleaned_data:
+            country = self.instance.check_country
+            code = cleaned_data['check_zip']
+            try:
+                cleaned_data['check_zip'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['check_zip']
+                self.add_error('check_zip', e)
         return cleaned_data
+
+    def has_check_errors(self):
+        return any((f in self.errors
+                    for f in self.fields
+                    if f[:6] == ('check_')))
 
     def save(self):
         created = self.instance.pk is None
         if self.cleaned_data.get('disconnect_stripe'):
-            self.instance.stripe_user_id = ''
-            self.instance.stripe_access_token = ''
-            self.instance.stripe_refresh_token = ''
-            self.instance.stripe_publishable_key = ''
+            if self.instance.api_type == Event.LIVE:
+                self.instance.stripe_user_id = ''
+                self.instance.stripe_access_token = ''
+                self.instance.stripe_refresh_token = ''
+                self.instance.stripe_publishable_key = ''
+            else:
+                self.instance.stripe_test_user_id = ''
+                self.instance.stripe_test_access_token = ''
+                self.instance.stripe_test_refresh_token = ''
+                self.instance.stripe_test_publishable_key = ''
         if self.cleaned_data.get('disconnect_dwolla'):
-            self.instance.dwolla_user_id = ''
-            self.instance.dwolla_access_token = ''
+            self.instance.clear_dwolla_data(self.instance.api_type)
         instance = super(EventForm, self).save()
         if {'start_date', 'end_date'} & set(self.changed_data) or created:
             cd = self.cleaned_data
@@ -198,7 +243,7 @@ class DiscountForm(forms.ModelForm):
 
     class Meta:
         model = Discount
-        exclude = ('event', 'items')
+        exclude = ('event',)
 
     def __init__(self, event, *args, **kwargs):
         self.event = event
@@ -219,6 +264,30 @@ class DiscountForm(forms.ModelForm):
             self.instance.validate_unique()
         except ValidationError as e:
             self._update_errors(e)
+
+
+class CustomFormForm(forms.ModelForm):
+    class Meta:
+        model = CustomForm
+        exclude = ('event',)
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(CustomFormForm, self).__init__(*args, **kwargs)
+
+    def _post_clean(self):
+        super(CustomFormForm, self)._post_clean()
+        self.instance.event = self.event
+
+
+CustomFormFieldFormSet = forms.inlineformset_factory(
+    CustomForm,
+    CustomFormField,
+    extra=0,
+    min_num=1,
+    validate_min=True,
+    exclude=(),
+)
 
 
 class AttendeeFilterSetForm(forms.Form):
@@ -246,17 +315,34 @@ class AttendeeFilterSetForm(forms.Form):
                           choices=ORDERING_CHOICES,
                           required=False)
 
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super(AttendeeFilterSetForm, self).__init__(*args, **kwargs)
+        option_qs = ItemOption.objects.filter(item__event=self.event).select_related('item')
+        self.fields['bought_items__item_option'].queryset = option_qs
+        self.fields['bought_items__item_option'].empty_label = 'Any Items'
+
+        discount_qs = Discount.objects.filter(event=self.event)
+        self.fields['bought_items__discounts__discount'].queryset = discount_qs
+        self.fields['bought_items__discounts__discount'].empty_label = 'Any Discounts'
+
 
 class ManualPaymentForm(forms.ModelForm):
     class Meta:
-        model = Payment
+        model = Transaction
         fields = ('amount', 'method')
 
-    def __init__(self, order, *args, **kwargs):
+    def __init__(self, order, user, *args, **kwargs):
         super(ManualPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['method'].choices = Payment.METHOD_CHOICES[2:]
+        self.fields['method'].choices = Transaction.METHOD_CHOICES[2:]
         self.order = order
-        self.instance.order = order
+        txn = self.instance
+        txn.order = order
+        txn.event = order.event
+        txn.transaction_type = Transaction.PURCHASE
+        txn.created_by = user
+        txn.is_confirmed = True
+        txn.api_type = txn.event.api_type
 
 
 class ManualDiscountForm(forms.Form):
@@ -269,3 +355,9 @@ class ManualDiscountForm(forms.Form):
 
     def save(self):
         self.order.add_discount(self.cleaned_data['discount'], force=True)
+
+
+class OrderNotesForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ('notes',)

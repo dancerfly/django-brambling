@@ -1,4 +1,7 @@
 {% load floppyforms %}
+
+{% include "brambling/forms/_top_error_list.html" %}
+
 <form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
 	{% csrf_token %}
 

@@ -11,11 +11,21 @@ h1, h2, .h2, h3, .h3
 
 //// Utilities
 
+.text-small
+	font-size: $font-size-small
+
 .text-large
 	font-size: $font-size-large
 
 .text-jumbo
 	font-size: $font-size-base * 2
+
+@media (min-width: $screen-sm-min)
+	.text-right-sm
+		text-align: right
+	.text-left-sm
+		text-align: left
+
 
 .list-comma
 	display: inline
@@ -59,6 +69,14 @@ h1, h2, .h2, h3, .h3
 
 .btn-default-dark
 	+button-variant($btn-default-color, darken($btn-default-bg,10%), $btn-default-border)
+
+//// Background
+
+.bg-primary-light
+	background-color: lighten($panel-primary-heading-bg,5%)
+	color: $panel-primary-text
+tfoot.bg-primary-light
+	border-top: 2px solid $panel-primary-border
 
 //// &c.
 

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
@@ -10,8 +11,8 @@ from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
-from brambling.utils import send_confirmation_email
-from brambling.views.utils import get_dwolla
+from brambling.mail import send_confirmation_email
+from brambling.utils.payment import dwolla_can_connect, dwolla_customer_oauth_url, LIVE
 
 
 class SignUpView(CreateView):
@@ -33,7 +34,7 @@ class SignUpView(CreateView):
 def send_confirmation_email_view(request, *args, **kwargs):
     if not request.user.is_authenticated():
         raise Http404
-    send_confirmation_email(request.user, request, secure=request.is_secure())
+    send_confirmation_email(request.user, site=get_current_site(request), secure=request.is_secure())
     messages.add_message(request, messages.SUCCESS, "Confirmation email sent.")
     return HttpResponseRedirect('/')
 
@@ -81,7 +82,6 @@ class PersonView(UpdateView):
         return super(PersonView, self).form_valid(form)
 
     def form_invalid(self, form):
-        messages.add_message(self.request, messages.ERROR, "Please correct the errors below.")
         return super(PersonView, self).form_invalid(form)
 
     def get_success_url(self):
@@ -92,13 +92,9 @@ class PersonView(UpdateView):
         context.update({
             'cards': self.request.user.cards.order_by('-added'),
         })
-        if getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and not self.object.dwolla_user_id:
-            dwolla = get_dwolla()
-            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                            settings.DWOLLA_APPLICATION_SECRET)
-            redirect_url = self.request.user.get_dwolla_connect_url()
-            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
-                                                                "Send|AccountInfoFull")
+        if dwolla_can_connect(self.object, LIVE):
+            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+                self.request.user, LIVE, self.request)
         return context
 
 

@@ -16,23 +16,51 @@
 	<div class="media-body">
 		<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
 		<p>
-			{% include "brambling/event/_when.html" %}
-			{% include "brambling/event/_where.html" %}
+			<span class="visible-inline-block">
+				<i class="fa fa-clock-o fa-fw"></i>
+				{% include "brambling/event/_when.html" %}
+			</span>
+			<span class="visible-inline-block">
+				<i class="fa fa-map-marker fa-fw"></i>
+				{% include "brambling/event/_where.html" %}
+			</span>
 		</p>
 		<p>
 		{% if event.description %}
 			<div class="shortened" data-lines="2">{{ event.description|linebreaks }}</div>
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
-		<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
-			{% if registered %}
-				Edit registration
-			{% else %}
-				Register
+		<div class='form-group'>
+			<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
+				{% if registered or event in registered_events %}
+					Edit registration
+				{% else %}
+					Register
+				{% endif %}
+			</a>
+			{% if event in admin_events %}
+				<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">
+					<i class="fa fa-cog"></i>
+					Manage Event
+				</a>
 			{% endif %}
-		</a>
-		{% if event.website_url %}
-			<a href="{{ event.website_url }}" class="btn btn-default-dark" target="_blank">Event website <i class='fa fa-fw fa-external-link'></i></a>
+			{% if event.website_url %}
+				<a target="_blank" href="{{ event.website_url }}" class="btn btn-default-dark">
+					<i class="fa fa-fw fa-globe"></i>
+					Website
+				</a>
+			{% endif %}
+			{% if event.facebook_url %}
+				<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-default-dark">
+					<i class="fa fa-fw fa-facebook"></i>
+					Facebook
+				</a>
+			{% endif %}
+
+		</div>
+
+		{% if event.order and event.order.has_cart %}
+			{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=event.order.cart_expire_time %}
 		{% endif %}
 	</div>
 </div>

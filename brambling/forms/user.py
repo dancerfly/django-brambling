@@ -9,8 +9,10 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
+from brambling.mail import send_confirmation_email
 from brambling.models import Person, Home, DanceStyle, Invite
-from brambling.utils import send_confirmation_email
+from brambling.utils.international import clean_postal_code
+from brambling.utils.payment import LIVE
 
 
 class FloppyAuthenticationForm(AuthenticationForm):
@@ -36,8 +38,10 @@ class BasePersonForm(forms.ModelForm):
 
     def email_confirmation(self):
         if 'email' in self.changed_data:
-            send_confirmation_email(self.instance, self.request,
-                                    secure=self.request.is_secure())
+            send_confirmation_email(
+                self.instance,
+                site=get_current_site(self.request),
+                secure=self.request.is_secure())
 
 
 class SignUpForm(BasePersonForm):
@@ -164,8 +168,7 @@ class PersonForm(BasePersonForm):
     def save(self, commit=True):
         self.instance.modified_directly = True
         if self.cleaned_data.get('disconnect_dwolla'):
-            self.instance.dwolla_user_id = ''
-            self.instance.dwolla_access_token = ''
+            self.instance.clear_dwolla_data(LIVE)
         if self.cleaned_data.get('new_password1'):
             self.instance.set_password(self.cleaned_data['new_password1'])
         person = super(PersonForm, self).save(commit)
@@ -202,6 +205,18 @@ class HomeForm(forms.ModelForm):
         for resident in residents:
             validator(resident)
         return residents
+
+    def clean(self):
+        cleaned_data = super(HomeForm, self).clean()
+        if 'country' in cleaned_data and 'zip_code' in cleaned_data:
+            country = cleaned_data['country']
+            code = cleaned_data['zip_code']
+            try:
+                cleaned_data['zip_code'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['zip_code']
+                self.add_error('zip_code', e)
+        return cleaned_data
 
     def save(self, commit=True):
         created = self.instance.pk is None

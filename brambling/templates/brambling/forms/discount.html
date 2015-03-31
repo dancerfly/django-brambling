@@ -1,4 +1,4 @@
-{% load floppyforms %}
+{% load floppyforms tz %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 <div class="row margin-trailer">
@@ -34,10 +34,16 @@
 		</header>
 		<div class="panel-collapse collapse" id="collapseAdvanced">
 			<div class="panel-body">
+				{% timezone event.timezone %}
+				{% get_current_timezone as TIME_ZONE_CURRENT %}
 				<div class="row">
-					<div class="col-md-6">{% formrow form.available_start %}</div>
+					<div class="col-md-6">
+						{% formrow form.available_start %}
+						<div class='help-block'>Timezone: {{ TIME_ZONE_CURRENT }}</div>
+					</div>
 					<div class="col-md-6">{% formrow form.available_end %}</div>
 				</div>
+				{% endtimezone %}
 			</div>
 		</div>
 	</div>

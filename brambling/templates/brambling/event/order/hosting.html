@@ -27,79 +27,78 @@
 	</script>
 {% endblock %}
 
+{# Don't display a next step button. The form's own button will suffice. #}
+{% block next_step_button %}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 
-	<form action="" class="max-width-sm" method="post" novalidate>
-		{% csrf_token %}
+	<form action="" method="post" novalidate>
+		<div class="max-width-sm">
+			{% csrf_token %}
 
-		{% formrow form.providing_housing with label="I want to house visiting dancers" %}
+			{% formrow form.providing_housing with label="I want to house visiting dancers" %}
 
-		<div id='hostingFields' class="collapse{% if form.instance.order.providing_housing %} in{% endif %}">
-			{% form form using "brambling/forms/hosting.html" %}
+			<div id='hostingFields' class="collapse{% if form.instance.order.providing_housing %} in{% endif %}">
+				{% form form using "brambling/forms/hosting.html" %}
 
-			<div class="panel panel-default margin-leader-dbl">
-				<header class="panel-heading">
-					<h4 class="panel-title">Capacity</h4>
-				</header>
-				<div class="panel-body">
-					<p>
-						In the form below, use the <strong>Comfy</strong> column to specify
-						how many people can sleep comfortably in your home. Use the
-						<strong>Max</strong> column to specify (if different) the maximum number of people
-						you can host if they are willing to sleep in slightly tighter
-						conditions.
-					</p>
-					<table class="table table-striped table-condensed" id="HostingFormTable">
-						<thead>
-							<tr>
-								<th class="col-xs-4">Date</th>
-								<th class="col-xs-2">Comfy</th>
-								<th class="col-xs-2">Max</th>
-								<th class="col-xs-4">&nbsp;</th>
-							</tr>
-						</thead>
-						<tbody>
-							{% for form in form.slot_forms %}
-								{% form form using %}
-									<tr{% if form.errors %} class="danger"{% endif %}>
-										<td class="text-right">{{ form.instance.night }}</td>
-										<td>{% formfield form.spaces %}</td>
-										<td>{% formfield form.spaces_max %}</td>
-										<td>
-											{% if forloop.first %}
-												<button class="btn btn-default btn-block" type="button" id="FillAllButton">
-													Copy to all rows <i class="fa fa-arrow-down"></i>
-												</button>
-											{% endif %}
-										</td>
-									</tr>
-									{% if form.errors %}
-										{% for key, list in form.errors.iteritems %}
-											{% for error in list %}
-												<tr class="danger text-danger">
-													<td></td>
-													<td colspan="2">
-														{{ error}}
-													</td>
-													<td></td>
-												</tr>
+				<div class="panel panel-default margin-leader-dbl">
+					<header class="panel-heading">
+						<h4 class="panel-title">Capacity</h4>
+					</header>
+					<div class="panel-body">
+						<p>
+							In the form below, use the <strong>Comfy</strong> column to specify
+							how many people can sleep comfortably in your home. Use the
+							<strong>Max</strong> column to specify (if different) the maximum number of people
+							you can host if they are willing to sleep in slightly tighter
+							conditions.
+						</p>
+						<table class="table table-striped table-condensed" id="HostingFormTable">
+							<thead>
+								<tr>
+									<th class="col-xs-4">Date</th>
+									<th class="col-xs-2">Comfy</th>
+									<th class="col-xs-2">Max</th>
+									<th class="col-xs-4">&nbsp;</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for form in form.slot_forms %}
+									{% form form using %}
+										<tr{% if form.errors %} class="danger"{% endif %}>
+											<td class="text-right">{{ form.instance.night }}</td>
+											<td>{% formfield form.spaces %}</td>
+											<td>{% formfield form.spaces_max %}</td>
+											<td>
+												{% if forloop.first %}
+													<button class="btn btn-default btn-block" type="button" id="FillAllButton">
+														Copy to all rows <i class="fa fa-arrow-down"></i>
+													</button>
+												{% endif %}
+											</td>
+										</tr>
+										{% if form.errors %}
+											{% for key, list in form.errors.iteritems %}
+												{% for error in list %}
+													<tr class="danger text-danger">
+														<td></td>
+														<td colspan="2">
+															{{ error}}
+														</td>
+														<td></td>
+													</tr>
+												{% endfor %}
 											{% endfor %}
-										{% endfor %}
-									{% endif %}
-								{% endform %}
-							{% endfor %}
-						</tbody>
-					</table>
+										{% endif %}
+									{% endform %}
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
-		</div>
-		<button type="submit" class="btn btn-success btn-block btn-lg">Next step <span class='fa fa-chevron-right'></span></button>
+		</div>{# /.max-width-sm #}
+		<button type="submit" class="btn btn-success btn-lg col-md-5">Next step <span class='fa fa-chevron-right'></span></button>
 	</form>
 {% endblock %}
-
-{% block countdown_next %}
-	{% if order.has_cart %}
-		{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time %}
-	{% endif %}
-{% endblock countdown_next %}

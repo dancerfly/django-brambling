@@ -2,23 +2,24 @@
 
 {% load floppyforms daguerre staticfiles %}
 
+{% block body-classes %}{{ block.super }} no-navbar{% endblock %}
+
 {% block top %}
 {% endblock top %}
 
 {% block main %}
-	<a href="https://github.com/littleweaver/django-brambling"><img style="position: absolute; top: 0; right: 0; border: 0; z-index: 4000;" src="https://camo.githubusercontent.com/52760788cde945287fbb584134c4cbc2bc36f904/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f77686974655f6666666666662e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png"></a>
-
-	<div class="masthead masthead-brand orange-barred splash">
+	<div class="masthead masthead-brand mod-splash">
 		<div class="row">
 			<div class="col-sm-6">
 				<p class="text-jumbo"><strong class="text-accent">Dancerfly</strong> is an easy-to-use dance event registration and ticketing system.</p>
-				<p class="text-jumbo">Sign up now to start <strong class="text-accent">organizing</strong> and <strong class="text-accent">attending</strong> dance events.</p>
+				<p class="text-jumbo">Start <strong class="text-accent">organizing</strong> and <strong class="text-accent">attending</strong> dance events today!</p>
+				<p><a class='btn btn-link btn-lg masthead-link pull-right' href='{% url "brambling_about" %}'>More information <i class='fa fa-chevron-right'></i></a></p>
 			</div>
 			<div class="col-sm-6">
 				<ul class="nav nav-pills masthead-pills text-jumbo" role="tablist">
-					<li class="active"><a href="#signup" class="masthead-link" role="tab" data-toggle="tab">Sign Up</a></li>
+					<li class="active"><a href="#signup" id="toggleToSignup" class="masthead-link" role="tab" data-toggle="tab">Sign Up</a></li>
 					<li>or</li>
-					<li><a href="#login" class="masthead-link" role="tab" data-toggle="tab">Log In</a></li>
+					<li><a href="#login" id="toggleToLogin" class="masthead-link" role="tab" data-toggle="tab">Log In</a></li>
 				</ul>
 				<div class="tab-content">
 					<form id="signup" class="masthead-form tab-pane fade in active" action="{% url "brambling_signup" %}" method="post">
@@ -36,61 +37,11 @@
 			</div>
 		</div>{# /.row #}
 	</div>
-	<div class='row'>
-		<div class='col-sm-6'>
-			<h2>About Dancerfly</h2>
-			<p>Dancerfly is an <a href="https://github.com/littleweaver/django-brambling">open source</a> dance registration platform built <strong>by dancers, for dancers</strong>. We're still in active development, so we'd love your feedback! (There will be a feedback button in the lower right of your screen once you've logged in.)</p>
-			<p><strong>Why open source?</strong> No single dance scene has enough resources (in terms of skilled volunteers) to truly focus on creating an application that meets all of their needs. As dancers, we've seen a variety of homegrown systems over the years, none of them quite polished enough for general use.</p>
-			<p>By providing a <strong>solid, easy-to-use</strong> alternative, we hope to save some time for local organizers and volunteers – and if we're lucky, to get a hand in return to make this the most awesomest social dance event registration system ever!</p>
-			<p>Thanks for your help!</p>
-			<h4><a href="http://littleweaverweb.com/">Little Weaver Web Collective</a></h4>
-		</div>
-		<div class='col-sm-6'>
-			<h2>Features</h2>
-			<ul class="ul-default">
-				<li>Manage merch, passes, and classes through the same portal</li>
-				<li>Manage housing</li>
-				<li>Discount codes</li>
-				<li>Download CSV of attendee data</li>
-				<li>One-click refunds</li>
-				<li>Stripe payments on-site</li>
-				<li>Dwolla payments</li>
-				<li>Multiple editors for a single event</li>
-				<li>Attractive event page!</li>
-			</ul>
-			<h2>Beta Events</h2>
-			<p>If might like to host an event using Dancerfly, please <a href="mailto:hello@littleweaverweb.com">email us</a>.</p>
-		</div>
-	</div>
 	{% if upcoming_events %}
-		<div class="pane-default splash">	
-			<h2>Upcoming Events on Dancerfly</h2>
-			{% for event in upcoming_events|slice:"3" %}
-				<div class="media margin-leader-dbl event-listing">
-					<a href="{{ event.get_absolute_url }}" class=" a-secret pull-left">
-						<div class="media-object relative margin-leader-tiny">
-							<div class="{% if event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
-								<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
-								<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
-							</div>
-							{% if event.banner_image %}
-								{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-								<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
-							{% endif %}
-						</div>
-					</a>
-					<div class="media-body">
-						<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
-						<h4 class="text-muted">{{ event.tagline }}</h4>
-						<p>
-							{% include "brambling/event/_when.html" %}
-							{% include "brambling/event/_where.html" %}
-						</p>
-						<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
-					</div>
-				</div>
+			<h2 class="margin-leader-dbl">Upcoming Events on Dancerfly</h2>
+			{% for event in upcoming_events|slice:"5" %}
+				{% include "brambling/_event_list_item.html" %}
 			{% endfor %}
-		</div>
 	{% endif %}
 {% endblock %}
 
@@ -98,4 +49,17 @@
 {% block javascripts %}
 	{{ block.super }}
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tab.js" %}"></script>
+	<script>
+		$(function() {
+			$('#toggleToLogin').click(function() {
+				$('#id_username').val($('#id_email').val());
+				$('#id_password').val($('#id_password1').val());
+			});
+			$('#toggleToSignup').click(function() {
+				$('#id_email').val($('#id_username').val());
+				$('#id_password1').val($('#id_password').val());
+			});
+		});
+	</script>
+
 {% endblock javascripts %}

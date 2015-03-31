@@ -1,0 +1,13 @@
+{% extends "brambling/layouts/12_xs.html" %}
+
+{% block title %}International support – {{ block.super }}{% endblock %}
+
+{% block main %}
+    <h2>International support</h2>
+
+    <p>Dancerfly can currently work for any country, with two caveats.</p>
+
+    <p>First, we do not currently offer the platform in languages other than English. We may someday expand into other languages; if you want to be kept informed, send us an email at <a href='mailto:hello@littleweaverweb.com'>hello@littleweaverweb.com</a>. If you can't wait for our timeline, you can also contribute translations to our <a href="https://github.com/littleweaver/django-brambling">Github repository</a>.</p>
+
+    <p>Second, our supported payment processors may not support your country. <a href="http://stripe.com/">Stripe</a>, our credit card processor, is currently available <a href="http://stripe.com/global">in 18 countries</a>; <a href="http://dwolla.com/">Dwolla</a> is only currently available <a href="http://dwolla.com/global">in the United States</a>. However, we do also support payment by check, which, while cumbersome, should cover most cases if needed.</p>
+{% endblock %}

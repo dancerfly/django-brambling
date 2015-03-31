@@ -26,6 +26,9 @@
 .margin-trailer-0
 	margin-bottom: 0
 
+.margin-trailer-tiny
+	margin-bottom: 4px
+
 .margin-trailer-dbl
 	margin-bottom: 2*$line-height-computed
 
@@ -41,6 +44,9 @@
 
 .hug
 	+hug
+
+.visible-inline-block
+	display: inline-block
 
 .relative
 	position: relative
@@ -73,6 +79,8 @@
 		top: $line-height-computed
 		bottom: $line-height-computed
 	background-color: $gray-lighter
-	&.splash
-		margin-bottom: 0
-		padding-bottom: 2*$line-height-computed
+	border:
+		color: darken($gray-lighter,4%)
+		style: solid
+		top-width: 1px
+		bottom-width: 1px

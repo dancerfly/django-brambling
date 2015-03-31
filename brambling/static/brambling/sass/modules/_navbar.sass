@@ -1,7 +1,11 @@
 // See height and colors defined in _variables.sass
 
+.navbar-fixed-top:hover
+    top: 0
+
 .navbar-default
     border: 0
+    border-bottom: 1px solid $btn-primary-border
     font-family: $headings-font-family
     .navbar-nav > .open > a
         &, &:hover, &:focus
@@ -14,17 +18,11 @@
     margin-bottom: $line-height-computed
 
 .navbar-hugged
-    margin-bottom: 0
+    border-bottom-width: 0
     > .container
         border-bottom: 1px solid lighten($yellow-light,10%)
-
-.orange-bar
-    height: 8px
-    position: fixed
-    width: 100%
-    top: 0
-    left: 0
-    z-index: 1035
-    background-color: $brand-primary
-    &:hover
-        background-color: $yellow-light
+    &.navbar-hugged-remove
+        border-bottom-width: 1
+        > .container
+            border-bottom-width: 0
+        

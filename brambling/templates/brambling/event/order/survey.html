@@ -38,9 +38,8 @@
 	</script>
 {% endblock %}
 
-{% block next_step_button %}
-	<button type="submit" class="btn btn-success btn-lg btn-block">Next step <span class='fa fa-chevron-right'></span></button>
-{% endblock %}
+{# Don't display a next step button. The form's own button will suffice. #}
+{% block next_step_button %}{% endblock %}
 
 {% block main %}
 	<form action="" method="post" novalidate>
@@ -60,13 +59,20 @@
 					{% formrow form.send_flyers with label="I would love to distribute promotional materials for "|add:event.name|add:" to my community. Please mail me some!" %}
 				<div id="promotionalCollapse" class="collapse{% if form.instance.send_flyers %} in{% endif %}">
 					{% formrow form.send_flyers_address %}
+					{% formrow form.send_flyers_address_2 using "brambling/forms/rows/no_label.html" %}
 					<div class="row">
 						<div class="col-md-5">{% formrow form.send_flyers_city %}</div>
 						<div class="col-md-3">{% formrow form.send_flyers_state_or_province %}</div>
-						<div class="col-md-4">{% formrow form.send_flyers_country %}</div>
+						<div class="col-md-4">{% formrow form.send_flyers_zip %}</div>
 					</div>
+					{% formrow form.send_flyers_country %}
 				</div>
+
+				{% for field in form.custom_fields %}
+					{% formrow field %}
+				{% endfor %}
 			{% endform %}
 		</div>
+		<button type="submit" class="btn btn-success btn-lg col-md-5">Next step <span class='fa fa-chevron-right'></span></button>
 	</form>
 {% endblock %}

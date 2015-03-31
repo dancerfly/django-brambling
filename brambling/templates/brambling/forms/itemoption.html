@@ -1,19 +1,37 @@
 {% extends "floppyforms/layouts/bootstrap.html" %}
 
-{% load floppyforms %}
+{% load floppyforms tz %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 {% block rows %}
 	<div class='row'>
-		<div class='col-md-12'>{% formrow form.name %}</div>
-	</div>
-	<div class='row'>
-		<div class='col-md-3 col-xs-6'>
+		<div class='col-sm-6'>{% formrow form.name %}</div>
+		<div class='col-sm-6'>
 			{% formrow form.price with append=event.currency %}
 		</div>
-		<div class='col-md-3 col-xs-6'>{% formrow form.total_number %}</div>
-		<div class='col-md-3 col-xs-6'>{% formrow form.available_start %}</div>
-		<div class='col-md-3 col-xs-6'>{% formrow form.available_end %}</div>
+	</div>
+	{% timezone event.timezone %}
+		<div class='row'>
+			{% get_current_timezone as TIME_ZONE_CURRENT %}
+			<div class='col-xs-6'>
+				{% formrow form.available_start %}
+				<div class='help-block'>
+					Timezone: {{ TIME_ZONE_CURRENT }}
+				</div>
+			</div>
+			<div class='col-xs-6'>{% formrow form.available_end %}</div>
+		</div>
+	{% endtimezone %}
+
+	<div class="checkbox">
+		<label for="{{ form.prefix }}-toggleLimits">
+			<input type="checkbox" id="{{ form.prefix }}-toggleLimits"{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} checked{% endif %}> Limit number of items available
+		</label>
+	</div>
+
+	<div id="{{ form.prefix }}-limitRow" class='row limitRow collapse{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} in{% endif %}'>
+		<div class='col-xs-6'>{% formrow form.total_number %}</div>
+		<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
 	</div>
 	<div class='row js-hide'>
 		<div class='col-md-6'>{% formrow form.order %}</div>

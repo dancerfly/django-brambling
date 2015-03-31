@@ -1,11 +1,12 @@
-from django.conf import settings
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect
 from django.utils.http import is_safe_url
 from django.views.generic import View
+from dwolla import oauth, accounts
 
 from brambling.models import Event, Order
-from brambling.views.utils import get_dwolla
+from brambling.utils.payment import dwolla_prep, LIVE, dwolla_set_tokens
 
 
 class DwollaConnectView(View):
@@ -20,25 +21,40 @@ class DwollaConnectView(View):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        dwolla = get_dwolla()
-        client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                        settings.DWOLLA_APPLICATION_SECRET)
         redirect_url = self.object.get_dwolla_connect_url()
-        qs = request.GET.copy()
-        del qs['code']
-        if qs:
-            redirect_url += "?"
-            for k, v in qs.items():
-                redirect_url += k + "=" + v
-        token = client.get_oauth_token(request.GET['code'],
-                                       redirect_uri=request.build_absolute_uri(redirect_url))
+        api_type = request.GET['api']
+        if 'code' in request.GET:
+            qs = request.GET.copy()
+            del qs['code']
+            if qs:
+                redirect_url += "?" + "&".join([k + "=" + v
+                                                for k, v in qs.iteritems()])
+            dwolla_prep(api_type)
+            oauth_tokens = oauth.get(request.GET['code'],
+                                     redirect=request.build_absolute_uri(redirect_url))
+            if 'access_token' in oauth_tokens:
+                token = oauth_tokens['access_token']
 
-        self.object.dwolla_access_token = token
+                # Now get account info.
+                account_info = accounts.full(token)
 
-        # Now get account info.
-        dwolla_user = dwolla.DwollaUser(token)
-        self.object.dwolla_user_id = dwolla_user.get_account_info()['Id']
-        self.object.save()
+                if api_type == LIVE:
+                    self.object.dwolla_user_id = account_info['Id']
+                else:
+                    self.object.dwolla_test_user_id = account_info['Id']
+
+                dwolla_set_tokens(self.object, api_type, oauth_tokens)
+
+                self.object.save()
+                messages.success(request, "Dwolla account connected!")
+            elif 'error_description' in oauth_tokens:
+                messages.error(request, oauth_tokens['error_description'])
+            else:
+                messages.error(request, "Unknown error during dwolla connection.")
+        elif 'error_description' in request.GET:
+            messages.error(request, request.GET['error_description'])
+        else:
+            messages.error(request, "Unknown error during dwolla connection.")
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -46,7 +62,7 @@ class DwollaConnectView(View):
 class EventDwollaConnectView(DwollaConnectView):
     def get_object(self):
         try:
-            return Event.objects.get(slug=self.kwargs['slugs'])
+            return Event.objects.get(slug=self.kwargs['slug'])
         except Event.DoesNotExist:
             raise Http404
 

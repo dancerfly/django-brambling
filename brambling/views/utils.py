@@ -2,41 +2,20 @@ from collections import OrderedDict
 from datetime import timedelta
 from functools import wraps
 from itertools import ifilter
-import os
 
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Min
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 
-from brambling.models import Event, Order, BoughtItem
+from brambling.models import Event, BoughtItem
 
 
 def get_event_or_404(slug):
     qs = Event.objects.annotate(start_date=Min('dates__date'),
                                 end_date=Max('dates__date'))
     return get_object_or_404(qs, slug=slug)
-
-
-def get_order(event, person=None, code=None):
-    order = None
-    if code is not None:
-        order = Order.objects.get(event=event, code=code)
-        if person is not None and order.person != person:
-            raise Order.DoesNotExist
-    elif person is not None:
-        try:
-            order = Order.objects.get(event=event, person=person)
-        except Order.DoesNotExist:
-            pass
-    if order is None:
-        code = get_random_string(8)
-        while Order.objects.filter(event=event, code=code).exists():
-            code = get_random_string(8)
-        order = Order.objects.create(event=event, person=person, code=code)
-    return order
 
 
 def split_view(test, if_true, if_false):
@@ -75,9 +54,11 @@ def get_event_admin_nav(event, request):
         ('brambling_event_summary', 'Summary', 'fa-dashboard', {'slug': event.slug}),
         ('brambling_event_update', 'Settings', 'fa-cog', {'slug': event.slug}),
         ('brambling_item_list', 'Items', 'fa-list', {'event_slug': event.slug}),
+        ('brambling_form_list', 'Forms', 'fa-question', {'event_slug': event.slug}),
         ('brambling_discount_list', 'Discounts', 'fa-gift', {'event_slug': event.slug}),
         ('brambling_event_attendees', 'Attendees', 'fa-users', {'event_slug': event.slug}),
-        ('brambling_event_orders', 'Orders', 'fa-money', {'event_slug': event.slug}),
+        ('brambling_event_orders', 'Orders', 'fa-ticket', {'event_slug': event.slug}),
+        ('brambling_event_finances', 'Finances', 'fa-money', {'event_slug': event.slug}),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
             for view_name, label, icon, kwargs in items]
@@ -178,11 +159,3 @@ class Step(object):
 
     def get_errors(self):
         return []
-
-
-def get_dwolla():
-    from django.conf import settings
-    os.environ['DWOLLA_VERIFY_SSL'] = 'True'
-    os.environ['DWOLLA_SANDBOX'] = str(settings.DWOLLA_SANDBOX)
-    import dwolla
-    return dwolla

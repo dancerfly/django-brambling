@@ -9,24 +9,6 @@
 
 	{% if not user.is_authenticated or user.confirmed_email %}
 		{% include 'brambling/event/order/_use_discount_js.html' %}
-
-		<script>
-			$(function(){
-				$('a[target]').on('click', function(e){
-					e.preventDefault();
-					$.post($(this).attr('target'), function(data){
-						// For now, just reload the page.
-						if (data.success) {
-							location.reload();
-						} else if (data.error) {
-							$('#items-list').before(
-								"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
-							);
-						}
-					});
-				})
-			});
-		</script>
 	{% endif %}
 
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
@@ -74,7 +56,7 @@
 								{% for options in cart_list %}
 									{% for personitem in options.list %}
 										<li class='list-group-item'>
-											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if order.person %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+											{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }}) <a target='{% if code_in_url %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk code=order.code %}{% else %}{% url "brambling_event_shop_remove" event_slug=event.slug pk=personitem.pk %}{% endif %}' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
 										</li>
 									{% endfor %}
 								{% endfor %}
@@ -92,7 +74,7 @@
 					<div class='list-group relative'>
 						{% for discount in discounts %}
 							<div class='list-group-item'>
-								{{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em>
+								{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							</div>
 						{% endfor %}
 						<div class='list-group-item'>
@@ -108,11 +90,8 @@
 						{% endif %}
 					</div>{# /.list-group #}
 				</div>
-				{% if next_step %}
-					{% include "brambling/event/order/_next_step_button.html" %}
-				{% endif %}
 			</div>
-			<div class="col-md-7 col-md-pull-5">
+			<div class="col-md-7 col-md-pull-5 margin-leader margin-leader-md-0">
 				{% for options in option_list %}
 					<div class='panel panel-default'>
 						<header class='panel-heading clearfix'>
@@ -121,9 +100,11 @@
 									<img src="{% adjust images.0.image 'fit' width=100 height=100 %}" class="img-responsive pull-right item-img" data-toggle="modal" data-target="#imageModal{{ forloop.counter }}">
 								{% endif %}
 								<div class='panel-title'>{{ options.grouper.name }}</div>
-								<div class="shortened" data-lines="2">
-									{{ options.grouper.description|linebreaks }}
-								</div>
+								{% if options.grouper.description %}
+									<div class="shortened" data-lines="2">
+										{{ options.grouper.description|linebreaks }}
+									</div>
+								{% endif %}
 								{% if images %}
 									{% if images|length > 1 %}<a href="" data-toggle="modal" data-target="#imageModal{{ forloop.counter }}">{{ images|length }} photo{{ images|pluralize }}</a>{% endif %}
 									<div class="modal fade" id="imageModal{{ forloop.counter }}" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
@@ -144,9 +125,10 @@
 												{% endif %}
 												<!-- Wrapper for slides -->
 												<div class="carousel-inner text-center">
-													{% for image in images %}
+													{% adjust_bulk images "image" 'fit' width=598 height=598 as adjusted_list %}
+													{% for images, image in adjusted_list %}
 														<div class="item{% if forloop.first %} active{% endif %}">
-															<img src="{{ image.image.url }}">
+															<img src="{{ image }}">
 														</div>
 													{% endfor %}
 												</div>
@@ -168,15 +150,28 @@
 						</header>
 						<div class='list-group relative'>
 							{% for option in options.list %}
-								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if order.person %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% endif %}'{% endif %} href='javascript://' class="list-group-item">
-									{# <div class="scroll-x"> #}
-										<div class='row'>
-											<div class='col-sm-5'>{{ option.name }}</div>
-											<div class='col-sm-3 text-right'>{% if option.total_number %}{{ option.remaining }} / {{ option.total_number }} left{% else %}&nbsp;{% endif %}</div>
-											<div class='col-sm-3 text-right'>{{ option.price|format_money:event.currency }}</div>
-											<div class='col-sm-1 text-right'><span class='fa fa-plus'></span></div>
+								<a{% if not user.is_authenticated or user.confirmed_email %} target='{% if code_in_url %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk code=order.code %}{% else %}{% url "brambling_event_shop_add" event_slug=event.slug pk=option.pk %}{% endif %}'{% endif %} href='javascript://' class="list-group-item {% if option.total_number and option.remaining <= 0 %} disabled{% endif %}">
+									<div class='row'>
+										<div class='col-xs-12 col-sm-6'>
+											{{ option.name }}
+											<span class='fa fa-plus pull-right visible-xs'></span>
 										</div>
-									{# </div> #}
+										<div class='col-xs-8 col-sm-3 text-left text-right-sm'>
+											{% if option.total_number and option.remaining_display != option.HIDDEN %}
+												{% if option.remaining_display == option.TOTAL_AND_REMAINING %}
+													{{ option.remaining }} / {{ option.total_number }} left
+												{% elif option.remaining_display == option.TOTAL %}
+													{{ option.total_number }} total
+												{% else %}
+													{{ option.remaining }} left
+												{% endif %}
+											{% else %}
+												&nbsp;
+											{% endif %}
+										</div>
+										<div class='col-xs-4 col-sm-2 text-right'>{{ option.price|format_money:event.currency }}</div>
+										<div class='col-sm-1 text-right hidden-xs'>{% if not option.total_number or option.remaining > 0 %}<span class='fa fa-plus'></span>{% endif %}</div>
+									</div>
 								</a>
 							{% endfor %}
 							{% if user.is_authenticated and not user.confirmed_email %}
@@ -199,43 +194,85 @@
 
 {% block masthead %}
 	{% include "brambling/event/order/_masthead.html" %}
-	<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
-		<div class="panel-body">
-			{% if event.description %}
-				<div class="row">
-					<div class="col-md-4">
-							<p class="text-large">
-								{% include "brambling/event/_when.html" %}
-							</p>
-							<p class="text-large">
-								{% include "brambling/event/_where.html" %}
-							</p>
-							{% for style in event.dance_styles.all %}
-								<h4 class="text-muted"><i class="fa fa-fw"></i> {{ style }}</h4>
-							{% endfor %}
-					</div>
-					<div class="col-md-8">
-						<div>
-							{{ event.description|linebreaks }}
+	{% with dance_styles=event.dance_styles.all %}
+		{% if event.description or event.website_url or event.facebook_url or dance_styles %}
+			<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
+				<div class="panel-body">
+					{% if event.description %}
+						<div class="row">
+							<div class="col-md-4">
+								<div class="media text-large">
+									<div class="media-left">
+										<i class="fa fa-clock-o fa-fw"></i>
+									</div>
+									<div class="media-body">
+										{% include "brambling/event/_when.html" %}
+									</div>
+								</div>
+								<div class="media text-large">
+									<div class="media-left">
+										<i class="fa fa-map-marker fa-fw"></i>
+									</div>
+									<div class="media-body">
+										{% include "brambling/event/_where.html" %}
+									</div>
+								</div>
+								{% if dance_styles %}
+									<div class="media text-large">
+										<div class="media-left">
+											<i class="fa fa-fw"></i>
+										</div>
+										<div class="media-body">
+											{% for style in dance_styles %}
+												<h4 class="text-muted">{{ style }}</h4>
+											{% endfor %}
+										</div>
+									</div>
+								{% endif %}
+							</div>
+							<div class="col-md-8">
+								<div>
+									{{ event.description|linebreaks }}
+								</div>
+								{% if event.website_url %}
+									<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+										<i class="fa fa-fw fa-globe"></i>
+										Website
+									</a>
+								{% endif %}
+								{% if event.facebook_url %}
+									<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+										<i class="fa fa-fw fa-facebook"></i>
+										Facebook
+									</a>
+								{% endif %}
+							</div>
 						</div>
+					{% else %}
 						{% if event.website_url %}
-							<a href="{{ event.website_url }}" class="btn btn-primary">
-								More information <i class="fa fa-fw fa-chevron-right"></i>
+							<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+								<i class="fa fa-fw fa-globe"></i>
+								Website
 							</a>
 						{% endif %}
-					</div>
+						{% if event.facebook_url %}
+							<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+								<i class="fa fa-fw fa-facebook"></i>
+								Facebook
+							</a>
+						{% endif %}
+						{% if dance_styles %}
+							<h4 class="text-muted event-tags">Featuring {% for style in dance_styles %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
+						{% endif %}
+					{% endif %}
 				</div>
-			{% else %}
-				{% if event.website_url %}
-					<a href="{{ event.website_url }}" class="btn btn-primary pull-right">
-						More information <i class="fa fa-fw fa-chevron-right"></i>
-					</a>
-				{% endif %}
-				<h4 class="text-muted event-tags">Featuring {% for style in event.dance_styles.all %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %} dancing.</h4>
-			{% endif %}
-		</div>
-	</div>
+			</div>
+		{% endif %}
+	{% endwith %}
 {% endblock masthead %}
 
+{% block next_step_button %}
+	{% include "brambling/event/order/_next_step_button.html" with button_text="Check out" %}
+{% endblock %}
 
 {% block countdown_next %}{% endblock %}

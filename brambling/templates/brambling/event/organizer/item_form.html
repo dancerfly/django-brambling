@@ -22,6 +22,7 @@
 		{% endform %}
 
 		<h3>Images</h3>
+		<p>Images will be scaled to fit in a 598 pixel square box.</p>
 		<p class="text-muted">Drag and drop to reorder.</p>
 
 		{{ itemimage_formset.management_form }}
@@ -139,7 +140,7 @@
 			</header>
 		</div>
 
-		<button class='btn btn-primary' type="submit">{% if item.pk %}Save changes{% else %}Add item{% endif %}</button>
+		<button class='btn btn-primary' type="submit">Save</button>
 		{% if item.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
 	</form>
 {% endblock %}
@@ -185,6 +186,25 @@
 				formTemplate: '.item-option-template',
 				sortableHandle: '.panel-heading',
 				sortableField: 'order'
+			});
+
+			// Handle limit row display/hide on itemoption forms.
+			$('.item-options-list').on('change', 'input[type=checkbox]', function() {
+				var prefix = this.id.substr(0, this.id.length - 13),
+					total_number = $("#id_" + prefix + "-total_number");
+				if (this.checked) {
+					if (total_number.val() === '') {
+						total_number.val(100);
+					}
+					$("#" + prefix + "-limitRow").collapse('show');
+				} else {
+					$("#id_" + prefix + "-total_number").val('');
+					$("#" + prefix + "-limitRow").collapse('hide');
+				}
+			});
+			$('.item-options-list').on('row_added.formset', function(e, row) {
+				$(row).find('.limitRow').collapse({toggle: false});
+				$(row).find('input[type=checkbox]').trigger('change');
 			});
 		}());
 	</script>

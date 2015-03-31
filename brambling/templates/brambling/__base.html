@@ -10,6 +10,7 @@
 	{% compress css %}
 		<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
 		<link rel="stylesheet" type="text/css" href="{% static "zenaida/css/styles.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
 	{% endcompress %}
 	{% compress css %}
 		{# must be separate to keep @fontface declarations on top #}
@@ -32,6 +33,8 @@
 		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/dropdown.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/js/jquery.shorten.js" %}"></script>
+		<script type="text/javascript" src="{% static "brambling/lib/bootstrap-datepicker/bootstrap-datepicker.js" %}"></script>
+		<script type="text/javascript" src="{% static "hints/hints.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
 		{# TO DO: Ultimately this analytics code should live in a proprietary repository with Little Weaver specific things. #}

@@ -17,13 +17,15 @@ $cover-image-padding-vertical: $line-height-computed
         top: $masthead-padding-vertical
         bottom: $masthead-padding-vertical
     text-shadow: 0 1px 0 rgba(0, 0, 0, .15)
-    &.splash
+    &.mod-splash
         margin-top: 0
+        margin-bottom: 0
 
 // THEMES
 
 .masthead-brand
     background-color: $brand-primary
+    border-bottom: 1px solid $btn-primary-border
     +text-light($brand-primary)
 
 .masthead-light
@@ -41,6 +43,7 @@ $cover-image-padding-vertical: $line-height-computed
     margin-bottom: -$masthead-padding-vertical
     margin-top: 0
     background-size: cover
+    background-position: center
     background-repeat: no-repeat
     +box-shadow(inset 0 0 0 1px rgba(0,0,0,.35))
     +border-radius($border-radius-base $border-radius-base 0 0)

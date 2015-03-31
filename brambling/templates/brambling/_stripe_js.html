@@ -1,7 +1,5 @@
 <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
 <script>
-	Stripe.setPublishableKey('{{ STRIPE_PUBLISHABLE_KEY }}');
-
 	$(function(){
 		$('#card-submit').on('click', function(e){
 			e.preventDefault();

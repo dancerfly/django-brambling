@@ -4,6 +4,10 @@
 
 {% block title %}{% if attendee.pk %}Edit {{ attendee.get_full_name }}{% else %}Add an attendee{% endif %} – {{ block.super }}{% endblock %}
 
+
+{# Don't display a next step button. The form's own button will suffice. #}
+{% block next_step_button %}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 
@@ -13,7 +17,12 @@
 			<ul class='list-group'>
 				{# these are BoughtItems #}
 				{% for pass in ordered_passes %}
-					<a href="{% url 'brambling_event_attendee_edit' event_slug=event.slug pk=pass.pk %}"class='list-group-item{% if pass == event_pass %} active{% elif pass.attendee_id %} disabled{% endif %}'>
+					{% if code_in_url %}
+						{% url "brambling_event_attendee_edit" pk=pass.pk event_slug=event.slug code=order.code as attendee_url %}
+					{% else %}
+						{% url "brambling_event_attendee_edit" pk=pass.pk event_slug=event.slug as attendee_url %}
+					{% endif %}
+					<a href="{{ attendee_url }}"class='list-group-item{% if pass == event_pass %} active{% elif pass.attendee_id %} disabled{% endif %}'>
 						{% if pass.attendee_id %}
 							<strong>{{ pass.attendee.get_full_name }}</strong><br />
 						{% endif %}
@@ -61,6 +70,10 @@
 					{% if form.housing_status %}
 						{% formrow form.housing_status %}
 					{% endif %}
+
+					{% for field in form.custom_fields %}
+						{% formrow field %}
+					{% endfor %}
 
 					{% formrow form.photo_consent %}
 

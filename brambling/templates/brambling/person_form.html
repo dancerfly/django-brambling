@@ -20,6 +20,8 @@
 {% block main %}
 	<h2>Edit settings</h2>
 
+	{% include "brambling/forms/_top_error_list.html" %}
+
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using "brambling/forms/person.html" %}

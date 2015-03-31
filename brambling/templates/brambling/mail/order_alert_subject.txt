@@ -1,0 +1,1 @@
+[{{ event.name }}] New order from {% if order.person %}{{ order.person.get_full_name }}{% else %}{{ order.email }}{% endif %}

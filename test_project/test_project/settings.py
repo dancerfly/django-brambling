@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = (
     'brambling',
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,6 +42,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'zenaida',
+    'zenaida.contrib.hints',
     'floppyforms',
     'django_filters',
     'daguerre',
@@ -116,12 +118,31 @@ AUTH_USER_MODEL = 'brambling.Person'
 
 # These IDs are used for Stripe Connect and Dwolla facilitation
 # respectively.
-STRIPE_APPLICATION_ID = None
-STRIPE_SECRET_KEY = None
-STRIPE_PUBLISHABLE_KEY = None
+STRIPE_APPLICATION_ID = os.environ.get('STRIPE_APPLICATION_ID', '')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_TEST_APPLICATION_ID = os.environ.get('STRIPE_TEST_APPLICATION_ID', '')
+STRIPE_TEST_SECRET_KEY = os.environ.get('STRIPE_TEST_SECRET_KEY', '')
+STRIPE_TEST_PUBLISHABLE_KEY = os.environ.get('STRIPE_TEST_PUBLISHABLE_KEY', '')
 
-DWOLLA_APPLICATION_KEY = None
-DWOLLA_APPLICATION_SECRET = None
+DWOLLA_APPLICATION_KEY = os.environ.get('DWOLLA_APPLICATION_KEY', '')
+DWOLLA_APPLICATION_SECRET = os.environ.get('DWOLLA_APPLICATION_SECRET', '')
+DWOLLA_TEST_APPLICATION_KEY = os.environ.get('DWOLLA_TEST_APPLICATION_KEY', '')
+DWOLLA_TEST_APPLICATION_SECRET = os.environ.get('DWOLLA_TEST_APPLICATION_SECRET', '')
+
+STRIPE_TEST_EVENT_ACCESS_TOKEN = os.environ.get('STRIPE_TEST_EVENT_ACCESS_TOKEN', '')
+STRIPE_TEST_EVENT_PUBLISHABLE_KEY = os.environ.get('STRIPE_TEST_EVENT_PUBLISHABLE_KEY', '')
+STRIPE_TEST_EVENT_REFRESH_TOKEN = os.environ.get('STRIPE_TEST_EVENT_REFRESH_TOKEN', '')
+STRIPE_TEST_EVENT_USER_ID = os.environ.get('STRIPE_TEST_EVENT_USER_ID', '')
+
+DWOLLA_TEST_EVENT_ACCESS_TOKEN = os.environ.get('DWOLLA_TEST_EVENT_ACCESS_TOKEN', '')
+DWOLLA_TEST_EVENT_USER_ID = os.environ.get('DWOLLA_TEST_EVENT_USER_ID', '')
+DWOLLA_TEST_EVENT_PIN = os.environ.get('DWOLLA_TEST_EVENT_PIN', '')
+DWOLLA_TEST_USER_ACCESS_TOKEN = os.environ.get('DWOLLA_TEST_USER_ACCESS_TOKEN', '')
+DWOLLA_TEST_USER_USER_ID = os.environ.get('DWOLLA_TEST_USER_USER_ID', '')
+DWOLLA_TEST_USER_PIN = os.environ.get('DWOLLA_TEST_USER_PIN', '')
+
+GRAPPELLI_ADMIN_TITLE = "Dancerfly"
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -167,8 +188,8 @@ if USE_DEBUG_TOOLBAR:
 
 if ACCEPT_FEEDBACK:
     MIDDLEWARE_CLASSES += (
-        'zenaida.contrib.feedback.middleware.FeedbackMiddleware',
+        'talkback.middleware.TalkbackMiddleware',
     )
     INSTALLED_APPS += (
-        'zenaida.contrib.feedback',
+        'talkback',
     )

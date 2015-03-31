@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from brambling.models import Event, BoughtItem, Invite, Home
+from brambling.models import Event, BoughtItem, Invite, Home, Order, Person
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
@@ -22,9 +22,6 @@ class UserDashboardView(TemplateView):
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             is_published=True,
-        ).exclude(
-            order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
@@ -32,9 +29,6 @@ class UserDashboardView(TemplateView):
             privacy=Event.PUBLIC,
             dance_styles__person=user,
             is_published=True,
-        ).exclude(
-            order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__gte=today).order_by('start_date')
 
@@ -43,15 +37,28 @@ class UserDashboardView(TemplateView):
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).order_by('-last_modified')
 
-        registered_events = Event.objects.filter(
+        # Registered events is upcoming things you are / might be going to.
+        # So you've paid for something or you're going to.
+        registered_events = list(Event.objects.filter(
             order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
+            order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
-                   ).filter(start_date__gte=today).order_by('-start_date')
+                   ).filter(start_date__gte=today).order_by('start_date'))
+        re_dict = dict((e.pk, e) for e in registered_events)
+        orders = Order.objects.filter(
+            person=user,
+            bought_items__status=BoughtItem.RESERVED,
+            event__in=registered_events
+        )
+        for order in orders:
+            order.event = re_dict[order.event_id]
+            order.event.order = order
 
+        # Past events is things you at one point paid for.
+        # So you've paid for something, even if it was later refunded.
         past_events = Event.objects.filter(
             order__person=user,
-            order__bought_items__status=BoughtItem.PAID,
+            order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
         ).annotate(start_date=Min('dates__date'), end_date=Max('dates__date')
                    ).filter(start_date__lt=today).order_by('-start_date')
 
@@ -73,7 +80,7 @@ class SplashView(TemplateView):
 
     def get_context_data(self):
         today = timezone.now().date()
-        upcoming_events = Event.objects.filter(privacy=Event.PUBLIC).annotate(
+        upcoming_events = Event.objects.filter(privacy=Event.PUBLIC, is_published=True).annotate(
             start_date=Min('dates__date'), end_date=Max('dates__date')
             ).filter(start_date__gte=today).order_by('start_date')
         return {
@@ -112,13 +119,19 @@ class InviteAcceptView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(InviteAcceptView, self).get_context_data(**kwargs)
+        if self.invite:
+            invited_person_exists = Person.objects.filter(email=self.invite.email).exists()
+        else:
+            invited_person_exists = False
         context.update({
             'invite': self.invite,
+            'invited_person_exists': invited_person_exists,
             'signup_form': SignUpForm(self.request),
             'login_form': FloppyAuthenticationForm(),
         })
-        context['signup_form'].initial['email'] = self.invite.email
-        context['login_form'].initial['username'] = self.invite.email
+        if self.invite:
+            context['signup_form'].initial['email'] = self.invite.email
+            context['login_form'].initial['username'] = self.invite.email
         return context
 
 
@@ -165,3 +178,10 @@ class InviteDeleteView(View):
         invite.delete()
         messages.success(request, "Invitation for {} canceled.".format(invite.email))
         return HttpResponseRedirect(url)
+
+
+class ExceptionView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise Http404
+        raise Exception("You did it now!")

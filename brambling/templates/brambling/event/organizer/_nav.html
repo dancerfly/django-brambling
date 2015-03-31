@@ -5,10 +5,22 @@
 				{{ event.name }}
 			</a>
 		</h4>
-		<small class="text-muted">
-			{% include "brambling/event/_when.html" %}<br />
-			{% include "brambling/event/_where.html" %}
-		</small>
+		<div class="media text-muted margin-leader-0 text-small">
+			<div class="media-left">
+				<i class="fa fa-clock-o fa-fw"></i>
+			</div>
+			<div class="media-body">
+				{% include "brambling/event/_when.html" %}
+			</div>
+		</div>
+		<div class="media text-muted margin-leader-0 text-small">
+			<div class="media-left">
+				<i class="fa fa-map-marker fa-fw"></i>
+			</div>
+			<div class="media-body">
+				{% include "brambling/event/_where.html" %}
+			</div>
+		</div>
 	</div>
 	<div class="list-group">
 		{% for item in event_admin_nav %}
@@ -22,10 +34,19 @@
 	</div>
 	<div class="panel-footer">
 		{% if event.is_frozen %}
-			<div class='tipped form-group' data-placement="right" data-container="body" title="Event is frozen and cannot be unpublished">
-				<button class='btn btn-danger btn-block' disabled>
-					Unpublish Event
-				</button>
+			<div class='tipped form-group' data-placement="right" data-container="body" title="Event is frozen">
+				{% comment %}
+				Theoretically, only published events can be frozen. But we want to make bad behavior obvious.
+				{% endcomment %}
+				{% if event.is_published %}
+					<button class='btn btn-danger btn-block' disabled>
+						Unpublish Event
+					</button>
+				{% else %}
+					<button class='btn btn-success btn-block' disabled>
+						Publish Event
+					</button>
+				{% endif %}
 			</div>
 		{% elif event.is_published %}
 			<div class='form-group'>

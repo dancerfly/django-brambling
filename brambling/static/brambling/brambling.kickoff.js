@@ -34,6 +34,7 @@ $.ajaxSetup({
 });
 
 $(function() {
+    var $win = $(window);
 
     // Prevent disabled links from doing anything.
     $('.disabled a').on('click', function(e){e.preventDefault();});
@@ -41,23 +42,73 @@ $(function() {
     // Add tooltips to elements with class "tipped".
     $('.tipped').tooltip();
 
-    // Add popovers to elements with class "popover-dismiss".
+    // Add dismissable popovers to elements with class "popped".
     $('.popped').popover({trigger: "focus"});
 
-    // // Keep an orange line at the top when you scroll down
-    var barred_height = -8;
-    $('.orange-barred').each(function(){
-        barred_height += $(this).outerHeight();
-    })
-    var barred = $('.orange-barred').last();
-    $(window).scroll(function(){
-        if($(window).scrollTop()>=barred_height){
-            barred.append('<a href="#" class="orange-bar"></a>');
+    // Add datepickers to date fields.
+    if (!Modernizr.inputtypes.date) {
+        $('input[type="date"]').datepicker({format: "yyyy-mm-dd"});
+    }
+
+    // In the absense of a good timepicker or server-side time-parsing, add help text to time fields.
+    if (!Modernizr.inputtypes.time) {
+        $('input[type="time"]').after('<p class="help-block">24-hour format, e.g., 13:45.</p>')
+    }
+
+    // Keep an orange line at the top when you scroll down
+    var $navbar_color_height, $navbar_scroll_check;
+    var $navbar_fixed = $('.navbar-fixed-top');
+    var $navbar_toggle = $navbar_fixed.children('.container').children('.navbar-header').children('.navbar-toggle');
+    var $navbar_hugged = $navbar_fixed.filter('.navbar-hugged');
+    var navbarColorHeight = function(){
+        $navbar_color_height = -10;
+        $('.orange-barred').each(function(){$navbar_color_height += $(this).outerHeight();});
+        $navbar_scroll_check = $navbar_color_height+50;
+    };
+    var navbarTop = function(){
+        var scroll = $win.scrollTop();
+        if(scroll>=32){
+            $navbar_fixed.css('top',-32);
+            $navbar_toggle.css('top',-8);
         }else{
-            $('.orange-bar').remove();
+            // Chrome and Safari let you scroll to negative values.
+            $navbar_fixed.css('top',-Math.max($win.scrollTop(), 0));
+            $navbar_toggle.css('top',-0.25*Math.max($win.scrollTop(), 0));
+        }
+        if($navbar_hugged){
+            if(scroll>=$navbar_color_height){
+                $navbar_hugged.removeClass('navbar-hugged');
+            }else{
+                $navbar_hugged.addClass('navbar-hugged');
+            }
+        }
+    };
+    navbarColorHeight();
+    navbarTop();
+    $win.resize(navbarColorHeight);
+    $win.resize(navbarTop);
+    $win.scroll(function(){
+        // Check whether they're far down enough on the page
+        // to worry about moving the navbar around.
+        if($win.scrollTop()<=$navbar_scroll_check){
+            // Check whether the page actually has scrolling.
+            // Some browsers let you scroll past the top and
+            // bottom of pages.
+            if ($win.height() < $(document).height()) {
+                navbarTop();
+            }
         }
     });
-    $(window).trigger('scroll');
+    $navbar_fixed.hover(
+        function(){
+            $navbar_fixed.animate({'top': '0'},150);
+            $navbar_toggle.animate({'top': '0'},150);
+            if($win.scrollTop()>=$navbar_color_height-30){
+                $navbar_hugged.removeClass('navbar-hugged');
+            }
+        },
+        navbarTop
+    );
 
     // Bind some brambling-specific events to the countdown timer.
     $('[data-countdown="timer"]').on("updated.countdown", function (e, data) {

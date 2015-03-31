@@ -10,6 +10,7 @@
 		</header>
 		<div class="panel-body">
 			{% formrow form.address %}
+			{% formrow form.address_2 using "brambling/forms/rows/no_label.html" %}
 			<div class="row">
 				<div class="col-sm-5">
 					{% formrow form.city %}
@@ -18,9 +19,10 @@
 					{% formrow form.state_or_province %}
 				</div>
 				<div class="col-sm-4">
-					{% formrow form.country %}
+					{% formrow form.zip_code with label="Zip Code"%}
 				</div>
 			</div>{# /.row #}
+			{% formrow form.country %}
 			{% formrow form.housing_categories %}
 			{% if form.housing_categories_confirm %}{% formrow form.housing_categories_confirm %}{% endif %}
 			{% formrow form.public_transit_access %}

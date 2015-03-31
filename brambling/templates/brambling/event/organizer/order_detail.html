@@ -1,43 +1,70 @@
 {% extends 'brambling/event/organizer/__base.html' %}
 
-{% load floppyforms zenaida staticfiles %}
+{% load floppyforms zenaida staticfiles tz %}
 
 {% block title %}Order {{ order.code }} – {{ block.super }}{% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
 
-	<script src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
+	<script type="text/javascript" src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
+	<script type="text/javascript" src="{% static 'zenaida/js/bootstrap/modal.js' %}"></script>
 	<script>
-		$('[data-toggle=tab]').click(function (e) {
-			e.preventDefault();
-			$(this).tab('show');
-		});
-		$('.removeDiscountLink').on('click', function(e){
-			e.preventDefault();
-			$.post($(this).attr('href'), function(){
-				location.reload();
+		$(function() {
+			$('[data-toggle=tab]').click(function (e) {
+				e.preventDefault();
+				$(this).tab('show');
+			});
+			$('.removeDiscountLink').on('click', function(e){
+				e.preventDefault();
+				$.post($(this).attr('href'), function(){
+					location.reload();
+				});
+			});
+			$('.payment-confirmation-toggle').on('click', function(e) {
+				e.preventDefault();
+				var $this = $(this);
+				$.getJSON(this.href, function(data) {
+					if (data.is_confirmed) {
+						$this.html("<i class='fa fa-check text-success'></i>");
+					} else {
+						$this.html("<i class='fa fa-ban text-danger'></i>");
+					}
+				});
 			});
 		});
 	</script>
+
 {% endblock %}
 
 {% block main %}
+	{% timezone event.timezone %}
 	{{ block.super }}
+
+	<h2>Order {{ order.code }} ({{ order.get_status_display }})
+		{% if order.status == order.COMPLETED %}
+			<div class='pull-right form-inline'>
+				<a class='btn btn-success' data-toggle="modal" data-target=".refund-{{ order.code }}">Refund order</a>
+				<a class='btn btn-success' href="{% url 'brambling_event_send_receipt' event_slug=event.slug code=order.code %}"><i class='fa fa-paper-plane'></i> Send receipt</a>
+			</div>
+		{% endif %}
+	</h2>
+	<h3>{% if order.person %}<a href="mailto:{{ order.person.email }}">{{ order.person.get_full_name }} &lt;{{ order.person.email }}&gt;</a>{% else %}<a href="mailto:{{ order.email }}">{{ order.email }}</a>{% endif %}</h3>
 
 	<!-- Nav tabs -->
 	<ul class="nav nav-tabs" role="tablist">
-	  <li{% if not payment_form.is_bound and not discount_form.is_bound %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
-	  <li{% if payment_form.is_bound %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
-	  <li{% if discount_form.is_bound %} class="active"{% endif %}><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
+	  <li{% if active == 'summary' %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
+	  <li{% if active == 'payment' %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
+	  <li{% if active == 'discount' %} class="active"{% endif %}><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
+	  <li{% if active == 'notes' %} class="active"{% endif %}><a href="#notes" role="tab" data-toggle="tab">Notes</a></li>
 	</ul>
 
 	<!-- Tab panes -->
 	<div class="tab-content">
-		<div class="tab-pane{% if not payment_form.is_bound and not discount_form.is_bound %} active{% endif %}" id="summary">
+		<div class="tab-pane{% if active == 'summary' %} active{% endif %}" id="summary">
 			{% include "brambling/event/organizer/_admin_order_summary.html" %}
 		</div>
-		<div class="tab-pane{% if payment_form.is_bound %} active{% endif %}" id="payment">
+		<div class="tab-pane{% if active == 'payment' %} active{% endif %}" id="payment">
 			<div class='row'>
 				<div class='col-sm-6 col-sm-offset-3'>
 					<form method='post' action=''>
@@ -52,7 +79,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="tab-pane{% if discount_form.is_bound %} active{% endif %}" id="discount">
+		<div class="tab-pane{% if active == 'discount' %} active{% endif %}" id="discount">
 			<div class='row'>
 				<div class='col-sm-6 col-sm-offset-3'>
 					<form method='post' action=''>
@@ -64,5 +91,18 @@
 				</div>
 			</div>
 		</div>
+		<div class="tab-pane{% if active == 'notes' %} active{% endif %}" id="notes">
+			<div class='row'>
+				<div class='col-sm-6 col-sm-offset-3'>
+					<form method='post' action='?active=notes'>
+						<input type='hidden' name='is_notes_form' value='1'>
+						{% csrf_token %}
+						{% form notes_form %}
+						<button type='submit' class='btn btn-primary'>Save notes</button>
+					</form>
+				</div>
+			</div>
+		</div>
 	</div>
+	{% endtimezone %}
 {% endblock %}

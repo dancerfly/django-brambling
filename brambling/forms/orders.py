@@ -1,19 +1,48 @@
-from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
 from brambling.models import (Date, EventHousing, EnvironmentalFactor,
-                              HousingCategory, CreditCard, Payment, Home,
+                              HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
-                              SubPayment, Order)
+                              Order, Event, CustomForm)
+from brambling.utils.international import clean_postal_code
+from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 
 
-class AttendeeBasicDataForm(forms.ModelForm):
+class CustomDataForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(CustomDataForm, self).__init__(*args, **kwargs)
+
+        self.custom_forms = self.get_custom_forms()
+        self.custom_form_fields = set()
+        for form in self.custom_forms:
+            fields = form.get_fields()
+            self.fields.update(fields)
+            self.custom_form_fields |= set(fields)
+            if self.instance.pk:
+                self.initial.update(form.get_data(self.instance))
+
+    def get_custom_forms(self):
+        raise NotImplementedError
+
+    def custom_fields(self):
+        return [field for field in self
+                if field.name in self.custom_form_fields]
+
+    def save(self):
+        instance = super(CustomDataForm, self).save()
+        for form in self.custom_forms:
+            form.save_data(self.cleaned_data, instance)
+        return instance
+
+
+class AttendeeBasicDataForm(CustomDataForm):
     additional_items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
 
     class Meta:
@@ -24,14 +53,15 @@ class AttendeeBasicDataForm(forms.ModelForm):
         }
 
     def __init__(self, event_pass, *args, **kwargs):
-        super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
-        self.fields['liability_waiver'].required = True
         self.event_pass = event_pass
         self.order = event_pass.order
+        super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
+        self.fields['liability_waiver'].required = True
         additional_items = self.order.bought_items.filter(
             Q(attendee__isnull=True) | Q(attendee=event_pass.attendee_id)
         ).exclude(item_option__item__category=Item.PASS)
-        if additional_items:
+        self.has_additional_items = bool(additional_items)
+        if self.has_additional_items:
             self.fields['additional_items'].queryset = additional_items
             if self.instance.pk:
                 self.fields['additional_items'].initial = self.order.bought_items.filter(
@@ -46,11 +76,14 @@ class AttendeeBasicDataForm(forms.ModelForm):
             self.fields['housing_status'].label = "Housing"
             self.fields['housing_status'].choices = (
                 (Attendee.NEED, 'Request housing'),
-                (Attendee.HAVE, 'Already arranged'),
+                (Attendee.HAVE, 'Already arranged / hosting not required'),
                 (Attendee.HOME, 'Staying at own home'),
             )
             self.fields['housing_status'].initial = ''
             self.fields['phone'].help_text = 'Required if requesting housing'
+
+    def get_custom_forms(self):
+        return self.order.event.forms.filter(form_type=CustomForm.ATTENDEE).prefetch_related('fields')
 
     def clean_housing_status(self):
         housing_status = self.cleaned_data['housing_status']
@@ -63,8 +96,13 @@ class AttendeeBasicDataForm(forms.ModelForm):
         self.instance.event_pass = self.event_pass
         self.instance.basic_completed = True
         instance = super(AttendeeBasicDataForm, self).save()
-        if self.cleaned_data.get('additional_items'):
-            self.cleaned_data['additional_items'].update(attendee=instance)
+        if self.has_additional_items:
+            old_additional = self.order.bought_items.filter(
+                                 attendee=self.event_pass.attendee
+                             ).exclude(item_option__item__category=Item.PASS)
+            old_additional.update(attendee=None)
+            if self.cleaned_data.get('additional_items'):
+                self.cleaned_data['additional_items'].update(attendee=instance)
         self.event_pass.attendee = instance
         self.event_pass.save()
         return instance
@@ -79,10 +117,10 @@ class AttendeeHousingDataForm(MemoModelForm):
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
 
-        if self.instance.person == self.instance.order.person:
+        if self.instance.person and self.instance.person == self.instance.order.person:
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
 
-            if not self.instance.housing_completed:
+            if self.instance.person and not self.instance.housing_completed:
                 if self.instance.person.modified_directly:
                     self.fields['ef_cause_confirm'] = forms.BooleanField(
                         required=True,
@@ -121,7 +159,8 @@ class AttendeeHousingDataForm(MemoModelForm):
     def save(self):
         self.instance.housing_completed = True
         instance = super(AttendeeHousingDataForm, self).save()
-        if (self.instance.person == self.instance.order.person and
+        if (self.instance.person and
+                self.instance.person == self.instance.order.person and
                 self.cleaned_data['save_as_defaults']):
             person = self.instance.person
             person.ef_cause = instance.ef_cause.all()
@@ -135,17 +174,21 @@ class AttendeeHousingDataForm(MemoModelForm):
         return instance
 
 
-class SurveyDataForm(forms.ModelForm):
+class SurveyDataForm(CustomDataForm):
     class Meta:
         model = Order
         fields = (
             'heard_through', 'heard_through_other', 'send_flyers',
-            'send_flyers_address', 'send_flyers_city',
-            'send_flyers_state_or_province', 'send_flyers_country'
+            'send_flyers_address', 'send_flyers_address_2', 'send_flyers_city',
+            'send_flyers_state_or_province', 'send_flyers_zip',
+            'send_flyers_country',
         )
         widgets = {
             'send_flyers_country': forms.Select
         }
+
+    def get_custom_forms(self):
+        return self.instance.event.forms.filter(form_type=CustomForm.ORDER).prefetch_related('fields')
 
     def clean_send_flyers(self):
         send_flyers = self.cleaned_data['send_flyers']
@@ -154,7 +197,20 @@ class SurveyDataForm(forms.ModelForm):
             self.fields['send_flyers_city'].required = True
             self.fields['send_flyers_state_or_province'].required = True
             self.fields['send_flyers_country'].required = True
+            self.fields['send_flyers_zip'].required = True
         return send_flyers
+
+    def clean(self):
+        cleaned_data = super(SurveyDataForm, self).clean()
+        if 'send_flyers_country' in cleaned_data and 'send_flyers_zip' in cleaned_data:
+            country = cleaned_data['send_flyers_country']
+            code = cleaned_data['send_flyers_zip']
+            try:
+                cleaned_data['send_flyers_zip'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['send_flyers_zip']
+                self.add_error('send_flyers_zip', e)
+        return cleaned_data
 
 
 class HousingSlotForm(forms.ModelForm):
@@ -220,8 +276,10 @@ class HostingForm(MemoModelForm):
                 )
                 self.initial.update({
                     'address': home.address,
+                    'address_2': home.address_2,
                     'city': home.city,
                     'state_or_province': home.state_or_province,
+                    'zip_code': home.zip_code,
                     'country': home.country,
                     'public_transit_access': home.public_transit_access,
                     'ef_present': self.filter(EnvironmentalFactor.objects.only('id'),
@@ -259,6 +317,18 @@ class HostingForm(MemoModelForm):
                                                    data=data,
                                                    prefix='{}-{}'.format(self.prefix, night.pk)))
 
+    def clean(self):
+        cleaned_data = super(HostingForm, self).clean()
+        if 'country' in cleaned_data and 'zip_code' in cleaned_data:
+            country = cleaned_data['country']
+            code = cleaned_data['zip_code']
+            try:
+                cleaned_data['zip_code'] = clean_postal_code(country, code)
+            except ValidationError, e:
+                del cleaned_data['zip_code']
+                self.add_error('zip_code', e)
+        return cleaned_data
+
     def is_valid(self):
         valid = super(HostingForm, self).is_valid()
         if not self.cleaned_data['providing_housing']:
@@ -291,8 +361,10 @@ class HostingForm(MemoModelForm):
                 home = instance.home or Home()
                 new_home = home.pk is None
                 home.address = instance.address
+                home.address_2 = instance.address_2
                 home.city = instance.city
                 home.state_or_province = instance.state_or_province
+                home.zip_code = instance.zip_code
                 home.country = instance.country
                 home.public_transit_access = instance.public_transit_access
                 home.save()
@@ -319,9 +391,9 @@ class HostingForm(MemoModelForm):
 class AddCardForm(forms.Form):
     token = forms.CharField(required=True,
                             error_messages={'required': "No token was provided. Please try again."})
+    api_type = Event.LIVE
 
     def __init__(self, user, *args, **kwargs):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         self.user = user
         super(AddCardForm, self).__init__(*args, **kwargs)
 
@@ -335,7 +407,15 @@ class AddCardForm(forms.Form):
 
     def add_card(self, token):
         user = self.user
-        if not user.stripe_customer_id:
+        stripe_prep(self.api_type)
+
+        if self.api_type == Event.LIVE:
+            customer_attr = 'stripe_customer_id'
+        else:
+            customer_attr = 'stripe_test_customer_id'
+        customer_id = getattr(user, customer_attr)
+
+        if not customer_id:
             customer = stripe.Customer.create(
                 email=user.email,
                 description=user.get_full_name(),
@@ -343,10 +423,10 @@ class AddCardForm(forms.Form):
                     'brambling_id': user.id
                 },
             )
-            user.stripe_customer_id = customer.id
+            setattr(user, customer_attr, customer.id)
             user.save()
         else:
-            customer = stripe.Customer.retrieve(user.stripe_customer_id)
+            customer = stripe.Customer.retrieve(customer_id)
         self.customer = customer
         return customer.cards.create(card=token)
 
@@ -361,7 +441,8 @@ class AddCardForm(forms.Form):
             exp_month=card.exp_month,
             exp_year=card.exp_year,
             last4=card.last4,
-            brand=card.type,
+            brand=card.brand,
+            api_type=self.api_type
         )
 
         if user and user.default_card_id is None:
@@ -372,46 +453,19 @@ class AddCardForm(forms.Form):
 
 
 class BasePaymentForm(forms.Form):
-    def __init__(self, order, bought_items, *args, **kwargs):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
+    def __init__(self, order, amount, *args, **kwargs):
+        self.api_type = order.event.api_type
         self.order = order
-        # bought_items is a list of summary dicts.
-        self.bought_items = [item for item in bought_items
-                             if item['net_balance'] > 0]
-        self.amount = sum((item['net_balance'] for item in self.bought_items))
+        self.amount = amount
         super(BasePaymentForm, self).__init__(*args, **kwargs)
 
-    def charge(self, card_or_token, customer=None):
-        if self.amount <= 0:
-            return None
-        # Amount is number of smallest currency units.
-        amount = int(self.amount * 100)
-        if customer is not None:
-            card_or_token = stripe.Token.create(
-                customer=customer,
-                card=card_or_token,
-                api_key=self.order.event.stripe_access_token,
-            )
-        return stripe.Charge.create(
-            amount=amount,
-            currency=self.order.event.currency,
-            customer=customer,
-            card=card_or_token,
-        )
-
     def save_payment(self, charge, creditcard):
-        payment = Payment.objects.create(order=self.order,
-                                         amount=self.amount,
-                                         method=Payment.STRIPE,
-                                         remote_id=charge.id,
-                                         card=creditcard)
-        SubPayment.objects.bulk_create((
-            SubPayment(payment=payment,
-                       bought_item=item['bought_item'],
-                       amount=item['net_balance'])
-            for item in self.bought_items
-        ))
-        return payment
+        return Transaction.from_stripe_charge(
+            charge,
+            card=creditcard,
+            api_type=self.api_type,
+            order=self.order,
+            event=self.order.event)
 
 
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
@@ -423,12 +477,16 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             del self.fields['save_card']
 
     def _post_clean(self):
+        kwargs = {
+            'amount': self.amount,
+            'event': self.order.event,
+        }
         try:
             if self.cleaned_data.get('save_card'):
                 self.card = self.add_card(self.cleaned_data['token'])
-                self._charge = self.charge(self.card.id, self.customer)
+                self._charge = stripe_charge(self.card.id, customer=self.customer, **kwargs)
             else:
-                self._charge = self.charge(self.cleaned_data['token'])
+                self._charge = stripe_charge(self.cleaned_data['token'], **kwargs)
                 self.card = self._charge.card
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
@@ -447,14 +505,23 @@ class SavedCardPaymentForm(BasePaymentForm):
 
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
-        self.fields['card'].queryset = self.order.person.cards.all()
+        self.fields['card'].queryset = self.order.person.cards.filter(
+            api_type=self.api_type)
         self.fields['card'].initial = self.order.person.default_card
 
     def _post_clean(self):
         self.card = self.cleaned_data['card']
+        if self.api_type == Event.LIVE:
+            customer_id = self.order.person.stripe_customer_id
+        else:
+            customer_id = self.order.person.stripe_test_customer_id
         try:
-            self._charge = self.charge(self.card.stripe_card_id,
-                                       self.order.person.stripe_customer_id)
+            self._charge = stripe_charge(
+                self.card.stripe_card_id,
+                amount=self.amount,
+                event=self.order.event,
+                customer=customer_id
+            )
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
 
@@ -471,39 +538,34 @@ class DwollaPaymentForm(BasePaymentForm):
 
     def _post_clean(self):
         if 'dwolla_pin' in self.cleaned_data:
-            from brambling.views.utils import get_dwolla
-            dwolla = get_dwolla()
-
-            try:
-                if self.amount <= 0:
-                    self._charge = None
-                else:
-                    if self.user.is_authenticated():
-                        user_access_token = self.user.dwolla_access_token
-                    else:
-                        user_access_token = self.order.dwolla_access_token
-                    dwolla_user = dwolla.DwollaUser(user_access_token)
-                    charge_id = dwolla_user.send_funds(float(self.amount),
-                                                       self.order.event.dwolla_user_id,
-                                                       self.cleaned_data['dwolla_pin'])
-                    # Charge id returned by send_funds is the transaction ID
-                    # for the user; the event has a different transaction ID.
-                    # But we can use this one to get that one.
-                    event_user = dwolla.DwollaUser(self.order.event.dwolla_access_token)
-                    self._charge = event_user.get_transaction(charge_id)['Id']
-
-            except dwolla.DwollaAPIError, e:
-                self.add_error(None, e.message)
+            self._charge = None
+            if self.amount > 0:
+                try:
+                    self._charge = dwolla_charge(
+                        user_or_order=self.user if self.user.is_authenticated() else self.order,
+                        amount=float(self.amount),
+                        event=self.order.event,
+                        pin=self.cleaned_data['dwolla_pin']
+                    )
+                except Exception as e:
+                    self.add_error(None, e.message)
 
     def save(self):
-        payment = Payment.objects.create(order=self.order,
-                                         amount=self.amount,
-                                         method=Payment.DWOLLA,
-                                         remote_id=self._charge)
-        SubPayment.objects.bulk_create((
-            SubPayment(payment=payment,
-                       bought_item=item['bought_item'],
-                       amount=item['net_balance'])
-            for item in self.bought_items
-        ))
-        return payment
+        return Transaction.from_dwolla_charge(
+            self._charge,
+            api_type=self.api_type,
+            order=self.order,
+            event=self.order.event)
+
+
+class CheckPaymentForm(BasePaymentForm):
+    def save(self):
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            order=self.order,
+            amount=self.amount,
+            method=Transaction.CHECK,
+            is_confirmed=False,
+            api_type=self.api_type,
+            event=self.order.event
+        )

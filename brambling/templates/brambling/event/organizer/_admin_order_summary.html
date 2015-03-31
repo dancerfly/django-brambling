@@ -3,29 +3,6 @@
 {% load zenaida %}
 
 {% block item_actions %}
-	{% url 'brambling_event_refund' event_slug=event.slug code=order.code item_pk=item.bought_item.pk as url %}
-	<form action='{{ url }}' method='post' class='form-inline'>{% csrf_token %}
-	{% if item.payments %}
-		{% if item.net_payments > 0 %}
-			{% if item.uses_dwolla %}
-				<div class="input-group">
-					<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
-					<span class="input-group-btn">
-			{% endif %}
-			<button type='submit' class='btn btn-success tipped' data-placement="top" data-container="body" title="Refund {{ item.net_payments|format_money:event.currency }}">
-				<span class='fa fa-fw fa-rotate-left fa-rotate-90'></span>
-			</button>
-			{% if item.uses_dwolla %}
-					</span>
-				</div>
-			{% endif %}
-		{% endif %}
-	{% else %}
-		<button type='submit' class='btn btn-danger tipped' data-placement="top" data-container="body" title="Remove">
-			<span class='fa fa-fw fa-times'></span>
-		</button>
-	{% endif %}
-	</form>
 {% endblock %}
 
 {% block discount_actions %}
@@ -35,8 +12,30 @@
 {% endblock %}
 
 {% block payment_actions %}
+	{% if payment.can_refund %}<a data-toggle="modal" data-target=".refund-{{ payment.pk }}"><i class='fa fa-fw fa-refresh'></i></a>{% endif %}
+
+	<div class="modal fade refund-{{ payment.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ payment.pk }}" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-body">
+					<form action='{% url 'brambling_event_refund' event_slug=event.slug code=order.code pk=payment.pk %}' method='post' class='form-inline'>
+						{% csrf_token %}
+						<h4 id="Label{{ bought_item.item_option.item.pk }}">Are you sure you want to refund {{ payment.amount|format_money:event.currency }} and all related purchases?</h4>
+						{% if order.has_dwolla_payments %}
+							<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
+						{% endif %}
+						<button type='submit' class='btn btn-success btn-block'>Yes, refund</button>
+						<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}
 
 
 {% block attendee_actions %}
 {% endblock %}
+
+{# class is used to hook in and call this as an api endpoint. #}
+{% block payment_is_confirmed %}<a class='payment-confirmation-toggle' href="{% url 'brambling_event_toggle_payment_confirmation' code=order.code payment_pk=payment.pk event_slug=event.slug %}">{% if payment.is_confirmed %}<i class='fa fa-check text-success'></i>{% else %}<i class='fa fa-ban text-danger'></i>{% endif %}</a>{% endblock %}

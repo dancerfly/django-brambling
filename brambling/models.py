@@ -1,25 +1,35 @@
 # encoding: utf8
+from __future__ import unicode_literals
+
 from datetime import timedelta
+from decimal import Decimal
 import itertools
+import json
 import operator
 
 from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
-from django.core.mail import send_mail
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import signals
-from django.template.defaultfilters import date, striptags
-from django.template.loader import render_to_string
+from django.db.models import signals, Sum
+from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+import floppyforms.__future__ as forms
+import stripe
+
+from brambling.mail import send_fancy_mail
+from brambling.utils.payment import dwolla_refund, stripe_refund, LIVE
 
 
 DEFAULT_DANCE_STYLES = (
@@ -102,6 +112,7 @@ class AbstractNamedModel(models.Model):
             'surname': self.surname,
         }
         return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+    get_full_name.short_description = 'Name'
 
     def get_short_name(self):
         return self.given_name
@@ -117,18 +128,47 @@ class AbstractDwollaModel(models.Model):
     # Token obtained via OAuth.
     dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
     dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_access_token_expires = models.DateTimeField(blank=True, null=True)
+    dwolla_refresh_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_refresh_token_expires = models.DateTimeField(blank=True, null=True)
+    dwolla_test_user_id = models.CharField(max_length=20, blank=True, default='')
+    dwolla_test_access_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_test_access_token_expires = models.DateTimeField(blank=True, null=True)
+    dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
+    dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
-    def connected_to_dwolla(self):
-        return (bool(self.dwolla_user_id) and
-                bool(settings.DWOLLA_APPLICATION_KEY) and
-                bool(settings.DWOLLA_APPLICATION_SECRET))
+    def connected_to_dwolla_live(self):
+        return bool(
+            self.dwolla_user_id and
+            self.dwolla_refresh_token_expires > timezone.now() and
+            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
+            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
+        )
+
+    def connected_to_dwolla_test(self):
+        return bool(
+            self.dwolla_test_user_id and
+            self.dwolla_test_refresh_token_expires > timezone.now() and
+            getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
+            getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
+        )
 
     def get_dwolla_connect_url(self):
         raise NotImplementedError
 
+    def clear_dwolla_data(self, api_type):
+        prefix = "dwolla_" if api_type == LIVE else "dwolla_test_"
+        for field in ('user_id', 'access_token', 'refresh_token'):
+            setattr(self, prefix + field, '')
+        for field in ('refresh_token_expires', 'access_token_expires'):
+            setattr(self, prefix + field, None)
+
 
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
+
+    class Meta:
+        ordering = ('name',)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -137,6 +177,9 @@ class DanceStyle(models.Model):
 class EnvironmentalFactor(models.Model):
     name = models.CharField(max_length=30)
 
+    class Meta:
+        ordering = ('name',)
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -144,12 +187,19 @@ class EnvironmentalFactor(models.Model):
 class DietaryRestriction(models.Model):
     name = models.CharField(max_length=20)
 
+    class Meta:
+        ordering = ('name',)
+
     def __unicode__(self):
         return smart_text(self.name)
 
 
 class HousingCategory(models.Model):
     name = models.CharField(max_length=20)
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'housing categories'
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -207,17 +257,26 @@ class Event(AbstractDwollaModel):
         (PUBLIC, _("List publicly")),
         (LINK, _("Visible to anyone with the link")),
     )
+
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
+
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
-                            validators=[RegexValidator("[a-z0-9-]+")],
+                            validators=[RegexValidator("^[a-z0-9-]+$")],
                             help_text="URL-friendly version of the event name."
                                       " Dashes, 0-9, and lower-case a-z only.",
                             unique=True)
     description = models.TextField(blank=True)
-    website_url = models.URLField(blank=True)
+    website_url = models.URLField(blank=True, verbose_name="website URL")
+    facebook_url = models.URLField(blank=True, verbose_name="facebook event URL")
     banner_image = models.ImageField(blank=True)
     city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
     country = CountryField(default='US')
     timezone = models.CharField(max_length=40, default='UTC')
     currency = models.CharField(max_length=10, default='USD')
@@ -242,6 +301,10 @@ class Event(AbstractDwollaModel):
     is_published = models.BooleanField(default=False)
     # If an event is "frozen", it can no longer be edited or unpublished.
     is_frozen = models.BooleanField(default=False)
+    # Unpublished events can use test APIs, so that event organizers
+    # and developers can easily run through things without accidentally
+    # charging actual money.
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
     owner = models.ForeignKey('Person',
                               related_name='owner_events')
@@ -261,8 +324,29 @@ class Event(AbstractDwollaModel):
     # These are obtained with Stripe Connect via Oauth.
     stripe_user_id = models.CharField(max_length=32, blank=True, default='')
     stripe_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_refresh_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
     stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
+    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    # This is a secret value set by admins
+    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+                                                  validators=[MaxValueValidator(100), MinValueValidator(0)])
+
+    check_payment_allowed = models.BooleanField(default=False)
+    check_payable_to = models.CharField(max_length=50, blank=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
+
+    check_recipient = models.CharField(max_length=50, blank=True)
+    check_address = models.CharField(max_length=200, blank=True)
+    check_address_2 = models.CharField(max_length=200, blank=True)
+    check_city = models.CharField(max_length=50, blank=True)
+    check_state_or_province = models.CharField(max_length=50, blank=True, verbose_name='state / province')
+    check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
+    check_country = CountryField(default='US')
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -295,7 +379,25 @@ class Event(AbstractDwollaModel):
         return pass_class_count >= 1
 
     def uses_stripe(self):
-        return bool(self.stripe_user_id)
+        if self.api_type == Event.LIVE:
+            return bool(
+                getattr(settings, 'STRIPE_SECRET_KEY', False) and
+                getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
+                self.stripe_user_id
+            )
+        return bool(
+            getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
+            getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
+            self.stripe_test_user_id
+        )
+
+    def uses_dwolla(self):
+        if self.api_type == Event.LIVE:
+            return self.connected_to_dwolla_live()
+        return self.connected_to_dwolla_test()
+
+    def uses_checks(self):
+        return self.check_payment_allowed
 
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.EDITOR,
@@ -333,12 +435,23 @@ class ItemImage(models.Model):
 
 
 class ItemOption(models.Model):
+    TOTAL_AND_REMAINING = 'both'
+    TOTAL = 'total'
+    REMAINING = 'remaining'
+    HIDDEN = 'hidden'
+    REMAINING_DISPLAY_CHOICES = (
+        (TOTAL_AND_REMAINING, _('Remaining / Total')),
+        (TOTAL, _('Total only')),
+        (REMAINING, _('Remaining only')),
+        (HIDDEN, _("Don't display")),
+    )
     item = models.ForeignKey(Item, related_name='options')
     name = models.CharField(max_length=30)
     price = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
     total_number = models.PositiveSmallIntegerField(blank=True, null=True, help_text="Leave blank for unlimited.")
     available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
+    remaining_display = models.CharField(max_length=9, default=TOTAL_AND_REMAINING, choices=REMAINING_DISPLAY_CHOICES)
     order = models.PositiveSmallIntegerField()
 
     class Meta:
@@ -355,7 +468,7 @@ class ItemOption(models.Model):
 
 
 class Discount(models.Model):
-    CODE_REGEX = '[0-9A-Za-z \'"~]+'
+    CODE_REGEX = '[0-9A-Za-z \'"~+=]+'
     PERCENT = 'percent'
     FLAT = 'flat'
 
@@ -364,8 +477,8 @@ class Discount(models.Model):
         (PERCENT, _('Percent')),
     )
     name = models.CharField(max_length=40)
-    code = models.CharField(max_length=20, validators=[RegexValidator(CODE_REGEX)],
-                            help_text="Allowed characters: 0-9, a-z, A-Z, space, and '\"~")
+    code = models.CharField(max_length=20, validators=[RegexValidator("^{}$".format(CODE_REGEX))],
+                            help_text="Allowed characters: 0-9, a-z, A-Z, space, and '\"~+=")
     item_options = models.ManyToManyField(ItemOption)
     available_start = models.DateTimeField(default=timezone.now)
     available_end = models.DateTimeField()
@@ -461,6 +574,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
+    stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
     default_card = models.OneToOneField('CreditCard', blank=True, null=True,
                                         related_name='default_for',
                                         on_delete=models.SET_NULL)
@@ -489,7 +603,14 @@ class CreditCard(models.Model):
         ('Diners Club', 'Diners Club'),
         ('Unknown', 'Unknown'),
     )
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, 'Live'),
+        (TEST, 'Test'),
+    )
     stripe_card_id = models.CharField(max_length=40)
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
     person = models.ForeignKey(Person, related_name='cards', blank=True, null=True)
     added = models.DateTimeField(auto_now_add=True)
 
@@ -508,11 +629,16 @@ class CreditCard(models.Model):
 
 @receiver(signals.pre_delete, sender=CreditCard)
 def delete_stripe_card(sender, instance, **kwargs):
-    import stripe
     from django.conf import settings
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-    customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
-    customer.cards.retrieve(instance.stripe_card_id).delete()
+    customer = None
+    if instance.stripe_api == CreditCard.LIVE and instance.person.stripe_customer_id:
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
+    if instance.stripe_api == CreditCard.TEST and instance.person.stripe_test_customer_id:
+        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+        customer = stripe.Customer.retrieve(instance.person.stripe_test_customer_id)
+    if customer is not None:
+        customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
 class Order(AbstractDwollaModel):
@@ -543,8 +669,22 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
+    # TODO: Add partial_refund status.
+    IN_PROGRESS = 'in_progress'
+    PENDING = 'pending'
+    COMPLETED = 'completed'
+    REFUNDED = 'refunded'
+
+    STATUS_CHOICES = (
+        (IN_PROGRESS, _('In progress')),
+        (PENDING, _('Payment pending')),
+        (COMPLETED, _('Completed')),
+        (REFUNDED, _('Refunded')),
+    )
+
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
+    email = models.EmailField(blank=True)
     code = models.CharField(max_length=8, db_index=True)
 
     cart_start_time = models.DateTimeField(blank=True, null=True)
@@ -557,13 +697,20 @@ class Order(AbstractDwollaModel):
     heard_through_other = models.CharField(max_length=128, blank=True)
     send_flyers = models.BooleanField(default=False)
     send_flyers_address = models.CharField(max_length=200, verbose_name='address', blank=True)
+    send_flyers_address_2 = models.CharField(max_length=200, verbose_name='address line 2', blank=True)
     send_flyers_city = models.CharField(max_length=50, verbose_name='city', blank=True)
-    send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state or province', blank=True)
+    send_flyers_state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    send_flyers_zip = models.CharField(max_length=12, verbose_name="zip / postal code", blank=True)
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
 
-    checked_out = models.BooleanField(default=False)
+    status = models.CharField(max_length=11, choices=STATUS_CHOICES)
+
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
+    # Admin-only data
+    notes = models.TextField(blank=True)
 
     class Meta:
         unique_together = ('event', 'code')
@@ -620,13 +767,15 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self):
-        self.bought_items.filter(
+    def mark_cart_paid(self, status, payment):
+        bought_items = self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
-        ).update(status=BoughtItem.PAID)
+        )
+        payment.bought_items = bought_items
+        bought_items.update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.checked_out = True
+        self.status = status
         self.save()
 
     def cart_expire_time(self):
@@ -656,47 +805,51 @@ class Order(AbstractDwollaModel):
         ).order_by('item_option__item', 'item_option__order', '-added')
 
     def get_summary_data(self):
-        payments = self.payments.order_by('timestamp')
+        if self.cart_is_expired():
+            self.delete_cart()
+        transactions = self.transactions.prefetch_related('bought_items').order_by('timestamp')
+        payments = [t for t in transactions
+                    if t.transaction_type == Transaction.PURCHASE]
+        refunds = [t for t in transactions
+                   if t.transaction_type == Transaction.REFUND]
+        payment_items = [t.bought_items.select_related('item_option__item') for t in payments]
         bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
-        bought_items = []
         for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
             items = [item.get_summary_data() for item in g]
-            bought_items.extend(items)
 
             gross_cost = sum((item['gross_cost'] for item in items))
-            gross_payments = sum((item['gross_payments'] for item in items))
             total_savings = sum((item['total_savings'] for item in items))
-            total_refunds = sum((item['total_refunds'] for item in items))
-            net_cost = gross_cost - total_refunds - total_savings
-            net_payments = gross_payments - total_refunds
-            net_balance = net_cost - net_payments
+            net_cost = gross_cost - total_savings
             attendees.append({
                 'attendee': k,
                 'bought_items': items,
                 'gross_cost': gross_cost,
-                'gross_payments': gross_payments,
                 'total_savings': total_savings,
-                'total_refunds': total_refunds,
                 'net_cost': net_cost,
-                'net_payments': net_payments,
-                'net_balance': net_balance,
             })
+        unpaid_items = [item for item in bought_items_qs
+                        if item.status == BoughtItem.UNPAID or
+                        item.status == BoughtItem.RESERVED]
 
         gross_cost = sum((item.item_option.price for item in bought_items_qs))
         gross_payments = sum((payment.amount for payment in payments))
         total_savings = sum((attendee['total_savings']
                              for attendee in attendees))
-        total_refunds = sum((attendee['total_refunds']
-                             for attendee in attendees))
+        total_refunds = abs(sum((refund.amount
+                                 for refund in refunds)))
         net_cost = gross_cost - total_refunds - total_savings
         net_payments = gross_payments - total_refunds
         net_balance = net_cost - net_payments
+        unconfirmed_check_payments = any((payment.method == Transaction.CHECK and
+                                          not payment.is_confirmed
+                                          for payment in payments))
         return {
             'attendees': attendees,
-            'bought_items': bought_items,
+            'payment_items': payment_items,
+            'unpaid_items': unpaid_items,
             'payments': payments,
-            'refunds': self.refunds.order_by('timestamp'),
+            'refunds': refunds,
             'gross_cost': gross_cost,
             'gross_payments': gross_payments,
             'total_savings': total_savings,
@@ -704,6 +857,7 @@ class Order(AbstractDwollaModel):
             'net_cost': net_cost,
             'net_payments': net_payments,
             'net_balance': net_balance,
+            'unconfirmed_check_payments': unconfirmed_check_payments
         }
 
     def get_eventhousing(self):
@@ -715,8 +869,11 @@ class Order(AbstractDwollaModel):
                 self._eventhousing = None
         return self._eventhousing
 
+    def has_dwolla_payments(self):
+        return self.transactions.filter(method=Transaction.DWOLLA).exists()
 
-class Payment(models.Model):
+
+class Transaction(models.Model):
     STRIPE = 'stripe'
     DWOLLA = 'dwolla'
     CASH = 'cash'
@@ -730,24 +887,174 @@ class Payment(models.Model):
         (CHECK, 'Check'),
         (FAKE, 'Fake')
     )
-    order = models.ForeignKey('Order', related_name='payments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0.01)])
+
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
+
+    PURCHASE = 'purchase'
+    REFUND = 'refund'
+    OTHER = 'other'
+    TRANSACTION_TYPE_CHOICES = (
+        (PURCHASE, _('Purchase')),
+        (REFUND, _('Refunded purchase')),
+        (OTHER, _('Other')),
+    )
+    amount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    application_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    processing_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     timestamp = models.DateTimeField(default=timezone.now)
-    method = models.CharField(max_length=6, choices=METHOD_CHOICES)
+    created_by = models.ForeignKey(Person, blank=True, null=True)
+    method = models.CharField(max_length=7, choices=METHOD_CHOICES)
+    transaction_type = models.CharField(max_length=8, choices=TRANSACTION_TYPE_CHOICES)
+    is_confirmed = models.BooleanField(default=False)
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
+    event = models.ForeignKey(Event)
+
+    related_transaction = models.ForeignKey('self', blank=True, null=True, related_name='related_transaction_set')
+    order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True)
-
-
-class SubPayment(models.Model):
-    """
-    Represents a portion of a payment assigned to a particular bought item.
-    """
-    payment = models.ForeignKey(Payment, related_name='subpayments')
-    bought_item = models.ForeignKey('BoughtItem', related_name='subpayments')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
+    bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
 
     class Meta:
-        unique_together = ('payment', 'bought_item')
+        get_latest_by = 'timestamp'
+
+    @classmethod
+    def from_stripe_charge(cls, charge, **kwargs):
+        # charge is expected to be a stripe charge with
+        # balance_transaction expanded.
+        application_fee = 0
+        processing_fee = 0
+        for fee in charge.balance_transaction.fee_details:
+            if fee.type == 'application_fee':
+                application_fee = Decimal(fee.amount) / 100
+            elif fee.type == 'stripe_fee':
+                processing_fee = Decimal(fee.amount) / 100
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            amount=Decimal(charge.amount) / 100,
+            method=Transaction.STRIPE,
+            remote_id=charge.id,
+            is_confirmed=True,
+            application_fee=application_fee,
+            processing_fee=processing_fee,
+            **kwargs
+        )
+
+    @classmethod
+    def from_stripe_refund(cls, refund, related_transaction, **kwargs):
+        application_fee_refund = refund['application_fee_refund']
+        refund = refund['refund']
+        processing_fee = 0
+        for fee in refund.balance_transaction.fee_details:
+            if fee.type == 'stripe_fee':
+                processing_fee = Decimal(fee.amount) / 100
+        return Transaction.objects.create(
+            transaction_type=Transaction.REFUND,
+            method=Transaction.STRIPE,
+            amount=-1 * Decimal(refund.amount) / 100,
+            is_confirmed=True,
+            related_transaction=related_transaction,
+            remote_id=refund.id,
+            application_fee=-1 * Decimal(application_fee_refund.amount) / 100,
+            processing_fee=processing_fee,
+            **kwargs
+        )
+
+    @classmethod
+    def from_dwolla_charge(cls, charge, **kwargs):
+        application_fee = 0
+        processing_fee = 0
+        for fee in charge['Fees']:
+            if fee['Type'] == 'Facilitator Fee':
+                application_fee = Decimal(str(fee['Amount']))
+            elif fee['Type'] == 'Dwolla Fee':
+                processing_fee = Decimal(str(fee['Amount']))
+        return Transaction.objects.create(
+            transaction_type=Transaction.PURCHASE,
+            amount=charge['Amount'],
+            method=Transaction.DWOLLA,
+            remote_id=charge['Id'],
+            is_confirmed=True,
+            application_fee=application_fee,
+            processing_fee=processing_fee,
+            **kwargs
+        )
+
+    @classmethod
+    def from_dwolla_refund(cls, refund, related_transaction, **kwargs):
+        # Dwolla refunds don't AFAICT refund fees.
+        return Transaction.objects.create(
+            transaction_type=Transaction.REFUND,
+            method=Transaction.DWOLLA,
+            amount=-1 * refund['Amount'],
+            is_confirmed=True,
+            related_transaction=related_transaction,
+            remote_id=refund['TransactionId'],
+            **kwargs
+        )
+
+    def can_refund(self):
+        refunded = self.related_transaction_set.filter(
+            transaction_type=Transaction.REFUND
+        ).aggregate(refunded=Sum('amount'))['refunded'] or 0
+        return self.amount + refunded > 0
+
+    def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
+        if amount is None:
+            amount = self.amount
+        if bought_items is None:
+            bought_items = self.bought_items.all()
+
+        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum'] or 0
+        refundable = self.amount + total_refunds
+        if refundable < amount:
+            raise ValueError("Not enough money available")
+
+        if refundable == 0:
+            return None
+
+        refund_kwargs = {
+            'order': self.order,
+            'related_transaction': self,
+            'api_type': self.api_type,
+            'created_by': issuer,
+            'event': self.event,
+        }
+
+        # May raise an error
+        if self.method == Transaction.STRIPE:
+            refund = stripe_refund(
+                event=self.order.event,
+                payment_id=self.remote_id,
+                amount=refundable,
+            )
+            txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
+        elif self.method == Transaction.DWOLLA:
+            refund = dwolla_refund(
+                event=self.order.event,
+                payment_id=self.remote_id,
+                amount=refundable,
+                pin=dwolla_pin,
+            )
+            txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
+        else:
+            txn = Transaction.objects.create(
+                transaction_type=Transaction.REFUND,
+                amount=-1 * refundable,
+                is_confirmed=True,
+                remote_id='',
+                method=self.method,
+                **refund_kwargs
+            )
+        txn.bought_items = bought_items
+        bought_items.update(status=BoughtItem.REFUNDED)
+        return txn
+    refund.alters_data = True
 
 
 class BoughtItem(models.Model):
@@ -758,12 +1065,12 @@ class BoughtItem(models.Model):
     # for display, but they don't really guarantee anything.
     RESERVED = 'reserved'
     UNPAID = 'unpaid'
-    PAID = 'paid'
+    BOUGHT = 'bought'
     REFUNDED = 'refunded'
     STATUS_CHOICES = (
         (RESERVED, _('Reserved')),
         (UNPAID, _('Unpaid')),
-        (PAID, _('Paid')),
+        (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
     )
     item_option = models.ForeignKey(ItemOption)
@@ -778,7 +1085,6 @@ class BoughtItem(models.Model):
     # by a single person could be assigned to multiple attendees.
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
-    payments = models.ManyToManyField(Payment, through=SubPayment)
 
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option.name,
@@ -787,30 +1093,16 @@ class BoughtItem(models.Model):
 
     def get_summary_data(self):
         gross_cost = self.item_option.price
-        payments = self.subpayments.order_by('payment__timestamp')
         discounts = self.discounts.order_by('timestamp')
-        refunds = self.refunds.order_by('timestamp')
         total_savings = sum((discount.savings() for discount in discounts))
-        gross_payments = sum((payment.amount for payment in payments))
-        total_refunds = sum((refund.amount for refund in refunds))
-        net_cost = gross_cost - total_refunds - total_savings
-        net_payments = gross_payments - total_refunds
-        net_balance = net_cost - net_payments
+        net_cost = gross_cost - total_savings
 
         return {
             'bought_item': self,
-            'payments': payments,
             'discounts': discounts,
-            'refunds': refunds,
             'gross_cost': gross_cost,
-            'gross_payments': gross_payments,
             'total_savings': total_savings,
-            'total_refunds': total_refunds,
             'net_cost': net_cost,
-            'net_payments': net_payments,
-            'net_balance': net_balance,
-            'uses_dwolla': any((payment.payment.method == Payment.DWOLLA
-                                for payment in payments)),
         }
 
 
@@ -842,26 +1134,6 @@ class BoughtItemDiscount(models.Model):
                    item_option.price)
 
 
-class Refund(models.Model):
-    order = models.ForeignKey('Order', related_name='refunds')
-    issuer = models.ForeignKey('Person')
-    bought_item = models.ForeignKey(BoughtItem, related_name='refunds')
-    timestamp = models.DateTimeField(default=timezone.now)
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-
-
-class SubRefund(models.Model):
-    STRIPE = Payment.STRIPE
-    DWOLLA = Payment.DWOLLA
-    METHOD_CHOICES = Payment.METHOD_CHOICES
-
-    refund = models.ForeignKey(Refund)
-    subpayment = models.ForeignKey(SubPayment, related_name='refunds')
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-    method = models.CharField(max_length=6, choices=METHOD_CHOICES)
-    remote_id = models.CharField(max_length=40, blank=True)
-
-
 class Attendee(AbstractNamedModel):
     """
     This model represents information attached to an event pass. It is
@@ -874,7 +1146,7 @@ class Attendee(AbstractNamedModel):
 
     HOUSING_STATUS_CHOICES = (
         (NEED, 'Needs housing'),
-        (HAVE, 'Already arranged'),
+        (HAVE, 'Already arranged / hosting not required'),
         (HOME, 'Staying at own home'),
     )
     # Internal tracking data
@@ -923,6 +1195,8 @@ class Attendee(AbstractNamedModel):
 
     other_needs = models.TextField(blank=True)
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
     def __unicode__(self):
         return self.get_full_name()
 
@@ -932,8 +1206,10 @@ class Attendee(AbstractNamedModel):
 
 class Home(models.Model):
     address = models.CharField(max_length=200)
+    address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
+    zip_code = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
@@ -981,8 +1257,10 @@ class EventHousing(models.Model):
 
     # Duplicated data from Home, plus confirm fields.
     address = models.CharField(max_length=200)
+    address_2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
+    zip_code = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
     country = CountryField()
     public_transit_access = models.BooleanField(default=False,
                                                 verbose_name="My/Our house has easy access to public transit")
@@ -1042,8 +1320,8 @@ class InviteManager(models.Manager):
         while True:
             code = get_random_string(
                 length=20,
-                allowed_chars='abcdefghijklmnopqrstuvwxyz'
-                              'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-~'
+                allowed_chars='abcdefghijkmnpqrstuvwxyz'
+                              'ABCDEFGHJKLMNPQRSTUVWXYZ23456789-~'
             )
             if not Invite.objects.filter(code=code):
                 break
@@ -1077,7 +1355,7 @@ class Invite(models.Model):
         unique_together = (('email', 'content_id', 'kind'),)
 
     def send(self, site, body_template_name='brambling/mail/invite_{kind}_body.html',
-             subject_template_name='brambling/mail/invite_{kind}_subject.html',
+             subject_template_name='brambling/mail/invite_{kind}_subject.txt',
              content=None, secure=False):
         context = {
             'invite': self,
@@ -1086,24 +1364,140 @@ class Invite(models.Model):
         }
         if content is not None:
             context['content'] = content
-        body = render_to_string(
-            body_template_name.format(kind=self.kind),
-            context
-        )
-        subject = render_to_string(
-            subject_template_name.format(kind=self.kind),
-            context
-        )
 
-        # Email subject *must not* contain newlines
-        subject = ''.join(subject.splitlines())
-
-        send_mail(
-            subject=subject,
-            message=striptags(body),
-            html_message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+        send_fancy_mail(
             recipient_list=[self.email],
+            subject_template=subject_template_name.format(kind=self.kind),
+            body_template=body_template_name.format(kind=self.kind),
+            context=context,
         )
         self.is_sent = True
         self.save()
+
+
+class CustomForm(models.Model):
+    ATTENDEE = 'attendee'
+    ORDER = 'order'
+
+    FORM_TYPE_CHOICES = (
+        (ATTENDEE, _('Attendee')),
+        (ORDER, _('Order')),
+
+    )
+    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES,
+                                 help_text='Order forms will only display if "collect survey data" is checked in your event settings')
+    event = models.ForeignKey(Event, related_name="forms")
+    # TODO: Add fk/m2m to BoughtItem to limit people the form is
+    # displayed to.
+    name = models.CharField(max_length=50,
+                            help_text="For organization purposes. This will not be displayed to attendees.")
+    index = models.PositiveSmallIntegerField(default=0,
+                                             help_text="Defines display order if you have multiple forms.")
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('index',)
+
+    def get_fields(self):
+        # Returns field definition dict that can be added to a form
+        return SortedDict((
+            (field.key, field.formfield())
+            for field in self.fields.all()
+        ))
+
+    def get_data(self, related_obj):
+        related_ct = ContentType.objects.get_for_model(related_obj)
+        related_id = related_obj.pk
+        entries = CustomFormEntry.objects.filter(
+            related_ct=related_ct,
+            related_id=related_id,
+            form_field__form=self,
+        )
+        raw_data = {
+            entry.form_field_id: entry.get_value()
+            for entry in entries
+        }
+        return {
+            field.key: raw_data[field.pk]
+            for field in self.fields.all()
+            if field.pk in raw_data
+        }
+
+    def save_data(self, cleaned_data, related_obj):
+        related_ct = ContentType.objects.get_for_model(related_obj)
+        related_id = related_obj.pk
+        for field in self.fields.all():
+            value = json.dumps(cleaned_data.get(field.key))
+            CustomFormEntry.objects.update_or_create(
+                related_ct=related_ct,
+                related_id=related_id,
+                form_field=field,
+                defaults={'value': value},
+            )
+
+
+class CustomFormField(models.Model):
+    TEXT = 'text'
+    TEXTAREA = 'textarea'
+    BOOLEAN = 'boolean'
+
+    FIELD_TYPE_CHOICES = (
+        (TEXT, _('Text')),
+        (TEXTAREA, _('Paragraph text')),
+        (BOOLEAN, _('Checkbox')),
+    )
+    field_type = models.CharField(max_length=8, choices=FIELD_TYPE_CHOICES, default=TEXT)
+
+    form = models.ForeignKey(CustomForm, related_name='fields')
+    name = models.CharField(max_length=30)
+    # Choices will be a comma-separated value field, not a relation.
+    #choices = models.CharField(max_length=255)
+    default = models.CharField(max_length=255, blank=True)
+    required = models.BooleanField(default=False)
+    index = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ('index',)
+
+    @property
+    def key(self):
+        return "custom_{}_{}".format(self.form_id, self.pk)
+
+    def formfield(self):
+        kwargs = {
+            'required': self.required,
+            'initial': self.default,
+            'label': self.name,
+        }
+        if self.field_type == self.TEXT:
+            field_class = forms.CharField
+        elif self.field_type == self.TEXTAREA:
+            field_class = forms.CharField
+            kwargs['widget'] = forms.Textarea
+        elif self.field_type == self.BOOLEAN:
+            field_class = forms.BooleanField
+
+        return field_class(**kwargs)
+
+
+class CustomFormEntry(models.Model):
+    related_ct = models.ForeignKey(ContentType)
+    related_id = models.IntegerField()
+    related_obj = GenericForeignKey('related_ct', 'related_id')
+
+    form_field = models.ForeignKey(CustomFormField)
+    value = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = (('related_ct', 'related_id', 'form_field'),)
+
+    def set_value(self, value):
+        self.value = json.dumps(value)
+
+    def get_value(self):
+        try:
+            return json.loads(self.value)
+        except:
+            return ''

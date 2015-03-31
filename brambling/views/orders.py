@@ -1,23 +1,33 @@
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView
 import floppyforms.__future__ as forms
 
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
-                                    SurveyDataForm)
+                                    SurveyDataForm, CheckPaymentForm)
+from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
-                              Attendee, EventHousing)
+                              Attendee, EventHousing, Event, Transaction)
+from brambling.utils.payment import (dwolla_can_connect,
+                                     dwolla_customer_oauth_url,
+                                     dwolla_is_connected)
 from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
-                                   ajax_required, get_order,
-                                   clear_expired_carts, Workflow, Step,
-                                   get_dwolla)
+                                   ajax_required, clear_expired_carts,
+                                   Workflow, Step)
+
+
+ORDER_CODE_SESSION_KEY = '_brambling_order_code'
+ORDER_CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 
 class OrderStep(Step):
@@ -38,7 +48,9 @@ class ShopStep(OrderStep):
 
     def _is_completed(self):
         order = self.workflow.order
-        return (order.checked_out or
+        if not order:
+            return False
+        return (order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED) or
                 (order.cart_start_time is not None and
                  order.bought_items.filter(status=BoughtItem.RESERVED,
                                            item_option__item__category=Item.PASS).exists()))
@@ -50,6 +62,8 @@ class AttendeeStep(OrderStep):
     view_name = 'brambling_event_attendee_list'
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return not self.workflow.order.bought_items.filter(attendee__isnull=True).exists()
 
     def get_errors(self):
@@ -101,11 +115,15 @@ class HousingStep(OrderStep):
         return workflow.event.collect_housing_data
 
     def is_active(self):
+        if not self.workflow.order:
+            return False
         if not hasattr(self, '_active'):
             self._active = self.workflow.order.attendees.filter(housing_status=Attendee.NEED).exists()
         return self._active
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return not self.workflow.order.attendees.filter(
             housing_status=Attendee.NEED,
             housing_completed=False
@@ -132,6 +150,8 @@ class SurveyStep(OrderStep):
         return workflow.event.collect_survey_data
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return self.workflow.order.survey_completed
 
 
@@ -145,15 +165,34 @@ class HostingStep(OrderStep):
         return workflow.event.collect_housing_data
 
     def is_active(self):
+        if not self.workflow.order:
+            return False
         if not hasattr(self, '_active'):
             self._active = self.workflow.order.attendees.exclude(housing_status=Attendee.NEED).exists()
         return self._active
 
     def _is_completed(self):
+        if not self.workflow.order:
+            return False
         return (not self.workflow.order.providing_housing) or EventHousing.objects.filter(
             event=self.workflow.event,
             order=self.workflow.order
         ).exists()
+
+
+class OrderEmailStep(OrderStep):
+    name = 'Email'
+    slug = 'email'
+    view_name = 'brambling_event_order_email'
+
+    @classmethod
+    def include_in(cls, workflow):
+        return workflow.order is None or workflow.order.person is None
+
+    def _is_completed(self):
+        if not self.workflow.order:
+            return False
+        return bool(self.workflow.order.email)
 
 
 class PaymentStep(OrderStep):
@@ -167,11 +206,11 @@ class PaymentStep(OrderStep):
 
 class RegistrationWorkflow(Workflow):
     step_classes = [ShopStep, AttendeeStep, HousingStep, SurveyStep,
-                    HostingStep, PaymentStep]
+                    HostingStep, OrderEmailStep, PaymentStep]
 
 
 class ShopWorkflow(Workflow):
-    step_classes = [ShopStep, AttendeeStep, HousingStep, PaymentStep]
+    step_classes = [ShopStep, AttendeeStep, HousingStep, HostingStep, PaymentStep]
 
 
 class SurveyWorkflow(Workflow):
@@ -186,25 +225,21 @@ class OrderMixin(object):
     current_step_slug = None
 
     def dispatch(self, request, *args, **kwargs):
+        # TODO: Isn't this a circular redirect?
         if request.user.is_authenticated() and not request.user.is_active:
             return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
 
         self.event = get_event_or_404(kwargs['event_slug'])
         if not self.event.viewable_by(request.user):
             raise Http404
-        if self.kwargs.get('code'):
-            self.order = get_order(self.event, code=self.kwargs['code'])
-            if (request.user.is_authenticated() and
-                    not self.order.person == request.user and
-                    not self.is_admin_request):
-                raise Http404
-            if (not request.user.is_authenticated() and
-                    self.order.person is not None):
-                raise Http404
-        elif request.user.is_authenticated():
-            self.order = get_order(self.event, person=request.user)
-        else:
-            self.order = get_order(self.event)
+
+        try:
+            self.order = self.get_order()
+        except Order.DoesNotExist:
+            raise Http404
+
+        if self.order and self.order.cart_is_expired():
+            self.order.delete_cart()
 
         self.workflow = self.get_workflow()
         if self.workflow is None or self.current_step_slug is None:
@@ -216,7 +251,10 @@ class OrderMixin(object):
                     not self.current_step.is_accessible()):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
-                        return HttpResponseRedirect(step.url)
+                        url_kwargs = {'event_slug': kwargs['event_slug']}
+                        if kwargs.get('code'):
+                            url_kwargs['code'] = kwargs['code']
+                        return HttpResponseRedirect(reverse(step.view_name, kwargs=url_kwargs))
         return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
     @property
@@ -224,6 +262,77 @@ class OrderMixin(object):
         if not hasattr(self, '_is_admin_request'):
             self._is_admin_request = self.event.editable_by(self.request.user)
         return self._is_admin_request
+
+    def get_order(self):
+        order_kwargs = {
+            'event': self.event,
+            'person': self.request.user if self.request.user.is_authenticated() else None,
+        }
+        code_in_url = False
+        order = None
+        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+
+        if self.kwargs.get('code'):
+            if str(self.event.pk) in session_orders:
+                del session_orders[str(self.event.pk)]
+            order_kwargs['code'] = self.kwargs['code']
+            code_in_url = True
+        elif str(self.event.pk) in session_orders:
+            order_kwargs['code'] = session_orders[str(self.event.pk)]
+        try:
+            if order_kwargs['person'] or order_kwargs.get('code'):
+                order = Order.objects.get(**order_kwargs)
+        except Order.DoesNotExist:
+            # If it was in the URL, re-raise the error.
+            if code_in_url:
+                raise
+
+            # Also be sure to remove the code from the session,
+            # if that's what they were using.
+            if order_kwargs.get('code'):
+                del session_orders[str(self.event.pk)]
+
+                # If the user is authenticated, try to get the order
+                # they have for this event. Maybe the code snuck in there
+                # somehow?
+                if self.request.user.is_authenticated():
+                    try:
+                        order = Order.objects.get(
+                            event=self.event,
+                            person=self.request.user
+                        )
+                    except Order.DoesNotExist:
+                        # See if the order exists and belongs to an
+                        # unauthenticated user. If so, and if that user hasn't
+                        # checked out yet, assume that the user created an
+                        # account mid-order and re-assign it.
+                        try:
+                            order = Order.objects.get(
+                                event=self.event,
+                                person__isnull=True,
+                                code=order_kwargs['code'],
+                                status=Order.IN_PROGRESS
+                            )
+                        except Order.DoesNotExist:
+                            pass
+                        else:
+                            order.person = self.request.user
+                            order.save()
+        return order
+
+    def create_order(self):
+        person = self.request.user if self.request.user.is_authenticated() else None
+        code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
+
+        while Order.objects.filter(event=self.event, code=code).exists():
+            code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
+        order = Order.objects.create(event=self.event, person=person, code=code)
+
+        if not self.request.user.is_authenticated():
+            session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+            session_orders[str(self.event.pk)] = code
+            self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+        return order
 
     def get_workflow_class(self):
         return RegistrationWorkflow
@@ -235,16 +344,30 @@ class OrderMixin(object):
         }
         return self.get_workflow_class()(**kwargs)
 
+    def get_success_url(self):
+        if self.current_step.errors:
+            view_name = self.current_step.view_name
+        else:
+            view_name = self.current_step.next_step.view_name
+        kwargs = {'event_slug': self.event.slug}
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
+            kwargs['code'] = self.kwargs['code']
+        return reverse(view_name, kwargs=kwargs)
+
     def get_context_data(self, **kwargs):
         context = super(OrderMixin, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
             'order': self.order,
+            # Use codes if a code was used and there's no authenticated user.
+            'code_in_url': (True if self.kwargs.get('code') and
+                            not self.request.user.is_authenticated() else False),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'is_admin_request': self.is_admin_request,
             'workflow': self.workflow,
             'current_step': self.current_step,
             'next_step': self.current_step.next_step if self.current_step else None,
+            'site': get_current_site(self.request),
         })
         return context
 
@@ -268,6 +391,13 @@ class AddToOrderView(OrderMixin, View):
             self.order.add_to_cart(item_option)
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})
+
+    def get_order(self):
+        order = super(AddToOrderView, self).get_order()
+
+        if order is None:
+            order = self.create_order()
+        return order
 
     def get_workflow(self):
         return None
@@ -322,25 +452,12 @@ class ApplyDiscountView(OrderMixin, View):
             'success': True,
         })
 
-    def get_workflow(self):
-        return None
+    def get_order(self):
+        order = super(ApplyDiscountView, self).get_order()
 
-
-class RemoveDiscountView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if not self.is_admin_request:
-            raise Http404
-        try:
-            boughtitemdiscount = BoughtItemDiscount.objects.get(
-                bought_item__order=self.order,
-                pk=kwargs['discount_pk']
-            )
-        except BoughtItemDiscount.DoesNotExist:
-            pass
-        else:
-            boughtitemdiscount.delete()
-        return JsonResponse({'success': True})
+        if order is None:
+            order = self.create_order()
+        return order
 
     def get_workflow(self):
         return None
@@ -350,9 +467,14 @@ class ChooseItemsView(OrderMixin, TemplateView):
     template_name = 'brambling/event/order/shop.html'
     current_step_slug = 'shop'
 
+    @method_decorator(ensure_csrf_cookie)
+    def dispatch(self, *args, **kwargs):
+        return super(ChooseItemsView, self).dispatch(*args, **kwargs)
+
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get_context_data(self, **kwargs):
         context = super(ChooseItemsView, self).get_context_data(**kwargs)
@@ -371,6 +493,9 @@ brambling_boughtitem.status != 'refunded'
         })
 
         context['item_options'] = item_options
+        if self.order is not None:
+            context['discounts'] = Discount.objects.filter(
+                orderdiscount__order=self.order).distinct()
         return context
 
 
@@ -379,8 +504,9 @@ class AttendeesView(OrderMixin, TemplateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
         try:
@@ -397,7 +523,7 @@ class AttendeesView(OrderMixin, TemplateView):
                 'event_slug': self.event.slug,
                 'pk': unassigned_pass.pk
             }
-            if self.order.person_id is None:
+            if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
             return HttpResponseRedirect(reverse('brambling_event_attendee_edit',
                                                 kwargs=kwargs))
@@ -419,8 +545,9 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
@@ -471,11 +598,6 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
         self.object = form.save()
         return super(AttendeeBasicDataView, self).form_valid(form)
 
-    def get_success_url(self):
-        if self.current_step.errors:
-            return self.current_step.url
-        return self.current_step.next_step.url
-
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context['event_pass'] = self.event_pass
@@ -492,8 +614,9 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     current_step_slug = 'housing'
 
     def get_workflow_class(self):
-        return (ShopWorkflow if self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
+            return ShopWorkflow
+        return RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
         if not self.event.collect_housing_data:
@@ -523,7 +646,7 @@ class AttendeeHousingView(OrderMixin, TemplateView):
         kwargs = {
             'event_slug': self.event.slug,
         }
-        if self.order.person_id is None:
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.order.code
         return reverse('brambling_event_survey', kwargs=kwargs)
 
@@ -560,8 +683,9 @@ class SurveyDataView(OrderMixin, UpdateView):
     form_class = SurveyDataForm
 
     def get_workflow_class(self):
-        return (SurveyWorkflow if self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
+            return SurveyWorkflow
+        return RegistrationWorkflow
 
     def get_object(self):
         return self.order
@@ -571,11 +695,6 @@ class SurveyDataView(OrderMixin, UpdateView):
         form.save()
         return super(SurveyDataView, self).form_valid(form)
 
-    def get_success_url(self):
-        if self.current_step.errors:
-            return self.current_step.url
-        return self.current_step.next_step.url
-
 
 class HostingView(OrderMixin, UpdateView):
     template_name = 'brambling/event/order/hosting.html'
@@ -583,8 +702,9 @@ class HostingView(OrderMixin, UpdateView):
     current_step_slug = 'hosting'
 
     def get_workflow_class(self):
-        return (HostingWorkflow if self.order.checked_out
-                else RegistrationWorkflow)
+        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
+            return HostingWorkflow
+        return RegistrationWorkflow
 
     def get_object(self):
         if not self.event.collect_housing_data:
@@ -605,9 +725,22 @@ class HostingView(OrderMixin, UpdateView):
         kwargs = {
             'event_slug': self.event.slug,
         }
-        if self.order.person_id is None:
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
             kwargs['code'] = self.order.code
         return reverse('brambling_event_order_summary', kwargs=kwargs)
+
+
+class OrderEmailView(OrderMixin, UpdateView):
+    template_name = 'brambling/event/order/email.html'
+    current_step_slug = 'email'
+
+    def get_form_class(self):
+        cls = forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+        cls.base_fields['email'].required = True
+        return cls
+
+    def get_object(self):
+        return self.order
 
 
 class SummaryView(OrderMixin, TemplateView):
@@ -626,10 +759,21 @@ class SummaryView(OrderMixin, TemplateView):
         self.summary_data = self.order.get_summary_data()
         self.net_balance = self.summary_data['net_balance']
         if self.net_balance == 0:
-            self.order.mark_cart_paid()
+            valid = True
+            payment = Transaction.objects.create(
+                amount=0,
+                method=Transaction.FAKE,
+                transaction_type=Transaction.PURCHASE,
+                is_confirmed=True,
+                api_type=self.event.api_type,
+                event=self.event,
+                order=self.order,
+            )
+            self.order.mark_cart_paid(Order.COMPLETED, payment)
         else:
             self.get_forms()
             form = None
+            valid = False
             if 'choose_card' in request.POST:
                 # Get a choose form.
                 form = self.choose_card_form
@@ -638,37 +782,69 @@ class SummaryView(OrderMixin, TemplateView):
                 form = self.new_card_form
             if 'dwolla' in request.POST:
                 form = self.dwolla_form
+            if 'check' in request.POST:
+                form = self.check_form
             if form and form.is_valid():
-                form.save()
-                self.order.mark_cart_paid()
+                valid = True
+                payment = form.save()
+                self.order.mark_cart_paid(Order.COMPLETED if payment.is_confirmed else Order.PENDING,
+                                          payment)
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()
-                return HttpResponseRedirect('')
+                summary_data = self.order.get_summary_data()
+                send_order_receipt(self.order, summary_data,
+                                   get_current_site(self.request),
+                                   event=self.event,
+                                   secure=self.request.is_secure())
+                send_order_alert(self.order, summary_data,
+                                 get_current_site(self.request),
+                                 secure=self.request.is_secure())
+
+                session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+                if str(self.event.pk) in session_orders:
+                    del session_orders[str(self.event.pk)]
+                    self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+
+        if valid:
+            if not self.order.person:
+                url = reverse('brambling_event_order_summary', kwargs={
+                    'event_slug': self.event.slug,
+                    'code': self.order.code
+                })
+                return HttpResponseRedirect(url)
+            return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def get_forms(self):
         kwargs = {
             'order': self.order,
-            'bought_items': self.summary_data['bought_items'],
+            'amount': self.net_balance,
         }
         choose_data = None
         new_data = None
         dwolla_data = None
+        check_data = None
         if self.request.method == 'POST':
-            if 'choose_card' in self.request.POST:
+            if 'choose_card' in self.request.POST and self.event.uses_stripe():
                 choose_data = self.request.POST
-            elif 'new_card' in self.request.POST:
+            elif 'new_card' in self.request.POST and self.event.uses_stripe():
                 new_data = self.request.POST
-            elif 'dwolla' in self.request.POST:
+            elif 'dwolla' in self.request.POST and self.event.uses_dwolla():
                 dwolla_data = self.request.POST
-        if self.order.person_id is not None:
-            self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
-        else:
-            self.choose_card_form = None
-        self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
-        self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
+            elif 'check' in self.request.POST and self.event.uses_checks():
+                check_data = self.request.POST
+        if self.event.uses_stripe():
+            if self.order.person_id is not None:
+                self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
+            else:
+                self.choose_card_form = None
+            self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
+        if self.event.uses_dwolla():
+            self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
+        if self.event.uses_checks():
+            self.check_form = CheckPaymentForm(data=check_data, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(SummaryView, self).get_context_data(**kwargs)
@@ -678,26 +854,30 @@ class SummaryView(OrderMixin, TemplateView):
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'dwolla_form': getattr(self, 'dwolla_form', None),
+            'check_form': getattr(self, 'check_form', None),
             'net_balance': self.net_balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
+            'STRIPE_TEST_PUBLISHABLE_KEY': getattr(settings,
+                                                   'STRIPE_TEST_PUBLISHABLE_KEY',
+                                                   ''),
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        if (getattr(settings, 'DWOLLA_APPLICATION_KEY', None) and
-                not dwolla_obj.dwolla_user_id):
-            dwolla = get_dwolla()
-            client = dwolla.DwollaClientApp(settings.DWOLLA_APPLICATION_KEY,
-                                            settings.DWOLLA_APPLICATION_SECRET)
+        if dwolla_can_connect(dwolla_obj, self.event.api_type):
             kwargs = {
                 'event_slug': self.event.slug,
             }
-            if self.order.person_id is None:
+            if self.kwargs.get('code') and not self.request.user.is_authenticated():
                 kwargs['code'] = self.order.code
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
-            redirect_url = dwolla_obj.get_dwolla_connect_url() + "?next_url=" + next_url
-            context['dwolla_oauth_url'] = client.init_oauth_url(self.request.build_absolute_uri(redirect_url),
-                                                                "Send|AccountInfoFull")
+            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+                dwolla_obj, self.event.api_type, self.request, next_url)
+        if dwolla_is_connected(dwolla_obj, self.event.api_type):
+            context.update({
+                'dwolla_is_connected': True,
+                'dwolla_user_id': dwolla_obj.dwolla_user_id if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_user_id
+            })
         context.update(self.summary_data)
         return context
