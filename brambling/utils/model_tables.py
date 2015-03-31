@@ -7,6 +7,7 @@ from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
+from django.forms.forms import pretty_name
 from django.utils.text import capfirst
 import floppyforms as forms
 
@@ -44,6 +45,7 @@ def comma_separated_manager(attr_name):
     def inner(self, obj):
         manager = getattr(obj, attr_name)
         return ", ".join([unicode(x) for x in manager.all()])
+    inner.short_description = pretty_name(attr_name)
     return inner
 
 
