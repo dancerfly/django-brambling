@@ -139,7 +139,11 @@ class ModelTable(object):
         if field in self.label_overrides:
             return self.label_overrides[field]
 
-        return label_for_field(field, self.model, self)
+        try:
+            return label_for_field(field, self.model, self)
+        except AttributeError:
+            # Trust that it exists, for now.
+            return pretty_name(field)
 
     def header_row(self):
         return Row((field, self._label(field))
