@@ -128,6 +128,11 @@ class ModelTable(object):
                        for field in fields),
                       obj=obj)
 
+    def __len__(self):
+        fields = self.get_fields()
+        object_list = self.get_queryset(fields)
+        return object_list.count()
+
     def _label(self, field):
         """
         Returns a pretty name for the given field. First check is the
