@@ -1,22 +1,22 @@
+import csv
+import itertools
 import logging
-import operator
 import pprint
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Sum, Q
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.db.models import Count, Sum
+from django.http import (Http404, HttpResponseRedirect, JsonResponse,
+                         StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_text
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
-
-from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 import requests
@@ -25,7 +25,8 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
-                                       CustomFormForm, CustomFormFieldFormSet)
+                                       CustomFormForm, CustomFormFieldFormSet,
+                                       OrderNotesForm)
 from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -36,7 +37,7 @@ from brambling.views.utils import (get_event_or_404,
                                    get_event_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
-from brambling.utils.model_tables import AttendeeTable, OrderTable
+from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.utils.payment import (dwolla_can_connect, dwolla_event_oauth_url,
                                      stripe_can_connect, stripe_event_oauth_url)
 
@@ -485,8 +486,7 @@ class CustomFormListView(ListView):
         return context
 
 
-class ModelTableView(FilterView):
-    search_fields = None
+class ModelTableView(ListView):
     model_table = None
     form_prefix = 'column'
 
@@ -509,59 +509,29 @@ class ModelTableView(FilterView):
         context['table'] = self.get_table(self.object_list)
         return context
 
-    def get_queryset(self):
-        queryset = super(ModelTableView, self).get_queryset()
-
-        # Originally from django.contrib.admin.options
-        def construct_search(field_name):
-            if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
-            elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
-            elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
-            else:
-                return "%s__icontains" % field_name
-
-        use_distinct = False
-        search_fields = self.search_fields
-        search_term = self.request.GET.get('search', '')
-        opts = self.model._meta
-        if search_fields and search_term:
-            orm_lookups = [construct_search(str(search_field))
-                           for search_field in search_fields]
-            for bit in search_term.split():
-                or_queries = [Q(**{orm_lookup: bit})
-                              for orm_lookup in orm_lookups]
-                queryset = queryset.filter(reduce(operator.or_, or_queries))
-            if not use_distinct:
-                for search_spec in orm_lookups:
-                    if lookup_needs_distinct(opts, search_spec):
-                        use_distinct = True
-                        break
-
-        if use_distinct:
-            queryset = queryset.distinct()
-        return queryset
-
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
 
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            return context['table'].render_csv_response()
-        else:
-            # Default to the template.
-            return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
+            table = context['table']
+            pseudo_buffer = Echo()
+            writer = csv.writer(pseudo_buffer)
+            response = StreamingHttpResponse((writer.writerow([force_text(cell.value) for cell in row])
+                                              for row in itertools.chain((table.header_row(),), table)),
+                                             content_type="text/csv")
+            response['Content-Disposition'] = 'attachment; filename="export.csv"'
+            return response
+
+        # Default to the template.
+        return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
 
 
 class AttendeeFilterView(ModelTableView):
     filterset_class = AttendeeFilterSet
     template_name = 'brambling/event/organizer/attendees.html'
     context_object_name = 'attendees'
-    search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
-                     'email', 'order__email', 'order__person__email')
     model = Attendee
     model_table = AttendeeTable
 
@@ -690,6 +660,7 @@ class OrderDetailView(DetailView):
                                        code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.discount_form = ManualDiscountForm(order=self.order)
+        self.notes_form = OrderNotesForm(instance=self.order)
         if self.request.method == 'POST':
             if 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
@@ -698,15 +669,29 @@ class OrderDetailView(DetailView):
             elif 'is_discount_form' in self.request.POST:
                 self.discount_form = ManualDiscountForm(order=self.order,
                                                         data=self.request.POST)
+            elif 'is_notes_form' in self.request.POST:
+                self.notes_form = OrderNotesForm(instance=self.order,
+                                                 data=self.request.POST)
+        return self.payment_form, self.discount_form, self.notes_form
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
+        if self.payment_form.is_bound:
+            active = 'payment'
+        elif self.discount_form.is_bound:
+            active = 'discount'
+        elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
+            active = 'notes'
+        else:
+            active = 'summary'
         context.update({
             'payment_form': self.payment_form,
             'discount_form': self.discount_form,
+            'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'active': active,
         })
         context.update(self.order.get_summary_data())
         return context
@@ -716,13 +701,13 @@ class OrderDetailView(DetailView):
         return super(OrderDetailView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.get_forms()
-        if self.payment_form.is_bound and self.payment_form.is_valid():
-            self.payment_form.save()
-            return HttpResponseRedirect(request.path)
-        if self.discount_form.is_bound and self.discount_form.is_valid():
-            self.discount_form.save()
-            return HttpResponseRedirect(request.path)
+        for form in self.get_forms():
+            if form.is_bound and form.is_valid():
+                form.save()
+                path = request.path
+                if 'active' in request.GET:
+                    path += '?active=' + request.GET['active']
+                return HttpResponseRedirect(path)
         return super(OrderDetailView, self).get(request, *args, **kwargs)
 
 
