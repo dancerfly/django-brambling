@@ -159,31 +159,17 @@ def dwolla_refund(event, payment_id, amount, pin):
     )
 
 
-def dwolla_can_connect(obj, api_type):
-    if api_type == LIVE:
-        return bool(
-            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
-            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False) and
-            not obj.dwolla_user_id
-        )
+def dwolla_test_settings_valid():
     return bool(
         getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
-        getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False) and
-        not obj.dwolla_test_user_id
+        getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
     )
 
 
-def dwolla_is_connected(obj, api_type):
-    if api_type == LIVE:
-        return bool(
-            obj.dwolla_user_id and
-            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
-            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
-        )
+def dwolla_live_settings_valid():
     return bool(
-        obj.dwolla_test_user_id and
-        getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
-        getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
+        getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
+        getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
     )
 
 
@@ -264,35 +250,19 @@ def stripe_refund(event, payment_id, amount):
     }
 
 
-def stripe_can_connect(obj, api_type):
-    if api_type == LIVE:
-        return bool(
-            getattr(settings, 'STRIPE_APPLICATION_ID', False) and
-            getattr(settings, 'STRIPE_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
-            not obj.stripe_user_id
-        )
+def stripe_test_settings_valid():
     return bool(
-        getattr(settings, 'STRIPE_TEST_APPLICATION_ID', False) and
-        getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
-        getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
-        not obj.stripe_test_user_id
-    )
-
-
-def stripe_is_connected(obj, api_type):
-    if api_type == LIVE:
-        return bool(
-            obj.stripe_user_id and
-            getattr(settings, 'STRIPE_APPLICATION_ID', False) and
-            getattr(settings, 'STRIPE_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False)
-        )
-    return bool(
-        obj.stripe_test_user_id and
         getattr(settings, 'STRIPE_TEST_APPLICATION_ID', False) and
         getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
         getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False)
+    )
+
+
+def stripe_live_settings_valid():
+    return bool(
+        getattr(settings, 'STRIPE_APPLICATION_ID', False) and
+        getattr(settings, 'STRIPE_SECRET_KEY', False) and
+        getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False)
     )
 
 

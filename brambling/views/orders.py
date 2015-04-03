@@ -19,12 +19,9 @@ from brambling.mail import send_order_receipt, send_order_alert
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing, Event, Transaction)
-from brambling.utils.payment import (dwolla_can_connect,
-                                     dwolla_customer_oauth_url,
-                                     dwolla_is_connected)
-from brambling.views.utils import (get_event_or_404, get_event_admin_nav,
-                                   ajax_required, clear_expired_carts,
-                                   Workflow, Step)
+from brambling.utils.payment import dwolla_customer_oauth_url
+from brambling.views.utils import (get_event_admin_nav, ajax_required,
+                                   clear_expired_carts, Workflow, Step)
 
 
 ORDER_CODE_SESSION_KEY = '_brambling_order_code'
@@ -843,23 +840,23 @@ class SummaryView(OrderMixin, TemplateView):
         dwolla_data = None
         check_data = None
         if self.request.method == 'POST':
-            if 'choose_card' in self.request.POST and self.event.uses_stripe():
+            if 'choose_card' in self.request.POST and self.event.stripe_connected():
                 choose_data = self.request.POST
-            elif 'new_card' in self.request.POST and self.event.uses_stripe():
+            elif 'new_card' in self.request.POST and self.event.stripe_connected():
                 new_data = self.request.POST
-            elif 'dwolla' in self.request.POST and self.event.uses_dwolla():
+            elif 'dwolla' in self.request.POST and self.event.dwolla_connected():
                 dwolla_data = self.request.POST
-            elif 'check' in self.request.POST and self.event.uses_checks():
+            elif 'check' in self.request.POST and self.event.check_payment_allowed:
                 check_data = self.request.POST
-        if self.event.uses_stripe():
+        if self.event.stripe_connected():
             if self.order.person_id is not None:
                 self.choose_card_form = SavedCardPaymentForm(data=choose_data, **kwargs)
             else:
                 self.choose_card_form = None
             self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
-        if self.event.uses_dwolla():
+        if self.event.dwolla_connected():
             self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
-        if self.event.uses_checks():
+        if self.event.organization.check_payment_allowed:
             self.check_form = CheckPaymentForm(data=check_data, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -881,7 +878,9 @@ class SummaryView(OrderMixin, TemplateView):
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        if dwolla_can_connect(dwolla_obj, self.event.api_type):
+        dwolla_connected = dwolla_obj.dwolla_live_connected() if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_connected()
+        dwolla_can_connect = dwolla_obj.dwolla_live_can_connect() if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_can_connect()
+        if dwolla_can_connect:
             kwargs = {
                 'event_slug': self.event.slug,
                 'organization_slug': self.event.organization.slug,
@@ -891,7 +890,7 @@ class SummaryView(OrderMixin, TemplateView):
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
                 dwolla_obj, self.event.api_type, self.request, next_url)
-        if dwolla_is_connected(dwolla_obj, self.event.api_type):
+        if dwolla_connected:
             context.update({
                 'dwolla_is_connected': True,
                 'dwolla_user_id': dwolla_obj.dwolla_user_id if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_user_id

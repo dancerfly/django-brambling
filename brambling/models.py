@@ -7,7 +7,6 @@ import itertools
 import json
 import operator
 
-from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -29,7 +28,11 @@ import floppyforms.__future__ as forms
 import stripe
 
 from brambling.mail import send_fancy_mail
-from brambling.utils.payment import dwolla_refund, stripe_refund, LIVE
+from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
+                                     stripe_test_settings_valid,
+                                     stripe_live_settings_valid,
+                                     dwolla_test_settings_valid,
+                                     dwolla_live_settings_valid)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -137,20 +140,36 @@ class AbstractDwollaModel(models.Model):
     dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
     dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
-    def connected_to_dwolla_live(self):
+    def dwolla_live_connected(self):
         return bool(
+            dwolla_live_settings_valid() and
             self.dwolla_user_id and
-            self.dwolla_refresh_token_expires > timezone.now() and
-            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
-            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
+            self.dwolla_refresh_token_expires > timezone.now()
         )
 
-    def connected_to_dwolla_test(self):
+    def dwolla_test_connected(self):
         return bool(
+            dwolla_test_settings_valid() and
             self.dwolla_test_user_id and
-            self.dwolla_test_refresh_token_expires > timezone.now() and
-            getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
-            getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
+            self.dwolla_test_refresh_token_expires > timezone.now()
+        )
+
+    def dwolla_live_can_connect(self):
+        return bool(
+            dwolla_live_settings_valid() and
+            (
+                not self.dwolla_user_id or
+                self.dwolla_refresh_token_expires <= timezone.now()
+            )
+        )
+
+    def dwolla_test_can_connect(self):
+        return bool(
+            dwolla_live_settings_valid() and
+            (
+                not self.dwolla_test_user_id or
+                self.dwolla_test_refresh_token_expires <= timezone.now()
+            )
         )
 
     def get_dwolla_connect_url(self):
@@ -320,22 +339,17 @@ class Organization(AbstractDwollaModel):
         return reverse('brambling_organization_dwolla_connect',
                        kwargs={'organization_slug': self.slug})
 
-    def connected_to_stripe_live(self):
-        return bool(
-            getattr(settings, 'STRIPE_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
-            self.stripe_user_id
-        )
+    def stripe_live_connected(self):
+        return bool(stripe_live_settings_valid() and self.stripe_user_id)
 
-    def connected_to_stripe_test(self):
-        return bool(
-            getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
-            self.stripe_test_user_id
-        )
+    def stripe_test_connected(self):
+        return bool(stripe_test_settings_valid() and self.stripe_test_user_id)
 
-    def uses_checks(self):
-        return self.check_payment_allowed
+    def stripe_live_can_connect(self):
+        return bool(stripe_live_settings_valid() and not self.stripe_user_id)
+
+    def stripe_test_can_connect(self):
+        return bool(stripe_test_settings_valid() and not self.stripe_test_user_id)
 
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
@@ -463,6 +477,26 @@ class Event(models.Model):
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
                                      content_id=self.pk)
+
+    def stripe_connected(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.stripe_live_connected()
+        return self.organization.stripe_test_connected()
+
+    def stripe_can_connect(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.stripe_live_can_connect()
+        return self.organization.stripe_test_can_connect()
+
+    def dwolla_connected(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.dwolla_live_connected()
+        return self.organization.dwolla_test_connected()
+
+    def dwolla_can_connect(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.dwolla_live_can_connect()
+        return self.organization.dwolla_test_can_connect()
 
 
 class Item(models.Model):
@@ -781,6 +815,16 @@ class Order(AbstractDwollaModel):
                        kwargs={'event_slug': self.event.slug,
                                'organization_slug': self.event.organization.slug,
                                'code': self.code})
+
+    def dwolla_connected(self):
+        if self.api_type == Event.LIVE:
+            return self.dwolla_live_connected()
+        return self.dwolla_test_connected()
+
+    def dwolla_can_connect(self):
+        if self.api_type == Event.LIVE:
+            return self.dwolla_live_can_connect()
+        return self.dwolla_test_can_connect()
 
     def add_discount(self, discount, force=False):
         if discount.event_id != self.event_id:

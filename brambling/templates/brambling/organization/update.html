@@ -160,7 +160,7 @@
 							</thead>
 							<tbody>
 								{# Stripe / Dwolla Live: #}
-								{% if organization.connected_to_stripe_live or stripe_oauth_url %}
+								{% if organization.stripe_live_connected or stripe_oauth_url %}
 									<tr>
 										<th>
 											<i class="fa fa-fw fa-credit-card"></i>
@@ -178,14 +178,14 @@
 										{% endif %}
 									</tr>
 								{% endif %}
-								{% if organization.connected_to_dwolla_live or dwolla_oauth_url %}
+								{% if organization.dwolla_live_connected or dwolla_oauth_url %}
 									<tr class="active">
 										<th>
 											<i class="fa fa-fw fa-money"></i>
 											Dwolla (Live)
 											<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
 										</th>
-										{% if organization.connected_to_dwolla_live %}
+										{% if organization.dwolla_live_connected %}
 											<td>Enabled ({{ organization.dwolla_user_id }})</td>
 											<td>{% formrow form.disconnect_dwolla_live with label="Disconnect" %}</td>
 										{% else %}
@@ -198,14 +198,14 @@
 								{% endif %}
 
 								{# Stripe / Dwolla Test: #}
-								{% if organization.connected_to_stripe_test or stripe_test_oauth_url %}
+								{% if organization.stripe_test_connected or stripe_test_oauth_url %}
 									<tr>
 										<th>
 											<i class="fa fa-fw fa-credit-card"></i>
 											Stripe (Test)
 											<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
 										</th>
-										{% if organization.connected_to_stripe_test %}
+										{% if organization.stripe_test_connected %}
 											<td>Enabled ({{ organization.stripe_test_user_id }})</td>
 											<td>{% formrow form.disconnect_stripe_test with label="Disconnect" %}</td>
 										{% else %}
@@ -216,14 +216,14 @@
 										{% endif %}
 									</tr>
 								{% endif %}
-								{% if organization.connected_to_dwolla_test or dwolla_test_oauth_url %}
+								{% if organization.dwolla_test_connected or dwolla_test_oauth_url %}
 									<tr class="active">
 										<th>
 											<i class="fa fa-fw fa-money"></i>
 											Dwolla (Test)
 											<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
 										</th>
-										{% if organization.connected_to_dwolla_test %}
+										{% if organization.dwolla_test_connected %}
 											<td>Enabled ({{ organization.dwolla_test_user_id }})</td>
 											<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
 										{% else %}
@@ -243,13 +243,13 @@
 										<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-html="true" data-content="Allow payments by mail. Note that Dancerfly does &lt;i&gt;not&lt;/i&gt; confirm these payments. See configuration for more details."><i class="fa fa-info-circle"></i></a>
 									</th>
 									<td>
-										{% if organization.uses_checks %}Enabled{% else %}Disabled{% endif %}
+										{% if organization.check_payment_allowed %}Enabled{% else %}Disabled{% endif %}
 									</td>
 									<td>
 										<a href='#CheckConfig' data-toggle="collapse" class="btn btn-xs btn-info"><i class="fa fa-cog"></i> Configure</a>
 									</td>
 								</tr>
-								<tr class="collapse active {% if organization.uses_checks or form.has_check_errors %}in{% endif %}" id="CheckConfig">
+								<tr class="collapse active {% if organization.check_payment_allowed or form.has_check_errors %}in{% endif %}" id="CheckConfig">
 									<td colspan="3">
 										{% formrow form.check_payment_allowed with label="Enable Payment by Check" %}
 

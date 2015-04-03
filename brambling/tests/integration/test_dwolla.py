@@ -5,8 +5,7 @@ from django.test import TestCase
 
 from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory, PersonFactory
-from brambling.utils.payment import (dwolla_prep, dwolla_is_connected,
-                                     dwolla_charge, dwolla_refund)
+from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
 
 
 CHARGE_DATA = {
@@ -41,7 +40,7 @@ class DwollaChargeTestCase(TestCase):
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=2.5)
-        self.assertTrue(dwolla_is_connected(event, Event.TEST))
+        self.assertTrue(event.dwolla_connected())
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()

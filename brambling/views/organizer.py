@@ -37,8 +37,8 @@ from brambling.views.utils import (get_event_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
-from brambling.utils.payment import (dwolla_can_connect, dwolla_organization_oauth_url,
-                                     stripe_can_connect, stripe_organization_oauth_url,
+from brambling.utils.payment import (dwolla_organization_oauth_url,
+                                     stripe_organization_oauth_url,
                                      LIVE, TEST)
 
 
@@ -67,19 +67,19 @@ class OrganizationUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
 
-        if dwolla_can_connect(self.object, LIVE):
+        if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
                 self.object, self.request, LIVE)
 
-        if dwolla_can_connect(self.object, TEST):
+        if self.object.dwolla_test_can_connect():
             context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
                 self.object, self.request, TEST)
 
-        if stripe_can_connect(self.object, LIVE):
+        if self.object.stripe_live_can_connect():
             context['stripe_oauth_url'] = stripe_organization_oauth_url(
                 self.object, self.request, LIVE)
 
-        if stripe_can_connect(self.object, TEST):
+        if self.object.stripe_test_can_connect():
             context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
                 self.object, self.request, TEST)
 
@@ -291,7 +291,7 @@ class EventUpdateView(UpdateView):
         user = self.request.user
         if not event.editable_by(user):
             raise Http404
-        self.organization_editable_by = self.organization_editable_by(user)
+        self.organization_editable_by = self.organization.editable_by(user)
         return event
 
     def get_form_kwargs(self):

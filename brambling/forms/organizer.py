@@ -50,13 +50,13 @@ class OrganizationForm(forms.ModelForm):
 
     def __init__(self, request, *args, **kwargs):
         super(OrganizationForm, self).__init__(*args, **kwargs)
-        if not self.instance.connected_to_stripe_live():
+        if not self.instance.stripe_live_connected():
             del self.fields['disconnect_stripe_live']
-        if not self.instance.connected_to_stripe_test():
+        if not self.instance.stripe_test_connected():
             del self.fields['disconnect_stripe_test']
-        if not self.instance.connected_to_dwolla_live():
+        if not self.instance.dwolla_live_connected():
             del self.fields['disconnect_dwolla_live']
-        if not self.instance.connected_to_dwolla_test():
+        if not self.instance.dwolla_test_connected():
             del self.fields['disconnect_dwolla_test']
         self.request = request
         if self.instance.pk is None:
