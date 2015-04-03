@@ -515,7 +515,8 @@ def discount_form(request, *args, **kwargs):
             if form.is_valid():
                 form.save()
                 url = reverse('brambling_discount_list',
-                              kwargs={'event_slug': event.slug})
+                              kwargs={'event_slug': event.slug,
+                                      'organization_slug': event.organization.slug})
                 return HttpResponseRedirect(url)
     else:
         form = DiscountForm(event, instance=discount)
@@ -574,7 +575,8 @@ def custom_form_form(request, *args, **kwargs):
             form.save()
             formset.save()
             url = reverse('brambling_form_list',
-                          kwargs={'event_slug': event.slug})
+                          kwargs={'event_slug': event.slug,
+                                  'organization_slug': event.organization.slug})
             return HttpResponseRedirect(url)
     else:
         form = CustomFormForm(event, instance=custom_form)
@@ -717,6 +719,7 @@ class RefundView(View):
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
+                              'organization_slug': self.event.organization.slug,
                               'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
 
@@ -889,7 +892,10 @@ class SendReceiptView(View):
                            get_current_site(request),
                            event=event, secure=request.is_secure())
         messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
-        return HttpResponseRedirect(reverse('brambling_event_order_detail', kwargs={'event_slug': event.slug, 'code': order.code}))
+        return HttpResponseRedirect(reverse(
+            'brambling_event_order_detail',
+            kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug, 'code': order.code}
+        ))
 
 
 class FinancesView(ListView):

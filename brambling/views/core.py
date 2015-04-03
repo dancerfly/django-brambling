@@ -184,7 +184,7 @@ class InviteDeleteView(View):
             event = Event.objects.filter(pk=invite.content_id).select_related('organization').get()
             if event.organization.owner_id != self.request.user.pk:
                 raise Http404
-            url = reverse('brambling_event_update', kwargs={'event_slug': event.slug, 'organization_slug': event.organization})
+            url = reverse('brambling_event_update', kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug})
         elif invite.kind == Invite.HOME:
             if not Home.objects.filter(pk=invite.content_id, residents=request.user).exists():
                 raise Http404

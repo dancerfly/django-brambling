@@ -87,12 +87,17 @@ class UserDwollaConnectView(DwollaConnectView):
 class OrderDwollaConnectView(DwollaConnectView):
     def get_object(self):
         try:
-            return Order.objects.get(code=self.kwargs['code'],
-                                     event__slug=self.kwargs['event_slug'])
+            return Order.objects.select_related(
+                'event__organization',
+            ).get(
+                code=self.kwargs['code'],
+                event__slug=self.kwargs['event_slug']
+            )
         except Order.DoesNotExist:
             raise Http404
 
     def get_success_url(self):
         return reverse('brambling_event_order_summary',
                        kwargs={'event_slug': self.object.event.slug,
+                               'organization_slug': self.object.event.organization.slug,
                                'code': self.object.code})

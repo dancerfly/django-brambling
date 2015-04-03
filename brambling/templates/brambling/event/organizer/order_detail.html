@@ -45,7 +45,7 @@
 		{% if order.status == order.COMPLETED %}
 			<div class='pull-right form-inline'>
 				<a class='btn btn-success' data-toggle="modal" data-target=".refund-{{ order.code }}">Refund order</a>
-				<a class='btn btn-success' href="{% url 'brambling_event_send_receipt' event_slug=event.slug code=order.code %}"><i class='fa fa-paper-plane'></i> Send receipt</a>
+				<a class='btn btn-success' href="{% url 'brambling_event_send_receipt' event_slug=event.slug organization_slug=event.organization.slug code=order.code %}"><i class='fa fa-paper-plane'></i> Send receipt</a>
 			</div>
 		{% endif %}
 	</h2>
