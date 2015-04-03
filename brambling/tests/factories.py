@@ -1,6 +1,10 @@
+from datetime import timedelta
+
+from django.utils.timezone import now
 import factory
 
-from brambling.models import Event, Person, Order, CreditCard, Invite
+from brambling.models import (Event, Person, Order, CreditCard, Invite,
+                              Organization)
 
 
 def lazy_setting(setting):
@@ -35,6 +39,27 @@ class PersonFactory(factory.DjangoModelFactory):
 
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
+    dwolla_test_access_token_expires = now() + timedelta(days=2)
+    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
+
+
+class OrganizationFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Organization
+
+    name = "Test organization"
+    slug = factory.Sequence(lambda n: "test-event-{}".format(n))
+    owner = factory.SubFactory(PersonFactory)
+
+    stripe_test_access_token = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_ACCESS_TOKEN'))
+    stripe_test_publishable_key = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_PUBLISHABLE_KEY'))
+    stripe_test_refresh_token = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_REFRESH_TOKEN'))
+    stripe_test_user_id = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_USER_ID'))
+
+    dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_USER_ID'))
+    dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN'))
+    dwolla_test_access_token_expires = now() + timedelta(days=2)
+    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
 
 
 class EventFactory(factory.DjangoModelFactory):
@@ -46,15 +71,7 @@ class EventFactory(factory.DjangoModelFactory):
     city = "Test City"
     state_or_province = "SOP"
     api_type = Event.TEST
-    owner = factory.SubFactory(PersonFactory)
-
-    stripe_test_access_token = factory.LazyAttribute(lazy_setting('STRIPE_TEST_EVENT_ACCESS_TOKEN'))
-    stripe_test_publishable_key = factory.LazyAttribute(lazy_setting('STRIPE_TEST_EVENT_PUBLISHABLE_KEY'))
-    stripe_test_refresh_token = factory.LazyAttribute(lazy_setting('STRIPE_TEST_EVENT_REFRESH_TOKEN'))
-    stripe_test_user_id = factory.LazyAttribute(lazy_setting('STRIPE_TEST_EVENT_USER_ID'))
-
-    dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_EVENT_USER_ID'))
-    dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_EVENT_ACCESS_TOKEN'))
+    organization = factory.SubFactory(OrganizationFactory)
 
 
 class OrderFactory(factory.DjangoModelFactory):
@@ -74,4 +91,4 @@ class InviteFactory(factory.DjangoModelFactory):
     code = factory.Sequence(lambda n: "invite{}".format(n))
     email = "test@test.com"
     user = factory.SubFactory(PersonFactory)
-    kind = Invite.EDITOR
+    kind = Invite.EVENT_EDITOR

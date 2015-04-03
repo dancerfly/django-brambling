@@ -39,7 +39,7 @@ CHARGE_DATA = {
 class DwollaChargeTestCase(TestCase):
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
-                             application_fee_percent=2.5)
+                             application_fee_percent=Decimal('2.5'))
         self.assertTrue(event.dwolla_connected())
         dwolla_prep(Event.TEST)
 

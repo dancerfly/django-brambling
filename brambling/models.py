@@ -144,6 +144,7 @@ class AbstractDwollaModel(models.Model):
         return bool(
             dwolla_live_settings_valid() and
             self.dwolla_user_id and
+            self.dwolla_refresh_token_expires and
             self.dwolla_refresh_token_expires > timezone.now()
         )
 
@@ -151,6 +152,7 @@ class AbstractDwollaModel(models.Model):
         return bool(
             dwolla_test_settings_valid() and
             self.dwolla_test_user_id and
+            self.dwolla_test_refresh_token_expires and
             self.dwolla_test_refresh_token_expires > timezone.now()
         )
 
