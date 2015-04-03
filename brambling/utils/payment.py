@@ -86,7 +86,7 @@ def dwolla_update_tokens(days):
     end = start + datetime.timedelta(days=days)
     count = 0
     test_count = 0
-    from brambling.models import Event, Person, Order
+    from brambling.models import Organization, Person, Order
     for api_type in (LIVE, TEST):
         dwolla_prep(api_type)
         if api_type == LIVE:
@@ -99,7 +99,7 @@ def dwolla_update_tokens(days):
             field + '_expires__range': (start, end),
             access_expires + '__lt': start,
         }
-        for model in (Event, Person, Order):
+        for model in (Organization, Person, Order):
             qs = model.objects.filter(**kwargs)
             for item in qs:
                 refresh_token = getattr(item, field)
@@ -119,11 +119,11 @@ def dwolla_charge(user_or_order, amount, event, pin):
     """
     dwolla_prep(event.api_type)
     access_token = dwolla_get_token(user_or_order, event.api_type)
-    event_access_token = dwolla_get_token(event, event.api_type)
+    organization_access_token = dwolla_get_token(event.organization, event.api_type)
     if event.api_type == LIVE:
-        destination = event.dwolla_user_id
+        destination = event.organization.dwolla_user_id
     else:
-        destination = event.dwolla_test_user_id
+        destination = event.organization.dwolla_test_user_id
 
     user_charge_id = transactions.send(
         destinationid=destination,
@@ -138,7 +138,7 @@ def dwolla_charge(user_or_order, amount, event, pin):
 
     event_charge = transactions.info(
         tid=str(user_charge_id),
-        alternate_token=event_access_token
+        alternate_token=organization_access_token
     )
 
     return event_charge
@@ -149,7 +149,7 @@ def dwolla_refund(event, payment_id, amount, pin):
     Returns id of refund transaction.
     """
     dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(event, event.api_type)
+    access_token = dwolla_get_token(event.organization, event.api_type)
     return transactions.refund(
         tid=int(payment_id),
         fundingsource="Balance",
@@ -202,9 +202,9 @@ def stripe_charge(card_or_token, amount, event, customer=None):
         return None
     stripe_prep(event.api_type)
     if event.api_type == LIVE:
-        access_token = event.stripe_access_token
+        access_token = event.organization.stripe_access_token
     else:
-        access_token = event.stripe_test_access_token
+        access_token = event.organization.stripe_test_access_token
     stripe.api_key = access_token
 
     if customer is not None:
@@ -225,9 +225,9 @@ def stripe_charge(card_or_token, amount, event, customer=None):
 def stripe_refund(event, payment_id, amount):
     stripe_prep(event.api_type)
     if event.api_type == LIVE:
-        access_token = event.stripe_access_token
+        access_token = event.organization.stripe_access_token
     else:
-        access_token = event.stripe_test_access_token
+        access_token = event.organization.stripe_test_access_token
     stripe.api_key = access_token
     # Retrieving the charge and refunding it uses the access token.
     charge = stripe.Charge.retrieve(payment_id)
