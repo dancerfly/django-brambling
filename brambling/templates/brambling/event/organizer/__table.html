@@ -9,17 +9,25 @@
 
     {# These should probably be in a navbar-default, but we'll need to redo some of the styles to not be the dancerfly header navbar. #}
     <div class="row">
-        <div class="col-md-3">
-            <p>
-                {% with filtered_count=table|length total_count=table.get_base_queryset|length %}
-                    <strong>{{ filtered_count }} item{{ filtered_count|pluralize }}</strong>
+        <div class="col-md-4">
+            <form class='form-inline' action="" method="get">
+                {% with filtered_count=table|length total_count=table.get_base_queryset.count %}
+                    <div class='form-group'>
+                        <label>{{ filtered_count }} item{{ filtered_count|pluralize }}</label>
+                    </div>
                     {% if filtered_count != total_count %}
-                        out of <a href="{{ request.path }}">{{ total_count }} item{{ total_count|pluralize }} total</a>
+                        {% for field in table.empty_filter_form %}{{ field.as_hidden }}{% endfor %}
+                        {# |safe is a workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145 #}
+                        {% for field in table.column_form %}{{ field.as_hidden|safe }}{% endfor %}
+                        <div class='form-group'>
+                        <label>out of</label>
+                        </div>
+                        <button type="submit" class='btn btn-link' href="{{ request.path }}">{{ total_count }} item{{ total_count|pluralize }} total</button>
                     {% endif %}
                 {% endwith%}
-            </p>
+            </form>
         </div>
-        <div class="col-md-9">
+        <div class="col-md-8">
             <form action="" method="get">
                 <div class='text-right form-inline'>
                     <div class='form-group'>

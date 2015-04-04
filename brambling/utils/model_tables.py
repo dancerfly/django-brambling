@@ -8,8 +8,10 @@ from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 from django.forms.forms import pretty_name
+from django.utils.datastructures import SortedDict
 from django.utils.text import capfirst
 import floppyforms as forms
+import six
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
 from brambling.models import Attendee, Order
@@ -273,6 +275,20 @@ class ModelTable(object):
         return value
 
     @property
+    def empty_filter_form(self):
+        if not hasattr(self, '_empty_filter_form'):
+            filterset = self.filterset
+            fields = SortedDict([
+                (name, filter_.field)
+                for name, filter_ in six.iteritems(filterset.filters)])
+            fields[filterset.order_by_field] = filterset.ordering_field
+            Form = type(str('%sForm' % filterset.__class__.__name__),
+                        (filterset._meta.form,), fields)
+            initial = dict(((name, None) for name in Form.base_fields))
+            self._empty_filter_form = Form(prefix=filterset.form_prefix, initial=initial)
+        return self._empty_filter_form
+
+    @property
     def filter_form(self):
         return self.filterset.form
 
@@ -301,6 +317,8 @@ class ModelTable(object):
                 widget=forms.CheckboxSelectMultiple,
                 required=False,
             )
+            # Workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145
+            field.hidden_widget = forms.MultipleHiddenInput
             fields = {
                 TABLE_COLUMN_FIELD: field,
             }
