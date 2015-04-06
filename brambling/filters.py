@@ -143,6 +143,5 @@ class OrderFilterSet(FloppyFilterSet):
         fields = ['providing_housing', 'send_flyers', 'pending_count']
         form = forms.Form
         order_by = ['code', '-code']
-OrderFilterSet.base_filters['status'].field_class = forms.MultipleChoiceField
 # Workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145
 forms.MultipleChoiceField.hidden_widget = forms.MultipleHiddenInput
