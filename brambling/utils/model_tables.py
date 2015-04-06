@@ -136,6 +136,12 @@ class ModelTable(object):
         object_list = self.get_queryset(fields)
         return object_list.count()
 
+    def __nonzero__(self):
+        # Prevents infinite recursion from calling __len__ - label_for_field
+        # gets called during __len__, and checks the boolean value of the
+        # table.
+        return True
+
     def _label(self, field):
         """
         Returns a pretty name for the given field. First check is the
