@@ -12,17 +12,20 @@
         <div class="col-md-4">
             <form class='form-inline' action="" method="get">
                 {% with filtered_count=table|length total_count=table.get_base_queryset.count %}
-                    <div class='form-group'>
-                        <label>{{ filtered_count }} item{{ filtered_count|pluralize }}</label>
-                    </div>
                     {% if filtered_count != total_count %}
                         {% for field in table.empty_filter_form %}{{ field.as_hidden }}{% endfor %}
                         {# |safe is a workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145 #}
                         {% for field in table.column_form %}{{ field.as_hidden|safe }}{% endfor %}
                         <div class='form-group'>
-                        <label>out of</label>
+                            <label>
+                                {{ filtered_count }} item{{ filtered_count|pluralize }} out of
+                            </label>
+                            <button type="submit" class='btn btn-default btn-xs' href="{{ request.path }}">{{ total_count }} item{{ total_count|pluralize }} total</button>
                         </div>
-                        <button type="submit" class='btn btn-link' href="{{ request.path }}">{{ total_count }} item{{ total_count|pluralize }} total</button>
+                    {% else %}
+                        <div class='form-group'>
+                            <label>{{ filtered_count }} item{{ filtered_count|pluralize }}</label>
+                        </div>
                     {% endif %}
                 {% endwith%}
             </form>
