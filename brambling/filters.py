@@ -17,43 +17,15 @@ FILTER_FIELD_OVERRIDES = copy.deepcopy(FORMFIELD_OVERRIDES)
 FILTER_FIELD_OVERRIDES[models.BooleanField] = {'form_class': forms.NullBooleanField}
 
 
-class IntegerRangeWidget(django_filters.widgets.RangeWidget):
-    def __init__(self, attrs=None):
-        widgets = (forms.TextInput(attrs=attrs), forms.TextInput(attrs=attrs))
-        super(django_filters.widgets.RangeWidget, self).__init__(widgets, attrs)
-
-
-class IntegerRangeField(forms.MultiValueField):
-    widget = IntegerRangeWidget
-
-    def __init__(self, *args, **kwargs):
-        fields = (
-            forms.IntegerField(),
-            forms.IntegerField(),
-        )
-        super(IntegerRangeField, self).__init__(fields, *args, **kwargs)
-
-    def compress(self, data_list):
-        if data_list:
-            return slice(*data_list)
-        return None
-
-
-class ExtraRangeFilter(django_filters.RangeFilter):
-    field_class = IntegerRangeField
+class ExtraBooleanFilter(django_filters.BooleanFilter):
+    field_class = forms.NullBooleanField
 
     def filter(self, qs, value):
+        if value is None:
+            return qs
         if value:
-            if value.start is not None and value.stop is not None:
-                if value.start == value.stop:
-                    qs = qs.extra(where=['{} = %s'.format(self.name)], params=[value.start])
-                else:
-                    qs = qs.extra(where=['{} BETWEEN %s AND %s'.format(self.name)], params=[value.start, value.stop])
-            elif value.start is not None:
-                qs = qs.extra(where=['{} >= %s'.format(self.name)], params=[value.start])
-            elif value.stop is not None:
-                qs = qs.extra(where=['{} <= %s'.format(self.name)], params=[value.stop])
-        return qs
+            return qs.extra(where=['{} > 0'.format(self.name)])
+        return qs.extra(where=['{} = 0'.format(self.name)])
 
 
 class FloppyFilterSet(django_filters.FilterSet):
@@ -94,9 +66,9 @@ class AttendeeFilterSet(django_filters.FilterSet):
     FilterSet for attendees of an event. Requires the event as its first argument.
 
     """
-    order_pending_count = ExtraRangeFilter()
-    order_purchased_count = ExtraRangeFilter()
-    order_refunded_count = ExtraRangeFilter()
+    order_pending_count = ExtraBooleanFilter(label="Order has active cart")
+    order_purchased_count = ExtraBooleanFilter(label="Order has purchased items")
+    order_refunded_count = ExtraBooleanFilter(label="Order has refunded items")
 
     def __init__(self, event, *args, **kwargs):
         "Limit the Item Option list to items belonging to this event."
@@ -134,9 +106,9 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
 
 class OrderFilterSet(FloppyFilterSet):
-    pending_count = ExtraRangeFilter()
-    purchased_count = ExtraRangeFilter()
-    refunded_count = ExtraRangeFilter()
+    pending_count = ExtraBooleanFilter(label="Has active cart")
+    purchased_count = ExtraBooleanFilter(label="Has purchased items")
+    refunded_count = ExtraBooleanFilter(label="Has refunded items")
 
     class Meta:
         model = Order
