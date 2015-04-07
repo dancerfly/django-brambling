@@ -149,6 +149,14 @@ class OrganizationDetailView(DetailView):
         return context
 
 
+class OrderRedirectView(View):
+    def get(self, request, *args, **kwargs):
+        event = get_object_or_404(Event.objects.select_related('organization'),
+                                  slug=kwargs['organization_slug'])
+        url = '/{}{}'.format(event.organization.slug, request.path)
+        return HttpResponseRedirect(url)
+
+
 class EventCreateView(CreateView):
     model = Event
     template_name = 'brambling/event/organizer/create.html'

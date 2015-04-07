@@ -33,6 +33,7 @@ from brambling.views.organizer import (
     OrganizationUpdateView,
     OrganizationDetailView,
     OrganizationRemoveEditorView,
+    OrderRedirectView,
     EventCreateView,
     EventSummaryView,
     EventUpdateView,
@@ -212,6 +213,8 @@ organization_urlpatterns = patterns('',
     url(r'^remove_editor/(?P<pk>\d+)$',
         OrganizationRemoveEditorView.as_view(),
         name="brambling_organization_remove_editor"),
+
+    url(r'^order/(?:(?P<code>[a-zA-Z0-9]{8})/)?', OrderRedirectView.as_view()),
 
     url(r'^(?P<event_slug>[\w-]+)/', include(event_urlpatterns)),
 )
