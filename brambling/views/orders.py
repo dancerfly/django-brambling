@@ -846,7 +846,7 @@ class SummaryView(OrderMixin, TemplateView):
                 new_data = self.request.POST
             elif 'dwolla' in self.request.POST and self.event.dwolla_connected():
                 dwolla_data = self.request.POST
-            elif 'check' in self.request.POST and self.event.check_payment_allowed:
+            elif 'check' in self.request.POST and self.event.organization.check_payment_allowed:
                 check_data = self.request.POST
         if self.event.stripe_connected():
             if self.order.person_id is not None:
