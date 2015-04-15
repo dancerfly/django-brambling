@@ -1,6 +1,7 @@
 import factory
 
-from brambling.models import Event, Person, Order, CreditCard, Invite
+from brambling.models import (Event, Person, Order, CreditCard, Invite,
+                              Transaction)
 
 
 def lazy_setting(setting):
@@ -75,3 +76,10 @@ class InviteFactory(factory.DjangoModelFactory):
     email = "test@test.com"
     user = factory.SubFactory(PersonFactory)
     kind = Invite.EDITOR
+
+
+class TransactionFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Transaction
+
+    event = factory.SubFactory(EventFactory)
