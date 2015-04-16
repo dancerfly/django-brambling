@@ -1,11 +1,16 @@
-from django.contrib import messages
-from django.core.urlresolvers import reverse
-from django.http import Http404, HttpResponseRedirect
-from django.utils.http import is_safe_url
-from django.views.generic import View
-from dwolla import oauth, accounts
+import json
 
-from brambling.models import Event, Order
+from django.contrib import messages
+from django.core.exceptions import SuspiciousOperation
+from django.core.urlresolvers import reverse
+from django.http import Http404, HttpResponseRedirect, HttpResponse
+from django.utils.decorators import method_decorator
+from django.utils.http import is_safe_url
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import View
+from dwolla import oauth, accounts, webhooks
+
+from brambling.models import Event, Order, Transaction
 from brambling.utils.payment import dwolla_prep, LIVE, dwolla_set_tokens
 
 
@@ -98,3 +103,33 @@ class OrderDwollaConnectView(DwollaConnectView):
         return reverse('brambling_event_order_summary',
                        kwargs={'event_slug': self.object.event.slug,
                                'code': self.object.code})
+
+
+class DwollaWebhookView(View):
+    @method_decorator(csrf_exempt)
+    def post(self, request, *args, **kwargs):
+        if request.META['CONTENT_TYPE'] != "application/json":
+            raise Http404("Incorrect content type")
+
+        try:
+            data = json.loads(request.body)
+        except ValueError:
+            raise Http404("Webhook failed to decode request body")
+
+        if data.get('Type') != 'Transaction' or data.get('Subtype') != 'Status':
+            raise Http404("Unhandled webhook type: {} / {}".format(data.get('Type'), data.get('Subtype')))
+
+        try:
+            txn = Transaction.objects.get(remote_id=data['Transaction']['Id'])
+        except Transaction.DoesNotExist:
+            raise Http404("Transaction doesn't exist")
+        except KeyError:
+            raise Http404("Data doesn't contain transaction id")
+
+        dwolla_prep(txn.api_type)
+        if not webhooks.verify(request.META.get('HTTP_X_DWOLLA_SIGNATURE'), request.body):
+            raise SuspiciousOperation("Transaction signature doesn't verify properly")
+
+        txn.is_confirmed = True if data['Transaction']['Status'] == 'processed' else False
+        txn.save()
+        return HttpResponse('')
