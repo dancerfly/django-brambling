@@ -236,12 +236,6 @@
 									<input name='choose_card' value='1' type='hidden'>
 									{% formrow choose_card_form.card %}
 
-									{% for error in choose_card_form.non_field_errors %}
-										<div class='alert alert-danger'>
-											{{ error }}
-										</div>
-									{% endfor %}
-
 									<p><button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
 								</form>
 								{% include 'brambling/_stripe_note.html' %}
@@ -266,12 +260,6 @@
 				<input name='new_card' value='1' type='hidden'>
 
 				{% if new_card_form.save_card %}{% formrow new_card_form.save_card %}{% endif %}
-
-				{% for error in new_card_form.non_field_errors %}
-					<div class='alert alert-danger'>
-						{{ error }}
-					</div>
-				{% endfor %}
 
 				<p><button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
 			</form>
@@ -301,12 +289,6 @@
 
 							{% formrow dwolla_form.dwolla_pin with autocomplete="off" %}
 							{% formrow dwolla_form.source %}
-
-							{% for error in dwolla_form.non_field_errors %}
-								<div class='alert alert-danger'>
-									{{ error }}
-								</div>
-							{% endfor %}
 
 							<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
 						</form>
