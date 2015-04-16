@@ -561,7 +561,7 @@ class DwollaPaymentForm(BasePaymentForm):
                         source=self.cleaned_data['source']
                     )
                 except Exception as e:
-                    self.add_error(None, e.message)
+                    self.add_error(None, e.response)
 
     def save(self):
         return Transaction.from_dwolla_charge(
