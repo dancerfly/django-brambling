@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from dwolla.exceptions import DwollaAPIException
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
@@ -560,8 +561,8 @@ class DwollaPaymentForm(BasePaymentForm):
                         pin=self.cleaned_data['dwolla_pin'],
                         source=self.cleaned_data['source']
                     )
-                except Exception as e:
-                    self.add_error(None, e.response)
+                except DwollaAPIException as e:
+                    self.add_error(None, getattr(e, 'response', e.message))
 
     def save(self):
         return Transaction.from_dwolla_charge(
