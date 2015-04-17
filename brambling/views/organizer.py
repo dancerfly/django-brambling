@@ -667,7 +667,6 @@ class ModelTableView(ListView):
 
 
 class AttendeeFilterView(ModelTableView):
-    filterset_class = AttendeeFilterSet
     template_name = 'brambling/event/organizer/attendees.html'
     context_object_name = 'attendees'
     model = Attendee
@@ -681,11 +680,6 @@ class AttendeeFilterView(ModelTableView):
             raise Http404
         qs = super(AttendeeFilterView, self).get_queryset()
         return qs.filter(order__event=self.event).distinct()
-
-    def get_filterset_kwargs(self, filterset_class):
-        kwargs = super(AttendeeFilterView, self).get_filterset_kwargs(filterset_class)
-        kwargs['event'] = self.event
-        return kwargs
 
     def get_table_kwargs(self, queryset):
         kwargs = super(AttendeeFilterView, self).get_table_kwargs(queryset)
@@ -733,10 +727,8 @@ class RefundView(View):
 
 
 class OrderFilterView(ModelTableView):
-    filterset_class = OrderFilterSet
     template_name = 'brambling/event/organizer/orders.html'
     context_object_name = 'orders'
-    search_fields = ('code', 'email', 'person__email')
     model = Order
     model_table = OrderTable
 

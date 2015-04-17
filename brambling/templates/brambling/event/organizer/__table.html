@@ -7,50 +7,77 @@
 
     {% include "brambling/event/_empty_shop_alert.html" %}
 
-    <form action="" method="get">
-        <div class='text-right form-inline'>
-            <div class='form-group'>
-                <label class='sr-only' for='search'>Search</label>
-                <div class="input-group">
-                    <input class='form-control' type='search' name='search' placeholder='Search…'{% if request.GET.search %} value="{{ request.GET.search }}"{% endif %}>
-                    <span class="input-group-btn">
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i><span class="sr-only"> Search</span></button>
-                    </span>
-                </div>{# /.input-group #}
-            </div>{# /.form-group #}
-            <button class="btn btn-default" data-toggle="modal" data-target="#filterModal" type='button'>
-                <i class="fa fa-filter"></i>
-                Change columns and filters
-            </button>
-            <button type="submit" class="btn btn-primary" name="format" value="csv"><i class="fa fa-download"></i> Download CSV</button>
-        </div>
-        <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                        <h4 class="modal-title">Filters &amp; Columns</h4>
-                    </div>
-                    <div class="modal-body">
-                        <div class='row'>
-                            <div class='col-sm-6'>
-                                <p><em>Limit attendees in data&hellip;</em></p>
-                                {% form table.filter_form %}
-                            </div>
-                            <div class='col-sm-6'>
-                                <p><em>Change displayed columns&hellip;</em></p>
-                                {% formfield table.column_form.columns %}
-                            </div>
+    {# These should probably be in a navbar-default, but we'll need to redo some of the styles to not be the dancerfly header navbar. #}
+    <div class="row">
+        <div class="col-md-4">
+            <form class='form-inline' action="" method="get">
+                {% with filtered_count=table|length total_count=table.get_base_queryset.count %}
+                    {% if filtered_count != total_count %}
+                        {% for field in table.empty_filter_form %}{{ field.as_hidden }}{% endfor %}
+                        {# |safe is a workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145 #}
+                        {% for field in table.column_form %}{{ field.as_hidden|safe }}{% endfor %}
+                        <div class='form-group'>
+                            <label>
+                                {{ filtered_count }} item{{ filtered_count|pluralize }} out of
+                            </label>
+                            <button type="submit" class='btn btn-default btn-xs' href="{{ request.path }}">{{ total_count }} item{{ total_count|pluralize }} total</button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Cancel</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> Apply</button>
-                    </div>
-                </div>{# /.modal-content #}
-            </div>{# /.modal-dialog #}
-        </div>{# /.modal #}
-    </form>
+                    {% else %}
+                        <div class='form-group'>
+                            <label>{{ filtered_count }} item{{ filtered_count|pluralize }}</label>
+                        </div>
+                    {% endif %}
+                {% endwith%}
+            </form>
+        </div>
+        <div class="col-md-8">
+            <form action="" method="get">
+                <div class='text-right form-inline'>
+                    <div class='form-group'>
+                        <label class='sr-only' for='search'>Search</label>
+                        <div class="input-group input-group-sm">
+                            <input class='form-control' type='search' name='search' placeholder='Search…'{% if request.GET.search %} value="{{ request.GET.search }}"{% endif %}>
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i><span class="sr-only"> Search</span></button>
+                            </span>
+                        </div>{# /.input-group #}
+                    </div>{# /.form-group #}
+                    <button class="btn btn-sm btn-default" data-toggle="modal" data-target="#filterModal" type='button'>
+                        <i class="fa fa-filter"></i>
+                        Change columns and filters
+                    </button>
+                    <button type="submit" class="btn btn-sm btn-default" name="format" value="csv"><i class="fa fa-download"></i> Download CSV</button>
+                </div>
+                <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                                <h4 class="modal-title">Filters &amp; Columns</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class='row'>
+                                    <div class='col-sm-6'>
+                                        <p><em>Limit attendees in data&hellip;</em></p>
+                                        {% form table.filter_form %}
+                                    </div>
+                                    <div class='col-sm-6'>
+                                        <p><em>Change displayed columns&hellip;</em></p>
+                                        {% formfield table.column_form.columns %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Cancel</button>
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> Apply</button>
+                            </div>
+                        </div>{# /.modal-content #}
+                    </div>{# /.modal-dialog #}
+                </div>{# /.modal #}
+            </form>
+        </div>{# /.col-md-9 #}
+    </div>{# /.row #}
+
     <div class="scroll-x">
         <table class="table table-striped">
             <thead>

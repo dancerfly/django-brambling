@@ -61,6 +61,7 @@ from brambling.views.payment import (
     OrganizationDwollaConnectView,
     OrderDwollaConnectView,
     UserDwollaConnectView,
+    DwollaWebhookView,
 )
 from brambling.views.user import (
     PersonView,
@@ -293,6 +294,8 @@ urlpatterns = patterns('',
     url(r'^418/$', TemplateView.as_view(template_name='418.html')),
     url(r'^500/$', 'django.views.defaults.server_error'),
     url(r'^500/raise/$', ExceptionView.as_view()),
+
+    url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 
     url(r'^(?P<organization_slug>[\w-]+)/', include(organization_urlpatterns)),
 )

@@ -44,7 +44,7 @@ class DwollaChargeTestCase(TestCase):
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
-        charge = dwolla_charge(person, 42.15, event, settings.DWOLLA_TEST_USER_PIN)
+        charge = dwolla_charge(person, 42.15, event, settings.DWOLLA_TEST_USER_PIN, 'Balance')
 
         self.assertIsInstance(charge, dict)
         self.assertEqual(charge["Type"], "money_received")

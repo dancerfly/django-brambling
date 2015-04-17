@@ -186,7 +186,8 @@ class PaymentFormTestCase(TestCase):
         event = order.event
         person = PersonFactory()
         pin = '1234'
-        form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin}, user=person)
+        source = 'Balance'
+        form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin, 'source': source}, user=person)
         self.assertTrue(form.is_bound)
         self.assertFalse(form.errors)
         dwolla_charge.assert_called_once_with(
@@ -194,6 +195,7 @@ class PaymentFormTestCase(TestCase):
             amount=42.15,
             event=event,
             pin=pin,
+            source=source,
         )
         txn = form.save()
         self.assertIsInstance(txn, Transaction)
