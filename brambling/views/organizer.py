@@ -71,17 +71,18 @@ class OrganizationUpdateView(UpdateView):
             context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
                 self.object, self.request, LIVE)
 
-        if self.object.dwolla_test_can_connect():
-            context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
-                self.object, self.request, TEST)
-
         if self.object.stripe_live_can_connect():
             context['stripe_oauth_url'] = stripe_organization_oauth_url(
                 self.object, self.request, LIVE)
 
-        if self.object.stripe_test_can_connect():
-            context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
-                self.object, self.request, TEST)
+        if self.request.user.is_superuser:
+            if self.object.dwolla_test_can_connect():
+                context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
+                    self.object, self.request, TEST)
+
+            if self.object.stripe_test_can_connect():
+                context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
+                    self.object, self.request, TEST)
 
         return context
 
