@@ -72,7 +72,8 @@ def send_order_alert(order, summary_data, site, secure=False,
     }
     context.update(summary_data)
     from brambling.models import Person
-    emails = Person.objects.filter(Q(owner_events=order.event) |
+    emails = Person.objects.filter(Q(owner_orgs=order.event.organization) |
+                                   Q(editor_orgs=order.event.organization) |
                                    Q(editor_events=order.event)
                                    ).values_list('email', flat=True)
     send_fancy_mail(emails, subject_template, body_template, context)
