@@ -84,6 +84,7 @@
 		<h4 class="panel-title">Registration</h4>
 	</header>
 	<div class="panel-body">
+		{% formrow form.privacy %}
 		{% formrow form.cart_timeout %}
 		<div class='form-group'>
 			{% with field=form.collect_housing_data %}
@@ -112,31 +113,46 @@
 
 <div class="panel panel-default">
 	<header class="panel-heading">
-		<h4 class="panel-title">Sharing</h4>
+		<h4 class="panel-title">Editors</h4>
 	</header>
 	<div class="panel-body">
-		{% formrow form.privacy %}
 
-		<p>The following people have access to edit this event. Only organization owners and editors can add or remove additional editors.</p>
+		<p>
+			The following people can edit all events run by this organization.
+			{% if request.user == organization.owner %}
+				This list can be updated in the <a href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">organization settings</a>.
+			{% else %}
+				Only the organization owner can change this list.
+			{% endif %}
+		</p>
+
+		<div class="table-responsive">
+			<table class='table table-striped'>
+				<tbody>
+					<tr>
+						<th>{{ organization.owner.get_full_name }}</th>
+						<td>{{ organization.owner.email }}</td>
+						<td><i class='fa fa-fw fa-lock'></i> Owner</td>
+						{% if organization_editable_by %}<td></td>{% endif %}
+					</tr>
+					{% for editor in organization.editors.all %}
+						<tr>
+							<th>{{ editor.get_full_name }}</th>
+							<td>{{ editor.email }}</td>
+							<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
+							{% if organization_editable_by %}<td></td>{% endif %}
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		<p>The following people can edit this event specifically. Only organization owners and editors (listed above) can change this list.</p>
 
 		{% with event=form.instance %}
 		<div class="table-responsive">
 			<table class='table table-striped'>
 				<tbody>
-					<tr>
-						<th>{{ event.organization.owner.get_full_name }}</th>
-						<td>{{ event.organization.owner.email }}</td>
-						<td><i class='fa fa-fw fa-lock'></i> Owner (Organization)</td>
-						{% if organization_editable_by %}<td></td>{% endif %}
-					</tr>
-					{% for editor in event.organization.editors.all %}
-						<tr>
-							<th>{{ editor.get_full_name }}</th>
-							<td>{{ editor.email }}</td>
-							<td><i class='fa fa-fw fa-pencil'></i> Editor (Organization)</td>
-							{% if organization_editable_by %}<td></td>{% endif %}
-						</tr>
-					{% endfor %}
 					{% if event.pk %}
 						{% for editor in event.additional_editors.all %}
 							<tr>
