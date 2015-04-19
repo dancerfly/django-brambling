@@ -61,18 +61,12 @@ class UserDashboardView(TemplateView):
             order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
         ).with_dates().filter(start_date__lt=today).order_by('-start_date')
 
-        organizations = Organization.objects.filter(
-            Q(owner=user) |
-            Q(editors=user)
-        ).order_by('name')
-
         return {
             'upcoming_events': upcoming_events,
             'upcoming_events_interest': upcoming_events_interest,
             'admin_events': admin_events,
             'registered_events': registered_events,
             'past_events': past_events,
-            'organizations': organizations,
         }
 
     @method_decorator(login_required)

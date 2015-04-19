@@ -68,18 +68,6 @@
 {% endblock %}
 
 {% block side %}
-	{% if organizations %}
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Your Organizations</h4>
-			</header>
-			<div class="list-group">
-				{% for organization in organizations %}
-					{% include "brambling/_organization_list-group-item.html" %}
-				{% endfor %}
-			</div>
-		</div>
-	{% endif %}
 	{% if admin_events %}
 		<div class="panel panel-default">
 			<header class="panel-heading">

@@ -689,6 +689,12 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     def get_dwolla_connect_url(self):
         return reverse('brambling_user_dwolla_connect')
 
+    def get_organizations(self):
+        return Organization.objects.filter(
+            models.Q(owner=self) |
+            models.Q(editors=self)
+        ).order_by('name')
+
 
 class CreditCard(models.Model):
     BRAND_CHOICES = (
