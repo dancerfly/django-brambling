@@ -101,7 +101,6 @@ class Workflow(object):
 
     @property
     def active_steps(self):
-
         return [step for step in self.steps.values()
                 if step.is_active()]
 
