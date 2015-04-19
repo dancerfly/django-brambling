@@ -146,6 +146,7 @@ class OrganizationDetailView(DetailView):
             'upcoming_events': upcoming_events,
             'admin_events': admin_events,
             'registered_events': registered_events,
+            'organization_editable_by': self.object.editable_by(self.request.user)
         })
         return context
 

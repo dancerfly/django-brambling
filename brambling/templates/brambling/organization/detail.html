@@ -27,7 +27,7 @@
 		{% endif %}
 	{% endwith %}
 	{% if organization.city and organization.state_or_province and organization.country %}
-		<p>{{ organization.city }}, {{ organization.state_or_province }}, {{ organization.country }}</p>
+		<p><i class="fa fa-map-marker fa-fw"></i> {{ organization.city }}, {{ organization.state_or_province }}, {{ organization.country }}</p>
 	{% endif %}
 
 	{% if registered_events %}
@@ -56,24 +56,25 @@
 {% endblock %}
 
 {% block side %}
-	{% if admin_events %}
+	{% if admin_events or organization_editable_by %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
-				<h4 class="panel-title">Events You Manage</h4>
+				<h4 class="panel-title">Admin Panel</h4>
 			</header>
 			<div class="list-group">
 				{% for event in admin_events %}
 					{% include "brambling/_event_list-group-item.html" %}
 				{% endfor %}
-				{% if request.user.is_superuser %}
+				{% if organization_editable_by %}
+					<a class="list-group-item" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
+						<i class="fa fa-gear fa-fw text-muted"></i> Settings
+					</a>
 					<a class="list-group-item" href="{% url 'brambling_event_create' organization_slug=organization.slug %}">
 						<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
 					</a>
 				{% endif %}
 			</div>
 		</div>
-	{% elif request.user.is_superuser %}
-		<p><a href="{% url 'brambling_event_create' organization_slug=organization.slug %}" class="btn btn-block btn-primary btn-large"><i class="fa fa-plus"></i> Create a New Event</a></p>
 	{% endif %}
 	{% if past_events %}
 		<div class="panel panel-default">
