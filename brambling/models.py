@@ -414,7 +414,7 @@ class Event(models.Model):
                                                   "of my own free will."), help_text=_("'{event}' will be automatically replaced with your event name when users are presented with the waiver."))
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PUBLIC, help_text="Who can view this event.")
+                               default=PUBLIC, help_text="Who can view this event once it's published.")
     is_published = models.BooleanField(default=False)
     # If an event is "frozen", it can no longer be edited or unpublished.
     is_frozen = models.BooleanField(default=False)
