@@ -167,7 +167,7 @@
 											Stripe (Live)
 											<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
 										</th>
-										{% if organization.connected_to_stripe_live %}
+										{% if organization.stripe_live_connected %}
 											<td>Enabled ({{ organization.stripe_user_id }})</td>
 											<td>{% formrow form.disconnect_stripe_live with label="Disconnect" %}</td>
 										{% else %}
