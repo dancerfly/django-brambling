@@ -41,10 +41,7 @@ Then, to install:
     # Install python requirements. This may take a while.
     pip install -r django-brambling/test_project/requirements.txt
 
-Modifying Brambling's CSS files requires `SASS <http://sass-lang.com/>`_, `Compass <http://compass-style.org/>`_, and `Bootstrap SASS <http://getbootstrap.com/css/#sass>`_. If you plan to make changes to CSS files, but don't have those installed:
-
-.. code:: bash
-
+    # Install ruby requirements. This could also take a second.
     gem install bundler # Ensure you have Bundler. May need sudo.
     bundle install --gemfile django-brambling/Gemfile # Install Ruby requirements.
 
@@ -58,15 +55,3 @@ Get it running
     python manage.py runserver # Run the server!
 
 Then, navigate to ``http://127.0.0.1:8000/`` in your favorite web browser!
-
-Modifying the Styles
---------------------
-
-Do not modify any of the files within ``django-brambling/static/brambling/css/``. That directory is managed by Compass. Instead, edit the compass source files in ``django-brambling/sass/``. You will need to use the Compass command line tool to compile stylesheets. E.g.,
-
-.. code:: bash
-
-    cd django-brambling/brambling # Ensure you are in the directory with config.rb.
-    compass watch         # Watch the sass directory for changes.
-
-Or use `Compass.app <http://compass.kkbox.com/>`_.

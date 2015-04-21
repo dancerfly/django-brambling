@@ -1,9 +1,5 @@
 @import variables
 
-@import compass/css3/border-radius
-@import compass/css3/box-shadow
-@import compass/css3/images
-
 // CHOSEN FIXES
 // ------------
 
@@ -12,23 +8,23 @@
 
 .chosen-container-multi .chosen-choices, .chosen-container-single .chosen-single
 	border: 1px solid $input-border
-	+background(none)
-	+box-shadow(inset 0 1px 1px rgba(black, 0.075))
-	+border-radius($input-border-radius)
+	background: none
+	box-shadow: inset 0 1px 1px rgba(black, 0.075)
+	border-radius: $input-border-radius
 .chosen-container-active
 	&.chosen-container-multi .chosen-choices, &.chosen-container-single .chosen-single
 		border-color: $input-border-focus
-		+background(none)
-		+border-radius($input-border-radius)
+		background: none
+		border-radius: $input-border-radius
 
 .chosen-container-multi
 	.chosen-drop
 		top: 110%
 		border: 1px solid $dropdown-border
-		+border-radius($border-radius-base)
+		border-radius: $border-radius-base
 		overflow: hidden
 	.chosen-results li.highlighted
-		+background(none)
+		background: none
 		background-color: $link-hover-color
 	.chosen-choices
 		padding: 0 2px
@@ -41,8 +37,8 @@
 			margin: 5px 3px
 			padding: 6px 20px 3px 5px
 			border: none
-			+box-shadow(none)
-			+background(none)
+			box-shadow: none
+			background: none
 			background-color: $gray-lighter
 			.search-choice-close
 				top: 7px
@@ -61,26 +57,26 @@
 		top: 90%
 		border: 1px solid $input-border-focus
 		border-top: none
-		+border-top-left-radius(0)
-		+border-top-right-radius(0)
-		+border-bottom-left-radius($input-border-radius)
-		+border-bottom-right-radius($input-border-radius)
-		+box-shadow(0 4px 8px rgba(black, 0.25))
+		border-top-left-radius: 0
+		border-top-right-radius: 0
+		border-bottom-left-radius: $input-border-radius
+		border-bottom-right-radius: $input-border-radius
+		box-shadow: 0 4px 8px rgba(black, 0.25)
 		overflow: hidden
 	.chosen-results li.highlighted
-		+background(none)
+		background: none
 		background-color: $link-hover-color
 .chosen-container-active.chosen-container-single .chosen-single
 	div b
 		background-position-y: 6px
 
 .input-group .chosen-choices
-	+border-radius(0)
+	border-radius: 0
 
 	&:first-child
-		+border-top-left-radius($border-radius-base)
-		+border-bottom-left-radius($border-radius-base)
+		border-top-left-radius: $border-radius-base
+		border-bottom-left-radius: $border-radius-base
 
 	&:last-child
-		+border-top-right-radius($border-radius-base)
-		+border-bottom-right-radius($border-radius-base)
+		border-top-right-radius: $border-radius-base
+		border-bottom-right-radius: $border-radius-base
