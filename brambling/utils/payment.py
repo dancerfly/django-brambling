@@ -5,7 +5,7 @@ import urllib
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils import timezone
-from dwolla import constants, transactions, oauth
+from dwolla import constants, transactions, oauth, fundingsources
 import stripe
 
 TEST = 'test'
@@ -58,6 +58,8 @@ def dwolla_get_token(dwolla_obj, api_type):
     else:
         expires = dwolla_obj.dwolla_test_access_token_expires
         refresh_expires = dwolla_obj.dwolla_test_refresh_token_expires
+    if expires is None or refresh_expires is None:
+        raise ValueError("Invalid dwolla object - unknown token expiration.")
     now = timezone.now()
     if expires < now:
         if refresh_expires < now:
@@ -113,7 +115,23 @@ def dwolla_update_tokens(days):
     return count, test_count
 
 
-def dwolla_charge(user_or_order, amount, event, pin):
+def dwolla_get_sources(user_or_order, event):
+    dwolla_prep(event.api_type)
+    access_token = dwolla_get_token(user_or_order, event.api_type)
+    if event.api_type == LIVE:
+        destination = event.dwolla_user_id
+    else:
+        destination = event.dwolla_test_user_id
+    return fundingsources.get(
+        alternate_token=access_token,
+        params={
+            'destinationid': destination,
+            'verified': True
+        }
+    )
+
+
+def dwolla_charge(user_or_order, amount, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
@@ -130,7 +148,10 @@ def dwolla_charge(user_or_order, amount, event, pin):
         amount=amount,
         alternate_token=access_token,
         alternate_pin=pin,
-        params={'facilitatorAmount': float(get_fee(event, amount))}
+        params={
+            'facilitatorAmount': float(get_fee(event, amount)),
+            'fundsSource': source
+        }
     )
     # Charge id returned by send_funds is the transaction ID
     # for the user; the event has a different transaction ID.
@@ -189,7 +210,7 @@ def dwolla_is_connected(obj, api_type):
 
 def dwolla_customer_oauth_url(user_or_order, api_type, request, next_url=""):
     dwolla_prep(api_type)
-    scope = "Send|AccountInfoFull"
+    scope = "Send|AccountInfoFull|Funding"
     redirect_url = user_or_order.get_dwolla_connect_url() + "?api=" + api_type
     if next_url:
         redirect_url += "&next_url=" + next_url

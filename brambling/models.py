@@ -979,9 +979,9 @@ class Transaction(models.Model):
             amount=charge['Amount'],
             method=Transaction.DWOLLA,
             remote_id=charge['Id'],
-            is_confirmed=True,
             application_fee=application_fee,
             processing_fee=processing_fee,
+            is_confirmed=True if charge['Status'] == 'processed' else False,
             **kwargs
         )
 
