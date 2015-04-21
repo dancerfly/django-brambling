@@ -69,13 +69,7 @@
 		</div>{# /.row #}
 
 		{% formrow form.timezone %}
-		<div class='form-group'>
-			<label class='control-label'>Currency *</label>
-			<select class="chosen-select" disabled>
-				<option selected="selected">{{ event.currency }}</option>
-			</select>
-		</div>
-
+		{% formrow form.currency %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
 

@@ -148,27 +148,18 @@ class EventForm(forms.ModelForm):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
                               required=False)
-    timezone = forms.ChoiceField(choices=(
-        ('America/Anchorage', 'America/Anchorage'),
-        ('America/Adak', 'America/Adak'),
-        ('America/Phoenix', 'America/Phoenix'),
-        ('America/Chicago', 'America/Chicago'),
-        ('America/New_York', 'America/New_York'),
-        ('America/Indiana/Indianapolis', 'America/Indiana/Indianapolis'),
-        ('America/Indiana/Knox', 'America/Indiana/Knox'),
-        ('America/Detroit', 'America/Detroit'),
-        ('America/Denver', 'America/Denver'),
-        ('America/Los_Angeles', 'America/Los_Angeles'),
-        ('Pacific/Honolulu', 'Pacific/Honolulu'),
-    ))
 
     class Meta:
         model = Event
         fields = ('name', 'slug', 'description', 'website_url', 'banner_image',
-                  'city', 'state_or_province', 'timezone', 'start_time',
-                  'end_time', 'dance_styles', 'has_dances', 'has_classes',
-                  'liability_waiver', 'privacy', 'collect_housing_data',
-                  'collect_survey_data', 'cart_timeout',)
+                  'city', 'state_or_province', 'country', 'timezone',
+                  'currency', 'start_time', 'end_time', 'dance_styles',
+                  'has_dances', 'has_classes', 'liability_waiver', 'privacy',
+                  'collect_housing_data', 'collect_survey_data',
+                  'cart_timeout',)
+        widgets = {
+            'country': forms.Select,
+        }
 
     def __init__(self, request, organization, organization_editable_by, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)

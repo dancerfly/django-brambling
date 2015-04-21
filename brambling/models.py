@@ -25,6 +25,7 @@ from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 import floppyforms.__future__ as forms
+import pytz
 import stripe
 
 from brambling.mail import send_fancy_mail
@@ -295,7 +296,7 @@ class Organization(AbstractDwollaModel):
     default_event_state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
     default_event_country = CountryField(default='US', blank=True)
     default_event_dance_styles = models.ManyToManyField(DanceStyle, blank=True, related_name='organization_event_default_set')
-    default_event_timezone = models.CharField(max_length=40, default='UTC', blank=True)
+    default_event_timezone = models.CharField(max_length=40, default='America/New_York', blank=True, choices=((tz, tz) for tz in pytz.common_timezones))
     default_event_currency = models.CharField(max_length=10, default='USD', blank=True)
     # This is a secret value set by admins. It will be cached on the event model.
     default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
@@ -395,7 +396,7 @@ class Event(models.Model):
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50, verbose_name='state / province')
     country = CountryField(default='US')
-    timezone = models.CharField(max_length=40, default='UTC')
+    timezone = models.CharField(max_length=40, default='America/New_York', choices=((tz, tz) for tz in pytz.common_timezones))
     currency = models.CharField(max_length=10, default='USD')
 
     dates = models.ManyToManyField(Date, related_name='event_dates')
