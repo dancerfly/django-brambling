@@ -194,3 +194,31 @@
 		{% formrow form.editors with label="Invite more editors" %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}
+
+
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h4 class="panel-title">Payment</h4>
+	</header>
+	<div class="panel-body">
+		{% if organization_editable_by %}
+			<p>Payment methods for an event can be changed in <a href="{% url 'brambling_organization_update' organization_slug=organization.slug %}" target="_blank">the organization's settings</a>.</p>
+		{% else %}
+			Payment methods can only be updated by people with permission to edit the organization.
+		{% endif %}
+
+		<table class='table'>
+			<tbody>
+				{% with event=form.instance %}
+				{% with stripe=event.stripe_connected dwolla=event.dwolla_connected check=event.organization.check_payment_allowed %}
+					<tr>
+						<td><div class='btn btn-block active {% if stripe %}btn-success{% else %}btn-danger{% endif %}'><i class='fa fa-fw {% if stripe %}fa-check{% else %}fa-ban{% endif %}'></i> Stripe</div></td>
+						<td><div class='btn btn-block active {% if dwolla %}btn-success{% else %}btn-danger{% endif %}'><i class='fa fa-fw {% if dwolla %}fa-check{% else %}fa-ban{% endif %}'></i> Dwolla</div></td>
+						<td><div class='btn btn-block active {% if check %}btn-success{% else %}btn-danger{% endif %}'><i class='fa fa-fw {% if check %}fa-check{% else %}fa-ban{% endif %}'></i> Check</div></td>
+					</tr>
+				{% endwith %}
+				{% endwith %}
+			</tbody>
+		</table>
+	</div>{# /.panel-body #}
+</div>{# /.panel #}
