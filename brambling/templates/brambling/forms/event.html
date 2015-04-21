@@ -179,6 +179,12 @@
 								</td>
 							{% endif %}
 						</tr>
+					{% empty %}
+						{% if not event.pk or not event.additional_editors.exists %}
+							<tr>
+								<td><em>This event does not have additional editors.</em></td>
+							</tr>
+						{% endif %}
 					{% endfor %}
 				</tbody>
 			</table>
