@@ -22,6 +22,7 @@ SECRET_KEY = 'NOT_SECRET'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 USE_DEBUG_TOOLBAR = DEBUG
+COMPRESS_ENABLED = True
 
 TEMPLATE_DEBUG = True
 
@@ -46,6 +47,7 @@ INSTALLED_APPS = (
     'floppyforms',
     'django_filters',
     'daguerre',
+    'compressor',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -102,6 +104,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
 
 import os
 MEDIA_URL = '/media/'
@@ -141,6 +144,20 @@ DWOLLA_TEST_USER_USER_ID = os.environ.get('DWOLLA_TEST_USER_USER_ID', '')
 DWOLLA_TEST_USER_PIN = os.environ.get('DWOLLA_TEST_USER_PIN', '')
 
 GRAPPELLI_ADMIN_TITLE = "Dancerfly"
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    # other finders..
+    'compressor.finders.CompressorFinder',
+)
+
+_BOOTSTRAP_SASS_SUBPATH = "/gems/bootstrap-sass-3.3.4.1/assets/stylesheets/"
+STATICFILES_DIRS = [x + _BOOTSTRAP_SASS_SUBPATH for x in os.environ['GEM_PATH'].split(":") if os.path.isdir(x + _BOOTSTRAP_SASS_SUBPATH)]
+
+COMPRESS_PRECOMPILERS = (
+    ('text/sass', 'django_libsass.SassCompiler'),
+)
 
 
 from django.contrib.messages import constants as messages
