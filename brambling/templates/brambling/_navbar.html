@@ -26,15 +26,6 @@
 							<li><a href="{{ brambling_user_profile_url }}"><i class="fa fa-cog fa-fw"></i> Profile Settings</a></li>
 							<li><a href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home Settings</a></li>
 							<li><a href="{% url 'logout' %}"><i class="fa fa-power-off fa-fw"></i> Log out</a></li>
-							{% with organizations=request.user.get_organizations %}
-								{% if organizations %}
-									 <li role="presentation" class="divider"></li>
-									<li role="presentation" class="dropdown-header">Your Organizations</li>
-									{% for organization in organizations %}
-										<li><a href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">{{ organization.name }}</a></li>
-									{% endfor %}
-								{% endif %}
-							{% endwith %}
 						</ul>
 					</li>
 				{% else %}
