@@ -162,7 +162,6 @@ class OrderRedirectView(View):
 class EventCreateView(CreateView):
     model = Event
     template_name = 'brambling/event/organizer/create.html'
-    context_object_name = 'event'
     form_class = EventForm
 
     def dispatch(self, request, *args, **kwargs):
@@ -196,6 +195,7 @@ class EventCreateView(CreateView):
         context = super(EventCreateView, self).get_context_data(**kwargs)
         context['organization'] = self.organization
         context['organization_editable_by'] = True
+        context['event'] = context['form'].instance
         return context
 
 
