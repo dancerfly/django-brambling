@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
@@ -805,6 +806,9 @@ class SummaryView(OrderMixin, TemplateView):
                 if str(self.event.pk) in session_orders:
                     del session_orders[str(self.event.pk)]
                     self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
+            elif form:
+                for error in form.non_field_errors():
+                    messages.error(request, error)
 
         if valid:
             if not self.order.person:
