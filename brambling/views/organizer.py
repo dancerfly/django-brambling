@@ -162,6 +162,8 @@ class OrganizationDetailView(DetailView):
             'registered_events': registered_events,
             'organization_editable_by': self.object.editable_by(self.request.user)
         })
+        if context['organization_editable_by']:
+            context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
         return context
 
 
@@ -175,7 +177,7 @@ class OrderRedirectView(View):
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/event/organizer/create.html'
+    template_name = 'brambling/organization/event_create.html'
     form_class = EventForm
 
     def dispatch(self, request, *args, **kwargs):
@@ -207,9 +209,12 @@ class EventCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
-        context['organization'] = self.organization
-        context['organization_editable_by'] = True
-        context['event'] = context['form'].instance
+        context.update({
+            'organization': self.organization,
+            'organization_editable_by': True,
+            'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
+            'event': context['form'].instance,
+        })
         return context
 
 

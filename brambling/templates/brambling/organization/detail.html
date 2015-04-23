@@ -56,36 +56,7 @@
 {% endblock %}
 
 {% block side %}
-	{% if admin_events or organization_editable_by %}
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Admin Panel</h4>
-			</header>
-			<div class="list-group">
-				{% for event in admin_events %}
-					{% include "brambling/_event_list-group-item.html" %}
-				{% endfor %}
-				{% if organization_editable_by %}
-					<a class="list-group-item" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
-						<i class="fa fa-gear fa-fw text-muted"></i> Settings
-					</a>
-					<a class="list-group-item" href="{% url 'brambling_event_create' organization_slug=organization.slug %}">
-						<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
-					</a>
-				{% endif %}
-			</div>
-		</div>
-	{% endif %}
-	{% if past_events %}
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Past Events You Registered For</h4>
-			</header>
-			<div class="list-group">
-				{% for event in past_events %}
-					{% include "brambling/_event_list-group-item.html" %}
-				{% endfor %}
-			</div>
-		</div>
+	{% if organization_editable_by %}
+		{% include 'brambling/organization/_nav.html' %}
 	{% endif %}
 {% endblock %}

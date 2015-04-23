@@ -69,17 +69,20 @@ def get_event_admin_nav(event, request):
 
 
 def get_organization_admin_nav(organization, request):
+    if not organization.editable_by(request.user):
+        return []
     kwargs = {
         'organization_slug': organization.slug,
     }
     items = (
-        ('brambling_organization_update', 'Profile'),
-        ('brambling_organization_update_payment', 'Payment'),
-        ('brambling_organization_update_event_defaults', 'Event Defaults'),
-        ('brambling_organization_update_permissions', 'Permissions'),
+        ('brambling_organization_update', 'Profile', ''),
+        ('brambling_organization_update_payment', 'Payment', ''),
+        ('brambling_organization_update_event_defaults', 'Event Defaults', ''),
+        ('brambling_organization_update_permissions', 'Permissions', ''),
+        ('brambling_event_create', 'Create a New Event', 'fa-plus'),
     )
-    return [NavItem(request, reverse(view_name, kwargs=kwargs), label, None)
-            for view_name, label in items]
+    return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
+            for view_name, label, icon in items]
 
 
 def ajax_required(view):
