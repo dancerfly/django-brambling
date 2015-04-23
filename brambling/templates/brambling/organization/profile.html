@@ -1,0 +1,59 @@
+{% extends 'brambling/organization/__admin.html' %}
+{% load floppyforms %}
+
+{% block main %}
+	{{ block.super }}
+
+	<h1>Organization profile</h1>
+
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+			{% formrow form.name %}
+			{% if form.slug %}
+				{% formrow form.slug %}
+			{% else %}
+				<div class="form-group">
+					<label class="control-label" for="id_slug">
+					Slug
+					 <span class="required">*</span>
+					</label>
+					<input class="form-control" type="text" value="{{ event.slug }}" disabled>
+					<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+				</div>
+			{% endif %}
+			{% formrow form.website_url %}
+			{% formrow form.facebook_url %}
+			{% formrow form.description %}
+			{% formrow form.banner_image %}
+			<p class="text-muted">Images will be scaled and cropped to 940 x 300 pixels.</p>
+			{% formrow form.dance_styles %}
+			<div class="row">
+				<div class="col-sm-5">
+					{% formrow form.city %}
+				</div>
+				<div class="col-sm-3">
+					{% formrow form.state_or_province %}
+				</div>
+				<div class="col-sm-4">
+					{% formrow form.country %}
+				</div>
+			</div>{# /.row #}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+
+		{% if organization.pk %}
+			<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+		{% endif %}
+
+	</form>
+
+{% endblock %}

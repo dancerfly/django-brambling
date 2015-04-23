@@ -68,6 +68,20 @@ def get_event_admin_nav(event, request):
             for view_name, label, icon in items]
 
 
+def get_organization_admin_nav(organization, request):
+    kwargs = {
+        'organization_slug': organization.slug,
+    }
+    items = (
+        ('brambling_organization_update', 'Profile'),
+        ('brambling_organization_update_payment', 'Payment'),
+        ('brambling_organization_update_event_defaults', 'Event Defaults'),
+        ('brambling_organization_update_permissions', 'Permissions'),
+    )
+    return [NavItem(request, reverse(view_name, kwargs=kwargs), label, None)
+            for view_name, label in items]
+
+
 def ajax_required(view):
     @wraps(view)
     def wrapped(request, *args, **kwargs):
