@@ -38,7 +38,7 @@
                 <p><strong>Sorry!</strong> Your cart ran out of time. Please return to the event&#8217;s main page and start again.</p>
             </div>
             <div class="modal-footer">
-                <a href="{% url "brambling_event_root" event.slug %}" class="btn btn-primary">Return to <strong>{{ event.name }}</strong></a>
+                <a href="{% url "brambling_event_root" event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-primary">Return to <strong>{{ event.name }}</strong></a>
             </div>
         </div>
     </div>

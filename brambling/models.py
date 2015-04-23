@@ -7,7 +7,6 @@ import itertools
 import json
 import operator
 
-from django.conf import settings
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -26,10 +25,15 @@ from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 import floppyforms.__future__ as forms
+import pytz
 import stripe
 
 from brambling.mail import send_fancy_mail
-from brambling.utils.payment import dwolla_refund, stripe_refund, LIVE
+from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
+                                     stripe_test_settings_valid,
+                                     stripe_live_settings_valid,
+                                     dwolla_test_settings_valid,
+                                     dwolla_live_settings_valid)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -137,20 +141,38 @@ class AbstractDwollaModel(models.Model):
     dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
     dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
-    def connected_to_dwolla_live(self):
+    def dwolla_live_connected(self):
         return bool(
+            dwolla_live_settings_valid() and
             self.dwolla_user_id and
-            self.dwolla_refresh_token_expires > timezone.now() and
-            getattr(settings, 'DWOLLA_APPLICATION_KEY', False) and
-            getattr(settings, 'DWOLLA_APPLICATION_SECRET', False)
+            self.dwolla_refresh_token_expires and
+            self.dwolla_refresh_token_expires > timezone.now()
         )
 
-    def connected_to_dwolla_test(self):
+    def dwolla_test_connected(self):
         return bool(
+            dwolla_test_settings_valid() and
             self.dwolla_test_user_id and
-            self.dwolla_test_refresh_token_expires > timezone.now() and
-            getattr(settings, 'DWOLLA_TEST_APPLICATION_KEY', False) and
-            getattr(settings, 'DWOLLA_TEST_APPLICATION_SECRET', False)
+            self.dwolla_test_refresh_token_expires and
+            self.dwolla_test_refresh_token_expires > timezone.now()
+        )
+
+    def dwolla_live_can_connect(self):
+        return bool(
+            dwolla_live_settings_valid() and
+            (
+                not self.dwolla_user_id or
+                self.dwolla_refresh_token_expires <= timezone.now()
+            )
+        )
+
+    def dwolla_test_can_connect(self):
+        return bool(
+            dwolla_live_settings_valid() and
+            (
+                not self.dwolla_test_user_id or
+                self.dwolla_test_refresh_token_expires <= timezone.now()
+            )
         )
 
     def get_dwolla_connect_url(self):
@@ -248,8 +270,104 @@ class Date(models.Model):
         return date(self.date, 'l, F jS')
 
 
-# TODO: "meta" class for groups of events? For example, annual events?
-class Event(AbstractDwollaModel):
+class Organization(AbstractDwollaModel):
+    name = models.CharField(max_length=50)
+    slug = models.SlugField(max_length=50,
+                            validators=[RegexValidator("^[a-z0-9-]+$")],
+                            help_text="URL-friendly version of the event name."
+                                      " Dashes, 0-9, and lower-case a-z only.",
+                            unique=True)
+    description = models.TextField(blank=True)
+    website_url = models.URLField(blank=True, verbose_name="website URL")
+    facebook_url = models.URLField(blank=True, verbose_name="facebook URL")
+    banner_image = models.ImageField(blank=True)
+    city = models.CharField(max_length=50, blank=True)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    country = CountryField(default='US', blank=True)
+    dance_styles = models.ManyToManyField(DanceStyle, blank=True)
+
+    owner = models.ForeignKey('Person',
+                              related_name='owner_orgs')
+    editors = models.ManyToManyField('Person',
+                                     related_name='editor_orgs',
+                                     blank=True, null=True)
+
+    default_event_city = models.CharField(max_length=50, blank=True)
+    default_event_state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    default_event_country = CountryField(default='US', blank=True)
+    default_event_dance_styles = models.ManyToManyField(DanceStyle, blank=True, related_name='organization_event_default_set')
+    default_event_timezone = models.CharField(max_length=40, default='America/New_York', blank=True, choices=((tz, tz) for tz in pytz.common_timezones))
+    default_event_currency = models.CharField(max_length=10, default='USD', blank=True)
+    # This is a secret value set by admins. It will be cached on the event model.
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+                                                          validators=[MaxValueValidator(100), MinValueValidator(0)])
+
+    # These are obtained with Stripe Connect via Oauth.
+    stripe_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
+    stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
+    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
+
+    check_payment_allowed = models.BooleanField(default=False)
+    check_payable_to = models.CharField(max_length=50, blank=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
+
+    check_recipient = models.CharField(max_length=50, blank=True)
+    check_address = models.CharField(max_length=200, blank=True)
+    check_address_2 = models.CharField(max_length=200, blank=True)
+    check_city = models.CharField(max_length=50, blank=True)
+    check_state_or_province = models.CharField(max_length=50, blank=True, verbose_name='state / province')
+    check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
+    check_country = CountryField(default='US')
+
+    def __unicode__(self):
+        return smart_text(self.name)
+
+    def get_absolute_url(self):
+        return reverse('brambling_organization_detail', kwargs={
+            'organization_slug': self.slug,
+        })
+
+    def editable_by(self, user):
+        return (user.is_authenticated() and user.is_active and
+                (user.is_superuser or user.pk == self.owner_id or
+                 self.editors.filter(pk=user.pk).exists()))
+
+    def get_dwolla_connect_url(self):
+        return reverse('brambling_organization_dwolla_connect',
+                       kwargs={'organization_slug': self.slug})
+
+    def stripe_live_connected(self):
+        return bool(stripe_live_settings_valid() and self.stripe_user_id)
+
+    def stripe_test_connected(self):
+        return bool(stripe_test_settings_valid() and self.stripe_test_user_id)
+
+    def stripe_live_can_connect(self):
+        return bool(stripe_live_settings_valid() and not self.stripe_user_id)
+
+    def stripe_test_can_connect(self):
+        return bool(stripe_test_settings_valid() and not self.stripe_test_user_id)
+
+    def get_invites(self):
+        return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
+                                     content_id=self.pk)
+
+
+class EventQuerySet(models.QuerySet):
+    def with_dates(self):
+        return self.annotate(
+            start_date=models.Min('dates__date'),
+            end_date=models.Max('dates__date'),
+        )
+
+
+class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
 
@@ -278,7 +396,7 @@ class Event(AbstractDwollaModel):
     city = models.CharField(max_length=50)
     state_or_province = models.CharField(max_length=50, verbose_name='state / province')
     country = CountryField(default='US')
-    timezone = models.CharField(max_length=40, default='UTC')
+    timezone = models.CharField(max_length=40, default='America/New_York', choices=((tz, tz) for tz in pytz.common_timezones))
     currency = models.CharField(max_length=10, default='USD')
 
     dates = models.ManyToManyField(Date, related_name='event_dates')
@@ -297,7 +415,7 @@ class Event(AbstractDwollaModel):
                                                   "of my own free will."), help_text=_("'{event}' will be automatically replaced with your event name when users are presented with the waiver."))
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PUBLIC, help_text="Who can view this event.")
+                               default=PUBLIC, help_text="Who can view this event once it's published.")
     is_published = models.BooleanField(default=False)
     # If an event is "frozen", it can no longer be edited or unpublished.
     is_frozen = models.BooleanField(default=False)
@@ -306,11 +424,10 @@ class Event(AbstractDwollaModel):
     # charging actual money.
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
-    owner = models.ForeignKey('Person',
-                              related_name='owner_events')
-    editors = models.ManyToManyField('Person',
-                                     related_name='editor_events',
-                                     blank=True, null=True)
+    organization = models.ForeignKey(Organization)
+    additional_editors = models.ManyToManyField('Person',
+                                                related_name='editor_events',
+                                                blank=True, null=True)
 
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -321,50 +438,32 @@ class Event(AbstractDwollaModel):
     cart_timeout = models.PositiveSmallIntegerField(default=15,
                                                     help_text="Minutes before a user's cart expires.")
 
-    # These are obtained with Stripe Connect via Oauth.
-    stripe_user_id = models.CharField(max_length=32, blank=True, default='')
-    stripe_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
-    stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
-
-    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
-    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
-    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
-
     # This is a secret value set by admins
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
 
-    check_payment_allowed = models.BooleanField(default=False)
-    check_payable_to = models.CharField(max_length=50, blank=True)
-    check_postmark_cutoff = models.DateField(blank=True, null=True)
-
-    check_recipient = models.CharField(max_length=50, blank=True)
-    check_address = models.CharField(max_length=200, blank=True)
-    check_address_2 = models.CharField(max_length=200, blank=True)
-    check_city = models.CharField(max_length=50, blank=True)
-    check_state_or_province = models.CharField(max_length=50, blank=True, verbose_name='state / province')
-    check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
-    check_country = CountryField(default='US')
+    objects = EventQuerySet.as_manager()
 
     def __unicode__(self):
         return smart_text(self.name)
 
     def get_absolute_url(self):
-        return reverse('brambling_event_root', kwargs={'event_slug': self.slug})
-
-    def get_dwolla_connect_url(self):
-        return reverse('brambling_event_dwolla_connect',
-                       kwargs={'slug': self.slug})
+        return reverse('brambling_event_root', kwargs={
+            'event_slug': self.slug,
+            'organization_slug': self.organization.slug,
+        })
 
     def get_liability_waiver(self):
         return self.liability_waiver.format(event=self.name)
 
     def editable_by(self, user):
-        return (user.is_authenticated() and user.is_active and
-                (user.is_superuser or user.pk == self.owner_id or
-                 self.editors.filter(pk=user.pk).exists()))
+        return (
+            self.organization.editable_by(user) or (
+                user.is_authenticated() and
+                user.is_active and
+                self.additional_editors.filter(pk=user.pk).exists()
+            )
+        )
 
     def viewable_by(self, user):
         if not self.is_published and not self.editable_by(user):
@@ -378,30 +477,29 @@ class Event(AbstractDwollaModel):
         pass_class_count = ItemOption.objects.filter(item__event=self, item__category__in=(Item.CLASS, Item.PASS)).count()
         return pass_class_count >= 1
 
-    def uses_stripe(self):
-        if self.api_type == Event.LIVE:
-            return bool(
-                getattr(settings, 'STRIPE_SECRET_KEY', False) and
-                getattr(settings, 'STRIPE_PUBLISHABLE_KEY', False) and
-                self.stripe_user_id
-            )
-        return bool(
-            getattr(settings, 'STRIPE_TEST_SECRET_KEY', False) and
-            getattr(settings, 'STRIPE_TEST_PUBLISHABLE_KEY', False) and
-            self.stripe_test_user_id
-        )
-
-    def uses_dwolla(self):
-        if self.api_type == Event.LIVE:
-            return self.connected_to_dwolla_live()
-        return self.connected_to_dwolla_test()
-
-    def uses_checks(self):
-        return self.check_payment_allowed
-
     def get_invites(self):
-        return Invite.objects.filter(kind=Invite.EDITOR,
+        return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
                                      content_id=self.pk)
+
+    def stripe_connected(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.stripe_live_connected()
+        return self.organization.stripe_test_connected()
+
+    def stripe_can_connect(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.stripe_live_can_connect()
+        return self.organization.stripe_test_can_connect()
+
+    def dwolla_connected(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.dwolla_live_connected()
+        return self.organization.dwolla_test_connected()
+
+    def dwolla_can_connect(self):
+        if self.api_type == Event.LIVE:
+            return self.organization.dwolla_live_can_connect()
+        return self.organization.dwolla_test_can_connect()
 
 
 class Item(models.Model):
@@ -592,6 +690,12 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     def get_dwolla_connect_url(self):
         return reverse('brambling_user_dwolla_connect')
 
+    def get_organizations(self):
+        return Organization.objects.filter(
+            models.Q(owner=self) |
+            models.Q(editors=self)
+        ).order_by('name')
+
 
 class CreditCard(models.Model):
     BRAND_CHOICES = (
@@ -718,7 +822,18 @@ class Order(AbstractDwollaModel):
     def get_dwolla_connect_url(self):
         return reverse('brambling_order_dwolla_connect',
                        kwargs={'event_slug': self.event.slug,
+                               'organization_slug': self.event.organization.slug,
                                'code': self.code})
+
+    def dwolla_connected(self):
+        if self.api_type == Event.LIVE:
+            return self.dwolla_live_connected()
+        return self.dwolla_test_connected()
+
+    def dwolla_can_connect(self):
+        if self.api_type == Event.LIVE:
+            return self.dwolla_live_can_connect()
+        return self.dwolla_test_can_connect()
 
     def add_discount(self, discount, force=False):
         if discount.event_id != self.event_id:
@@ -1334,10 +1449,12 @@ class InviteManager(models.Manager):
 
 class Invite(models.Model):
     HOME = 'home'
-    EDITOR = 'editor'
+    EVENT_EDITOR = 'editor'
+    ORGANIZATION_EDITOR = 'org_editor'
     KIND_CHOICES = (
         (HOME, _("Home")),
-        (EDITOR, _("Editor")),
+        (EVENT_EDITOR, _("Event Editor")),
+        (ORGANIZATION_EDITOR, _("Organization Editor")),
     )
 
     objects = InviteManager()
@@ -1346,7 +1463,7 @@ class Invite(models.Model):
     #: User who sent the invitation.
     user = models.ForeignKey(Person)
     is_sent = models.BooleanField(default=False)
-    kind = models.CharField(max_length=6, choices=KIND_CHOICES)
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
     content_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)

@@ -21,7 +21,7 @@
 		</div>{# /.col-sm-9 #}
 		<div class="col-sm-3 hidden-xs">
 			<div class="btn-group-vertical pull-right">
-				<a class="btn btn-default btn-sm tipped" data-placement="left" data-container="body" title="Manage Event" href="{% url 'brambling_event_summary' event.slug %}">
+				<a class="btn btn-default btn-sm tipped" data-placement="left" data-container="body" title="Manage Event" href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}">
 					<i class="fa fa-fw fa-cog"></i>
 				</a>
 				<a class="btn btn-default btn-sm tipped" data-placement="left" data-container="body" title="Visit Shop" href="{{ event.get_absolute_url }}">
@@ -31,7 +31,7 @@
 		</div>{# /.col-sm-3.hidden-xs #}
 	</div>{# /.row #}
 	<div class="visible-xs">
-		<a class="btn btn-default btn-sm" href="{% url 'brambling_event_summary' event.slug %}">
+		<a class="btn btn-default btn-sm" href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}">
 			<i class="fa fa-fw fa-cog"></i> Manage Event
 		</a>
 		<a class="btn btn-default btn-sm" title="Visit Shop" href="{{ event.get_absolute_url }}">

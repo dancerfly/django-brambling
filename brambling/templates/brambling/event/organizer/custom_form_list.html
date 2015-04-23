@@ -9,7 +9,7 @@
 
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
-	<p><a class="btn btn-primary" href="{% url 'brambling_form_create' event_slug=event.slug %}">Create form</a></p>
+	<p><a class="btn btn-primary" href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}">Create form</a></p>
 
 	{% if custom_forms %}
 		{% regroup custom_forms by get_form_type_display as form_types %}
@@ -29,7 +29,7 @@
 						</div>
 						<div class="list-group">
 							{% for custom_form in form_type_group.list %}
-								<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug pk=custom_form.pk %}">
+								<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug organization_slug=event.organization.slug pk=custom_form.pk %}">
 									{{ custom_form.name }}
 								</a>
 							{% endfor %}

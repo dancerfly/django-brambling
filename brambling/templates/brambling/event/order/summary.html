@@ -11,14 +11,14 @@
 		var discountReload = true;
 	</script>
 	{% include 'brambling/event/order/_use_discount_js.html' %}
-	{% if event.uses_stripe %}
+	{% if event.stripe_connected %}
 		{% include "brambling/_stripe_js.html" %}
 		<script>
 			function set_stripe_key() {
 				if ($('#id_save_card').prop('checked')) {
-					Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
 				} else {
-					Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ event.stripe_test_publishable_key }}{% else %}{{ event.stripe_publishable_key }}{% endif %}')
+					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ event.stripe_test_publishable_key }}{% else %}{{ event.stripe_publishable_key }}{% endif %}')
 				}
 			}
 			$('#id_save_card').on('change', function(e) {
@@ -52,7 +52,7 @@
 		</div>
 	{% endif %}
 
-	<h2>Order {% if order and not order.person %}<a href="{% url 'brambling_event_order_summary' event_slug=event.slug code=order.code %}">{% endif %}{{ order.code }}{% if order and not order.person %}</a>{% endif %}</h2>
+	<h2>Order {% if order and not order.person %}<a href="{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug code=order.code %}">{% endif %}{{ order.code }}{% if order and not order.person %}</a>{% endif %}</h2>
 
 	<div class="row">
 		<div class="col-md-6">
@@ -146,7 +146,7 @@
 				<div class='input-group input-group-lg'>
 					<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
 					<span class='input-group-btn'>
-						<button id='discountCodeButton' class='btn btn-success' type='submit' data-slug="{{ event.slug }}"><span class='fa fa-plus'></span></button>
+						<button id='discountCodeButton' class='btn btn-success' type='submit'><span class='fa fa-plus'></span></button>
 					</span>
 				</div>
 			</form>
@@ -160,9 +160,9 @@
 								{{ attendee.attendee.get_full_name }}
 								{% block attendee_actions %}
 								{% if code_in_url %}
-									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug code=order.code as attendee_url %}
+									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
 								{% else %}
-									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug as attendee_url %}
+									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
 								{% endif %}
 								<a class='pull-right' href='{{ attendee_url }}'><i class='fa fa-pencil fa-fw'></i></a>
 								{% endblock %}
@@ -218,7 +218,7 @@
 			{% endif %}
 		</p>
 
-		{% if event.uses_stripe %}
+		{% if event.stripe_connected %}
 			{% if has_cards %}
 				<div class="panel-group" id="accordion">
 					<div class="panel panel-default">
@@ -272,8 +272,7 @@
 				</div>
 			{% endif %}
 		{% endif %}
-		{% if event.uses_dwolla %}
-			{% if dwolla_is_connected or dwolla_oauth_url %}
+		{% if event.dwolla_connected %}
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h4 class="panel-title">
@@ -297,13 +296,12 @@
 					{% endif %}
 				</div>
 			</div>
-			{% endif %}
 		{% endif %}
 
 		{# Payment by check #}
 		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}
-		{% if event.uses_checks and event.check_postmark_cutoff %}
-			{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+		{% if event.organization.check_payment_allowed and event.organization.check_postmark_cutoff %}
+			{% td_to_dict event.organization.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
 			{% if time_until_check_cutoff.days >= 0 %}
 				<div class="panel panel-default">
 					<div class="panel-heading">

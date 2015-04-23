@@ -9,7 +9,7 @@
 
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
-	<p><a class="btn btn-primary" href="{% url 'brambling_discount_create' event_slug=event.slug %}">Create discount</a></p>
+	<p><a class="btn btn-primary" href="{% url 'brambling_discount_create' event_slug=event.slug organization_slug=event.organization.slug %}">Create discount</a></p>
 	{% if discounts %}
 		<table class='table table-striped'>
 			<thead>
@@ -23,7 +23,7 @@
 			<tbody>
 			{% for discount in discounts %}
 				<tr>
-					<td><a href="{% url 'brambling_discount_update' event_slug=event.slug pk=discount.pk %}">{{ discount.name }}</a></td>
+					<td><a href="{% url 'brambling_discount_update' event_slug=event.slug organization_slug=event.organization.slug pk=discount.pk %}">{{ discount.name }}</a></td>
 					<td>{{ discount.code }}</td>
 					<td>{{ discount.item_option }}</td>
 					<td>{% if discount.discount_type == discount.PERCENT %}{{ discount.amount }}%{% else %} {{ discount.amount|format_money:event.currency }}{% endif %}</td>

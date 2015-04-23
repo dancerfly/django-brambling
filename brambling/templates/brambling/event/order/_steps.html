@@ -1,9 +1,9 @@
 <div class="stepbar stepbar-{{ workflow.active_steps|length }}-up{% if event.banner_image and not no_hug %} stepbar-hug-masthead{% endif %}">
 	{% for step in workflow.active_steps %}
 		{% if code_in_url %}
-			{% url step.view_name event_slug=event.slug code=order.code as step_url %}
+			{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug code=order.code as step_url %}
 		{% else %}
-			{% url step.view_name event_slug=event.slug as step_url %}
+			{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug as step_url %}
 		{% endif %}
 
 		{# a or div, depending on if the step is accessible #}

@@ -1,0 +1,91 @@
+{% extends "brambling/layouts/8_4.html" %}
+
+{% load staticfiles hints %}
+
+{% block title %}Your events – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<h1>{{ organization.name }}</h1>
+	{% if organization.description %}
+		<div>{{ organization.description|linebreaks }}</div>
+	{% endif %}
+	{% if organization.website_url %}
+		<a target="_blank" href="{{ organization.website_url }}" class="btn btn-primary">
+			<i class="fa fa-fw fa-globe"></i>
+			Website
+		</a>
+	{% endif %}
+	{% if organization.facebook_url %}
+		<a target="_blank" href="{{ organization.facebook_url }}" class="btn btn-primary">
+			<i class="fa fa-fw fa-facebook"></i>
+			Facebook
+		</a>
+	{% endif %}
+	{% with dance_styles=organization.dance_styles.all %}
+		{% if dance_styles %}
+			<h4 class="text-muted event-tags">Featuring {% for style in dance_styles %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
+		{% endif %}
+	{% endwith %}
+	{% if organization.city and organization.state_or_province and organization.country %}
+		<p><i class="fa fa-map-marker fa-fw"></i> {{ organization.city }}, {{ organization.state_or_province }}, {{ organization.country }}</p>
+	{% endif %}
+
+	{% if registered_events %}
+		<div class="page-header">
+			<h1>Events You Registered For</h1>
+		</div>
+		{% for event in registered_events %}
+			{% include "brambling/_event_list_item.html" with registered="true" %}
+		{% endfor %}
+	{% endif %}
+
+	<div class="page-header{% if registered_events %} margin-leader-dbl{% endif %}">
+		<h1>Upcoming Events</h1>
+	</div>
+	{% if upcoming_events_interest %}
+		{% for event in upcoming_events_interest|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% elif upcoming_events %}
+		{% for event in upcoming_events|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% else %}
+		<p>No upcoming events</p>
+	{% endif %}
+{% endblock %}
+
+{% block side %}
+	{% if admin_events or organization_editable_by %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Admin Panel</h4>
+			</header>
+			<div class="list-group">
+				{% for event in admin_events %}
+					{% include "brambling/_event_list-group-item.html" %}
+				{% endfor %}
+				{% if organization_editable_by %}
+					<a class="list-group-item" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
+						<i class="fa fa-gear fa-fw text-muted"></i> Settings
+					</a>
+					<a class="list-group-item" href="{% url 'brambling_event_create' organization_slug=organization.slug %}">
+						<i class="fa fa-plus fa-fw text-muted"></i> Create a New Event
+					</a>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+	{% if past_events %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Past Events You Registered For</h4>
+			</header>
+			<div class="list-group">
+				{% for event in past_events %}
+					{% include "brambling/_event_list-group-item.html" %}
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

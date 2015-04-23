@@ -540,9 +540,9 @@ class DwollaPaymentForm(BasePaymentForm):
         event = self.order.event
         dwolla_obj = self.user if self.user.is_authenticated() else self.order
         if event.api_type == Event.LIVE:
-            connected = dwolla_obj.connected_to_dwolla_live()
+            connected = dwolla_obj.dwolla_live_connected()
         else:
-            connected = dwolla_obj.connected_to_dwolla_test()
+            connected = dwolla_obj.dwolla_test_connected()
         if connected:
             self.sources = dwolla_get_sources(dwolla_obj, event)
             source_choices = [(source['Id'], source['Name'])

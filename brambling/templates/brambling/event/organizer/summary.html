@@ -9,13 +9,15 @@
 
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
+	{% url "brambling_event_attendees" event_slug=event.slug organization_slug=event.organization.slug as attendees_url%}
+
 	<h2>Event Summary</h2>
 	<div class='row'>
 		<div class='col-md-6'>
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
 					<h4 class='panel-title'>
-						<a href="{% url 'brambling_event_finances' event_slug=event.slug %}">Finance Summary</a>
+						<a href="{% url 'brambling_event_finances' event_slug=event.slug organization_slug=event.organization.slug %}">Finance Summary</a>
 					</h4>
 				</div>
 				<ul class='list-group'>
@@ -49,7 +51,7 @@
 				</div>
 				<div class='list-group'>
 					{% for itemoption in itemoptions %}
-						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?bought_items__item_option={{ itemoption.pk }}'>
+						<a class='list-group-item' href='{{ attendees_url }}?bought_items__item_option={{ itemoption.pk }}'>
 							{{ itemoption.item.name }} ({{ itemoption.name }})
 							<strong class='pull-right'>{{ itemoption.boughtitem__count }}</strong>
 						</a>
@@ -58,7 +60,7 @@
 							<ul class='list-inline'>
 								<li>This event has no items for purchase.</li>
 
-								<li><a class='btn btn-primary' href='{% url "brambling_item_create" event_slug=event.slug %}'>
+								<li><a class='btn btn-primary' href='{% url "brambling_item_create" event_slug=event.slug organization_slug=event.organization.slug %}'>
 									Create item
 									<span class='fa fa-plus'></span>
 								</a></li>
@@ -77,7 +79,7 @@
 				</div>
 				<ul class='list-group'>
 					{% for discount in discounts %}
-						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?bought_items__discounts__discount={{ discount.pk }}'>
+						<a class='list-group-item' href='{{ attendees_url }}?bought_items__discounts__discount={{ discount.pk }}'>
 							{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							<strong class='pull-right'>{{ discount.used_count }}</strong>
 						</a>
@@ -86,7 +88,7 @@
 							<ul class='list-inline'>
 								<li>This event has no discounts.</li>
 
-								<li><a class='btn btn-primary' href='{% url "brambling_discount_create" event_slug=event.slug %}'>
+								<li><a class='btn btn-primary' href='{% url "brambling_discount_create" event_slug=event.slug organization_slug=event.organization.slug %}'>
 									Create discount
 									<span class='fa fa-plus'></span>
 								</a></li>
@@ -102,20 +104,20 @@
 				</div>
 				<div class='list-group'>
 					{% if event.collect_housing_data %}
-						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?housing_status=need'>
+						<a class='list-group-item' href='{{ attendees_url }}?housing_status=need'>
 							Requesting housing
 							<strong class='pull-right'>{{ attendee_requesting_count }}</strong>
 						</a>
-						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?housing_status=have'>
+						<a class='list-group-item' href='{{ attendees_url }}?housing_status=have'>
 							Arranged housing
 							<strong class='pull-right'>{{ attendee_arranged_count }}</strong>
 						</a>
-						<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}?housing_status=home'>
+						<a class='list-group-item' href='{{ attendees_url }}?housing_status=home'>
 							At own home
 							<strong class='pull-right'>{{ attendee_home_count }}</strong>
 						</a>
 					{% endif %}
-					<a class='list-group-item' href='{% url "brambling_event_attendees" event_slug=event.slug %}'>
+					<a class='list-group-item' href='{{ attendees_url }}'>
 						<strong>Total count</strong>
 						<strong class='pull-right'>{{ attendee_count }}</strong>
 					</a>

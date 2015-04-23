@@ -5,7 +5,7 @@
 {% block main %}
 	{{ block.super }}
 
-	<p><a class="btn btn-primary" href="{% url 'brambling_item_create' event_slug=event.slug %}">Create item</a></p>
+	<p><a class="btn btn-primary" href="{% url 'brambling_item_create' event_slug=event.slug organization_slug=event.organization.slug %}">Create item</a></p>
 	{% if items %}
 		<table class='table table-striped'>
 			<thead>
@@ -19,7 +19,7 @@
 			<tbody>
 			{% for item in items %}
 				<tr>
-					<td><a href="{% url 'brambling_item_update' event_slug=event.slug pk=item.pk %}">{{ item.name }}</a></td>
+					<td><a href="{% url 'brambling_item_update' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk %}">{{ item.name }}</a></td>
 					<td>{{ item.get_category_display }}</td>
 					<td>{{ item.created_timestamp }}</td>
 					<td>{{ item.option_count }}</td>
