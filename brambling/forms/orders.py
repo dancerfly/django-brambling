@@ -1,3 +1,5 @@
+import datetime
+
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from dwolla.exceptions import DwollaAPIException
@@ -5,7 +7,7 @@ import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
-from brambling.models import (Date, EventHousing, EnvironmentalFactor,
+from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event, CustomForm)
@@ -149,7 +151,8 @@ class AttendeeHousingDataForm(MemoModelForm):
                 })
 
         self.fields['nights'].required = True
-        self.set_choices('nights', Date, event_housing_dates=self.instance.order.event)
+        event = self.instance.order.event
+        self.set_choices('nights', HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
         self.initial['nights'] = self.fields['nights'].queryset
         self.set_choices('ef_cause',
                          EnvironmentalFactor.objects.only('id', 'name'))
@@ -300,7 +303,8 @@ class HostingForm(MemoModelForm):
         self.set_choices('housing_categories',
                          HousingCategory.objects.only('id', 'name'))
 
-        self.nights = self.filter(Date, event_housing_dates=self.instance.event)
+        event = self.instance.event
+        self.nights = self.filter(HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
         slot_map = {}
         if self.instance.pk is not None:
             slot_map = {slot.night_id: slot

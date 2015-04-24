@@ -1,5 +1,3 @@
-import datetime
-
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
@@ -7,7 +5,7 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage, Transaction, Invite, CustomForm,
+                              ItemImage, Transaction, Invite, CustomForm,
                               CustomFormField, Order, Organization)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE, TEST

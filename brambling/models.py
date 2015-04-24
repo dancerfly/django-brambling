@@ -1,7 +1,7 @@
 # encoding: utf8
 from __future__ import unicode_literals
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 import itertools
 import json
@@ -258,16 +258,6 @@ def create_defaults(app_config, **kwargs):
                 HousingCategory(name=name)
                 for name in DEFAULT_HOUSING_CATEGORIES
             ])
-
-
-class Date(models.Model):
-    date = models.DateField()
-
-    class Meta:
-        ordering = ('date',)
-
-    def __unicode__(self):
-        return date(self.date, 'l, F jS')
 
 
 class Organization(AbstractDwollaModel):
@@ -1238,6 +1228,34 @@ class BoughtItemDiscount(models.Model):
                    item_option.price)
 
 
+class HousingRequestNight(models.Model):
+    date = models.DateField()
+
+    class Meta:
+        ordering = ('date',)
+
+    def __unicode__(self):
+        return date(self.date, 'l, F jS')
+
+
+@receiver(signals.post_save, sender=Event)
+def create_request_nights(sender, instance, **kwargs):
+    """
+    At some point in the future, we might want to switch this to
+    a ForeignKey relationship in the other direction, and let folks
+    annotate each night with specific information. For now, for simplicity,
+    we're sticking with the relationship that already exists.
+    """
+    date_set = {instance.start_date + timedelta(n - 1) for n in
+                xrange((instance.end_date - instance.start_date).days + 2)}
+    seen = set(HousingRequestNight.objects.filter(date__in=date_set).values_list('date', flat=True))
+    to_create = date_set - seen
+    if to_create:
+        HousingRequestNight.objects.bulk_create([
+            HousingRequestNight(date=date) for date in to_create
+        ])
+
+
 class Attendee(AbstractNamedModel):
     """
     This model represents information attached to an event pass. It is
@@ -1270,7 +1288,7 @@ class Attendee(AbstractNamedModel):
 
     # Housing information - all optional.
     housing_completed = models.BooleanField(default=False)
-    nights = models.ManyToManyField(Date, blank=True, null=True)
+    nights = models.ManyToManyField(HousingRequestNight, blank=True, null=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='attendee_cause',
                                       blank=True,
