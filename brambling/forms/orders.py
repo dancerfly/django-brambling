@@ -317,7 +317,7 @@ class HostingForm(MemoModelForm):
                 instance = slot_map[night.pk]
             else:
                 instance = HousingSlot(eventhousing=self.instance,
-                                       night=night)
+                                       date=night.date)
 
             self.slot_forms.append(HousingSlotForm(instance=instance,
                                                    data=data,
