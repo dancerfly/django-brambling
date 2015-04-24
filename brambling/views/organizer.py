@@ -130,24 +130,28 @@ class OrganizationDetailView(DetailView):
             is_published=True,
         ).with_dates().filter(start_date__gte=today).order_by('start_date')
 
-        admin_events = Event.objects.filter(
-            Q(organization__owner=self.request.user) |
-            Q(organization__editors=self.request.user) |
-            Q(additional_editors=self.request.user),
-            organization=self.object,
-        ).with_dates().order_by('-last_modified')
-
-        registered_events = list(Event.objects.filter(
-            order__person=self.request.user,
-            order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
-        ).with_dates().filter(start_date__gte=today).order_by('start_date'))
-
         context.update({
             'upcoming_events': upcoming_events,
-            'admin_events': admin_events,
-            'registered_events': registered_events,
             'organization_editable_by': self.object.editable_by(self.request.user)
         })
+
+        if self.request.user.is_authenticated():
+            admin_events = Event.objects.filter(
+                Q(organization__owner=self.request.user) |
+                Q(organization__editors=self.request.user) |
+                Q(additional_editors=self.request.user),
+                organization=self.object,
+            ).with_dates().order_by('-last_modified')
+
+            registered_events = list(Event.objects.filter(
+                order__person=self.request.user,
+                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
+            ).with_dates().filter(start_date__gte=today).order_by('start_date'))
+
+            context.update({
+                'admin_events': admin_events,
+                'registered_events': registered_events,
+            })
         return context
 
 
