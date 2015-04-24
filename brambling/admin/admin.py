@@ -151,16 +151,16 @@ class EventAdmin(admin.ModelAdmin):
         ("Dates", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
-                'timezone', 'dates',
+                'timezone',
+                ('start_date', 'end_date'),
                 ('start_time', 'end_time'),
-                'housing_dates'
             )
         }),
         ("Checkout", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
                 ('collect_housing_data', 'collect_survey_data'),
-                'liability_waiver', 'cart_timeout', 'housing_dates'
+                'liability_waiver', 'cart_timeout',
             )
         }),
         ("Permissions", {
@@ -173,7 +173,7 @@ class EventAdmin(admin.ModelAdmin):
         }),
     )
     raw_id_fields = ('organization',)
-    filter_horizontal = ("dance_styles", "dates", "housing_dates", "additional_editors")
+    filter_horizontal = ("dance_styles", "additional_editors")
     radio_fields = {'api_type': admin.HORIZONTAL}
 
 

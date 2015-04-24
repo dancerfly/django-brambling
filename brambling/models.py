@@ -359,14 +359,6 @@ class Organization(AbstractDwollaModel):
                                      content_id=self.pk)
 
 
-class EventQuerySet(models.QuerySet):
-    def with_dates(self):
-        return self.annotate(
-            start_date=models.Min('dates__date'),
-            end_date=models.Max('dates__date'),
-        )
-
-
 class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
@@ -399,11 +391,10 @@ class Event(models.Model):
     timezone = models.CharField(max_length=40, default='America/New_York', choices=((tz, tz) for tz in pytz.common_timezones))
     currency = models.CharField(max_length=10, default='USD')
 
-    dates = models.ManyToManyField(Date, related_name='event_dates')
+    start_date = models.DateField()
+    end_date = models.DateField()
     start_time = models.TimeField(blank=True, null=True)
     end_time = models.TimeField(blank=True, null=True)
-    housing_dates = models.ManyToManyField(Date, blank=True, null=True,
-                                           related_name='event_housing_dates')
 
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
@@ -441,8 +432,6 @@ class Event(models.Model):
     # This is a secret value set by admins
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
-
-    objects = EventQuerySet.as_manager()
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -1409,7 +1398,7 @@ class EventHousing(models.Model):
 
 class HousingSlot(models.Model):
     eventhousing = models.ForeignKey(EventHousing)
-    night = models.ForeignKey(Date)
+    date = models.DateField()
     spaces = models.PositiveSmallIntegerField(default=0,
                                               validators=[MaxValueValidator(100)])
     spaces_max = models.PositiveSmallIntegerField(default=0,
