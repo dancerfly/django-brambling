@@ -195,6 +195,11 @@ class EventCreateView(CreateView):
         kwargs['organization_editable_by'] = True
         return kwargs
 
+    def get_success_url(self):
+        return reverse('brambling_event_update',
+                       kwargs={'event_slug': self.object.slug,
+                               'organization_slug': self.object.organization.slug})
+
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
         context['organization'] = self.organization
