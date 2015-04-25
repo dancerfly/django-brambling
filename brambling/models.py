@@ -584,7 +584,8 @@ class Discount(models.Model):
                                      choices=TYPE_CHOICES,
                                      default=FLAT)
     amount = models.DecimalField(max_digits=5, decimal_places=2,
-                                 validators=[MinValueValidator(0)])
+                                 validators=[MinValueValidator(0)],
+                                 verbose_name="discount value")
     event = models.ForeignKey(Event)
 
     class Meta:
