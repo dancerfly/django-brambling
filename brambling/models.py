@@ -389,11 +389,11 @@ class Event(models.Model):
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
     has_classes = models.BooleanField(verbose_name="Is a class / Has class(es)", default=False)
-    liability_waiver = models.TextField(default=_("I hereby release {event}, its officers, and its employees from all "
+    liability_waiver = models.TextField(default=_("I hereby release {organization}, its officers, and its employees from all "
                                                   "liability of injury, loss, or damage to personal property associated "
                                                   "with this event. I acknowledge that I understand the content of this "
                                                   "document. I am aware that it is legally binding and I accept it out "
-                                                  "of my own free will."), help_text=_("'{event}' will be automatically replaced with your event name when users are presented with the waiver."))
+                                                  "of my own free will."), help_text=_("'{event}' and '{organization}' will be automatically replaced with your event and organization names respectively when users are presented with the waiver."))
 
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC, help_text="Who can view this event once it's published.")
@@ -433,7 +433,7 @@ class Event(models.Model):
         })
 
     def get_liability_waiver(self):
-        return self.liability_waiver.format(event=self.name)
+        return self.liability_waiver.format(event=self.name, organization=self.organization.name)
 
     def editable_by(self, user):
         return (
@@ -563,7 +563,8 @@ class Discount(models.Model):
                                      choices=TYPE_CHOICES,
                                      default=FLAT)
     amount = models.DecimalField(max_digits=5, decimal_places=2,
-                                 validators=[MinValueValidator(0)])
+                                 validators=[MinValueValidator(0)],
+                                 verbose_name="discount value")
     event = models.ForeignKey(Event)
 
     class Meta:
