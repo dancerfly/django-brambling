@@ -1,54 +1,109 @@
-{% extends "brambling/layouts/12_xs.html" %}
+{% extends "brambling/__marketing.html" %}
+
+{% load staticfiles %}
 
 {% block title %}About – {{ block.super }}{% endblock %}
 
-{% block main %}
-	<h2>About Dancerfly</h2>
+{% block body-classes %}{{ block.super }} marketing-page{% endblock %}
 
-	<p>
-		Dancerfly is a solid, easy-to-use event registration platform built <strong>by&nbsp;dancers, for&nbsp;dancers</strong>.
-		Leave selling tickets to us; you go focus on making the rest of your event amazing!
-	</p>
+{% block content %}
+	<div class='marketing marketing-brand'>
+		<div class='container'>
+			<div class='row'>
+				<div class='col-sm-10 col-sm-offset-1'>
+					<p class='text-jumbo'>
+						<strong>Dancerfly</strong> is a solid, easy-to-use event registration platform built <strong>by&nbsp;dancers, for&nbsp;dancers</strong>.
+						Leave selling tickets to us; go make the rest of your event amazing!
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 
-	<p>
-		What we offer includes:
-	</p>
+	<div class='marketing'>
+		<div class='row'>
+			<div class='col-sm-4'>
+				<p class='text-jumbo marketing-icon-header'>
+					<i class='fa fa-check-square-o fa-2x'></i>
+					Easy checkout
+				</p>
+				<p>
+					Zero account creation, plus a human-friendly design and checkout process!
+					Use credit cards, Dwolla, and/or checks, whatever is easiest for you and your attendees!
+				</p>
+			</div>
+			<div class='col-sm-4'>
+				<p class='text-jumbo marketing-icon-header'>
+					<i class='fa fa-check-square-o fa-2x'></i>
+					Easy events
+				</p>
+				<p>
+					From customizable data downloads for your attendees
+					to financial reports and simple refunds, we make
+					the event management process as simple as possible for you!
+				</p>
+			</div>
+			<div class='col-sm-4'>
+				<p class='text-jumbo marketing-icon-header'>
+					<i class='fa fa-check-square-o fa-2x'></i>
+					Easy teams
+				</p>
+				<p>
+					Have a team of people involved in your event? Great!
+					Control their access to data and editing on a per-event
+					basis, or give them access to all your events at once!
+				</p>
+			</div>
+		</div>
+		<p class='text-center'>
+			<a href='mailto:hello@littleweaverweb.com' class='btn btn-xl btn-primary'>Sign me up!</a>
+		</p>
+	</div>
 
-	<ul>
-		<li>Payment on our site with <a href="{% url 'brambling_pricing' %}">credit card, Dwolla, or check</a></li>
-		<li>Mobile-friendly design</li>
-		<li>Discount codes</li>
-		<li>Custom forms</li>
-		<li>Customizable attendee data downloads</li>
-		<li>Housing management</li>
-		<li>Multiple managers per event</li>
-		<li>Simple refunds</li>
-		<li>Optional account creation</li>
-		<li>Discoverability based on dance style</li>
-		<li><a href="{% url 'brambling_global' %}">International support</a></li>
-		<li>A knowledgeable, professional, responsive support team</li>
-	</ul>
+	<div class='marketing marketing-grey'>
+		<div class='container'>
+			<div class='row'>
+				<div class='col-sm-10 col-sm-offset-1'>
+					<p>
+						Not sure whether we have a feature you need? <a href='mailto:hello@littleweaverweb.com'>Shoot us an email</a>!
+						Even if it's not there right now, we just might add it for you.
+						We're always looking for ways to make <strong>Dancerfly</strong> even better!
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 
-	<p>
-		If you're interested in using Dancerfly for your event, or if you have questions, email us at <a href="mailto:hello@littleweaverweb.com">hello@littleweaverweb.com</a>.
-	</p>
-
-	<p>
-		Let us know if there are any specific features that you need.
-		We may already support them – and if not, we’re always looking to improve the platform!
-	</p>
-
-	<p>
-		Thanks for checking us out.
-		And however you handle registration – best of luck with your event!
-	</p>
-
-	<h4>Little Weaver Web Collective</h4>
-	<p>
-		<i class='fa fa-fw fa-globe text-muted'></i> <a href="http://littleweaverweb.com/">littleweaverweb.com</a>
-		<br />
-		<i class='fa fa-fw fa-paper-plane-o text-muted'></i> <a href="mailto:hello@littleweaverweb.com">hello@littleweaverweb.com</a>
-		<br />
-		<i class='fa fa-fw fa-github-alt text-muted'></i> <a href="http://github.com/littleweaver/">github.com/littleweaver</a>
-	</p>
+	<div class='marketing marketing clearfix'>
+		<div class='container'>
+			<div class='row'>
+				<div class='col-xs-6 col-xs-offset-3 col-sm-3 col-sm-offset-1 col-md-offset-2'>
+					<a href='http://littleweaverweb.com' target="_blank" class='thumbnail pull-left'>
+						<img src='{% static "brambling/little-weaver.png" %}' />
+					</a>
+				</div>
+				<div class='col-xs-12 col-sm-6 col-sm-offset-1 col-md-4'>
+					<p>
+						<strong>Dancerfly</strong> is a project of <a href='http://littleweaverweb.com' target='_blank'>Little Weaver Web Collective</a>,
+						a web development &amp; design agency. We're all dancers, so we get you.
+						If you run into any questions, we're here to help!
+					</p>
+					<p class='pull-right'>
+						<a href='mailto:hello@littleweaverweb.com' class='btn btn-primary btn-lg'>
+							Drop us a line!
+						</a>
+					</p>
+					<div class='clearfix'></div>
+					<p class='pull-right'>
+						<small>
+							<i class='fa fa-fw fa-envelope-o text-muted'></i>
+							<a href='mailto:hello@littleweaverweb.com'>
+								hello@littleweaverweb.com
+							</a>
+						</small>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}
