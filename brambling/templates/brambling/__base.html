@@ -18,6 +18,16 @@
 	{% endcompress %}
 {% endblock stylesheets %}
 
+{% block meta %}
+	<meta property="og:site_name" content="Dancerfly" />
+	<meta property="og:title" content="Dancerfly" />
+
+	<meta name="description" content="Dancerfly is an easy-to-use dance event registration and ticketing system." />
+	<meta property="og:description" content="Dancerfly is an easy-to-use dance event registration and ticketing system." />
+
+	<meta property="og:url" content="https://{{ site.domain }}{{ request.path }}" />
+{% endblock %}
+
 {% block top%}
 	{% include "brambling/_navbar.html" %}
 {% endblock %}
