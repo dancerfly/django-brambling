@@ -671,9 +671,10 @@ class HostingView(OrderMixin, WorkflowMixin, UpdateView):
         return reverse('brambling_event_order_summary', kwargs=kwargs)
 
 
-class OrderEmailView(OrderMixin, UpdateView):
+class OrderEmailView(OrderMixin, WorkflowMixin, UpdateView):
     template_name = 'brambling/event/order/email.html'
     current_step_slug = 'email'
+    workflow_class = RegistrationWorkflow
 
     def get_form_class(self):
         cls = forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
@@ -684,9 +685,10 @@ class OrderEmailView(OrderMixin, UpdateView):
         return self.order
 
 
-class SummaryView(OrderMixin, TemplateView):
+class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
     template_name = 'brambling/event/order/summary.html'
     current_step_slug = 'payment'
+    workflow_class = RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()
