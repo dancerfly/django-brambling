@@ -22,8 +22,7 @@
 		{% formrow form.website_url %}
 		{% formrow form.facebook_url %}
 		{% formrow form.description %}
-		{% formrow form.banner_image %}
-		<p class="text-muted">Images will be scaled and cropped to 940 x 300 pixels.</p>
+		{% formrow form.banner_image with help_text="Images will be scaled and cropped to 940 x 300 pixels.<br />Supported formats: .jpg, .png, .gif" %}
 		{% formrow form.dance_styles %}
 		{% formrow form.has_dances %}
 		{% formrow form.has_classes %}
