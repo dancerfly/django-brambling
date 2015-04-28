@@ -168,10 +168,15 @@ class WorkflowMixin(object):
     current_step_slug = None
     workflow_class = None
 
-    def _clean_kwargs(self):
-        return {key: value
-                for key, value in self.kwargs.items()
-                if value is not None}
+    def get_reverse_kwargs(self):
+        return self.kwargs
+
+    def _reverse(self, view_name):
+        return reverse(view_name, kwargs={
+            key: value
+            for key, value in self.get_reverse_kwargs().items()
+            if value is not None
+        })
 
     def dispatch(self, request, *args, **kwargs):
         self.workflow = self.get_workflow()
@@ -184,7 +189,7 @@ class WorkflowMixin(object):
                     not self.current_step.is_accessible()):
                 for step in reversed(self.workflow.steps.values()):
                     if step.is_accessible() and step.is_active():
-                        return HttpResponseRedirect(reverse(step.view_name, kwargs=self._clean_kwargs()))
+                        return HttpResponseRedirect(self._reverse(step.view_name))
         return super(WorkflowMixin, self).dispatch(request, *args, **kwargs)
 
     def get_workflow_class(self):
@@ -201,7 +206,7 @@ class WorkflowMixin(object):
             view_name = self.current_step.view_name
         else:
             view_name = self.current_step.next_step.view_name
-        return reverse(view_name, kwargs=self._clean_kwargs())
+        return self._reverse(view_name)
 
     def get_context_data(self, **kwargs):
         context = super(WorkflowMixin, self).get_context_data(**kwargs)

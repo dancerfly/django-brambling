@@ -337,6 +337,16 @@ class OrderMixin(object):
             'order': self.order
         }
 
+    def get_reverse_kwargs(self):
+        # Only used if this is combined with WorkflowMixin.
+        kwargs = {
+            'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
+        }
+        if self.kwargs.get('code'):
+            kwargs['code'] = self.order.code
+        return kwargs
+
 
 class AddToOrderView(OrderMixin, View):
     @method_decorator(ajax_required)
