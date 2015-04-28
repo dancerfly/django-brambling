@@ -263,12 +263,6 @@ class OrderMixin(object):
                         return HttpResponseRedirect(reverse(step.view_name, kwargs=url_kwargs))
         return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
-    @property
-    def is_admin_request(self):
-        if not hasattr(self, '_is_admin_request'):
-            self._is_admin_request = self.event.editable_by(self.request.user)
-        return self._is_admin_request
-
     def get_order(self):
         order_kwargs = {
             'event': self.event,
@@ -378,7 +372,6 @@ class OrderMixin(object):
             'code_in_url': (True if self.kwargs.get('code') and
                             not self.request.user.is_authenticated() else False),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
-            'is_admin_request': self.is_admin_request,
             'workflow': self.workflow,
             'current_step': self.current_step,
             'next_step': self.current_step.next_step if self.current_step else None,
@@ -402,7 +395,7 @@ class AddToOrderView(OrderMixin, View):
         if item_option.total_number is not None and item_option.remaining <= 0:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
-        if self.order.person is None or self.order.person.confirmed_email or self.is_admin_request:
+        if self.order.person is None or self.order.person.confirmed_email or self.event.editable_by(self.request.user):
             self.order.add_to_cart(item_option)
             return JsonResponse({'success': True})
         return JsonResponse({'success': False})

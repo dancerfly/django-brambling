@@ -774,7 +774,7 @@ class OrganizerApplyDiscountView(ApplyDiscountView):
 class RemoveDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
     def post(self, request, *args, **kwargs):
-        if not self.is_admin_request:
+        if not self.event.editable_by(self.request.user):
             raise Http404
         try:
             boughtitemdiscount = BoughtItemDiscount.objects.get(
