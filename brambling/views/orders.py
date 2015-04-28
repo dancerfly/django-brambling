@@ -52,8 +52,7 @@ class ShopStep(OrderStep):
         order = self.workflow.order
         if not order:
             return False
-        return (order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED) or
-                (order.cart_start_time is not None and
+        return ((order.cart_start_time is not None and
                  order.bought_items.filter(status=BoughtItem.RESERVED,
                                            item_option__item__category=Item.PASS).exists()))
 
@@ -314,11 +313,17 @@ class OrderMixin(object):
                         # checked out yet, assume that the user created an
                         # account mid-order and re-assign it.
                         try:
-                            order = Order.objects.get(
+                            order = Order.objects.extra(select={
+                                'pending_count': """
+                                    SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                                    brambling_boughtitem.order_id = brambling_order.id AND
+                                    brambling_boughtitem.status IN ('reserved', 'unpaid')
+                                """
+                            }).get(
                                 event=self.event,
                                 person__isnull=True,
                                 code=order_kwargs['code'],
-                                status=Order.IN_PROGRESS
+                                pending_count__gt=0
                             )
                         except Order.DoesNotExist:
                             pass
@@ -482,8 +487,6 @@ class ChooseItemsView(OrderMixin, TemplateView):
         return super(ChooseItemsView, self).dispatch(*args, **kwargs)
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return ShopWorkflow
         return RegistrationWorkflow
 
     def get_context_data(self, **kwargs):
@@ -514,8 +517,6 @@ class AttendeesView(OrderMixin, TemplateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return ShopWorkflow
         return RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
@@ -556,8 +557,6 @@ class AttendeeBasicDataView(OrderMixin, UpdateView):
     current_step_slug = 'attendees'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return ShopWorkflow
         return RegistrationWorkflow
 
     def get_form_class(self):
@@ -625,8 +624,6 @@ class AttendeeHousingView(OrderMixin, TemplateView):
     current_step_slug = 'housing'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return ShopWorkflow
         return RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
@@ -695,8 +692,6 @@ class SurveyDataView(OrderMixin, UpdateView):
     form_class = SurveyDataForm
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return SurveyWorkflow
         return RegistrationWorkflow
 
     def get_object(self):
@@ -714,8 +709,6 @@ class HostingView(OrderMixin, UpdateView):
     current_step_slug = 'hosting'
 
     def get_workflow_class(self):
-        if self.order is not None and self.order.status in (Order.COMPLETED, Order.PENDING, Order.REFUNDED):
-            return HostingWorkflow
         return RegistrationWorkflow
 
     def get_object(self):
@@ -782,7 +775,7 @@ class SummaryView(OrderMixin, TemplateView):
                 event=self.event,
                 order=self.order,
             )
-            self.order.mark_cart_paid(Order.COMPLETED, payment)
+            self.order.mark_cart_paid(payment)
         else:
             self.get_forms()
             form = None
@@ -800,8 +793,7 @@ class SummaryView(OrderMixin, TemplateView):
             if form and form.is_valid():
                 valid = True
                 payment = form.save()
-                self.order.mark_cart_paid(Order.COMPLETED if payment.is_confirmed else Order.PENDING,
-                                          payment)
+                self.order.mark_cart_paid(payment)
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()

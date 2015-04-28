@@ -237,7 +237,7 @@ class EventSummaryView(TemplateView):
             itemoption_map[itemoption.pk] = itemoption
             itemoption.boughtitem__count = BoughtItem.objects.filter(
                 item_option=itemoption,
-                order__status__in=(Order.PENDING, Order.COMPLETED)
+                status=BoughtItem.BOUGHT
             ).count()
             gross_sales += itemoption.price * itemoption.boughtitem__count
 
@@ -881,9 +881,6 @@ class TogglePaymentConfirmationView(View):
         self.object = self.get_object()
         self.object.is_confirmed = not self.object.is_confirmed
         self.object.save()
-        all_confirmed = not self.order.transactions.filter(is_confirmed=False).exists()
-        self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
-        self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})
 
 
