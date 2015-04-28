@@ -787,9 +787,6 @@ class RemoveDiscountView(OrderMixin, View):
             boughtitemdiscount.delete()
         return JsonResponse({'success': True})
 
-    def get_workflow(self):
-        return None
-
     def get_order(self):
         return Order.objects.get(event=self.event, code=self.kwargs['code'])
 
