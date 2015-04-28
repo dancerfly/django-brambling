@@ -4,29 +4,6 @@
 
 {% block title %}Your events – {{ block.super }}{% endblock %}
 
-{% block content %}
-	{% if not request.user.is_authenticated or not organizations and not admin_events %}
-		{% if not request.COOKIES.hideCall %}
-			<div class="masthead clearfix masthead-brand orange-barred">
-				<div class="row">
-					<div class="col-sm-6">
-						<p class="text-jumbo"><strong class="text-accent">Dancerfly</strong> is an easy-to-use dance event registration and ticketing system.</p>
-					</div>
-					<div class="col-sm-6">
-						<p class="text-jumbo">Start using Dancerfly for your <strong class='text-accent'>organization</strong> or <strong class='text-accent'>event</strong> today!</p>
-						<p>
-							<a class='btn btn-lg btn-primary-light'>Learn more <i class='fa fa-chevron-right'></i></a>
-							<a id='hideCall' class='btn btn-lg btn-link masthead-link'>Hide</a>
-						</p>
-					</div>
-				</div>{# /.row #}
-			</div>
-		{% endif %}
-	{% endif %}
-
-{{ block.super }}
-{% endblock %}
-
 {% block main %}
 
 	{% if request.user.is_authenticated %}
@@ -93,6 +70,20 @@
 {% endblock %}
 
 {% block side %}
+	{% if not request.user.is_authenticated or not organizations and not admin_events %}
+		{% if not request.COOKIES.hideCall %}
+			<div class='panel panel-default' id='hidePanel'>
+				<div class='panel-body'>
+					<p><strong>Dancerfly</strong> is an event registration system built <strong>by dancers, for dancers.</strong></p>
+					<p>Want to use Dancerfly for <em>your</em> event?</p>
+					<p>
+						<a class='btn btn-primary' href='{% url "brambling_about" %}'>Learn more <i class='fa fa-chevron-right'></i></a>
+						<a id='hideCall' class='btn btn-link'>Hide this forever</a>
+					</p>
+				</div>
+			</div>
+		{% endif %}
+	{% endif %}
 	{% if admin_events %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
@@ -154,7 +145,7 @@
 		$(function() {
 			$('#hideCall').on('click', function() {
 				createCookie('hideCall', 1, 1000);
-				$('.masthead').slideUp();
+				$('#hidePanel').slideUp();
 			});
 		});
 	</script>
