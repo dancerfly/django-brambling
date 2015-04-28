@@ -290,11 +290,10 @@ class OrderMixin(object):
                                     brambling_boughtitem.order_id = brambling_order.id AND
                                     brambling_boughtitem.status IN ('reserved', 'unpaid')
                                 """
-                            }).get(
+                            }, where=['pending_count > 0']).get(
                                 event=self.event,
                                 person__isnull=True,
-                                code=order_kwargs['code'],
-                                pending_count__gt=0
+                                code=order_kwargs['code']
                             )
                         except Order.DoesNotExist:
                             pass
