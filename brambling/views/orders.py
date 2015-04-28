@@ -53,9 +53,7 @@ class ShopStep(OrderStep):
         order = self.workflow.order
         if not order:
             return False
-        return ((order.cart_start_time is not None and
-                 order.bought_items.filter(status=BoughtItem.RESERVED,
-                                           item_option__item__category=Item.PASS).exists()))
+        return order.cart_start_time is not None or order.bought_items.exists()
 
 
 class AttendeeStep(OrderStep):
