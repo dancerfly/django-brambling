@@ -403,7 +403,7 @@ class StripeConnectView(View):
                     organization.pk, organization.name, pprint.pformat(data)))
                 messages.error(request, 'Something went wrong. Please try again.')
 
-        return HttpResponseRedirect(reverse('brambling_organization_update',
+        return HttpResponseRedirect(reverse('brambling_organization_update_payment',
                                             kwargs={'organization_slug': organization.slug}))
 
 
