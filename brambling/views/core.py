@@ -1,10 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Q, Min, Max
+from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
-from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
