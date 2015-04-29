@@ -31,7 +31,7 @@
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 		<div class='form-group'>
-				{% if registered or event in registered_events %}
+				{% if registered %}
 					{% if event.order and event.order.has_cart %}
 						<a href="{{ event.get_absolute_url }}" class="btn btn-warning tipped" title="Complete your registration">
 							<i class="fa fa-exclamation-circle"></i> Almost Registered
