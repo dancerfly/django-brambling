@@ -28,8 +28,7 @@ from brambling.views.orders import (
 )
 from brambling.views.core import (
     ExceptionView,
-    UserDashboardView,
-    SplashView,
+    DashboardView,
     InviteAcceptView,
     InviteSendView,
     InviteDeleteView,
@@ -79,7 +78,6 @@ from brambling.views.user import (
     CreditCardAddView,
     CreditCardDeleteView,
 )
-from brambling.views.utils import split_view
 
 
 order_urlpatterns = patterns('',
@@ -254,9 +252,7 @@ urlpatterns = patterns('',
     url(r'global/', TemplateView.as_view(template_name='brambling/global.html'), name='brambling_global'),
 
     url(r'^$',
-        split_view(lambda r, *a, **k: r.user.is_authenticated(),
-                   UserDashboardView.as_view(),
-                   SplashView.as_view()),
+        DashboardView.as_view(),
         name="brambling_dashboard"),
     url(r'^stripe_connect/$',
         StripeConnectView.as_view(),
