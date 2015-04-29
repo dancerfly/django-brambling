@@ -271,6 +271,8 @@ class Date(models.Model):
 
 
 class Organization(AbstractDwollaModel):
+    DEMO_SLUG = 'demo'
+
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
                             validators=[RegexValidator("^[a-z0-9-]+$")],
@@ -357,6 +359,9 @@ class Organization(AbstractDwollaModel):
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
                                      content_id=self.pk)
+
+    def is_demo(self):
+        return self.slug == Organization.DEMO_SLUG
 
 
 class EventQuerySet(models.QuerySet):
@@ -500,6 +505,9 @@ class Event(models.Model):
         if self.api_type == Event.LIVE:
             return self.organization.dwolla_live_can_connect()
         return self.organization.dwolla_test_can_connect()
+
+    def is_demo(self):
+        return self.organization.is_demo()
 
 
 class Item(models.Model):
