@@ -31,15 +31,23 @@
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 		<div class='form-group'>
-			<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
 				{% if registered or event in registered_events %}
-					Edit registration
+					{% if event.order and event.order.has_cart %}
+						<a href="{{ event.get_absolute_url }}" class="btn btn-warning tipped" title="Complete your registration">
+							<i class="fa fa-exclamation-circle"></i> Almost Registered
+						</a>
+					{% else %}
+						<a href="{{ event.get_absolute_url }}" class="btn btn-success tipped" title="Modify your registration">
+							<i class="fa fa-check"></i> Registered
+						</a>
+					{% endif %}
 				{% else %}
-					Register
+					<a href="{{ event.get_absolute_url }}" class="btn btn-default">
+						<i class="fa fa-ticket"></i> Register!
+					</a>
 				{% endif %}
-			</a>
 			{% if event in admin_events %}
-				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-primary">
+				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-default">
 					<i class="fa fa-cog"></i>
 					Manage Event
 				</a>
