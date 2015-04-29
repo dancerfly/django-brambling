@@ -55,11 +55,12 @@ class EmailConfirmView(DetailView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if not self.generator.check_token(self.object, self.kwargs['token']):
-            raise Http404("Token invalid or expired.")
-        self.object.confirmed_email = self.object.email
-        self.object.save()
+        valid_token = self.generator.check_token(self.object, self.kwargs['token'])
+        if valid_token:
+            self.object.confirmed_email = self.object.email
+            self.object.save()
         context = self.get_context_data(object=self.object)
+        context['valid_token'] = valid_token
         return self.render_to_response(context)
 
 
