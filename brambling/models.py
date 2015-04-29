@@ -695,7 +695,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
         return Organization.objects.filter(
             models.Q(owner=self) |
             models.Q(editors=self)
-        ).order_by('name')
+        ).order_by('name').distinct()
 
 
 class CreditCard(models.Model):
