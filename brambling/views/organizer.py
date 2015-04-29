@@ -413,7 +413,7 @@ class EventRemoveEditorView(View):
         if not request.user.is_authenticated():
             raise Http404
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
-        event = get_object_or_404(Event, slug=kwargs['event_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
 
         if not organization.owner_id == request.user.pk:
             raise Http404
@@ -432,10 +432,10 @@ class PublishEventView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
+
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
         if not event.editable_by(request.user):
             raise Http404
         if not event.can_be_published():
@@ -451,10 +451,10 @@ class UnpublishEventView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
+
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
         if event.is_frozen:
             raise Http404
         if not event.editable_by(request.user):
