@@ -174,7 +174,7 @@ class InviteDeleteView(View):
             organization = Organization.objects.get(pk=invite.content_id)
             if organization.owner_id != self.request.user.pk:
                 raise Http404
-            url = reverse('brambling_organization_update', kwargs={'organization_slug': organization.slug})
+            url = reverse('brambling_organization_update_permissions', kwargs={'organization_slug': organization.slug})
         invite.delete()
         messages.success(request, "Invitation for {} canceled.".format(invite.email))
         return HttpResponseRedirect(url)

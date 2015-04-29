@@ -26,7 +26,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
                                        CustomFormForm, CustomFormFieldFormSet,
-                                       OrderNotesForm, OrganizationForm)
+                                       OrderNotesForm, OrganizationPaymentForm)
 from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -34,6 +34,7 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               Person, CustomForm, Organization)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
+                                   get_organization_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
@@ -44,9 +45,7 @@ from brambling.utils.payment import (dwolla_organization_oauth_url,
 
 class OrganizationUpdateView(UpdateView):
     model = Organization
-    template_name = 'brambling/organization/update.html'
     context_object_name = 'organization'
-    form_class = OrganizationForm
 
     def get_object(self):
         obj = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
@@ -55,17 +54,32 @@ class OrganizationUpdateView(UpdateView):
             raise Http404
         return obj
 
+    def get_form_class(self):
+        if self.form_class is not None:
+            return self.form_class
+        return modelform_factory(self.model, fields=self.fields)
+
     def get_form_kwargs(self):
         kwargs = super(OrganizationUpdateView, self).get_form_kwargs()
-        kwargs['request'] = self.request
+        if self.form_class:
+            kwargs['request'] = self.request
         return kwargs
 
     def get_success_url(self):
-        return reverse('brambling_organization_update',
-                       kwargs={'organization_slug': self.object.slug})
+        return self.request.path
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
+        context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
+        return context
+
+
+class OrganizationPaymentView(OrganizationUpdateView):
+    form_class = OrganizationPaymentForm
+    template_name = 'brambling/organization/payment.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
 
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
@@ -102,7 +116,7 @@ class OrganizationRemoveEditorView(View):
         else:
             organization.editors.remove(person)
         messages.success(request, 'Removed editor successfully.')
-        return HttpResponseRedirect(reverse('brambling_organization_update',
+        return HttpResponseRedirect(reverse('brambling_organization_update_permissions',
                                     kwargs={'organization_slug': organization.slug}))
 
 
@@ -135,6 +149,9 @@ class OrganizationDetailView(DetailView):
             'organization_editable_by': self.object.editable_by(self.request.user)
         })
 
+        if context['organization_editable_by']:
+            context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
+
         if self.request.user.is_authenticated():
             admin_events = Event.objects.filter(
                 Q(organization__owner=self.request.user) |
@@ -165,7 +182,7 @@ class OrderRedirectView(View):
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/event/organizer/create.html'
+    template_name = 'brambling/organization/event_create.html'
     form_class = EventForm
 
     def dispatch(self, request, *args, **kwargs):
@@ -202,9 +219,12 @@ class EventCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
-        context['organization'] = self.organization
-        context['organization_editable_by'] = True
-        context['event'] = context['form'].instance
+        context.update({
+            'organization': self.organization,
+            'organization_editable_by': True,
+            'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
+            'event': context['form'].instance,
+        })
         return context
 
 
@@ -383,7 +403,7 @@ class StripeConnectView(View):
                     organization.pk, organization.name, pprint.pformat(data)))
                 messages.error(request, 'Something went wrong. Please try again.')
 
-        return HttpResponseRedirect(reverse('brambling_organization_update',
+        return HttpResponseRedirect(reverse('brambling_organization_update_payment',
                                             kwargs={'organization_slug': organization.slug}))
 
 
