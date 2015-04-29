@@ -128,11 +128,6 @@ class OrganizationPaymentForm(forms.ModelForm):
         self.request = request
         if self.instance.pk is None:
             self.instance.owner = request.user
-        if not request.user == self.instance.owner:
-            del self.fields['editors']
-
-        if self.instance.slug in STATIC_ORGANIZATION_SLUGS:
-            del self.fields['slug']
 
     def clean_check_payment_allowed(self):
         cpa = self.cleaned_data['check_payment_allowed']
