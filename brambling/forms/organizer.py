@@ -210,7 +210,7 @@ class EventForm(forms.ModelForm):
             if (timezone, timezone) not in self.fields['timezone'].choices:
                 self.fields['timezone'].choices += ((timezone, timezone),)
 
-        if self.instance.is_demo():
+        if self.instance.is_demo() and self.instance.pk:
             del self.fields['slug']
 
     def clean_editors(self):
@@ -234,6 +234,8 @@ class EventForm(forms.ModelForm):
 
     def save(self):
         created = self.instance.pk is None
+        if self.instance.is_demo():
+            self.instance.api_type = Event.TEST
         instance = super(EventForm, self).save()
 
         if {'start_date', 'end_date'} & set(self.changed_data) or created:
