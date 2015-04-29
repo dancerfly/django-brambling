@@ -415,7 +415,7 @@ class EventRemoveEditorView(View):
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
         event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
 
-        if not organization.owner_id == request.user.pk:
+        if not organization.editable_by(request.user):
             raise Http404
         try:
             person = Person.objects.get(pk=kwargs['pk'])
