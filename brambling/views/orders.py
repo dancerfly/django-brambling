@@ -396,10 +396,8 @@ class AddToOrderView(OrderMixin, View):
         if item_option.total_number is not None and item_option.remaining <= 0:
             return JsonResponse({'success': False, 'error': 'That item is sold out.'})
 
-        if self.order.person is None or self.order.person.confirmed_email or self.is_admin_request:
-            self.order.add_to_cart(item_option)
-            return JsonResponse({'success': True})
-        return JsonResponse({'success': False})
+        self.order.add_to_cart(item_option)
+        return JsonResponse({'success': True})
 
     def get_order(self):
         order = super(AddToOrderView, self).get_order()
