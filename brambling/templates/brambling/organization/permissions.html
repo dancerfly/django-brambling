@@ -1,0 +1,76 @@
+{% extends 'brambling/organization/__admin.html' %}
+{% load floppyforms %}
+
+{% block main %}
+	{{ block.super }}
+
+	<h1>Permissions</h1>
+
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+
+			<p>The following people have access to edit this organization and all its events. Only the organization owner can add or remove editors.</p>
+
+			<div class="table-responsive">
+				<table class='table table-striped'>
+					<tbody>
+						<tr>
+							<th>{{ organization.owner.get_full_name }}</th>
+							<td>{{ organization.owner.email }}</td>
+							<td><i class='fa fa-fw fa-lock'></i> Owner</td>
+							{% if organization.owner == request.user %}<td></td>{% endif %}
+						</tr>
+						{% for editor in organization.editors.all %}
+							<tr>
+								<th>{{ editor.get_full_name }}</th>
+								<td>{{ editor.email }}</td>
+								<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
+								{% if organization.owner == request.user %}
+									<td>
+										<a href="{% url 'brambling_organization_remove_editor' organization_slug=organization.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+									</td>
+								{% endif %}
+							</tr>
+						{% endfor %}
+						{% for invite in organization.get_invites %}
+							<tr>
+								<th>{{ invite.email }}</th>
+								<td>{{ invite.email }}</td>
+								<td>
+									{% if invite.is_sent %}
+										<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+									{% else %}
+										<i class='fa fa-fw fa-envelope'></i> Not sent
+									{% endif %}
+								</td>
+								{% if organization.owner == request.user %}
+									<td>
+										<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+										<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+									</td>
+								{% endif %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+
+			{% formrow form.editors with label="Invite more editors" %}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+
+		{% if organization.pk %}
+			<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+		{% endif %}
+
+	</form>
+
+{% endblock %}

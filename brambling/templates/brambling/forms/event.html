@@ -83,6 +83,11 @@
 			{% with field=form.collect_housing_data %}
 				<div class='checkbox'>
 					<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+					<small><a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-html="true" data-content="
+						{% filter force_escape %}
+							<p>If checked, attendees will be asked whether they would like to request or offer housing and presented with additional housing-related forms based on their selection.</p>
+						{% endfilter %}
+					" tabindex="-1">What is housing data?</a></small>
 				</div>
 			{% endwith %}
 			{% with field=form.collect_survey_data %}
@@ -113,7 +118,7 @@
 		<p>
 			The following people can edit <em>all</em> events run by <strong>{{ event.organization }}</strong>.
 			{% if request.user == organization.owner %}
-				This list can be updated in the <a href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">organization settings</a>.
+				This list can be updated in the <a href="{% url 'brambling_organization_update_permissions' organization_slug=organization.slug %}">organization settings</a>.
 			{% else %}
 				Only the organization owner can change this list.
 			{% endif %}
@@ -201,7 +206,7 @@
 	</header>
 	<div class="panel-body">
 		{% if organization_editable_by %}
-			<p>Payment methods for an event can be changed in the <a href="{% url 'brambling_organization_update' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
+			<p>Payment methods for an event can be changed in the <a href="{% url 'brambling_organization_update_payment' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
 		{% else %}
 			Payment methods can only be updated by people with permission to edit the organization.
 		{% endif %}

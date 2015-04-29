@@ -7,6 +7,11 @@ from brambling.forms.user import (
     FloppyPasswordResetForm,
     FloppySetPasswordForm,
 )
+from brambling.forms.organizer import (
+    OrganizationPermissionForm,
+    OrganizationProfileForm,
+    OrganizationEventDefaultsForm,
+)
 from brambling.models import Discount
 from brambling.views.orders import (
     AddToOrderView,
@@ -23,14 +28,14 @@ from brambling.views.orders import (
 )
 from brambling.views.core import (
     ExceptionView,
-    UserDashboardView,
-    SplashView,
+    DashboardView,
     InviteAcceptView,
     InviteSendView,
     InviteDeleteView,
 )
 from brambling.views.organizer import (
     OrganizationUpdateView,
+    OrganizationPaymentView,
     OrganizationDetailView,
     OrganizationRemoveEditorView,
     OrderRedirectView,
@@ -73,7 +78,6 @@ from brambling.views.user import (
     CreditCardAddView,
     CreditCardDeleteView,
 )
-from brambling.views.utils import split_view
 
 
 order_urlpatterns = patterns('',
@@ -202,9 +206,27 @@ organization_urlpatterns = patterns('',
     url(r'^$',
         OrganizationDetailView.as_view(),
         name='brambling_organization_detail'),
-    url(r'^edit/$',
-        OrganizationUpdateView.as_view(),
+    url(r'^edit/profile/$',
+        OrganizationUpdateView.as_view(
+            form_class=OrganizationProfileForm,
+            template_name='brambling/organization/profile.html',
+        ),
         name='brambling_organization_update'),
+    url(r'^edit/event_defaults/$',
+        OrganizationUpdateView.as_view(
+            form_class=OrganizationEventDefaultsForm,
+            template_name='brambling/organization/event_defaults.html'
+        ),
+        name='brambling_organization_update_event_defaults'),
+    url(r'^edit/permissions/$',
+        OrganizationUpdateView.as_view(
+            form_class=OrganizationPermissionForm,
+            template_name='brambling/organization/permissions.html'
+        ),
+        name='brambling_organization_update_permissions'),
+    url(r'^edit/payment/$',
+        OrganizationPaymentView.as_view(),
+        name='brambling_organization_update_payment'),
     url(r'^create/$',
         EventCreateView.as_view(),
         name="brambling_event_create"),
@@ -230,9 +252,7 @@ urlpatterns = patterns('',
     url(r'global/', TemplateView.as_view(template_name='brambling/global.html'), name='brambling_global'),
 
     url(r'^$',
-        split_view(lambda r, *a, **k: r.user.is_authenticated(),
-                   UserDashboardView.as_view(),
-                   SplashView.as_view()),
+        DashboardView.as_view(),
         name="brambling_dashboard"),
     url(r'^stripe_connect/$',
         StripeConnectView.as_view(),

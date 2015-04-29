@@ -1,0 +1,29 @@
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<a href="{{ organization.get_absolute_url }}">
+				{{ organization.name }}
+			</a>
+		</h4>
+		{% if organization.city or organization.state_or_province or organization.country %}
+			<div class="media text-muted margin-leader-0 text-small">
+				<div class="media-left">
+					<i class="fa fa-map-marker fa-fw"></i>
+				</div>
+				<div class="media-body">
+					{% include "brambling/event/_where.html" with event=organization %}
+				</div>
+			</div>
+		{% endif %}
+	</div>
+	<div class="list-group">
+		{% for item in organization_admin_nav %}
+			<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">
+				{% if item.icon %}
+					<i class="fa fa-fw {{ item.icon }}"></i>
+				{% endif %}
+				{{ item.label }}
+			</a>
+		{% endfor %}
+	</div>
+</div>
