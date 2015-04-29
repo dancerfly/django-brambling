@@ -34,6 +34,7 @@
 					</tr>
 				</thead>
 				<tbody>
+				{% if not organization.is_demo %}
 					{# Stripe / Dwolla Live: #}
 					{% if organization.stripe_live_connected or stripe_oauth_url %}
 						<tr>
@@ -71,7 +72,7 @@
 							{% endif %}
 						</tr>
 					{% endif %}
-
+				{% else %}
 					{# Stripe / Dwolla Test: #}
 					{% if request.user.is_superuser %}
 						{% if organization.stripe_test_connected or stripe_test_oauth_url %}
@@ -111,6 +112,7 @@
 							</tr>
 						{% endif %}
 					{% endif %}
+				{% endif %}
 
 					{# By Mail/Check: #}
 					<tr>
@@ -161,6 +163,10 @@
 				</tbody>
 			</table>
 		{% endform %}
+
+		{% if organization.is_demo %}
+			<p class='text-muted'>Note: This is a demo organization which uses test APIs. None of the transactions made through this organization can result in real money changing hands.</p>
+		{% endif %}
 
 		<button class="btn btn-primary" type="submit">
 			Save Changes
