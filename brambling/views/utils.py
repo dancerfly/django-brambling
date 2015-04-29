@@ -75,10 +75,10 @@ def get_organization_admin_nav(organization, request):
         'organization_slug': organization.slug,
     }
     items = (
-        ('brambling_organization_update', 'Profile', ''),
-        ('brambling_organization_update_payment', 'Payment', ''),
-        ('brambling_organization_update_event_defaults', 'Event Defaults', ''),
-        ('brambling_organization_update_permissions', 'Permissions', ''),
+        ('brambling_organization_update', 'Organization Profile', 'fa-institution'),
+        ('brambling_organization_update_payment', 'Payment', 'fa-money'),
+        ('brambling_organization_update_event_defaults', 'Event Defaults', 'fa-calendar-o'),
+        ('brambling_organization_update_permissions', 'Permissions', 'fa-group'),
         ('brambling_event_create', 'Create a New Event', 'fa-plus'),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
