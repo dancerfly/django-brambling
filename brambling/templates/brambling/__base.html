@@ -56,15 +56,16 @@
 		<script type="text/javascript" src="{% static "hints/hints.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
-		{# TO DO: Ultimately this analytics code should live in a proprietary repository with Little Weaver specific things. #}
-		<script>
-			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+		{% if GOOGLE_ANALYTICS_UA and GOOGLE_ANALYTICS_DOMAIN %}
+			<script>
+				(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+				(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+				m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+				})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-			ga('create', 'UA-52154832-1', 'littleweaverweb.com');
-			ga('send', 'pageview');
-		</script>
+				ga('create', '{{ GOOGLE_ANALYTICS_UA }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}');
+				ga('send', 'pageview');
+			</script>
+		{% endif %}
 	{% endcompress %}
 {% endblock %}
