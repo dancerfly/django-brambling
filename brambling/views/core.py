@@ -90,6 +90,9 @@ class InviteAcceptView(TemplateView):
             invite = None
         else:
             if request.user.is_authenticated() and request.user.email == invite.email:
+                if request.user.confirmed_email != request.user.email:
+                    request.user.confirmed_email = request.user.email
+                    request.user.save()
                 if invite.kind == Invite.EVENT_EDITOR:
                     event = Event.objects.get(pk=invite.content_id)
                     event.additional_editors.add(request.user)
