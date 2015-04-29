@@ -33,7 +33,7 @@
 		<div class='form-group'>
 				{% if registered %}
 					{% if event.order and event.order.has_cart %}
-						<a href="{{ event.get_absolute_url }}" class="btn btn-warning tipped" title="Complete your registration">
+						<a href="{{ event.get_absolute_url }}" class="btn btn-warning tipped" title="Complete your registration now!">
 							<i class="fa fa-exclamation-circle"></i> Almost Registered
 						</a>
 					{% else %}
@@ -43,7 +43,7 @@
 					{% endif %}
 				{% else %}
 					<a href="{{ event.get_absolute_url }}" class="btn btn-default">
-						<i class="fa fa-ticket"></i> Register!
+						<i class="fa fa-ticket"></i> Register for <strong>{{ event.name }}</strong>!
 					</a>
 				{% endif %}
 			{% if event in admin_events %}
