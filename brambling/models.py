@@ -1614,3 +1614,17 @@ class CustomFormEntry(models.Model):
             return json.loads(self.value)
         except:
             return ''
+
+
+class SavedReport(models.Model):
+    ATTENDEE = 'attendee'
+    ORDER = 'order'
+    REPORT_TYPE_CHOICES = (
+        (ATTENDEE, _('Attendee')),
+        (ORDER, _('Order')),
+
+    )
+    report_type = models.CharField(max_length=8, choices=REPORT_TYPE_CHOICES)
+    event = models.ForeignKey(Event)
+    name = models.CharField(max_length=40)
+    querystring = models.TextField()

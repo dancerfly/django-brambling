@@ -31,7 +31,8 @@ from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Person, CustomForm, Organization)
+                              Person, CustomForm, Organization,
+                              SavedReport)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
@@ -727,7 +728,8 @@ class AttendeeFilterView(ModelTableView):
         context = super(AttendeeFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'saved_reports': SavedReport.objects.filter(event=self.event, report_type=SavedReport.ORDER),
         })
         return context
 
@@ -787,7 +789,8 @@ class OrderFilterView(ModelTableView):
         context = super(OrderFilterView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'saved_reports': SavedReport.objects.filter(event=self.event, report_type=SavedReport.ORDER),
         })
         return context
 
