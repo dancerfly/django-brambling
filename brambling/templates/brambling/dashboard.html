@@ -53,6 +53,10 @@
 		{% endfor %}
 	{% endif %}
 
+	{% if registered_events %}
+		<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
+	{% endif %}
+
 	{% if upcoming_events_interest %}
 		{% for event in upcoming_events_interest|slice:"5" %}
 			{% include "brambling/_event_list_item.html" %}
