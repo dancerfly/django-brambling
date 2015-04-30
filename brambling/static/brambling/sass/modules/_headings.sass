@@ -8,3 +8,26 @@
 		margin: 0
 	h4
 		margin-top: 4px
+
+.header-divider
+	font-size: $font-size-base * .9
+	line-height: $line-height-computed
+	text-align: center
+	span
+		background-color: #FFF
+		text-transform: uppercase
+		letter-spacing: .02em
+		padding: 0 .5em
+		z-index: 1
+		position: relative
+		color: #888
+	&::after
+		border-bottom: 1px solid #CCC
+		display: block
+		content: " "
+		height: 0
+		position: absolute
+		top: 50%
+		left: 0
+		right: 0
+		z-index: 0

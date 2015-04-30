@@ -161,14 +161,20 @@ class OrganizationDetailView(DetailView):
                 organization=self.object,
             ).with_dates().order_by('-last_modified')
 
-            registered_events = list(Event.objects.filter(
+            registered_events_qs = Event.objects.filter(
                 order__person=self.request.user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
-            ).with_dates().filter(start_date__gte=today).order_by('start_date'))
+                organization=self.object,
+            ).with_dates().filter(start_date__gte=today).order_by('start_date')
+            registered_events = list(registered_events_qs)
+
+            # Exclude registered events from upcoming events:
+            upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
 
             context.update({
                 'admin_events': admin_events,
                 'registered_events': registered_events,
+                'upcoming_events': upcoming_events
             })
         return context
 
