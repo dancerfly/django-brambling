@@ -377,7 +377,6 @@ class OrderMixin(object):
             'workflow': self.workflow,
             'current_step': self.current_step,
             'next_step': self.current_step.next_step if self.current_step else None,
-            'site': get_current_site(self.request),
         })
         return context
 
