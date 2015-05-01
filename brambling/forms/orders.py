@@ -512,7 +512,9 @@ class SavedCardPaymentForm(BasePaymentForm):
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
         self.fields['card'].queryset = self.order.person.cards.filter(
-            api_type=self.api_type)
+            api_type=self.api_type,
+            is_saved=True,
+        )
         self.fields['card'].initial = self.order.person.default_card
 
     def _post_clean(self):
