@@ -91,7 +91,7 @@
 								{% if cards.test or stripe_test_settings_valid %}
 									<div class='row'>
 										{% for card in cards.test %}
-											<div class='col-xs-3'>
+											<div class='col-sm-3 col-xs-6'>
 												<p>
 													<i class='fa fa-fw fa-{{ card.get_icon }}'></i>
 													{{ card.brand }} &bull;&bull;&bull;&bull;{{ card.last4 }}
@@ -107,7 +107,7 @@
 											</div>
 										{% endfor %}
 										{% if stripe_test_settings_valid %}
-											<div class='col-xs-3'>
+											<div class='col-sm-3 col-xs-6'>
 												<a class='btn btn-primary' href='{% url "brambling_user_card_add" api_type="test" %}'><span class='fa fa-plus'></span> Add a card</a>
 											</div>
 										{% endif %}

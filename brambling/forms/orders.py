@@ -503,7 +503,7 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
 
 
 class SavedCardPaymentForm(BasePaymentForm):
-    card = forms.ModelChoiceField(CreditCard)
+    card = forms.ModelChoiceField(CreditCard, widget=forms.RadioSelect)
 
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
