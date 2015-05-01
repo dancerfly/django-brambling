@@ -674,9 +674,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
-    default_card = models.OneToOneField('CreditCard', blank=True, null=True,
-                                        related_name='default_for',
-                                        on_delete=models.SET_NULL)
 
     # Internal tracking
     modified_directly = models.BooleanField(default=False)
@@ -732,9 +729,6 @@ class CreditCard(models.Model):
     brand = models.CharField(max_length=16)
 
     is_saved = models.BooleanField(default=False)
-
-    def is_default(self):
-        return self.person.default_card_id == self.id
 
     def __unicode__(self):
         return (u"{} " + u"\u2022" * 4 + u"{}").format(self.brand, self.last4)

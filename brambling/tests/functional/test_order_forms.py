@@ -160,7 +160,6 @@ class PaymentFormTestCase(TestCase):
         event = order.event
         card = CardFactory()
         person.cards.add(card)
-        person.default_card = card
         person.save()
         form = SavedCardPaymentForm(order, Decimal('42.15'), data={'card': card.pk})
         self.assertTrue(form.is_bound)

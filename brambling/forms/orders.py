@@ -448,10 +448,6 @@ class AddCardForm(forms.Form):
             is_saved=card.customer is not None
         )
 
-        if user and user.default_card_id is None:
-            user.default_card = creditcard
-            user.save()
-
         return creditcard
 
 
@@ -515,7 +511,6 @@ class SavedCardPaymentForm(BasePaymentForm):
             api_type=self.api_type,
             is_saved=True,
         )
-        self.fields['card'].initial = self.order.person.default_card
 
     def _post_clean(self):
         self.card = self.cleaned_data['card']
