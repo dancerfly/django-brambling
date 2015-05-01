@@ -135,7 +135,7 @@ class PaymentFormTestCase(TestCase):
         event = order.event
         person = PersonFactory()
         token = 'FAKE_TOKEN'
-        form = OneTimePaymentForm(order, Decimal('42.15'), data={'token': token}, user=person)
+        form = OneTimePaymentForm(order=order, amount=Decimal('42.15'), data={'token': token}, user=person)
         self.assertTrue(form.is_bound)
         self.assertFalse(form.errors)
         stripe_charge.assert_called_once_with(
@@ -158,7 +158,7 @@ class PaymentFormTestCase(TestCase):
         person = PersonFactory(stripe_test_customer_id='FAKE_CUSTOMER_ID')
         order = OrderFactory(person=person)
         event = order.event
-        card = CardFactory()
+        card = CardFactory(is_saved=True)
         person.cards.add(card)
         person.save()
         form = SavedCardPaymentForm(order, Decimal('42.15'), data={'card': card.pk})

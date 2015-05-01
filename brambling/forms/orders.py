@@ -513,7 +513,9 @@ class SavedCardPaymentForm(BasePaymentForm):
         )
 
     def _post_clean(self):
-        self.card = self.cleaned_data['card']
+        self.card = self.cleaned_data.get('card')
+        if not self.card:
+            return
         if self.api_type == Event.LIVE:
             customer_id = self.order.person.stripe_customer_id
         else:
