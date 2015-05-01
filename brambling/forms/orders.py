@@ -393,10 +393,10 @@ class HostingForm(MemoModelForm):
 class AddCardForm(forms.Form):
     token = forms.CharField(required=True,
                             error_messages={'required': "No token was provided. Please try again."})
-    api_type = Event.LIVE
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, api_type, *args, **kwargs):
         self.user = user
+        self.api_type = api_type
         super(AddCardForm, self).__init__(*args, **kwargs)
 
     def _post_clean(self):
@@ -473,8 +473,11 @@ class BasePaymentForm(forms.Form):
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
     save_card = forms.BooleanField(required=False)
 
-    def __init__(self, *args, **kwargs):
-        super(OneTimePaymentForm, self).__init__(*args, **kwargs)
+    def __init__(self, order, *args, **kwargs):
+        super(OneTimePaymentForm, self).__init__(
+            order=order,
+            api_type=order.event.api_type,
+            *args, **kwargs)
         if not self.user.is_authenticated():
             del self.fields['save_card']
 

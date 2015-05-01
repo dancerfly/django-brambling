@@ -8,7 +8,9 @@
 	{{ block.super }}
 	{% if request.is_secure %}
 		{% include "brambling/_stripe_js.html" %}
-		Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+		<script>
+			Stripe.setPublishableKey('{% if api_type == TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+		</script>
 	{% endif %}
 
 {% endblock %}
@@ -22,7 +24,7 @@
 		</div>
 	{% endfor %}
 
-	{% include 'brambling/_stripe_form.html' with api_type='live' %}
+	{% include 'brambling/_stripe_form.html' with api_type=api_type %}
 
 	<p>
 		<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>

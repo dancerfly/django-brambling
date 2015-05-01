@@ -714,6 +714,12 @@ class CreditCard(models.Model):
         (LIVE, 'Live'),
         (TEST, 'Test'),
     )
+    ICONS = {
+        'Visa': 'cc-visa',
+        'American Express': 'cc-amex',
+        'Discover': 'cc-discover',
+        'MasterCard': 'cc-mastercard',
+    }
     stripe_card_id = models.CharField(max_length=40)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
     person = models.ForeignKey(Person, related_name='cards', blank=True, null=True)
@@ -730,6 +736,9 @@ class CreditCard(models.Model):
 
     def __unicode__(self):
         return (u"{} " + u"\u2022" * 4 + u"{}").format(self.brand, self.last4)
+
+    def get_icon(self):
+        return self.ICONS.get(self.brand, 'credit-card')
 
 
 @receiver(signals.pre_delete, sender=CreditCard)

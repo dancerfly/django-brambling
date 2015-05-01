@@ -12,7 +12,11 @@ from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
 from brambling.mail import send_confirmation_email
-from brambling.utils.payment import dwolla_customer_oauth_url, LIVE
+from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
+                                     stripe_test_settings_valid,
+                                     stripe_live_settings_valid,
+                                     dwolla_test_settings_valid,
+                                     dwolla_live_settings_valid)
 
 
 class SignUpView(CreateView):
@@ -89,8 +93,16 @@ class PersonView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(PersonView, self).get_context_data(**kwargs)
+        cards_qs = self.request.user.cards.order_by('-added')
         context.update({
-            'cards': self.request.user.cards.order_by('-added'),
+            'cards': {
+                'test': cards_qs.filter(api_type=CreditCard.TEST),
+                'live': cards_qs.filter(api_type=CreditCard.LIVE),
+            },
+            'stripe_live_settings_valid': stripe_live_settings_valid(),
+            'stripe_test_settings_valid': stripe_test_settings_valid(),
+            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
+            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
@@ -102,7 +114,7 @@ class CreditCardAddView(TemplateView):
     template_name = 'brambling/creditcard_add.html'
 
     def post(self, request, *args, **kwargs):
-        form = AddCardForm(request.user, data=request.POST)
+        form = AddCardForm(request.user, api_type=kwargs['api_type'], data=request.POST)
         if form.is_valid():
             form.save()
 
@@ -122,7 +134,13 @@ class CreditCardAddView(TemplateView):
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
+            'STRIPE_TEST_PUBLISHABLE_KEY': getattr(settings,
+                                                   'STRIPE_TEST_PUBLISHABLE_KEY',
+                                                   ''),
             'errors': getattr(self, 'errors', {}),
+            'api_type': self.kwargs['api_type'],
+            'LIVE': CreditCard.LIVE,
+            'TEST': CreditCard.TEST,
         })
         return context
 
