@@ -1030,7 +1030,7 @@ class Transaction(models.Model):
     related_transaction = models.ForeignKey('self', blank=True, null=True, related_name='related_transaction_set')
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
-    card = models.ForeignKey('CreditCard', blank=True, null=True)
+    card = models.ForeignKey('CreditCard', blank=True, null=True, on_delete=models.SET_NULL)
     bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
 
     class Meta:
