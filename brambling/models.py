@@ -1569,7 +1569,7 @@ class CustomFormField(models.Model):
     field_type = models.CharField(max_length=8, choices=FIELD_TYPE_CHOICES, default=TEXT)
 
     form = models.ForeignKey(CustomForm, related_name='fields')
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=255)
     # Choices will be a comma-separated value field, not a relation.
     #choices = models.CharField(max_length=255)
     default = models.CharField(max_length=255, blank=True)
