@@ -18,7 +18,6 @@
 		<div class='form-group'>
 			<label for='card-cvc'>CVC</label>
 			<input type='text' class='form-control' id='card-cvc' maxlength='4' placeholder='111'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
-			<p class='help-block'>An additional three or four digit number found on the back of your card.</p>
 		</div>
 		<div class='form-group'>
 			<label for='card-cvc'>Expiration Date</label>
@@ -34,5 +33,6 @@
 	</div>
 	<div class='col-sm-6'>
 		{% include 'brambling/_stripe_note.html' %}
+		<p class='text-muted'>A CVC code is an additional three or four digit number found on the back of your card.</p>
 	</div>
 </div>

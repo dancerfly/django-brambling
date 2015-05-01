@@ -6,7 +6,7 @@
 
 {% block javascripts %}
 	{{ block.super }}
-	{% if request.is_secure %}
+	{% if api_type == TEST or request.is_secure %}
 		{% include "brambling/_stripe_js.html" %}
 		<script>
 			Stripe.setPublishableKey('{% if api_type == TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
@@ -27,7 +27,7 @@
 	{% include 'brambling/_stripe_form.html' with api_type=api_type %}
 
 	<p>
-		<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
+		<button class="btn btn-primary" type="submit" id='card-submit'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>Add card</button>
 		<a href="{% url 'brambling_user_profile' %}" class="btn btn-link">Cancel</a>
 	</p>
 
