@@ -1,34 +1,38 @@
-{% if not request.is_secure %}
-	<div class="alert alert-danger">
-		<p><strong>Warning:</strong> This connection is not secure. Never submit real credit card data over an insecure connection. You may see this error if this site is in testing mode. If not, please contact a site administrator.</p>
-		<p>If you are testing this site, you may use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a>.</p>
+{% if api_type == 'test' %}
+	<div class='alert alert-info'>
+		<p>This event is in test mode; use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a> to complete your purchase.</p>
 	</div>
-{% elif event.api_type == event.TEST %}
-	<p>This event is in test mode; use <a class="alert-link" href="https://stripe.com/docs/testing#cards" target="_blank">these test credit card numbers</a>.</p>
+{% elif not request.is_secure %}
+	<div class="alert alert-danger">
+		<p><strong>Warning:</strong> This connection is not secure. Credit card processing is disabled. Please contact a system administrator if you think this message is in error.</p>
+	</div>
 {% endif %}
 
-<div class='row'>
-	<div class='col-sm-9'>
-		<div class='form-group'>
-			<input type='text' class='form-control' id='card-number' maxlength='16' placeholder='Card number'>
-		</div>
-	</div>
-	<div class='col-sm-3'>
-		<div class='form-group'>
-			<input type='text' class='form-control' id='card-cvc' maxlength='4' placeholder='CVC'>
-		</div>
-	</div>
-</div>
 
 <div class='row'>
-	<div class='col-sm-6'>
+	<div class='col-xs-6'>
 		<div class='form-group'>
-			<input type='text' class='form-control' id='card-expiry-month' placeholder='MM' maxlength='2'>
+			<label for='card-number'>Card number</label>
+			<input type='text' class='form-control' id='card-number' maxlength='16' placeholder='4242424242424242'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
+		</div>
+		<div class='form-group'>
+			<label for='card-cvc'>CVC</label>
+			<input type='text' class='form-control' id='card-cvc' maxlength='4' placeholder='111'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
+			<p class='help-block'>An additional three or four digit number found on the back of your card.</p>
+		</div>
+		<div class='form-group'>
+			<label for='card-cvc'>Expiration Date</label>
+			<div class='row'>
+				<div class='col-xs-5'>
+					<input type='text' class='form-control' id='card-expiry-month' placeholder='MM' maxlength='2'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
+				</div>
+				<div class='col-xs-5'>
+					<input type='text' class='form-control' id='card-expiry-year' placeholder='YY' maxlength='2'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
+				</div>
+			</div>
 		</div>
 	</div>
 	<div class='col-sm-6'>
-		<div class='form-group'>
-			<input type='text' class='form-control' id='card-expiry-year' placeholder='YY' maxlength='2'>
-		</div>
+		{% include 'brambling/_stripe_note.html' %}
 	</div>
 </div>

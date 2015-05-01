@@ -254,7 +254,7 @@
 							<div class="panel-body">
 			{% endif %}
 
-			{% include 'brambling/_stripe_form.html' %}
+			{% include 'brambling/_stripe_form.html' with api_type=event.api_type %}
 			<form novalidate action="" method="post" id='card-form'>
 				{% csrf_token %}
 				<input name='new_card' value='1' type='hidden'>
@@ -263,7 +263,6 @@
 
 				<p><button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
 			</form>
-			{% include 'brambling/_stripe_note.html' %}
 
 			{% if has_cards %}
 							</div>

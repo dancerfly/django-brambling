@@ -6,8 +6,10 @@
 
 {% block javascripts %}
 	{{ block.super }}
-	{% include "brambling/_stripe_js.html" %}
-	Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+	{% if request.is_secure %}
+		{% include "brambling/_stripe_js.html" %}
+		Stripe.setPublishableKey('{% if event and event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+	{% endif %}
 
 {% endblock %}
 
@@ -20,14 +22,12 @@
 		</div>
 	{% endfor %}
 
-	{% include 'brambling/_stripe_form.html' %}
+	{% include 'brambling/_stripe_form.html' with api_type='live' %}
 
 	<p>
 		<button class="btn btn-primary" type="submit" id='card-submit'>Add card</button>
 		<a href="{% url 'brambling_user_profile' %}" class="btn btn-link">Cancel</a>
 	</p>
-
-	{% include "brambling/_stripe_note.html" %}
 
 	<form id='card-form' action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
 		{% csrf_token %}
