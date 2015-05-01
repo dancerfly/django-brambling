@@ -745,10 +745,10 @@ class CreditCard(models.Model):
 def delete_stripe_card(sender, instance, **kwargs):
     from django.conf import settings
     customer = None
-    if instance.stripe_api == CreditCard.LIVE and instance.person.stripe_customer_id:
+    if instance.api_type == CreditCard.LIVE and instance.person.stripe_customer_id:
         stripe.api_key = settings.STRIPE_SECRET_KEY
         customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
-    if instance.stripe_api == CreditCard.TEST and instance.person.stripe_test_customer_id:
+    if instance.api_type == CreditCard.TEST and instance.person.stripe_test_customer_id:
         stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
         customer = stripe.Customer.retrieve(instance.person.stripe_test_customer_id)
     if customer is not None:
