@@ -444,7 +444,8 @@ class AddCardForm(forms.Form):
             exp_year=card.exp_year,
             last4=card.last4,
             brand=card.brand,
-            api_type=self.api_type
+            api_type=self.api_type,
+            is_saved=card.customer is not None
         )
 
         if user and user.default_card_id is None:

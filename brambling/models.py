@@ -731,6 +731,8 @@ class CreditCard(models.Model):
     last4 = models.CharField(max_length=4)
     brand = models.CharField(max_length=16)
 
+    is_saved = models.BooleanField(default=False)
+
     def is_default(self):
         return self.person.default_card_id == self.id
 
@@ -739,20 +741,6 @@ class CreditCard(models.Model):
 
     def get_icon(self):
         return self.ICONS.get(self.brand, 'credit-card')
-
-
-@receiver(signals.pre_delete, sender=CreditCard)
-def delete_stripe_card(sender, instance, **kwargs):
-    from django.conf import settings
-    customer = None
-    if instance.api_type == CreditCard.LIVE and instance.person.stripe_customer_id:
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
-    if instance.api_type == CreditCard.TEST and instance.person.stripe_test_customer_id:
-        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_test_customer_id)
-    if customer is not None:
-        customer.cards.retrieve(instance.stripe_card_id).delete()
 
 
 class Order(AbstractDwollaModel):
