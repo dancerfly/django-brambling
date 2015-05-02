@@ -1,6 +1,8 @@
-{% load zenaida %}
+{% load zenaida tz %}
 
-{% td_to_dict event.start_date|td_timeuntil as time_until_event %}
+{% timezone event.timezone %}
+	{% td_to_dict event.start_date|td_timeuntil as time_until_event %}
+{% endtimezone %}
 
 {# start date #}
 {% if time_until_event.days == 0 %}
