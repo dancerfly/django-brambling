@@ -456,10 +456,7 @@ class Event(models.Model):
         return True
 
     def can_be_published(self):
-        # See https://github.com/littleweaver/django-brambling/issues/150
-        # At least one pass / class must exist before the event can be published.
-        pass_class_count = ItemOption.objects.filter(item__event=self, item__category__in=(Item.CLASS, Item.PASS)).count()
-        return pass_class_count >= 1
+        return ItemOption.objects.filter(item__event=self).exists()
 
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
@@ -496,21 +493,8 @@ class Event(models.Model):
 
 
 class Item(models.Model):
-    MERCHANDISE = 'merch'
-    COMPETITION = 'comp'
-    CLASS = 'class'
-    PASS = 'pass'
-
-    CATEGORIES = (
-        (MERCHANDISE, _("Merchandise")),
-        (COMPETITION, _("Competition")),
-        (CLASS, _("Class/Lesson a la carte")),
-        (PASS, _("Pass")),
-    )
-
     name = models.CharField(max_length=30)
     description = models.TextField(blank=True)
-    category = models.CharField(max_length=7, choices=CATEGORIES)
     event = models.ForeignKey(Event, related_name='items')
 
     created_timestamp = models.DateTimeField(auto_now_add=True)
@@ -897,7 +881,7 @@ class Order(AbstractDwollaModel):
         refunds = [t for t in transactions
                    if t.transaction_type == Transaction.REFUND]
         payment_items = [t.bought_items.select_related('item_option__item') for t in payments]
-        bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
+        bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'discounts', 'discounts__discount').order_by('attendee', 'added')
         attendees = []
         for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
             items = [item.get_summary_data() for item in g]
@@ -1247,8 +1231,7 @@ def create_request_nights(sender, instance, **kwargs):
 
 class Attendee(AbstractNamedModel):
     """
-    This model represents information attached to an event pass. It is
-    by default copied from the pass buyer (if they don't already have a pass).
+    This model represents information about someone attending an event.
 
     """
     NEED = 'need'
@@ -1264,7 +1247,6 @@ class Attendee(AbstractNamedModel):
     order = models.ForeignKey(Order, related_name='attendees')
     person = models.ForeignKey(Person, blank=True, null=True)
     person_confirmed = models.BooleanField(default=False)
-    event_pass = models.OneToOneField(BoughtItem, related_name='event_pass_for')
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)

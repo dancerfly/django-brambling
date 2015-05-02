@@ -160,9 +160,9 @@
 								{{ attendee.attendee.get_full_name }}
 								{% block attendee_actions %}
 								{% if code_in_url %}
-									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
+									{% url "brambling_event_attendee_edit" pk=attendee.attendee.pk event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
 								{% else %}
-									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
+									{% url "brambling_event_attendee_edit" pk=attendee.attendee.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
 								{% endif %}
 								<a class='pull-right' href='{{ attendee_url }}'><i class='fa fa-pencil fa-fw'></i></a>
 								{% endblock %}

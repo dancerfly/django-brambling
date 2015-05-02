@@ -384,8 +384,6 @@ class AttendeeTable(CustomDataTable):
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
         ('Contact',
          ('email', 'phone')),
-        ('Pass',
-         ('pass_type', 'pass_status')),
         ('Housing',
          ('housing_status', 'housing_nights', 'housing_preferences',
           'environment_avoid', 'environment_cause', 'person_prefer',
@@ -453,8 +451,6 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.select_related('order')
             elif field == 'order_placed_by':
                 queryset = queryset.select_related('order__person')
-            elif field == 'pass_type' or field == 'pass_status':
-                queryset = queryset.select_related('event_pass__item_option__item')
             elif field == 'order_balance':
                 queryset = queryset.annotate(
                     order_balance=Sum('order__transactions__amount')
@@ -487,14 +483,6 @@ class AttendeeTable(CustomDataTable):
         if person:
             return "{} ({})".format(person.get_full_name(), person.email)
         return obj.order.email
-
-    def pass_type(self, obj):
-        return "{}: {}".format(
-            obj.event_pass.item_option.item.name,
-            obj.event_pass.item_option.name)
-
-    def pass_status(self, obj):
-        return obj.event_pass.get_status_display()
 
     def order_balance(self, obj):
         return format_money(obj.order_balance or 0, self.event.currency)
