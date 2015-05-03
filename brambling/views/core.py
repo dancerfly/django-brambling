@@ -22,7 +22,7 @@ class DashboardView(TemplateView):
         upcoming_events = Event.objects.filter(
             privacy=Event.PUBLIC,
             is_published=True,
-        ).with_dates().filter(start_date__gte=today).order_by('start_date')
+        ).filter(start_date__gte=today).order_by('start_date')
 
         context = {
             'upcoming_events': upcoming_events,
@@ -33,20 +33,20 @@ class DashboardView(TemplateView):
                 privacy=Event.PUBLIC,
                 dance_styles__person=user,
                 is_published=True,
-            ).with_dates().filter(start_date__gte=today).order_by('start_date')
+            ).filter(start_date__gte=today).order_by('start_date')
 
             admin_events = Event.objects.filter(
                 Q(organization__owner=user) |
                 Q(organization__editors=user) |
                 Q(additional_editors=user)
-            ).with_dates().order_by('-last_modified')
+            ).order_by('-last_modified')
 
             # Registered events is upcoming things you are / might be going to.
             # So you've paid for something or you're going to.
             registered_events_qs = Event.objects.filter(
                 order__person=user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
-            ).with_dates().filter(start_date__gte=today).order_by('start_date')
+            ).filter(start_date__gte=today).order_by('start_date')
             registered_events = list(registered_events_qs)
             re_dict = dict((e.pk, e) for e in registered_events)
             orders = Order.objects.filter(
@@ -67,7 +67,7 @@ class DashboardView(TemplateView):
             past_events = Event.objects.filter(
                 order__person=user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
-            ).with_dates().filter(start_date__lt=today).order_by('-start_date')
+            ).filter(start_date__lt=today).order_by('-start_date')
             context.update({
                 'upcoming_events_interest': upcoming_events_interest,
                 'upcoming_events': upcoming_events,
