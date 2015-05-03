@@ -143,7 +143,7 @@ class OrganizationDetailView(DetailView):
             organization=self.object,
             privacy=Event.PUBLIC,
             is_published=True,
-        ).filter(start_date__gte=today).order_by('start_date')
+        ).filter(start_date__gte=today).order_by('start_date').distinct()
 
         context.update({
             'upcoming_events': upcoming_events,
@@ -159,13 +159,13 @@ class OrganizationDetailView(DetailView):
                 Q(organization__editors=self.request.user) |
                 Q(additional_editors=self.request.user),
                 organization=self.object,
-            ).order_by('-last_modified')
+            ).order_by('-last_modified').distinct()
 
             registered_events_qs = Event.objects.filter(
                 order__person=self.request.user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
                 organization=self.object,
-            ).filter(start_date__gte=today).order_by('start_date')
+            ).filter(start_date__gte=today).order_by('start_date').distinct()
             registered_events = list(registered_events_qs)
 
             # Exclude registered events from upcoming events:
