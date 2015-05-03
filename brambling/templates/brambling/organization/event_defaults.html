@@ -1,0 +1,42 @@
+{% extends 'brambling/organization/__admin.html' %}
+{% load floppyforms %}
+
+{% block main %}
+	{{ block.super }}
+
+	<h1>Event Defaults</h1>
+
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+			<div class="row">
+				<div class="col-sm-5">
+					{% formrow form.default_event_city %}
+				</div>
+				<div class="col-sm-3">
+					{% formrow form.default_event_state_or_province %}
+				</div>
+				<div class="col-sm-4">
+					{% formrow form.default_event_country %}
+				</div>
+			</div>{# /.row #}
+
+			{% formrow form.default_event_timezone %}
+			{% formrow form.default_event_currency %}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+
+		{% if organization.pk %}
+			<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+		{% endif %}
+
+	</form>
+
+{% endblock %}

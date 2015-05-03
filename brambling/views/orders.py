@@ -225,7 +225,7 @@ class OrderMixin(object):
     current_step_slug = None
 
     def dispatch(self, request, *args, **kwargs):
-        self.event = get_object_or_404(Event.objects.with_dates().select_related('organization'),
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=kwargs['event_slug'],
                                        organization__slug=kwargs['organization_slug'])
         if not self.event.viewable_by(request.user):
@@ -325,7 +325,14 @@ class OrderMixin(object):
             'code_in_url': (True if self.kwargs.get('code') and
                             not self.request.user.is_authenticated() else False),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+<<<<<<< HEAD
             'site': get_current_site(self.request),
+=======
+            'is_admin_request': self.is_admin_request,
+            'workflow': self.workflow,
+            'current_step': self.current_step,
+            'next_step': self.current_step.next_step if self.current_step else None,
+>>>>>>> master
         })
         return context
 

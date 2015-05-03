@@ -1,0 +1,18 @@
+{% extends 'brambling/__base_fluid.html' %}
+
+{% block title %}{{ organization.name }} – {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-2 col-md-3 col-sm-3">
+            {% include "brambling/organization/_nav.html" %}
+        </div>
+        {# Narrower column that doesn't span the whole width of the page. #}
+        <div class="col-lg-7 col-md-7 col-sm-9">
+            {% block messages %}
+                {% include "brambling/layouts/_messages.html" %}
+            {% endblock %}
+            {% block main %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

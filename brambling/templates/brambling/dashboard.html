@@ -6,54 +6,57 @@
 
 {% block main %}
 
-	{% hint request.user "welcome" %}
-		<div class="alert alert-info" id="welcomeHint">
-			<form action="{{ hint.dismiss_action }}" method="post" data-dismiss-hint="#welcomeHint">
+	{% if request.user.is_authenticated %}
+		{% hint request.user "welcome" %}
+			<div class="alert alert-info margin-trailer" id="welcomeHint">
+				<form action="{{ hint.dismiss_action }}" method="post" data-dismiss-hint="#welcomeHint">
 
-				{% csrf_token %}
-				{{ hint.dismiss_form }}
+					{% csrf_token %}
+					{{ hint.dismiss_form }}
 
-				<button class="close"><span aria-hidden="true">&times;</span></button>
+					<button class="close"><span aria-hidden="true">&times;</span></button>
 
-				<p><strong>Welcome to Dancerfly!</strong></p>
+					<p><strong>Welcome to Dancerfly!</strong></p>
 
-				<p>
-					Thanks for signing up for Dancerfly.
-					We&#8217;re happy to have you here! If you were registering
-					for an event, head back to that event page. We&#8217;ll keep
-					you logged in so you can register quickly.
-				</p>
-				<p>
-					Below is a list of upcoming events we think you might be
-					interested in. If there&#8217;s not much listed there it&#8217;s
-					because there aren&#8217;t enough events coming up or because
-					your dance preferences are too restrictive. You can update those
-					preferences (and other settings) on your
-					<a href="{% url "brambling_user_profile"%}" class="alert-link">profile settings</a>
-					page.
-				</p>
-				<p>
-					When you&#8217;re ready to use the website on your own, go ahead
-					and dismiss this message with the <strong>&times;</strong> in the corner. We won&#8217;t
-					show it again.
-				</p>
+					<p>
+						Thanks for signing up for Dancerfly.
+						We&#8217;re happy to have you here! If you were registering
+						for an event, head back to that event page. We&#8217;ll keep
+						you logged in so you can register quickly.
+					</p>
+					<p>
+						Below is a list of upcoming events we think you might be
+						interested in. If there&#8217;s not much listed there it&#8217;s
+						because there aren&#8217;t enough events coming up or because
+						your dance preferences are too restrictive. You can update those
+						preferences (and other settings) on your
+						<a href="{% url "brambling_user_profile"%}" class="alert-link">profile settings</a>
+						page.
+					</p>
+					<p>
+						When you&#8217;re ready to use the website on your own, go ahead
+						and dismiss this message with the <strong>&times;</strong> in the corner. We won&#8217;t
+						show it again.
+					</p>
 
-			</form>
-		</div>
-	{% endhint %}
+				</form>
+			</div>
+		{% endhint %}
+	{% endif %}
+
+	<h1 class="margin-leader-0">Upcoming Events</h1>
 
 	{% if registered_events %}
-		<div class="page-header">
-			<h1>Events You Registered For</h1>
-		</div>
+		<p class="text-muted">Events you&#8217;re registered for are shown first.</p>
 		{% for event in registered_events %}
 			{% include "brambling/_event_list_item.html" with registered="true" %}
 		{% endfor %}
 	{% endif %}
 
-	<div class="page-header{% if registered_events %} margin-leader-dbl{% endif %}">
-		<h1>Upcoming Events</h1>
-	</div>
+	{% if registered_events %}
+		<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
+	{% endif %}
+
 	{% if upcoming_events_interest %}
 		{% for event in upcoming_events_interest|slice:"5" %}
 			{% include "brambling/_event_list_item.html" %}
@@ -68,6 +71,20 @@
 {% endblock %}
 
 {% block side %}
+	{% if not request.user.is_authenticated or not organizations and not admin_events %}
+		{% if not request.COOKIES.hideCall %}
+			<div class='panel panel-default' id='hidePanel'>
+				<div class='panel-body'>
+					<p><strong>Dancerfly</strong> is an event registration system built <strong>by dancers, for dancers.</strong></p>
+					<p>Want to use Dancerfly for <em>your</em> event?</p>
+					<p>
+						<a class='btn btn-primary' href='{% url "brambling_about" %}'>Learn more <i class='fa fa-chevron-right'></i></a>
+						<a id='hideCall' class='btn btn-link'>Hide this forever</a>
+					</p>
+				</div>
+			</div>
+		{% endif %}
+	{% endif %}
 	{% if admin_events %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
@@ -92,24 +109,45 @@
 			</div>
 		</div>
 	{% endif %}
-	{% with organizations=request.user.get_organizations %}
-		{% if organizations %}
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">Your Organizations</h4>
-				</div>
-				<div class="list-group">
-					{% for organization in organizations %}
-						<div class="list-group-item clearfix">
-							<a class="pull-right btn btn-xs btn-default tipped" data-placement="left" data-container="body" title="Organization Settings" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
-								<i class="fa fa-fw fa-cog"></i>
-								<span class="sr-only">Organization Settings</span>
-							</a>
-							<a href="{{ organization.get_absolute_url }}">{{ organization.name }}</a>
-						</div>
-					{% endfor %}
-				</div>
+	{% if organizations %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">Your Organizations</h4>
 			</div>
-		{% endif %}
-	{% endwith %}
+			<div class="list-group">
+				{% for organization in organizations %}
+					<div class="list-group-item clearfix">
+						<a class="pull-right btn btn-xs btn-default tipped" data-placement="left" data-container="body" title="Organization Settings" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
+							<i class="fa fa-fw fa-cog"></i>
+							<span class="sr-only">Organization Settings</span>
+						</a>
+						<a href="{{ organization.get_absolute_url }}">{{ organization.name }}</a>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script>
+		// quirksmode.org/js/cookies.html
+		function createCookie(name,value,days) {
+			if (days) {
+				var date = new Date();
+				date.setTime(date.getTime()+(days*24*60*60*1000));
+				var expires = "; expires="+date.toGMTString();
+			}
+			else var expires = "";
+			document.cookie = name+"="+value+expires+"; path=/";
+		}
+
+		$(function() {
+			$('#hideCall').on('click', function() {
+				createCookie('hideCall', 1, 1000);
+				$('#hidePanel').slideUp();
+			});
+		});
+	</script>
 {% endblock %}

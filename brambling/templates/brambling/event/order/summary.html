@@ -18,7 +18,7 @@
 				if ($('#id_save_card').prop('checked')) {
 					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
 				} else {
-					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ event.stripe_test_publishable_key }}{% else %}{{ event.stripe_publishable_key }}{% endif %}')
+					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ event.organization.stripe_test_publishable_key }}{% else %}{{ event.organization.stripe_publishable_key }}{% endif %}')
 				}
 			}
 			$('#id_save_card').on('change', function(e) {

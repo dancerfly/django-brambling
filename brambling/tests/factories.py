@@ -72,6 +72,8 @@ class EventFactory(factory.DjangoModelFactory):
     state_or_province = "SOP"
     api_type = Event.TEST
     organization = factory.SubFactory(OrganizationFactory)
+    start_date = now().date() + timedelta(days=2)
+    end_date = now().date() + timedelta(days=3)
 
 
 class OrderFactory(factory.DjangoModelFactory):

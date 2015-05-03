@@ -70,7 +70,7 @@ class OrganizationDwollaConnectView(DwollaConnectView):
         return get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
 
     def get_success_url(self):
-        return reverse('brambling_organization_update',
+        return reverse('brambling_organization_update_payment',
                        kwargs={'organization_slug': self.object.slug})
 
 
