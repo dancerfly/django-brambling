@@ -30,7 +30,7 @@ def status_backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0031_auto_20150428_1955'),
+        ('brambling', '0037_merge'),
     ]
 
     operations = [
