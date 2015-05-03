@@ -326,7 +326,6 @@ class OrderMixin(object):
                             not self.request.user.is_authenticated() else False),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'site': get_current_site(self.request),
-            'is_admin_request': self.is_admin_request,
             'workflow': self.workflow,
             'current_step': self.current_step,
             'next_step': self.current_step.next_step if self.current_step else None,
