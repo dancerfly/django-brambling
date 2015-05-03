@@ -64,7 +64,7 @@ class AttendeeStep(OrderStep):
     def _is_completed(self):
         if not self.workflow.order:
             return False
-        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exists()
+        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exclude(status=BoughtItem.REFUNDED).exists()
 
     def get_errors(self):
         errors = []
@@ -72,7 +72,7 @@ class AttendeeStep(OrderStep):
         # All attendees must have at least one non-refunded item
         total_count = order.attendees.count()
         valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
-        with_count = order.attendees.filter(bought_items__status__in=valid_statuses).count()
+        with_count = order.attendees.filter(bought_items__status__in=valid_statuses).distinct().count()
         if with_count != total_count:
             errors.append('All attendees must have at least one item')
 
@@ -86,7 +86,7 @@ class AttendeeStep(OrderStep):
             errors.append(error)
 
         # All items must be assigned to an attendee.
-        if order.bought_items.filter(attendee__isnull=True).exists():
+        if order.bought_items.filter(attendee__isnull=True).exclude(status=BoughtItem.REFUNDED).exists():
             errors.append('All items in order must be assigned to an attendee.')
         return errors
 
@@ -476,7 +476,11 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
         context.update({
             'errors': self.current_step.errors,
             'attendees': self.attendees,
-            'unassigned_items': self.order.bought_items.filter(attendee__isnull=True).order_by('item_option__item', 'item_option'),
+            'unassigned_items': self.order.bought_items.filter(
+                attendee__isnull=True
+            ).exclude(
+                status=BoughtItem.REFUNDED
+            ).order_by('item_option__item', 'item_option'),
         })
         return context
 
@@ -486,6 +490,11 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
     form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
     workflow_class = RegistrationWorkflow
+
+    def get_object(self):
+        if 'pk' not in self.kwargs:
+            return None
+        return super(AttendeeBasicDataView, self).get_object()
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
