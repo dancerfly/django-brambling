@@ -167,7 +167,7 @@ class InviteDeleteView(View):
         invite = Invite.objects.get(code=kwargs['code'])
         if invite.kind == Invite.EVENT_EDITOR:
             event = Event.objects.filter(pk=invite.content_id).select_related('organization').get()
-            if event.organization.owner_id != self.request.user.pk:
+            if not event.organization.editable_by(self.request.user):
                 raise Http404
             url = reverse('brambling_event_update', kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug})
         elif invite.kind == Invite.HOME:
