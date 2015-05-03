@@ -66,7 +66,8 @@ class OrganizationUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return self.request.path
+        return reverse('brambling_organization_update',
+                       kwargs={'organization_slug': self.object.slug})
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
@@ -160,14 +161,20 @@ class OrganizationDetailView(DetailView):
                 organization=self.object,
             ).order_by('-last_modified')
 
-            registered_events = list(Event.objects.filter(
+            registered_events_qs = Event.objects.filter(
                 order__person=self.request.user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
-            ).filter(start_date__gte=today).order_by('start_date'))
+                organization=self.object,
+            ).filter(start_date__gte=today).order_by('start_date')
+            registered_events = list(registered_events_qs)
+
+            # Exclude registered events from upcoming events:
+            upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
 
             context.update({
                 'admin_events': admin_events,
                 'registered_events': registered_events,
+                'upcoming_events': upcoming_events
             })
         return context
 
@@ -412,9 +419,9 @@ class EventRemoveEditorView(View):
         if not request.user.is_authenticated():
             raise Http404
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
-        event = get_object_or_404(Event, slug=kwargs['event_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
 
-        if not organization.owner_id == request.user.pk:
+        if not organization.editable_by(request.user):
             raise Http404
         try:
             person = Person.objects.get(pk=kwargs['pk'])
@@ -431,10 +438,10 @@ class PublishEventView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
+
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
         if not event.editable_by(request.user):
             raise Http404
         if not event.can_be_published():
@@ -450,10 +457,10 @@ class UnpublishEventView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
+
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
         if event.is_frozen:
             raise Http404
         if not event.editable_by(request.user):

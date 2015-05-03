@@ -1,10 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Q, Min, Max
+from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
-from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
@@ -45,10 +43,11 @@ class DashboardView(TemplateView):
 
             # Registered events is upcoming things you are / might be going to.
             # So you've paid for something or you're going to.
-            registered_events = list(Event.objects.filter(
+            registered_events_qs = Event.objects.filter(
                 order__person=user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
-            ).filter(start_date__gte=today).order_by('start_date'))
+            ).filter(start_date__gte=today).order_by('start_date')
+            registered_events = list(registered_events_qs)
             re_dict = dict((e.pk, e) for e in registered_events)
             orders = Order.objects.filter(
                 person=user,
@@ -59,6 +58,10 @@ class DashboardView(TemplateView):
                 order.event = re_dict[order.event_id]
                 order.event.order = order
 
+            # Exclude registered events
+            upcoming_events_interest = upcoming_events_interest.exclude(pk__in=registered_events_qs)
+            upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
+
             # Past events is things you at one point paid for.
             # So you've paid for something, even if it was later refunded.
             past_events = Event.objects.filter(
@@ -67,6 +70,7 @@ class DashboardView(TemplateView):
             ).filter(start_date__lt=today).order_by('-start_date')
             context.update({
                 'upcoming_events_interest': upcoming_events_interest,
+                'upcoming_events': upcoming_events,
                 'admin_events': admin_events,
                 'registered_events': registered_events,
                 'past_events': past_events,
