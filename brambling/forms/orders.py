@@ -307,14 +307,14 @@ class HostingForm(MemoModelForm):
         self.nights = self.filter(HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
         slot_map = {}
         if self.instance.pk is not None:
-            slot_map = {slot.night_id: slot
+            slot_map = {slot.date: slot
                         for slot in self.filter(HousingSlot, eventhousing=self.instance)}
 
         data = None if not self.is_bound else self.data
         self.slot_forms = []
         for night in self.nights:
-            if night.pk in slot_map:
-                instance = slot_map[night.pk]
+            if night.date in slot_map:
+                instance = slot_map[night.date]
             else:
                 instance = HousingSlot(eventhousing=self.instance,
                                        date=night.date)
