@@ -480,6 +480,12 @@ class Event(models.Model):
             return self.organization.dwolla_live_can_connect()
         return self.organization.dwolla_test_can_connect()
 
+    def get_housing_dates(self):
+        return [
+            self.start_date + timedelta(n-1)
+            for n in xrange((self.end_date - self.start_date).days + 2)
+        ]
+
 
 class Item(models.Model):
     MERCHANDISE = 'merch'
@@ -1231,8 +1237,7 @@ def create_request_nights(sender, instance, **kwargs):
     annotate each night with specific information. For now, for simplicity,
     we're sticking with the relationship that already exists.
     """
-    date_set = {instance.start_date + timedelta(n - 1) for n in
-                xrange((instance.end_date - instance.start_date).days + 2)}
+    date_set = set(instance.get_housing_dates)
     seen = set(HousingRequestNight.objects.filter(date__in=date_set).values_list('date', flat=True))
     to_create = date_set - seen
     if to_create:

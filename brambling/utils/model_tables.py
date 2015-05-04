@@ -545,10 +545,10 @@ class OrderTable(CustomDataTable):
             fieldsets += self.survey_fieldsets
         if self.event.collect_housing_data:
             housing_fields = self.housing_fieldsets[0][1]
-            for date in self.event.housing_dates.all():
+            for date in self.event.get_housing_dates():
                 housing_fields += (
-                    "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")),
-                    "hosting_max_{}".format(date.date.strftime("%Y%m%d")),
+                    "hosting_spaces_{}".format(date.strftime("%Y%m%d")),
+                    "hosting_max_{}".format(date.strftime("%Y%m%d")),
                 )
             fieldsets += (
                 ('Housing', housing_fields),
@@ -602,7 +602,7 @@ class OrderTable(CustomDataTable):
             if obj.get_eventhousing():
                 hosting_date = datetime.datetime.strptime(date_str, "%Y%m%d").date()
                 try:
-                    slot = HousingSlot.objects.get(eventhousing__order=obj, night__date=hosting_date)
+                    slot = HousingSlot.objects.get(eventhousing__order=obj, date=hosting_date)
                 except HousingSlot.DoesNotExist:
                     pass
                 else:
