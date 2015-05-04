@@ -22,7 +22,6 @@ SECRET_KEY = 'NOT_SECRET'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 USE_DEBUG_TOOLBAR = DEBUG
-COMPRESS_ENABLED = True
 
 TEMPLATE_DEBUG = True
 
@@ -68,6 +67,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
     "django.core.context_processors.request",
+    'brambling.context_processors.current_site',
 )
 
 ROOT_URLCONF = 'test_project.urls'

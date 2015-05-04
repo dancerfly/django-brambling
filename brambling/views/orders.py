@@ -231,7 +231,7 @@ class OrderMixin(object):
         if request.user.is_authenticated() and not request.user.is_active:
             return HttpResponseRedirect(reverse('brambling_event_root', args=args, kwargs=kwargs))
 
-        self.event = get_object_or_404(Event.objects.with_dates().select_related('organization'),
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=kwargs['event_slug'],
                                        organization__slug=kwargs['organization_slug'])
         if not self.event.viewable_by(request.user):
@@ -377,7 +377,6 @@ class OrderMixin(object):
             'workflow': self.workflow,
             'current_step': self.current_step,
             'next_step': self.current_step.next_step if self.current_step else None,
-            'site': get_current_site(self.request),
         })
         return context
 
