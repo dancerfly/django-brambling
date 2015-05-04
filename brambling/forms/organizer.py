@@ -220,7 +220,8 @@ class EventForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
-        if cleaned_data['start_date'] > cleaned_data['end_date']:
+        if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
+                cleaned_data['start_date'] > cleaned_data['end_date']):
             raise ValidationError("End date must be before or equal to "
                                   "the start date.")
         return cleaned_data
