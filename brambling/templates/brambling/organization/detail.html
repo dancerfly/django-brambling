@@ -1,0 +1,65 @@
+{% extends "brambling/layouts/8_4.html" %}
+
+{% load staticfiles hints %}
+
+{% block title %}{{ organization.name }} – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<div class="page-header">
+		<h1>{{ organization.name }}</h1>
+		{% if organization.description %}
+			<div>{{ organization.description|linebreaks }}</div>
+		{% endif %}
+		{% if organization.website_url %}
+			<a target="_blank" href="{{ organization.website_url }}" class="btn btn-primary">
+				<i class="fa fa-fw fa-globe"></i>
+				Website
+			</a>
+		{% endif %}
+		{% if organization.facebook_url %}
+			<a target="_blank" href="{{ organization.facebook_url }}" class="btn btn-primary">
+				<i class="fa fa-fw fa-facebook"></i>
+				Facebook
+			</a>
+		{% endif %}
+		{% with dance_styles=organization.dance_styles.all %}
+			{% if dance_styles %}
+				<h4 class="text-muted event-tags">Featuring {% for style in dance_styles %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
+			{% endif %}
+		{% endwith %}
+		{% if organization.city and organization.state_or_province and organization.country %}
+			<p><i class="fa fa-map-marker fa-fw"></i> {{ organization.city }}, {{ organization.state_or_province }}, {{ organization.country }}</p>
+		{% endif %}
+	</div>
+
+	<h1>Upcoming Events</h1>
+
+	{% if registered_events %}
+		<p class="text-muted">Events you&#8217;re registered for are shown first.</p>
+		{% for event in registered_events %}
+			{% include "brambling/_event_list_item.html" with registered="true" %}
+		{% endfor %}
+	{% endif %}
+
+	{% if registered_events %}
+		<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
+	{% endif %}
+
+	{% if upcoming_events_interest %}
+		{% for event in upcoming_events_interest|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% elif upcoming_events %}
+		{% for event in upcoming_events|slice:"5" %}
+			{% include "brambling/_event_list_item.html" %}
+		{% endfor %}
+	{% else %}
+		<p>No upcoming events</p>
+	{% endif %}
+{% endblock %}
+
+{% block side %}
+	{% if organization_editable_by %}
+		{% include 'brambling/organization/_nav.html' %}
+	{% endif %}
+{% endblock %}

@@ -67,7 +67,7 @@
 								{% for form in form.slot_forms %}
 									{% form form using %}
 										<tr{% if form.errors %} class="danger"{% endif %}>
-											<td class="text-right">{{ form.instance.night }}</td>
+											<td class="text-right">{{ form.instance.date|date:'l, F jS' }}</td>
 											<td>{% formfield form.spaces %}</td>
 											<td>{% formfield form.spaces_max %}</td>
 											<td>

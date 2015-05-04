@@ -5,7 +5,7 @@
             var discountCodeButton = $(this),
                 discountCode = $('#discountCode'),
                 code = discountCode.val(),
-                url = '/' + discountCodeButton.data('slug') + '/order/' + {% if code_in_url %}{{ order.code }} + {% endif %}'discount/use/' + code + '/';
+                url = '/{{ event.organization.slug }}/{{ event.slug }}/order/{% if code_in_url %}{{ order.code }}/{% endif %}use-discount/' + code + '/';
             discountCodeButton.attr('disabled', 'disabled');
             discountCode.parent().removeClass('has-error');
             $('#discounts').find('.help-block').remove();

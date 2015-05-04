@@ -1,15 +1,19 @@
+import datetime
+
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from dwolla.exceptions import DwollaAPIException
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
 
-from brambling.models import (Date, EventHousing, EnvironmentalFactor,
+from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem, Item,
                               Order, Event, CustomForm)
 from brambling.utils.international import clean_postal_code
-from brambling.utils.payment import (dwolla_charge, stripe_prep, stripe_charge)
+from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
+                                     stripe_prep, stripe_charge)
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
@@ -147,7 +151,8 @@ class AttendeeHousingDataForm(MemoModelForm):
                 })
 
         self.fields['nights'].required = True
-        self.set_choices('nights', Date, event_housing_dates=self.instance.order.event)
+        event = self.instance.order.event
+        self.set_choices('nights', HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
         self.initial['nights'] = self.fields['nights'].queryset
         self.set_choices('ef_cause',
                          EnvironmentalFactor.objects.only('id', 'name'))
@@ -298,7 +303,8 @@ class HostingForm(MemoModelForm):
         self.set_choices('housing_categories',
                          HousingCategory.objects.only('id', 'name'))
 
-        self.nights = self.filter(Date, event_housing_dates=self.instance.event)
+        event = self.instance.event
+        self.nights = self.filter(HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
         slot_map = {}
         if self.instance.pk is not None:
             slot_map = {slot.night_id: slot
@@ -311,7 +317,7 @@ class HostingForm(MemoModelForm):
                 instance = slot_map[night.pk]
             else:
                 instance = HousingSlot(eventhousing=self.instance,
-                                       night=night)
+                                       date=night.date)
 
             self.slot_forms.append(HousingSlotForm(instance=instance,
                                                    data=data,
@@ -535,9 +541,20 @@ class DwollaPaymentForm(BasePaymentForm):
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super(DwollaPaymentForm, self).__init__(*args, **kwargs)
+        event = self.order.event
+        dwolla_obj = self.user if self.user.is_authenticated() else self.order
+        if event.api_type == Event.LIVE:
+            connected = dwolla_obj.dwolla_live_connected()
+        else:
+            connected = dwolla_obj.dwolla_test_connected()
+        if connected:
+            self.sources = dwolla_get_sources(dwolla_obj, event)
+            source_choices = [(source['Id'], source['Name'])
+                              for source in self.sources]
+            self.fields['source'] = forms.ChoiceField(choices=source_choices, initial="Balance")
 
     def _post_clean(self):
-        if 'dwolla_pin' in self.cleaned_data:
+        if 'dwolla_pin' in self.cleaned_data and 'source' in self.cleaned_data:
             self._charge = None
             if self.amount > 0:
                 try:
@@ -545,10 +562,11 @@ class DwollaPaymentForm(BasePaymentForm):
                         user_or_order=self.user if self.user.is_authenticated() else self.order,
                         amount=float(self.amount),
                         event=self.order.event,
-                        pin=self.cleaned_data['dwolla_pin']
+                        pin=self.cleaned_data['dwolla_pin'],
+                        source=self.cleaned_data['source']
                     )
-                except Exception as e:
-                    self.add_error(None, e.message)
+                except DwollaAPIException as e:
+                    self.add_error(None, getattr(e, 'response', e.message))
 
     def save(self):
         return Transaction.from_dwolla_charge(

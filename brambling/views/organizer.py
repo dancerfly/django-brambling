@@ -1,22 +1,22 @@
+import csv
+import itertools
 import logging
-import operator
 import pprint
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.utils import lookup_needs_distinct
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum, Q
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.http import (Http404, HttpResponseRedirect, JsonResponse,
+                         StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_text
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View)
-
-from django_filters.views import FilterView
 
 from floppyforms.__future__.models import modelform_factory
 import requests
@@ -25,47 +25,188 @@ from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
-                                       CustomFormForm, CustomFormFieldFormSet)
+                                       CustomFormForm, CustomFormFieldFormSet,
+                                       OrderNotesForm, OrganizationPaymentForm)
 from brambling.mail import send_order_receipt
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Person, CustomForm)
+                              Person, CustomForm, Organization)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
-from brambling.views.utils import (get_event_or_404,
-                                   get_event_admin_nav,
+from brambling.views.utils import (get_event_admin_nav,
+                                   get_organization_admin_nav,
                                    clear_expired_carts,
                                    ajax_required)
-from brambling.utils.model_tables import AttendeeTable, OrderTable
-from brambling.utils.payment import (dwolla_can_connect, dwolla_event_oauth_url,
-                                     stripe_can_connect, stripe_event_oauth_url)
+from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
+from brambling.utils.payment import (dwolla_organization_oauth_url,
+                                     stripe_organization_oauth_url,
+                                     LIVE, TEST)
+
+
+class OrganizationUpdateView(UpdateView):
+    model = Organization
+    context_object_name = 'organization'
+
+    def get_object(self):
+        obj = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        user = self.request.user
+        if not obj.editable_by(user):
+            raise Http404
+        return obj
+
+    def get_form_class(self):
+        if self.form_class is not None:
+            return self.form_class
+        return modelform_factory(self.model, fields=self.fields)
+
+    def get_form_kwargs(self):
+        kwargs = super(OrganizationUpdateView, self).get_form_kwargs()
+        if self.form_class:
+            kwargs['request'] = self.request
+        return kwargs
+
+    def get_success_url(self):
+        return reverse('brambling_organization_update',
+                       kwargs={'organization_slug': self.object.slug})
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
+        context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
+        return context
+
+
+class OrganizationPaymentView(OrganizationUpdateView):
+    form_class = OrganizationPaymentForm
+    template_name = 'brambling/organization/payment.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
+
+        if self.object.dwolla_live_can_connect():
+            context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
+                self.object, self.request, LIVE)
+
+        if self.object.stripe_live_can_connect():
+            context['stripe_oauth_url'] = stripe_organization_oauth_url(
+                self.object, self.request, LIVE)
+
+        if self.request.user.is_superuser:
+            if self.object.dwolla_test_can_connect():
+                context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
+                    self.object, self.request, TEST)
+
+            if self.object.stripe_test_can_connect():
+                context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
+                    self.object, self.request, TEST)
+
+        return context
+
+
+class OrganizationRemoveEditorView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+
+        if not organization.owner_id == request.user.pk:
+            raise Http404
+        try:
+            person = Person.objects.get(pk=kwargs['pk'])
+        except Person.DoesNotExist:
+            pass
+        else:
+            organization.editors.remove(person)
+        messages.success(request, 'Removed editor successfully.')
+        return HttpResponseRedirect(reverse('brambling_organization_update_permissions',
+                                    kwargs={'organization_slug': organization.slug}))
+
+
+class OrganizationDetailView(DetailView):
+    model = Organization
+    template_name = 'brambling/organization/detail.html'
+    slug_url_kwarg = 'organization_slug'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+        except Http404:
+            event = get_object_or_404(Event, slug=kwargs['organization_slug'])
+            return HttpResponseRedirect(event.get_absolute_url())
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationDetailView, self).get_context_data(**kwargs)
+        # TODO: This will probably cause timezone issues in some cases.
+        today = timezone.now().date()
+        upcoming_events = Event.objects.filter(
+            organization=self.object,
+            privacy=Event.PUBLIC,
+            is_published=True,
+        ).filter(start_date__gte=today).order_by('start_date').distinct()
+
+        context.update({
+            'upcoming_events': upcoming_events,
+            'organization_editable_by': self.object.editable_by(self.request.user)
+        })
+
+        if context['organization_editable_by']:
+            context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
+
+        if self.request.user.is_authenticated():
+            admin_events = Event.objects.filter(
+                Q(organization__owner=self.request.user) |
+                Q(organization__editors=self.request.user) |
+                Q(additional_editors=self.request.user),
+                organization=self.object,
+            ).order_by('-last_modified').distinct()
+
+            registered_events_qs = Event.objects.filter(
+                order__person=self.request.user,
+                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
+                organization=self.object,
+            ).filter(start_date__gte=today).order_by('start_date').distinct()
+            registered_events = list(registered_events_qs)
+
+            # Exclude registered events from upcoming events:
+            upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
+
+            context.update({
+                'admin_events': admin_events,
+                'registered_events': registered_events,
+                'upcoming_events': upcoming_events
+            })
+        return context
+
+
+class OrderRedirectView(View):
+    def get(self, request, *args, **kwargs):
+        event = get_object_or_404(Event.objects.select_related('organization'),
+                                  slug=kwargs['organization_slug'])
+        url = '/{}{}'.format(event.organization.slug, request.path)
+        return HttpResponseRedirect(url)
 
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/event/organizer/create.html'
-    context_object_name = 'event'
+    template_name = 'brambling/organization/event_create.html'
     form_class = EventForm
 
     def dispatch(self, request, *args, **kwargs):
         if request.method.lower() in self.http_method_names:
-            if not request.user.is_authenticated() or not request.user.is_superuser:
+            self.organization = Organization.objects.get(slug=kwargs['organization_slug'])
+            if not self.organization.editable_by(request.user):
                 raise Http404
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         "Instantiate form with owner as current user."
-        initial = {
-            'country': 'US',
-        }
-        try:
-            data = requests.get('http://api.hostip.info/get_json.php', timeout=.5).json()
-        except requests.exceptions.Timeout:
-            pass
-        else:
-            if data['country_code'] == 'US' and ', ' in data['city']:
-                initial['city'], initial['state'] = data['city'].split(', ')
-
+        initial = dict((
+            (k, getattr(self.organization, 'default_event_' + k))
+            for k in ('city', 'state_or_province', 'country',
+                      'timezone', 'currency')
+        ))
+        initial['dance_styles'] = self.organization.default_event_dance_styles.all()
         return initial
 
     def get_form_class(self):
@@ -74,11 +215,23 @@ class EventCreateView(CreateView):
     def get_form_kwargs(self):
         kwargs = super(EventCreateView, self).get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization'] = self.organization
+        kwargs['organization_editable_by'] = True
         return kwargs
+
+    def get_success_url(self):
+        return reverse('brambling_event_update',
+                       kwargs={'event_slug': self.object.slug,
+                               'organization_slug': self.object.organization.slug})
 
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
-        context['owner'] = self.request.user
+        context.update({
+            'organization': self.organization,
+            'organization_editable_by': True,
+            'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
+            'event': context['form'].instance,
+        })
         return context
 
 
@@ -86,7 +239,9 @@ class EventSummaryView(TemplateView):
     template_name = 'brambling/event/organizer/summary.html'
 
     def get(self, request, *args, **kwargs):
-        self.event = get_event_or_404(self.kwargs['slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(request.user):
             raise Http404
         clear_expired_carts(self.event)
@@ -177,48 +332,54 @@ class EventUpdateView(UpdateView):
     form_class = EventForm
 
     def get_object(self):
-        obj = get_event_or_404(self.kwargs['slug'])
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
         user = self.request.user
-        if not obj.editable_by(user):
+        if not event.editable_by(user):
             raise Http404
-        return obj
+        self.organization_editable_by = self.organization.editable_by(user)
+        return event
 
     def get_form_kwargs(self):
         kwargs = super(EventUpdateView, self).get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization'] = self.organization
+        kwargs['organization_editable_by'] = self.organization_editable_by
         return kwargs
 
     def get_success_url(self):
         return reverse('brambling_event_update',
-                       kwargs={'slug': self.object.slug})
+                       kwargs={'event_slug': self.object.slug,
+                               'organization_slug': self.object.organization.slug})
 
     def get_context_data(self, **kwargs):
         context = super(EventUpdateView, self).get_context_data(**kwargs)
         context.update({
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
-            'owner': self.object.owner,
+            'organization': self.organization,
+            'organization_editable_by': self.organization_editable_by,
         })
-        if dwolla_can_connect(self.object, self.object.api_type):
-            context['dwolla_oauth_url'] = dwolla_event_oauth_url(
-                self.object, self.request)
-        if stripe_can_connect(self.object, self.object.api_type):
-            context['stripe_oauth_url'] = stripe_event_oauth_url(
-                self.object, self.request)
         return context
 
 
 class StripeConnectView(View):
     def get(self, request, *args, **kwargs):
         try:
-            event = Event.objects.get(slug=request.GET.get('state'))
-        except Event.DoesNotExist:
+            slug, api_type = request.GET.get('state', '').split('|')
+        except ValueError:
+            raise Http404("Invalid state.")
+        if not api_type in (LIVE, TEST):
+            raise Http404("Invalid api type.")
+        try:
+            organization = Organization.objects.get(slug=slug)
+        except Organization.DoesNotExist:
             raise Http404
         user = request.user
-        if not event.editable_by(user):
+        if not organization.editable_by(user):
             raise Http404
         if 'code' in request.GET:
-            if event.api_type == Event.LIVE:
+            if api_type == LIVE:
                 secret_key = settings.STRIPE_SECRET_KEY
             else:
                 secret_key = settings.STRIPE_TEST_SECRET_KEY
@@ -231,56 +392,56 @@ class StripeConnectView(View):
                               data=data)
             data = r.json()
             if 'access_token' in data:
-                if event.api_type == Event.LIVE:
-                    event.stripe_publishable_key = data['stripe_publishable_key']
-                    event.stripe_user_id = data['stripe_user_id']
-                    event.stripe_refresh_token = data['refresh_token']
-                    event.stripe_access_token = data['access_token']
+                if api_type == LIVE:
+                    organization.stripe_publishable_key = data['stripe_publishable_key']
+                    organization.stripe_user_id = data['stripe_user_id']
+                    organization.stripe_refresh_token = data['refresh_token']
+                    organization.stripe_access_token = data['access_token']
                 else:
-                    event.stripe_test_publishable_key = data['stripe_publishable_key']
-                    event.stripe_test_user_id = data['stripe_user_id']
-                    event.stripe_test_refresh_token = data['refresh_token']
-                    event.stripe_test_access_token = data['access_token']
-                event.save()
+                    organization.stripe_test_publishable_key = data['stripe_publishable_key']
+                    organization.stripe_test_user_id = data['stripe_user_id']
+                    organization.stripe_test_refresh_token = data['refresh_token']
+                    organization.stripe_test_access_token = data['access_token']
+                organization.save()
                 messages.success(request, 'Stripe account connected!')
             else:
                 logger = logging.getLogger('brambling.stripe')
-                logger.debug("Error connecting event {} ({}) to stripe. Data: {}".format(
-                    event.pk, event.name, pprint.pformat(data)))
+                logger.debug("Error connecting organization {} ({}) to stripe. Data: {}".format(
+                    organization.pk, organization.name, pprint.pformat(data)))
                 messages.error(request, 'Something went wrong. Please try again.')
 
-        return HttpResponseRedirect(reverse('brambling_event_update',
-                                            kwargs={'slug': event.slug}))
+        return HttpResponseRedirect(reverse('brambling_organization_update_payment',
+                                            kwargs={'organization_slug': organization.slug}))
 
 
-class RemoveEditorView(View):
+class EventRemoveEditorView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
-        if not event.owner_id == request.user.pk:
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
+        if not organization.editable_by(request.user):
             raise Http404
         try:
             person = Person.objects.get(pk=kwargs['pk'])
         except Person.DoesNotExist:
             pass
         else:
-            event.editors.remove(person)
+            event.additional_editors.remove(person)
         messages.success(request, 'Removed editor successfully.')
-        return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
+        return HttpResponseRedirect(reverse('brambling_event_update',
+                                    kwargs={'event_slug': event.slug, 'organization_slug': organization.slug}))
 
 
 class PublishEventView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
+
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
         if not event.editable_by(request.user):
             raise Http404
         if not event.can_be_published():
@@ -288,17 +449,18 @@ class PublishEventView(View):
         if not event.is_published:
             event.is_published = True
             event.save()
-        return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
+        return HttpResponseRedirect(reverse('brambling_event_update',
+                                    kwargs={'event_slug': event.slug, 'organization_slug': organization.slug}))
 
 
 class UnpublishEventView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
-        try:
-            event = Event.objects.get(slug=kwargs['event_slug'])
-        except Event.DoesNotExist:
-            raise Http404
+
+        organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
+        event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
+
         if event.is_frozen:
             raise Http404
         if not event.editable_by(request.user):
@@ -306,11 +468,14 @@ class UnpublishEventView(View):
         if event.is_published:
             event.is_published = False
             event.save()
-        return HttpResponseRedirect(reverse('brambling_event_update', kwargs={'slug': event.slug}))
+        return HttpResponseRedirect(reverse('brambling_event_update',
+                                    kwargs={'event_slug': event.slug, 'organization_slug': organization.slug}))
 
 
 def item_form(request, *args, **kwargs):
-    event = get_event_or_404(kwargs['event_slug'])
+    event = get_object_or_404(Event.objects.select_related('organization'),
+                              slug=kwargs['event_slug'],
+                              organization__slug=kwargs['organization_slug'])
     if not event.editable_by(request.user):
         raise Http404
     if 'pk' in kwargs:
@@ -333,7 +498,7 @@ def item_form(request, *args, **kwargs):
             image_formset.save()
             formset.save()
             url = reverse('brambling_item_list',
-                          kwargs={'event_slug': event.slug})
+                          kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug})
             return HttpResponseRedirect(url)
     else:
         form = ItemForm(event, instance=item)
@@ -359,7 +524,9 @@ class ItemListView(ListView):
     template_name = 'brambling/event/organizer/item_list.html'
 
     def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(ItemListView, self).get_queryset()
@@ -377,7 +544,9 @@ class ItemListView(ListView):
 
 
 def discount_form(request, *args, **kwargs):
-    event = get_event_or_404(kwargs['event_slug'])
+    event = get_object_or_404(Event.objects.select_related('organization'),
+                              slug=kwargs['event_slug'],
+                              organization__slug=kwargs['organization_slug'])
     if not event.editable_by(request.user):
         raise Http404
     if 'pk' in kwargs:
@@ -392,7 +561,8 @@ def discount_form(request, *args, **kwargs):
             if form.is_valid():
                 form.save()
                 url = reverse('brambling_discount_list',
-                              kwargs={'event_slug': event.slug})
+                              kwargs={'event_slug': event.slug,
+                                      'organization_slug': event.organization.slug})
                 return HttpResponseRedirect(url)
     else:
         form = DiscountForm(event, instance=discount)
@@ -414,7 +584,9 @@ class DiscountListView(ListView):
     template_name = 'brambling/event/organizer/discount_list.html'
 
     def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(DiscountListView, self).get_queryset()
@@ -431,7 +603,9 @@ class DiscountListView(ListView):
 
 
 def custom_form_form(request, *args, **kwargs):
-    event = get_event_or_404(kwargs['event_slug'])
+    event = get_object_or_404(Event.objects.select_related('organization'),
+                              slug=kwargs['event_slug'],
+                              organization__slug=kwargs['organization_slug'])
     if not event.editable_by(request.user):
         raise Http404
     if 'pk' in kwargs:
@@ -447,7 +621,8 @@ def custom_form_form(request, *args, **kwargs):
             form.save()
             formset.save()
             url = reverse('brambling_form_list',
-                          kwargs={'event_slug': event.slug})
+                          kwargs={'event_slug': event.slug,
+                                  'organization_slug': event.organization.slug})
             return HttpResponseRedirect(url)
     else:
         form = CustomFormForm(event, instance=custom_form)
@@ -470,7 +645,9 @@ class CustomFormListView(ListView):
     template_name = 'brambling/event/organizer/custom_form_list.html'
 
     def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(CustomFormListView, self).get_queryset()
@@ -485,8 +662,7 @@ class CustomFormListView(ListView):
         return context
 
 
-class ModelTableView(FilterView):
-    search_fields = None
+class ModelTableView(ListView):
     model_table = None
     form_prefix = 'column'
 
@@ -509,73 +685,39 @@ class ModelTableView(FilterView):
         context['table'] = self.get_table(self.object_list)
         return context
 
-    def get_queryset(self):
-        queryset = super(ModelTableView, self).get_queryset()
-
-        # Originally from django.contrib.admin.options
-        def construct_search(field_name):
-            if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
-            elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
-            elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
-            else:
-                return "%s__icontains" % field_name
-
-        use_distinct = False
-        search_fields = self.search_fields
-        search_term = self.request.GET.get('search', '')
-        opts = self.model._meta
-        if search_fields and search_term:
-            orm_lookups = [construct_search(str(search_field))
-                           for search_field in search_fields]
-            for bit in search_term.split():
-                or_queries = [Q(**{orm_lookup: bit})
-                              for orm_lookup in orm_lookups]
-                queryset = queryset.filter(reduce(operator.or_, or_queries))
-            if not use_distinct:
-                for search_spec in orm_lookups:
-                    if lookup_needs_distinct(opts, search_spec):
-                        use_distinct = True
-                        break
-
-        if use_distinct:
-            queryset = queryset.distinct()
-        return queryset
-
     def render_to_response(self, context, *args, **kwargs):
         "Return a response in the requested format."
 
         format_ = self.request.GET.get('format', default='html')
 
         if format_ == 'csv':
-            return context['table'].render_csv_response()
-        else:
-            # Default to the template.
-            return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
+            table = context['table']
+            pseudo_buffer = Echo()
+            writer = csv.writer(pseudo_buffer)
+            response = StreamingHttpResponse((writer.writerow([force_text(cell.value) for cell in row])
+                                              for row in itertools.chain((table.header_row(),), table)),
+                                             content_type="text/csv")
+            response['Content-Disposition'] = 'attachment; filename="export.csv"'
+            return response
+
+        # Default to the template.
+        return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
 
 
 class AttendeeFilterView(ModelTableView):
-    filterset_class = AttendeeFilterSet
     template_name = 'brambling/event/organizer/attendees.html'
     context_object_name = 'attendees'
-    search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
-                     'email', 'order__email', 'order__person__email')
     model = Attendee
     model_table = AttendeeTable
 
     def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(AttendeeFilterView, self).get_queryset()
         return qs.filter(order__event=self.event).distinct()
-
-    def get_filterset_kwargs(self, filterset_class):
-        kwargs = super(AttendeeFilterView, self).get_filterset_kwargs(filterset_class)
-        kwargs['event'] = self.event
-        return kwargs
 
     def get_table_kwargs(self, queryset):
         kwargs = super(AttendeeFilterView, self).get_table_kwargs(queryset)
@@ -593,7 +735,9 @@ class AttendeeFilterView(ModelTableView):
 
 class RefundView(View):
     def get_object(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         try:
@@ -615,20 +759,21 @@ class RefundView(View):
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
+                              'organization_slug': self.event.organization.slug,
                               'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
 
 
 class OrderFilterView(ModelTableView):
-    filterset_class = OrderFilterSet
     template_name = 'brambling/event/organizer/orders.html'
     context_object_name = 'orders'
-    search_fields = ('code', 'email', 'person__email')
     model = Order
     model_table = OrderTable
 
     def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         qs = super(OrderFilterView, self).get_queryset()
@@ -683,13 +828,16 @@ class OrderDetailView(DetailView):
         return self.order
 
     def get_forms(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.discount_form = ManualDiscountForm(order=self.order)
+        self.notes_form = OrderNotesForm(instance=self.order)
         if self.request.method == 'POST':
             if 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
@@ -698,15 +846,29 @@ class OrderDetailView(DetailView):
             elif 'is_discount_form' in self.request.POST:
                 self.discount_form = ManualDiscountForm(order=self.order,
                                                         data=self.request.POST)
+            elif 'is_notes_form' in self.request.POST:
+                self.notes_form = OrderNotesForm(instance=self.order,
+                                                 data=self.request.POST)
+        return self.payment_form, self.discount_form, self.notes_form
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
+        if self.payment_form.is_bound:
+            active = 'payment'
+        elif self.discount_form.is_bound:
+            active = 'discount'
+        elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
+            active = 'notes'
+        else:
+            active = 'summary'
         context.update({
             'payment_form': self.payment_form,
             'discount_form': self.discount_form,
+            'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'active': active,
         })
         context.update(self.order.get_summary_data())
         return context
@@ -716,19 +878,21 @@ class OrderDetailView(DetailView):
         return super(OrderDetailView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        self.get_forms()
-        if self.payment_form.is_bound and self.payment_form.is_valid():
-            self.payment_form.save()
-            return HttpResponseRedirect(request.path)
-        if self.discount_form.is_bound and self.discount_form.is_valid():
-            self.discount_form.save()
-            return HttpResponseRedirect(request.path)
+        for form in self.get_forms():
+            if form.is_bound and form.is_valid():
+                form.save()
+                path = request.path
+                if 'active' in request.GET:
+                    path += '?active=' + request.GET['active']
+                return HttpResponseRedirect(path)
         return super(OrderDetailView, self).get(request, *args, **kwargs)
 
 
 class TogglePaymentConfirmationView(View):
     def get_object(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         try:
@@ -752,7 +916,9 @@ class TogglePaymentConfirmationView(View):
 
 class SendReceiptView(View):
     def get(self, request, *args, **kwargs):
-        event = get_event_or_404(self.kwargs['event_slug'])
+        event = get_object_or_404(Event.objects.select_related('organization'),
+                                  slug=kwargs['event_slug'],
+                                  organization__slug=kwargs['organization_slug'])
         if not event.editable_by(self.request.user):
             raise Http404
         try:
@@ -764,7 +930,10 @@ class SendReceiptView(View):
                            get_current_site(request),
                            event=event, secure=request.is_secure())
         messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
-        return HttpResponseRedirect(reverse('brambling_event_order_detail', kwargs={'event_slug': event.slug, 'code': order.code}))
+        return HttpResponseRedirect(reverse(
+            'brambling_event_order_detail',
+            kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug, 'code': order.code}
+        ))
 
 
 class FinancesView(ListView):
@@ -773,7 +942,9 @@ class FinancesView(ListView):
     template_name = 'brambling/event/organizer/finances.html'
 
     def get_queryset(self):
-        self.event = get_event_or_404(self.kwargs['event_slug'])
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
         return super(FinancesView, self).get_queryset().filter(

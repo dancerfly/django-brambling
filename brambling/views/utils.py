@@ -18,14 +18,6 @@ def get_event_or_404(slug):
     return get_object_or_404(qs, slug=slug)
 
 
-def split_view(test, if_true, if_false):
-    # Renders if_true view if condition is true, else if_false
-    def wrapped(request, *args, **kwargs):
-        view = if_true if test(request, *args, **kwargs) else if_false
-        return view(request, *args, **kwargs)
-    return wrapped
-
-
 def route_view(test, if_true, if_false):
     # Redirects to if_true lazy reversal if condition is true and if_false
     # otherwise.
@@ -50,18 +42,39 @@ class NavItem(object):
 def get_event_admin_nav(event, request):
     if not event.editable_by(request.user):
         return []
+    kwargs = {
+        'event_slug': event.slug,
+        'organization_slug': event.organization.slug,
+    }
     items = (
-        ('brambling_event_summary', 'Summary', 'fa-dashboard', {'slug': event.slug}),
-        ('brambling_event_update', 'Settings', 'fa-cog', {'slug': event.slug}),
-        ('brambling_item_list', 'Items', 'fa-list', {'event_slug': event.slug}),
-        ('brambling_form_list', 'Forms', 'fa-question', {'event_slug': event.slug}),
-        ('brambling_discount_list', 'Discounts', 'fa-gift', {'event_slug': event.slug}),
-        ('brambling_event_attendees', 'Attendees', 'fa-users', {'event_slug': event.slug}),
-        ('brambling_event_orders', 'Orders', 'fa-ticket', {'event_slug': event.slug}),
-        ('brambling_event_finances', 'Finances', 'fa-money', {'event_slug': event.slug}),
+        ('brambling_event_summary', 'Summary', 'fa-dashboard'),
+        ('brambling_event_update', 'Settings', 'fa-cog'),
+        ('brambling_item_list', 'Items', 'fa-list'),
+        ('brambling_form_list', 'Forms', 'fa-question'),
+        ('brambling_discount_list', 'Discounts', 'fa-gift'),
+        ('brambling_event_attendees', 'Attendees', 'fa-users'),
+        ('brambling_event_orders', 'Orders', 'fa-ticket'),
+        ('brambling_event_finances', 'Finances', 'fa-money'),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
-            for view_name, label, icon, kwargs in items]
+            for view_name, label, icon in items]
+
+
+def get_organization_admin_nav(organization, request):
+    if not organization.editable_by(request.user):
+        return []
+    kwargs = {
+        'organization_slug': organization.slug,
+    }
+    items = (
+        ('brambling_organization_update', 'Organization Profile', 'fa-institution'),
+        ('brambling_organization_update_payment', 'Payment', 'fa-money'),
+        ('brambling_organization_update_event_defaults', 'Event Defaults', 'fa-calendar-o'),
+        ('brambling_organization_update_permissions', 'Permissions', 'fa-group'),
+        ('brambling_event_create', 'Create a New Event', 'fa-plus'),
+    )
+    return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
+            for view_name, label, icon in items]
 
 
 def ajax_required(view):
@@ -97,7 +110,6 @@ class Workflow(object):
 
     @property
     def active_steps(self):
-
         return [step for step in self.steps.values()
                 if step.is_active()]
 

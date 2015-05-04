@@ -1,9 +1,7 @@
-@import compass/css3/border-radius
-
 .stepbar
 	@extend .clearfix
 	margin-bottom: $line-height-computed
-	+border-radius($border-radius-base)
+	border-radius: $border-radius-base
 	background-color: #CCC
 
 .step
@@ -20,12 +18,12 @@
 	border-right-width: 1px
 	border-bottom-width: 1px
 	&:first-child
-		+border-radius($border-radius-base 0 0 $border-radius-base)
+		border-radius: $border-radius-base 0 0 $border-radius-base
 		border-left-width: 1px
 		border-left-style: solid
 	&:last-child
 		float: right
-		+border-radius(0 $border-radius-base $border-radius-base 0)
+		border-radius: 0 $border-radius-base $border-radius-base 0
 	&.complete, &.current
 		background: lighten($brand-primary,2%)
 		color: #FFF
@@ -93,6 +91,6 @@ a.step
 	> .step
 		border-top: 0
 	> .step:first-child
-		+border-radius(0 0 0 $border-radius-base)
+		border-radius: 0 0 0 $border-radius-base
 	> .step:last-child
-		+border-radius(0 0 $border-radius-base 0)
+		border-radius: 0 0 $border-radius-base 0

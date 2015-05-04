@@ -4,7 +4,7 @@
         <div class="alert alert-warning clearfix">
             <p>
                 <strong>Hey, event organizer!</strong> Your event doesn’t have any items available for sale. That’s fine if registration isn't open yet, but if you want people to start registering for the event, why not head over to the store to create some passes?
-                <a href="{% url "brambling_item_list" event.slug %}" class="alert-link">Manage items <i class="fa fa-chevron-right"></i></a>
+                <a href="{% url "brambling_item_list" event.slug organization_slug=event.organization.slug %}" class="alert-link">Manage items <i class="fa fa-chevron-right"></i></a>
             </p>
         </div>
     {% endif %}

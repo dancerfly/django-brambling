@@ -1,44 +1,71 @@
 {% extends 'zenaida/__base.html' %}
 
-{% load staticfiles %}
+{% load staticfiles compress %}
 
-{% block title %}Dancerfly{% endblock %}</title>
+{% block title %}Dancerfly{% endblock %}
 
 {% block body-classes %}dancerfly brambling {{ block.super }}{% endblock %}
 
 {% block stylesheets %}
-	<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
-	<link rel="stylesheet" type="text/css" href="{% static "zenaida/css/styles.css" %}" />
-	<link rel="stylesheet" type="text/css" href="{% static "brambling/css/styles.css" %}" />
-	<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
-	{% endblock stylesheets %}
+	{% compress css %}
+		<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "zenaida/css/styles.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
+	{% endcompress %}
+	{% compress css %}
+		{# must be separate to keep @fontface declarations on top #}
+		<link rel="stylesheet" type="text/sass" href="{% static "brambling/sass/styles.sass" %}" />
+	{% endcompress %}
+{% endblock stylesheets %}
 
-{% block top%}
-	{% include "brambling/_navbar.html" %}
+{% block meta %}
+	<meta property="og:site_name" content="Dancerfly" />
+	<meta property="og:title" content="Dancerfly" />
+
+	<meta name="description" content="Dancerfly is an event platform built by dancers, for dancers. Leave registration to us – go make the rest of your event amazing!" />
+	<meta property="og:description" content="Dancerfly is an event platform built by dancers, for dancers. Leave registration to us – go make the rest of your event amazing!" />
+
+	<meta property="og:url" content="https://{{ site.domain }}{{ request.path }}" />
 {% endblock %}
 
-{% block bottom %}
-	{% include "brambling/_footer.html" %}
-{% endblock bottom %}
+{% block body %}
+	{% block top %}
+		{% include "brambling/_navbar.html" %}
+	{% endblock %}
+
+    <div class="container">
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        {% block content %}{% endblock %}
+    </div>
+
+	{% block bottom %}
+		{% include "brambling/_footer.html" %}
+	{% endblock bottom %}
+{% endblock body %}
 
 {% block javascripts %}
-	{{ block.super }}
-	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>
-	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>
-	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/dropdown.js" %}"></script>
-	<script type="text/javascript" src="{% static "zenaida/js/jquery.shorten.js" %}"></script>
-	<script type="text/javascript" src="{% static "brambling/lib/bootstrap-datepicker/bootstrap-datepicker.js" %}"></script>
-	<script type="text/javascript" src="{% static "hints/hints.js" %}"></script>
-	<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
-	<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
-	{# TO DO: Ultimately this analytics code should live in a proprietary repository with Little Weaver specific things. #}
-	<script>
-		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+	{% compress js %}
+		{{ block.super }}
+		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>
+		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>
+		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/dropdown.js" %}"></script>
+		<script type="text/javascript" src="{% static "zenaida/js/jquery.shorten.js" %}"></script>
+		<script type="text/javascript" src="{% static "brambling/lib/bootstrap-datepicker/bootstrap-datepicker.js" %}"></script>
+		<script type="text/javascript" src="{% static "hints/hints.js" %}"></script>
+		<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
+		<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
+		{% if GOOGLE_ANALYTICS_UA and GOOGLE_ANALYTICS_DOMAIN %}
+			<script>
+				(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+				(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+				m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+				})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-		ga('create', 'UA-52154832-1', 'littleweaverweb.com');
-		ga('send', 'pageview');
-	</script>
+				ga('create', '{{ GOOGLE_ANALYTICS_UA }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}');
+				ga('send', 'pageview');
+			</script>
+		{% endif %}
+	{% endcompress %}
 {% endblock %}

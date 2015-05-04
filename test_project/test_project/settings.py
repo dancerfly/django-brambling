@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'floppyforms',
     'django_filters',
     'daguerre',
+    'compressor',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -66,6 +67,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
     "django.core.context_processors.request",
+    'brambling.context_processors.current_site',
 )
 
 ROOT_URLCONF = 'test_project.urls'
@@ -102,6 +104,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
 
 import os
 MEDIA_URL = '/media/'
@@ -128,19 +131,33 @@ DWOLLA_APPLICATION_SECRET = os.environ.get('DWOLLA_APPLICATION_SECRET', '')
 DWOLLA_TEST_APPLICATION_KEY = os.environ.get('DWOLLA_TEST_APPLICATION_KEY', '')
 DWOLLA_TEST_APPLICATION_SECRET = os.environ.get('DWOLLA_TEST_APPLICATION_SECRET', '')
 
-STRIPE_TEST_EVENT_ACCESS_TOKEN = os.environ.get('STRIPE_TEST_EVENT_ACCESS_TOKEN', '')
-STRIPE_TEST_EVENT_PUBLISHABLE_KEY = os.environ.get('STRIPE_TEST_EVENT_PUBLISHABLE_KEY', '')
-STRIPE_TEST_EVENT_REFRESH_TOKEN = os.environ.get('STRIPE_TEST_EVENT_REFRESH_TOKEN', '')
-STRIPE_TEST_EVENT_USER_ID = os.environ.get('STRIPE_TEST_EVENT_USER_ID', '')
+STRIPE_TEST_ORGANIZATION_ACCESS_TOKEN = os.environ.get('STRIPE_TEST_ORGANIZATION_ACCESS_TOKEN', '')
+STRIPE_TEST_ORGANIZATION_PUBLISHABLE_KEY = os.environ.get('STRIPE_TEST_ORGANIZATION_PUBLISHABLE_KEY', '')
+STRIPE_TEST_ORGANIZATION_REFRESH_TOKEN = os.environ.get('STRIPE_TEST_ORGANIZATION_REFRESH_TOKEN', '')
+STRIPE_TEST_ORGANIZATION_USER_ID = os.environ.get('STRIPE_TEST_ORGANIZATION_USER_ID', '')
 
-DWOLLA_TEST_EVENT_ACCESS_TOKEN = os.environ.get('DWOLLA_TEST_EVENT_ACCESS_TOKEN', '')
-DWOLLA_TEST_EVENT_USER_ID = os.environ.get('DWOLLA_TEST_EVENT_USER_ID', '')
-DWOLLA_TEST_EVENT_PIN = os.environ.get('DWOLLA_TEST_EVENT_PIN', '')
+DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN = os.environ.get('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN', '')
+DWOLLA_TEST_ORGANIZATION_USER_ID = os.environ.get('DWOLLA_TEST_ORGANIZATION_USER_ID', '')
+DWOLLA_TEST_ORGANIZATION_PIN = os.environ.get('DWOLLA_TEST_ORGANIZATION_PIN', '')
 DWOLLA_TEST_USER_ACCESS_TOKEN = os.environ.get('DWOLLA_TEST_USER_ACCESS_TOKEN', '')
 DWOLLA_TEST_USER_USER_ID = os.environ.get('DWOLLA_TEST_USER_USER_ID', '')
 DWOLLA_TEST_USER_PIN = os.environ.get('DWOLLA_TEST_USER_PIN', '')
 
 GRAPPELLI_ADMIN_TITLE = "Dancerfly"
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    # other finders..
+    'compressor.finders.CompressorFinder',
+)
+
+_BOOTSTRAP_SASS_SUBPATH = "/gems/bootstrap-sass-3.3.4.1/assets/stylesheets/"
+STATICFILES_DIRS = [x + _BOOTSTRAP_SASS_SUBPATH for x in os.environ['GEM_PATH'].split(":") if os.path.isdir(x + _BOOTSTRAP_SASS_SUBPATH)]
+
+COMPRESS_PRECOMPILERS = (
+    ('text/sass', 'django_libsass.SassCompiler'),
+)
 
 
 from django.contrib.messages import constants as messages

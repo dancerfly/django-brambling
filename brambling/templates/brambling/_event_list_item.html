@@ -1,6 +1,6 @@
 {% load daguerre %}
 
-<div class="media margin-leader-dbl event-listing">
+<div class="media margin-trailer-dbl event-listing">
 	<a href="{{ event.get_absolute_url }}" class=" a-secret a-opacity pull-left">
 		<div class="media-object relative margin-leader-tiny">
 			<div class="{% if event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
@@ -31,15 +31,23 @@
 		{% endif %}
 		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 		<div class='form-group'>
-			<a href="{{ event.get_absolute_url }}" class="btn btn-primary">
-				{% if registered or event in registered_events %}
-					Edit registration
+				{% if registered %}
+					{% if event.order and event.order.has_cart %}
+						<a href="{{ event.get_absolute_url }}" class="btn btn-warning tipped" title="Complete your registration now!">
+							<i class="fa fa-exclamation-circle"></i> Almost Registered
+						</a>
+					{% else %}
+						<a href="{{ event.get_absolute_url }}" class="btn btn-success tipped" title="Modify your registration">
+							<i class="fa fa-check"></i> Registered
+						</a>
+					{% endif %}
 				{% else %}
-					Register
+					<a href="{{ event.get_absolute_url }}" class="btn btn-default">
+						<i class="fa fa-ticket"></i> Register for <strong>{{ event.name }}</strong>!
+					</a>
 				{% endif %}
-			</a>
 			{% if event in admin_events %}
-				<a href="{% url 'brambling_event_summary' slug=event.slug %}" class="btn btn-primary">
+				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-default">
 					<i class="fa fa-cog"></i>
 					Manage Event
 				</a>

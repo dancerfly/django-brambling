@@ -5,17 +5,16 @@ import stripe
 
 from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory
-from brambling.utils.payment import (stripe_prep, stripe_charge,
-                                     stripe_is_connected, stripe_refund)
+from brambling.utils.payment import stripe_prep, stripe_charge, stripe_refund
 
 
 class StripeTestCase(TestCase):
     def test_charge__no_customer(self):
         event = EventFactory(api_type=Event.TEST,
-                             application_fee_percent=2.5)
-        self.assertTrue(stripe_is_connected(event, Event.TEST))
+                             application_fee_percent=Decimal('2.5'))
+        self.assertTrue(event.stripe_connected())
         stripe_prep(Event.TEST)
-        stripe.api_key = event.stripe_test_access_token
+        stripe.api_key = event.organization.stripe_test_access_token
 
         token = stripe.Token.create(
             card={
@@ -45,8 +44,8 @@ class StripeTestCase(TestCase):
 
     def test_charge__customer(self):
         event = EventFactory(api_type=Event.TEST,
-                             application_fee_percent=2.5)
-        self.assertTrue(stripe_is_connected(event, Event.TEST))
+                             application_fee_percent=Decimal('2.5'))
+        self.assertTrue(event.stripe_connected())
         stripe_prep(Event.TEST)
 
         token = stripe.Token.create(

@@ -1,17 +1,17 @@
 {% load zenaida %}
 
-{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+{% td_to_dict event.organization.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
 
 {% if time_until_check_cutoff.days >= 0 %}
-	<p>Checks should be made out to <strong>{{ event.check_payable_to }}</strong> and include your order code (<strong>{{ order.code }}</strong>) in the memo line. Mail them to:</p>
+	<p>Checks should be made out to <strong>{{ event.organization.check_payable_to }}</strong> and include your order code (<strong>{{ order.code }}</strong>) in the memo line. Mail them to:</p>
 	<p>
-		{{ event.check_recipient }}</br />
-		{{ event.check_address }}</br />
-		{% if event.check_address_2 %}{{ event.check_address_2 }}<br />{% endif %}
-		{{ event.check_city }}, {{ event.check_state_or_province }} {{ event.check_zip }}
-		{{ event.check_country }}
+		{{ event.organization.check_recipient }}</br />
+		{{ event.organization.check_address }}</br />
+		{% if event.organization.check_address_2 %}{{ event.organization.check_address_2 }}<br />{% endif %}
+		{{ event.organization.check_city }}, {{ event.organization.check_state_or_province }} {{ event.organization.check_zip }}
+		{{ event.organization.check_country }}
 	</p>
-	<p>Checks must be postmarked no later than <strong>{% if time_until_check_cutoff.days == 0%}today{% else %}{{ event.check_postmark_cutoff|date:"F jS, Y" }}{% endif %}</strong>. If your payment is not postmarked by {% if time_until_check_cutoff.days == 0%}today{% else %}that date{% endif %}, the event organizer reserves the right to revoke your passes.</p>
+	<p>Checks must be postmarked no later than <strong>{% if time_until_check_cutoff.days == 0%}today{% else %}{{ event.organization.check_postmark_cutoff|date:"F jS, Y" }}{% endif %}</strong>. If your payment is not postmarked by {% if time_until_check_cutoff.days == 0%}today{% else %}that date{% endif %}, the event organizer reserves the right to revoke your passes.</p>
 {% else %}
-	<p>Payment was due to be postmarked no later than {{ event.check_postmark_cutoff|date:"F jS, Y" }}. The event organizer reserves the right to revoke your passes if you have not sent in your payment.</p>
+	<p>Payment was due to be postmarked no later than {{ event.organization.check_postmark_cutoff|date:"F jS, Y" }}. The event organizer reserves the right to revoke your passes if you have not sent in your payment.</p>
 {% endif %}
