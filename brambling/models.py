@@ -1253,7 +1253,7 @@ def create_request_nights(sender, instance, **kwargs):
     annotate each night with specific information. For now, for simplicity,
     we're sticking with the relationship that already exists.
     """
-    date_set = set(instance.get_housing_dates)
+    date_set = set(instance.get_housing_dates())
     seen = set(HousingRequestNight.objects.filter(date__in=date_set).values_list('date', flat=True))
     to_create = date_set - seen
     if to_create:
