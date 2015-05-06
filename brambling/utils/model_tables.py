@@ -409,7 +409,6 @@ class AttendeeTable(CustomDataTable):
         'other_needs': 'Other Housing Needs',
         'order__code': 'Order Code',
         'order_placed_by': 'Order Placed By',
-        'order_status': 'Order Status',
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
         'order_pending_count': 'Order pending items',
@@ -450,7 +449,7 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.prefetch_related('ef_avoid')
             elif field == 'environment_cause':
                 queryset = queryset.prefetch_related('ef_cause')
-            elif field == 'order_code' or field == 'order_status':
+            elif field == 'order_code':
                 queryset = queryset.select_related('order')
             elif field == 'order_placed_by':
                 queryset = queryset.select_related('order__person')
@@ -482,9 +481,6 @@ class AttendeeTable(CustomDataTable):
     # Methods to be used as fields
     def order_code(self, obj):
         return obj.order.code
-
-    def order_status(self, obj):
-        return obj.order.get_status_display()
 
     def order_placed_by(self, obj):
         person = obj.order.person
@@ -549,10 +545,10 @@ class OrderTable(CustomDataTable):
             fieldsets += self.survey_fieldsets
         if self.event.collect_housing_data:
             housing_fields = self.housing_fieldsets[0][1]
-            for date in self.event.housing_dates.all():
+            for date in self.event.get_housing_dates():
                 housing_fields += (
-                    "hosting_spaces_{}".format(date.date.strftime("%Y%m%d")),
-                    "hosting_max_{}".format(date.date.strftime("%Y%m%d")),
+                    "hosting_spaces_{}".format(date.strftime("%Y%m%d")),
+                    "hosting_max_{}".format(date.strftime("%Y%m%d")),
                 )
             fieldsets += (
                 ('Housing', housing_fields),
@@ -606,7 +602,7 @@ class OrderTable(CustomDataTable):
             if obj.get_eventhousing():
                 hosting_date = datetime.datetime.strptime(date_str, "%Y%m%d").date()
                 try:
-                    slot = HousingSlot.objects.get(eventhousing__order=obj, night__date=hosting_date)
+                    slot = HousingSlot.objects.get(eventhousing__order=obj, date=hosting_date)
                 except HousingSlot.DoesNotExist:
                     pass
                 else:

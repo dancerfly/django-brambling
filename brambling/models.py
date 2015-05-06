@@ -1,7 +1,7 @@
 # encoding: utf8
 from __future__ import unicode_literals
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 import itertools
 import json
@@ -260,16 +260,6 @@ def create_defaults(app_config, **kwargs):
             ])
 
 
-class Date(models.Model):
-    date = models.DateField()
-
-    class Meta:
-        ordering = ('date',)
-
-    def __unicode__(self):
-        return date(self.date, 'l, F jS')
-
-
 class Organization(AbstractDwollaModel):
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
@@ -359,14 +349,6 @@ class Organization(AbstractDwollaModel):
                                      content_id=self.pk)
 
 
-class EventQuerySet(models.QuerySet):
-    def with_dates(self):
-        return self.annotate(
-            start_date=models.Min('dates__date'),
-            end_date=models.Max('dates__date'),
-        )
-
-
 class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
@@ -399,11 +381,10 @@ class Event(models.Model):
     timezone = models.CharField(max_length=40, default='America/New_York', choices=((tz, tz) for tz in pytz.common_timezones))
     currency = models.CharField(max_length=10, default='USD')
 
-    dates = models.ManyToManyField(Date, related_name='event_dates')
+    start_date = models.DateField()
+    end_date = models.DateField()
     start_time = models.TimeField(blank=True, null=True)
     end_time = models.TimeField(blank=True, null=True)
-    housing_dates = models.ManyToManyField(Date, blank=True, null=True,
-                                           related_name='event_housing_dates')
 
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
     has_dances = models.BooleanField(verbose_name="Is a dance / Has dance(s)", default=False)
@@ -441,8 +422,6 @@ class Event(models.Model):
     # This is a secret value set by admins
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
-
-    objects = EventQuerySet.as_manager()
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -500,6 +479,12 @@ class Event(models.Model):
         if self.api_type == Event.LIVE:
             return self.organization.dwolla_live_can_connect()
         return self.organization.dwolla_test_can_connect()
+
+    def get_housing_dates(self):
+        return [
+            self.start_date + timedelta(n-1)
+            for n in xrange((self.end_date - self.start_date).days + 2)
+        ]
 
 
 class Item(models.Model):
@@ -765,19 +750,6 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
-    # TODO: Add partial_refund status.
-    IN_PROGRESS = 'in_progress'
-    PENDING = 'pending'
-    COMPLETED = 'completed'
-    REFUNDED = 'refunded'
-
-    STATUS_CHOICES = (
-        (IN_PROGRESS, _('In progress')),
-        (PENDING, _('Payment pending')),
-        (COMPLETED, _('Completed')),
-        (REFUNDED, _('Refunded')),
-    )
-
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -800,8 +772,6 @@ class Order(AbstractDwollaModel):
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
-
-    status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
@@ -874,7 +844,7 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self, status, payment):
+    def mark_cart_paid(self, payment):
         bought_items = self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
         )
@@ -882,8 +852,7 @@ class Order(AbstractDwollaModel):
         bought_items.update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.status = status
-        self.save()
+            self.save()
 
     def cart_expire_time(self):
         if self.cart_start_time is None:
@@ -1241,6 +1210,33 @@ class BoughtItemDiscount(models.Model):
                    item_option.price)
 
 
+class HousingRequestNight(models.Model):
+    date = models.DateField()
+
+    class Meta:
+        ordering = ('date',)
+
+    def __unicode__(self):
+        return date(self.date, 'l, F jS')
+
+
+@receiver(signals.post_save, sender=Event)
+def create_request_nights(sender, instance, **kwargs):
+    """
+    At some point in the future, we might want to switch this to
+    a ForeignKey relationship in the other direction, and let folks
+    annotate each night with specific information. For now, for simplicity,
+    we're sticking with the relationship that already exists.
+    """
+    date_set = set(instance.get_housing_dates())
+    seen = set(HousingRequestNight.objects.filter(date__in=date_set).values_list('date', flat=True))
+    to_create = date_set - seen
+    if to_create:
+        HousingRequestNight.objects.bulk_create([
+            HousingRequestNight(date=date) for date in to_create
+        ])
+
+
 class Attendee(AbstractNamedModel):
     """
     This model represents information attached to an event pass. It is
@@ -1273,7 +1269,7 @@ class Attendee(AbstractNamedModel):
 
     # Housing information - all optional.
     housing_completed = models.BooleanField(default=False)
-    nights = models.ManyToManyField(Date, blank=True, null=True)
+    nights = models.ManyToManyField(HousingRequestNight, blank=True, null=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='attendee_cause',
                                       blank=True,
@@ -1401,7 +1397,7 @@ class EventHousing(models.Model):
 
 class HousingSlot(models.Model):
     eventhousing = models.ForeignKey(EventHousing)
-    night = models.ForeignKey(Date)
+    date = models.DateField()
     spaces = models.PositiveSmallIntegerField(default=0,
                                               validators=[MaxValueValidator(100)])
     spaces_max = models.PositiveSmallIntegerField(default=0,

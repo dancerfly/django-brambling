@@ -1,5 +1,3 @@
-import datetime
-
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
@@ -7,7 +5,7 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              Date, ItemImage, Transaction, Invite, CustomForm,
+                              ItemImage, Transaction, Invite, CustomForm,
                               CustomFormField, Order, Organization)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE, TEST
@@ -175,8 +173,6 @@ class OrganizationPaymentForm(forms.ModelForm):
 
 
 class EventForm(forms.ModelForm):
-    start_date = forms.DateField()
-    end_date = forms.DateField()
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
                               required=False)
@@ -188,19 +184,13 @@ class EventForm(forms.ModelForm):
                   'currency', 'start_time', 'end_time', 'dance_styles',
                   'has_dances', 'has_classes', 'liability_waiver', 'privacy',
                   'collect_housing_data', 'collect_survey_data',
-                  'cart_timeout',)
+                  'cart_timeout', 'start_date', 'end_date')
         widgets = {
             'country': forms.Select,
         }
 
     def __init__(self, request, organization, organization_editable_by, *args, **kwargs):
         super(EventForm, self).__init__(*args, **kwargs)
-        self.fields['start_date'].initial = getattr(self.instance,
-                                                    'start_date',
-                                                    datetime.date.today)
-        self.fields['end_date'].initial = getattr(self.instance,
-                                                  'end_date',
-                                                  datetime.date.today)
         self.request = request
         self.organization = organization
         self.instance.organization = organization
@@ -230,7 +220,8 @@ class EventForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
-        if cleaned_data['start_date'] > cleaned_data['end_date']:
+        if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
+                cleaned_data['start_date'] > cleaned_data['end_date']):
             raise ValidationError("End date must be before or equal to "
                                   "the start date.")
         return cleaned_data
@@ -238,20 +229,6 @@ class EventForm(forms.ModelForm):
     def save(self):
         created = self.instance.pk is None
         instance = super(EventForm, self).save()
-
-        if {'start_date', 'end_date'} & set(self.changed_data) or created:
-            cd = self.cleaned_data
-            date_set = {cd['start_date'] + datetime.timedelta(n - 1) for n in
-                        xrange((cd['end_date'] - cd['start_date']).days + 2)}
-            seen = set(Date.objects.filter(date__in=date_set
-                                           ).values_list('date', flat=True))
-            Date.objects.bulk_create([
-                Date(date=date) for date in date_set
-                if date not in seen
-            ])
-            instance.housing_dates = Date.objects.filter(date__in=date_set)
-            date_set.remove(cd['start_date'] - datetime.timedelta(1))
-            instance.dates = Date.objects.filter(date__in=date_set)
 
         if self.organization_editable_by and self.cleaned_data['editors']:
             for editor in self.cleaned_data['editors']:
