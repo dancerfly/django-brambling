@@ -724,6 +724,20 @@ class EventTableView(ModelTableView):
             except SavedReport.DoesNotExist:
                 return HttpResponseRedirect(request.path)
 
+        if 'delete_report' in request.GET:
+            qd = request.GET.copy()
+            try:
+                report = SavedReport.objects.get(
+                    pk=request.GET['delete_report'],
+                    report_type=self.report_type
+                )
+            except SavedReport.DoesNotExist:
+                pass
+            else:
+                report.delete()
+            del qd['delete_report']
+            return HttpResponseRedirect("{}?{}".format(request.path, qd.urlencode()))
+
         if 'save_report' in request.GET and request.GET.get('report_name'):
             qd = request.GET.copy()
             name = qd['report_name']
