@@ -13,14 +13,11 @@ from brambling.utils.payment import LIVE, TEST
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
 
-STATIC_ORGANIZATION_SLUGS = frozenset(('demo', 'demo-event'))
-STATIC_EVENT_SLUGS = frozenset(('demo-event',))
-
 
 class OrganizationProfileForm(forms.ModelForm):
     def __init__(self, request, *args, **kwargs):
         super(OrganizationProfileForm, self).__init__(*args, **kwargs)
-        if self.instance.slug in STATIC_ORGANIZATION_SLUGS:
+        if self.instance.is_demo():
             del self.fields['slug']
 
     class Meta:
@@ -203,7 +200,7 @@ class EventForm(forms.ModelForm):
             if (timezone, timezone) not in self.fields['timezone'].choices:
                 self.fields['timezone'].choices += ((timezone, timezone),)
 
-        if self.instance.slug in STATIC_EVENT_SLUGS:
+        if self.instance.is_demo() and self.instance.pk:
             del self.fields['slug']
 
     def clean_editors(self):
@@ -228,6 +225,8 @@ class EventForm(forms.ModelForm):
 
     def save(self):
         created = self.instance.pk is None
+        if self.instance.is_demo():
+            self.instance.api_type = Event.TEST
         instance = super(EventForm, self).save()
 
         if self.organization_editable_by and self.cleaned_data['editors']:
