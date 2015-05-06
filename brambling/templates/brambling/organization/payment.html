@@ -41,7 +41,7 @@
 							<th>
 								<i class="fa fa-fw fa-credit-card"></i>
 								Stripe
-								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
+								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
 							</th>
 							{% if organization.stripe_live_connected %}
 								<td>Enabled ({{ organization.stripe_user_id }})</td>
@@ -59,7 +59,7 @@
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla
-								<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
+								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
 							</th>
 							{% if organization.dwolla_live_connected %}
 								<td>Enabled ({{ organization.dwolla_user_id }})</td>
@@ -80,7 +80,7 @@
 								<th>
 									<i class="fa fa-fw fa-credit-card"></i>
 									Stripe (Test)
-									<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
+									<a href="javascript:void(0);" class="popped" data-container="body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
 								</th>
 								{% if organization.stripe_test_connected %}
 									<td>Enabled ({{ organization.stripe_test_user_id }})</td>
@@ -98,7 +98,7 @@
 								<th>
 									<i class="fa fa-fw fa-money"></i>
 									Dwolla (Test)
-									<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
+									<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
 								</th>
 								{% if organization.dwolla_test_connected %}
 									<td>Enabled ({{ organization.dwolla_test_user_id }})</td>
@@ -119,7 +119,7 @@
 						<th>
 							<i class="fa fa-fw fa-envelope"></i>
 							By Mail/Check
-							<a href="javascript:void(0);" class="popped" data-container=".panel-body" data-html="true" data-content="Allow payments by mail. Note that Dancerfly does &lt;i&gt;not&lt;/i&gt; confirm these payments. See configuration for more details."><i class="fa fa-info-circle"></i></a>
+							<a href="javascript:void(0);" class="popped" data-container="body" data-html="true" data-content="Allow payments by mail. Note that Dancerfly does &lt;i&gt;not&lt;/i&gt; confirm these payments. See configuration for more details."><i class="fa fa-info-circle"></i></a>
 						</th>
 						<td>
 							{% if organization.check_payment_allowed %}Enabled{% else %}Disabled{% endif %}
