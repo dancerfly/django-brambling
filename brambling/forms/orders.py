@@ -397,10 +397,10 @@ class HostingForm(MemoModelForm):
 class AddCardForm(forms.Form):
     token = forms.CharField(required=True,
                             error_messages={'required': "No token was provided. Please try again."})
-    api_type = Event.LIVE
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, api_type, *args, **kwargs):
         self.user = user
+        self.api_type = api_type
         super(AddCardForm, self).__init__(*args, **kwargs)
 
     def _post_clean(self):
@@ -448,12 +448,9 @@ class AddCardForm(forms.Form):
             exp_year=card.exp_year,
             last4=card.last4,
             brand=card.brand,
-            api_type=self.api_type
+            api_type=self.api_type,
+            is_saved=card.customer is not None
         )
-
-        if user and user.default_card_id is None:
-            user.default_card = creditcard
-            user.save()
 
         return creditcard
 
@@ -477,8 +474,11 @@ class BasePaymentForm(forms.Form):
 class OneTimePaymentForm(BasePaymentForm, AddCardForm):
     save_card = forms.BooleanField(required=False)
 
-    def __init__(self, *args, **kwargs):
-        super(OneTimePaymentForm, self).__init__(*args, **kwargs)
+    def __init__(self, order, *args, **kwargs):
+        super(OneTimePaymentForm, self).__init__(
+            order=order,
+            api_type=order.event.api_type,
+            *args, **kwargs)
         if not self.user.is_authenticated():
             del self.fields['save_card']
 
@@ -507,16 +507,19 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
 
 
 class SavedCardPaymentForm(BasePaymentForm):
-    card = forms.ModelChoiceField(CreditCard)
+    card = forms.ModelChoiceField(CreditCard, widget=forms.RadioSelect)
 
     def __init__(self, *args, **kwargs):
         super(SavedCardPaymentForm, self).__init__(*args, **kwargs)
         self.fields['card'].queryset = self.order.person.cards.filter(
-            api_type=self.api_type)
-        self.fields['card'].initial = self.order.person.default_card
+            api_type=self.api_type,
+            is_saved=True,
+        )
 
     def _post_clean(self):
-        self.card = self.cleaned_data['card']
+        self.card = self.cleaned_data.get('card')
+        if not self.card:
+            return
         if self.api_type == Event.LIVE:
             customer_id = self.order.person.stripe_customer_id
         else:

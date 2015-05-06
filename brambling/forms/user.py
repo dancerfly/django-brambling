@@ -126,7 +126,6 @@ class PersonForm(BasePersonForm):
 
     def __init__(self, *args, **kwargs):
         super(PersonForm, self).__init__(*args, **kwargs)
-        self.STRIPE_APPLICATION_ID = getattr(settings, 'STRIPE_APPLICATION_ID', None)
         if not self.instance.dwolla_user_id:
             del self.fields['disconnect_dwolla']
 

@@ -667,9 +667,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
-    default_card = models.OneToOneField('CreditCard', blank=True, null=True,
-                                        related_name='default_for',
-                                        on_delete=models.SET_NULL)
 
     # Internal tracking
     modified_directly = models.BooleanField(default=False)
@@ -707,6 +704,12 @@ class CreditCard(models.Model):
         (LIVE, 'Live'),
         (TEST, 'Test'),
     )
+    ICONS = {
+        'Visa': 'cc-visa',
+        'American Express': 'cc-amex',
+        'Discover': 'cc-discover',
+        'MasterCard': 'cc-mastercard',
+    }
     stripe_card_id = models.CharField(max_length=40)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
     person = models.ForeignKey(Person, related_name='cards', blank=True, null=True)
@@ -718,25 +721,13 @@ class CreditCard(models.Model):
     last4 = models.CharField(max_length=4)
     brand = models.CharField(max_length=16)
 
-    def is_default(self):
-        return self.person.default_card_id == self.id
+    is_saved = models.BooleanField(default=False)
 
     def __unicode__(self):
         return (u"{} " + u"\u2022" * 4 + u"{}").format(self.brand, self.last4)
 
-
-@receiver(signals.pre_delete, sender=CreditCard)
-def delete_stripe_card(sender, instance, **kwargs):
-    from django.conf import settings
-    customer = None
-    if instance.stripe_api == CreditCard.LIVE and instance.person.stripe_customer_id:
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
-    if instance.stripe_api == CreditCard.TEST and instance.person.stripe_test_customer_id:
-        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_test_customer_id)
-    if customer is not None:
-        customer.cards.retrieve(instance.stripe_card_id).delete()
+    def get_icon(self):
+        return self.ICONS.get(self.brand, 'credit-card')
 
 
 class Order(AbstractDwollaModel):
@@ -1010,7 +1001,7 @@ class Transaction(models.Model):
     related_transaction = models.ForeignKey('self', blank=True, null=True, related_name='related_transaction_set')
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
-    card = models.ForeignKey('CreditCard', blank=True, null=True)
+    card = models.ForeignKey('CreditCard', blank=True, null=True, on_delete=models.SET_NULL)
     bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
 
     class Meta:

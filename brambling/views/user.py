@@ -6,13 +6,19 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View)
+import stripe
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
 from brambling.mail import send_confirmation_email
-from brambling.utils.payment import dwolla_customer_oauth_url, LIVE
+from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
+                                     stripe_test_settings_valid,
+                                     stripe_live_settings_valid,
+                                     dwolla_test_settings_valid,
+                                     dwolla_live_settings_valid,
+                                     stripe_prep)
 
 
 class SignUpView(CreateView):
@@ -90,8 +96,16 @@ class PersonView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(PersonView, self).get_context_data(**kwargs)
+        cards_qs = self.request.user.cards.filter(is_saved=True).order_by('-added')
         context.update({
-            'cards': self.request.user.cards.order_by('-added'),
+            'cards': {
+                'test': cards_qs.filter(api_type=CreditCard.TEST),
+                'live': cards_qs.filter(api_type=CreditCard.LIVE),
+            },
+            'stripe_live_settings_valid': stripe_live_settings_valid(),
+            'stripe_test_settings_valid': stripe_test_settings_valid(),
+            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
+            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
@@ -103,7 +117,7 @@ class CreditCardAddView(TemplateView):
     template_name = 'brambling/creditcard_add.html'
 
     def post(self, request, *args, **kwargs):
-        form = AddCardForm(request.user, data=request.POST)
+        form = AddCardForm(request.user, api_type=kwargs['api_type'], data=request.POST)
         if form.is_valid():
             form.save()
 
@@ -123,7 +137,13 @@ class CreditCardAddView(TemplateView):
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
                                               'STRIPE_PUBLISHABLE_KEY',
                                               ''),
+            'STRIPE_TEST_PUBLISHABLE_KEY': getattr(settings,
+                                                   'STRIPE_TEST_PUBLISHABLE_KEY',
+                                                   ''),
             'errors': getattr(self, 'errors', {}),
+            'api_type': self.kwargs['api_type'],
+            'LIVE': CreditCard.LIVE,
+            'TEST': CreditCard.TEST,
         })
         return context
 
@@ -137,7 +157,7 @@ class CreditCardDeleteView(View):
             raise Http404
 
         try:
-            creditcard = CreditCard.objects.get(pk=kwargs['pk'])
+            creditcard = CreditCard.objects.get(is_saved=True, pk=kwargs['pk'])
         except CreditCard.DoesNotExist:
             # Count it a success.
             return self.success()
@@ -148,7 +168,16 @@ class CreditCardDeleteView(View):
             # Maybe also just redirect?
             raise Http404
 
-        creditcard.delete()
+        creditcard.is_saved = False
+        creditcard.save()
+        customer = None
+        stripe_prep(creditcard.api_type)
+        if creditcard.api_type == CreditCard.LIVE and creditcard.person.stripe_customer_id:
+            customer = stripe.Customer.retrieve(creditcard.person.stripe_customer_id)
+        if creditcard.api_type == CreditCard.TEST and creditcard.person.stripe_test_customer_id:
+            customer = stripe.Customer.retrieve(creditcard.person.stripe_test_customer_id)
+        if customer is not None:
+            customer.cards.retrieve(creditcard.stripe_card_id).delete()
         return self.success()
 
     def post(self, *args, **kwargs):

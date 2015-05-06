@@ -6,6 +6,7 @@
 
 {% block javascripts %}
 	{{ block.super }}
+	<script type="text/javascript" src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
 	<script>
 		$('.remove-card').on('click', function(e) {
 			var $this = $(this);
@@ -13,6 +14,10 @@
 			$.post($this.attr('target'), function() {
 				$this.parent().parent().fadeOut();
 			});
+		});
+		$('a[data-toggle=tab]').click(function(e) {
+			e.preventDefault();
+			$(this).tab('show');
 		});
 	</script>
 {% endblock %}
@@ -30,21 +35,88 @@
 				<h4 class="panel-title">Payment</h4>
 			</header>
 			<div class="panel-body">
-				{% if form.STRIPE_APPLICATION_ID %}
-					<h3>Stripe <small><a class='btn btn-link' href='{% url "brambling_user_card_add" %}'><span class='fa fa-plus'></span> Add another card</a></small></h3>
-					{% if cards %}
-						{% for card in cards %}
-							<div class='clearfix'>
-								<h5>{{ card.brand }} <span class='pull-right'>&bull;&bull;&bull;&bull;{{ card.last4 }}</span></h5>
-								<p>
-									<span class='text-muted'>Expires {{ card.exp_month }}/{{ card.exp_year }}</span>
-									<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='pull-right text-danger remove-card'><span class='fa fa-times'></span></a>
-								</p>
+				{% if stripe_live_settings_valid or stripe_test_settings_valid %}
+					<h3>Stripe</h3>
+
+					<div role="tabpanel">
+
+						<!-- Nav tabs -->
+						<ul class="nav nav-tabs" role="tablist">
+							<li role="presentation" class="active"><a href="#stripeLive" aria-controls="stripeLive" role="tab" data-toggle="tab">Live</a></li>
+							<li role="presentation"><a href="#stripeTest" aria-controls="stripeTest" role="tab" data-toggle="tab">Test</a></li>
+						</ul>
+
+						<!-- Tab panes -->
+						<div class="tab-content clearfix">
+							<div role="tabpanel" class="tab-pane active" id="stripeLive">
+								{% if not cards.live %}
+									<p>No cards are associated with your account.</p>
+								{% endif %}
+								{% if not stripe_live_settings_valid %}
+									<p>Cards cannot be added because Stripe is not configured.</p>
+								{% endif %}
+								{% if cards.live or stripe_live_settings_valid %}
+									<div class='row'>
+										{% for card in cards.live %}
+											<div class='col-xs-3'>
+												<p>
+													<i class='fa fa-fw fa-{{ card.get_icon }}'></i>
+													{{ card.brand }} &bull;&bull;&bull;&bull;{{ card.last4 }}
+													<br />
+													Expires {{ card.exp_month }}/{{ card.exp_year }}
+												</p>
+												<p>
+													<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='text-danger remove-card'>
+														<span class='fa fa-times'></span>
+														Remove card
+													</a>
+												</p>
+											</div>
+										{% endfor %}
+										{% if stripe_live_settings_valid %}
+											<div class='col-xs-3'>
+												<a class='btn btn-primary' href='{% url "brambling_user_card_add" api_type="live" %}'><span class='fa fa-plus'></span> Add a card</a>
+											</div>
+										{% endif %}
+									</div>
+								{% endif %}
 							</div>
-						{% endfor %}
-					{% else %}
-						<p>No credit cards on record.</p>
-					{% endif %}
+							<div role="tabpanel" class="tab-pane" id="stripeTest">
+								{% if not cards.test %}
+									<p>No cards are associated with your account.</p>
+								{% endif %}
+								{% if not stripe_test_settings_valid %}
+									<p>Cards cannot be added because Stripe is not configured.</p>
+								{% endif %}
+								{% if cards.test or stripe_test_settings_valid %}
+									<div class='row'>
+										{% for card in cards.test %}
+											<div class='col-sm-3 col-xs-6'>
+												<p>
+													<i class='fa fa-fw fa-{{ card.get_icon }}'></i>
+													{{ card.brand }} &bull;&bull;&bull;&bull;{{ card.last4 }}
+													<br />
+													Expires {{ card.exp_month }}/{{ card.exp_year }}
+												</p>
+												<p>
+													<a target='{% url "brambling_user_card_delete" pk=card.pk %}' href="javascript://" class='text-danger remove-card'>
+														<span class='fa fa-times'></span>
+														Remove card
+													</a>
+												</p>
+											</div>
+										{% endfor %}
+										{% if stripe_test_settings_valid %}
+											<div class='col-sm-3 col-xs-6'>
+												<a class='btn btn-primary' href='{% url "brambling_user_card_add" api_type="test" %}'><span class='fa fa-plus'></span> Add a card</a>
+											</div>
+										{% endif %}
+									</div>
+								{% endif %}
+							</div>
+						</div>
+
+					</div>
 				{% endif %}
 
 				{% if form.instance.dwolla_user_id or dwolla_oauth_url %}

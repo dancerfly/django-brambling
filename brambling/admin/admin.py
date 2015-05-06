@@ -40,7 +40,7 @@ class PersonAdmin(UserAdmin):
             'dance_styles',
         )}),
         ('Financial Transactions', {'fields': (
-            ('stripe_customer_id', 'stripe_test_customer_id', 'default_card'),
+            ('stripe_customer_id', 'stripe_test_customer_id'),
             "dwolla_user_id",
             ("dwolla_access_token", "dwolla_access_token_expires"),
             ("dwolla_refresh_token", "dwolla_refresh_token_expires"),
