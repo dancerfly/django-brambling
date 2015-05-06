@@ -1,14 +1,29 @@
-{% extends "brambling/layouts/12.html" %}
+{% extends "brambling/layouts/12_xs.html" %}
 
-{% block title %}Email confirmed – {{ block.super }}{% endblock %}
+{% block title %}{% if valid_token %}Email confirmed{% else %}Invalid token{% endif %} – {{ block.super }}{% endblock %}
 
 {% block meta %}
     {{ block.super }}
-    <meta http-equiv="refresh" content="3; url={% url 'brambling_dashboard' %}">
+
+	{% if valid_token %}
+	    <meta http-equiv="refresh" content="3; url={% url 'brambling_dashboard' %}">
+   {% endif %}
 {% endblock %}
 
 {% block main %}
-    <div class="alert alert-success">
-        Your email address has been confirmed! You will be redirected to <a href="{% url 'brambling_dashboard' %}">your dashboard</a> in a few seconds.
-    </div>
+	{% if valid_token %}
+	    <div class="alert alert-success">
+	        Your email address has been confirmed! You will be redirected to <a href="{% url 'brambling_dashboard' %}">your dashboard</a> in a few seconds.
+	    </div>
+	{% else %}
+		<p>
+			Sorry, but the email confirmation link you followed is no longer valid.
+			It probably expired or has already been used.
+		</p>
+		{% if request.user.is_authenticated %}
+			<p>If you think this is in error, please <a href='{% url "brambling_email_confirm_send" %}'>request a new confirmation link</a>. Thanks!</p>
+		{% else %}
+			<p>If you think this is in error, please log in to request a new confirmation link.</p>
+		{% endif %}
+	{% endif %}
 {% endblock %}
