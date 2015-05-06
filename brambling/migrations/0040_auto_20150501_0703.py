@@ -30,7 +30,7 @@ def is_saved_forward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0033_creditcard_is_saved'),
+        ('brambling', '0039_creditcard_is_saved'),
     ]
 
     operations = [
