@@ -20,7 +20,11 @@ def is_saved_forward(apps, schema_editor):
                 stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
                 customer = stripe.Customer.retrieve(card.person.stripe_test_customer_id)
             if customer is not None:
-                stripe_card = customer.cards.retrieve(card.stripe_card_id)
+                try:
+                    stripe_card = customer.cards.retrieve(card.stripe_card_id)
+                except stripe.InvalidRequestError:
+                    # card doesn't exist
+                    pass
             if stripe_card:
                 is_saved = True
         card.is_saved = is_saved
