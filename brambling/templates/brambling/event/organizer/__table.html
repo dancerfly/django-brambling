@@ -42,6 +42,32 @@
                             </span>
                         </div>{# /.input-group #}
                     </div>{# /.form-group #}
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-sm {% if report %}btn-primary{% else %}btn-default{% endif %} dropdown-toggle tipped" data-toggle="dropdown" aria-expanded="false" title="Saved reports" data-container="body">
+                        <i class="fa fa-bars"></i>
+                        <span class='hidden-sm hidden-md'>Saved reports</span>
+                        <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        {% for r in saved_reports %}
+                            <li{% if r == report %} class="active"{% endif %}>
+                                <a href="{{ request.path }}?choose_report={{ r.pk }}">Action</a>
+                            </li>
+                        {% endfor %}
+                        {% if saved_reports %}
+                            <li role="presentation" class="divider"></li>
+                        {% endif %}
+                        <li>
+                            <label for="id_report_name">Save this report</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_report_name" name="report_name" />
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="submit" name='save_report'><i class="fa fa-save"></i><span class='sr-only'>Save</span></button>
+                                </span>
+                            </div>
+                        </li>
+                      </ul>
+                    </div>
                     <button class="btn btn-sm btn-default tipped" data-toggle="modal" data-target="#filterModal" type='button' title="Change columns and filters" data-container="body">
                         <i class="fa fa-filter"></i>
                         <span class='hidden-sm hidden-md'>Change columns and filters</span>
@@ -72,7 +98,6 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Cancel</button>
-                                <button type="submit" name='save_report' value='1' class="btn btn-primary"><i class="fa fa-save"></i> Apply &amp; Save</button>
                                 <button type="submit" class="btn btn-primary"><i class="fa fa-check"></i> Apply</button>
                             </div>
                         </div>{# /.modal-content #}
@@ -137,4 +162,9 @@
 {% block javascripts %}
     {{ block.super }}
     <script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
+    <script>
+        $('#id_report_name').on('click', function(e) {
+            e.stopPropagation();
+        });
+    </script>
 {% endblock %}
