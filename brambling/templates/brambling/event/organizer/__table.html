@@ -42,11 +42,14 @@
                             </span>
                         </div>{# /.input-group #}
                     </div>{# /.form-group #}
-                    <button class="btn btn-sm btn-default" data-toggle="modal" data-target="#filterModal" type='button'>
+                    <button class="btn btn-sm btn-default tipped" data-toggle="modal" data-target="#filterModal" type='button' title="Change columns and filters" data-container="body">
                         <i class="fa fa-filter"></i>
-                        Change columns and filters
+                        <span class='hidden-sm hidden-md'>Change columns and filters</span>
                     </button>
-                    <button type="submit" class="btn btn-sm btn-default" name="format" value="csv"><i class="fa fa-download"></i> Download CSV</button>
+                    <button type="submit" class="btn btn-sm btn-default tipped" name="format" value="csv" title="Download CSV" data-container="body">
+                        <i class="fa fa-download"></i>
+                        <span class='hidden-sm hidden-md'>Download CSV</span>
+                    </button>
                 </div>
                 <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-hidden="true">
                     <div class="modal-dialog">
