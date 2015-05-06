@@ -759,19 +759,6 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
-    # TODO: Add partial_refund status.
-    IN_PROGRESS = 'in_progress'
-    PENDING = 'pending'
-    COMPLETED = 'completed'
-    REFUNDED = 'refunded'
-
-    STATUS_CHOICES = (
-        (IN_PROGRESS, _('In progress')),
-        (PENDING, _('Payment pending')),
-        (COMPLETED, _('Completed')),
-        (REFUNDED, _('Refunded')),
-    )
-
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -794,8 +781,6 @@ class Order(AbstractDwollaModel):
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
-
-    status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
@@ -868,7 +853,7 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self, status, payment):
+    def mark_cart_paid(self, payment):
         bought_items = self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
         )
@@ -876,8 +861,7 @@ class Order(AbstractDwollaModel):
         bought_items.update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.status = status
-        self.save()
+            self.save()
 
     def cart_expire_time(self):
         if self.cart_start_time is None:
@@ -1253,7 +1237,7 @@ def create_request_nights(sender, instance, **kwargs):
     annotate each night with specific information. For now, for simplicity,
     we're sticking with the relationship that already exists.
     """
-    date_set = set(instance.get_housing_dates)
+    date_set = set(instance.get_housing_dates())
     seen = set(HousingRequestNight.objects.filter(date__in=date_set).values_list('date', flat=True))
     to_create = date_set - seen
     if to_create:

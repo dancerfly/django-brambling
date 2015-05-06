@@ -81,7 +81,6 @@ class OrderFactory(factory.DjangoModelFactory):
         model = Order
 
     event = factory.SubFactory(EventFactory)
-    status = Order.IN_PROGRESS
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
 
