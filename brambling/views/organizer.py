@@ -66,8 +66,7 @@ class OrganizationUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return reverse('brambling_organization_update',
-                       kwargs={'organization_slug': self.object.slug})
+        return self.request.path
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
