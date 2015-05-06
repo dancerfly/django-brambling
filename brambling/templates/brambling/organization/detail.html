@@ -27,8 +27,8 @@
 				<h4 class="text-muted event-tags">Featuring {% for style in dance_styles %}<span class="list-comma text-lowercase">{{ style }}</span>{% endfor %}.</h4>
 			{% endif %}
 		{% endwith %}
-		{% if organization.city and organization.state_or_province and organization.country %}
-			<p><i class="fa fa-map-marker fa-fw"></i> {{ organization.city }}, {{ organization.state_or_province }}, {{ organization.country }}</p>
+		{% if organization.city or organization.state_or_province or organization.country %}
+			<p><i class="fa fa-map-marker fa-fw"></i> {% include "brambling/organization/_where.html" %}</p>
 		{% endif %}
 	</div>
 
