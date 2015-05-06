@@ -726,8 +726,9 @@ class EventTableView(ModelTableView):
 
         if 'save_report' in request.GET and request.GET.get('report_name'):
             qd = request.GET.copy()
+            name = qd['report_name']
             del qd['save_report']
-            name = qd.pop('report_name')
+            del qd['report_name']
             report = SavedReport.objects.create(
                 report_type=self.report_type,
                 event=self.event,

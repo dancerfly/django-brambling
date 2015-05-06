@@ -51,7 +51,7 @@
                       <ul class="dropdown-menu dropdown-menu-right" role="menu">
                         {% for r in saved_reports %}
                             <li{% if r == report %} class="active"{% endif %}>
-                                <a href="{{ request.path }}?choose_report={{ r.pk }}">Action</a>
+                                <a href="{{ request.path }}?choose_report={{ r.pk }}">{{ r.name }}</a>
                             </li>
                         {% endfor %}
                         {% if saved_reports %}
