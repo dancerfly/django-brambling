@@ -60,7 +60,7 @@
 					<h4>
 						{% if txn.card %}
 							<i class='fa fa-fw fa-{{ txn.card.get_icon }}'></i>
-							{{ txn.card.get_brand_display }}
+							{{ txn.card.brand }}
 							&bull;&bull;&bull;&bull;{{ txn.card.last4 }}
 						{% else %}
 							{{ txn.get_method_display }}
