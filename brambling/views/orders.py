@@ -490,6 +490,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
     form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
     workflow_class = RegistrationWorkflow
+    model = Attendee
 
     def get_object(self):
         if 'pk' not in self.kwargs:
