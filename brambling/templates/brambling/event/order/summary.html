@@ -69,19 +69,9 @@
 
 	<div class="row">
 		<div class="col-sm-6">
-
 			{% for txn, txn_dict in transactions.iteritems %}
 				{% include "brambling/event/order/_transaction_receipt.html" %}
 			{% endfor %}
-
-			<form class='margin-trailer'>
-				<div class='input-group input-group-lg'>
-					<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
-					<span class='input-group-btn'>
-						<button id='discountCodeButton' class='btn btn-success' type='submit'><span class='fa fa-plus'></span></button>
-					</span>
-				</div>
-			</form>
 		</div>{# /.col-sm-6 #}
 		<div class="col-sm-6">
 			{% include "brambling/event/order/_attendee_summary.html" %}
