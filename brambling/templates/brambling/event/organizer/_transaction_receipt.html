@@ -1,0 +1,44 @@
+{% extends 'brambling/event/order/_transaction_receipt.html' %}
+
+{% load zenaida %}
+
+{% block actions %}
+	<div class='margin-trailer-tiny'>
+	{% url 'brambling_event_toggle_payment_confirmation' code=order.code payment_pk=txn.pk event_slug=event.slug organization_slug=event.organization.slug as payment_toggle_url %}
+	{% if txn.is_confirmed %}
+		<a class='btn btn-success payment-confirmation-toggle' href="{{ payment_toggle_url }}">
+			<i class='fa fa-fw fa-check'></i> Confirmed
+		</a>
+	{% else %}
+		<a class='btn btn-danger payment-confirmation-toggle' href="{{ payment_toggle_url }}">
+			<i class='fa fa-fw fa-ban'></i> Pending
+		</a>
+	{% endif %}
+	</div>
+
+	{% if txn.transaction_type == txn.PURCHASE %}
+		{% if txn.can_refund %}
+			<a class='btn btn-default' data-toggle="modal" data-target="#refund-{{ txn.pk }}"><i class='fa fa-fw fa-undo'></i> Refund</a>
+
+			<div class="modal fade" id="refund-{{ txn.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ txn.pk }}" aria-hidden="true">
+				<div class="modal-dialog modal-sm">
+					<div class="modal-content">
+						<div class="modal-body">
+							<form action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=txn.pk %}' method='post' class='form-inline'>
+								{% csrf_token %}
+								<h4 id="Label{{ bought_item.item_option.item.pk }}">Are you sure you want to refund {{ txn.amount|format_money:event.currency }} and all related purchases?</h4>
+								{% if txn.has_dwolla_payments %}
+									<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
+								{% endif %}
+								<button type='submit' class='btn btn-success btn-block'>Yes, refund</button>
+								<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		{% else %}
+			<a href='javascript://' class='btn btn-default disabled'><i class='fa fa-fw fa-ban'></i> Refunded</a>
+		{% endif %}
+	{% endif %}
+{% endblock %}

@@ -26,9 +26,13 @@
 				var $this = $(this);
 				$.getJSON(this.href, function(data) {
 					if (data.is_confirmed) {
-						$this.html("<i class='fa fa-check text-success'></i>");
+						$this.removeClass("btn-danger");
+						$this.addClass("btn-success");
+						$this.html("<i class='fa fa-fw fa-check'></i> Confirmed");
 					} else {
-						$this.html("<i class='fa fa-ban text-danger'></i>");
+						$this.removeClass("btn-success");
+						$this.addClass("btn-danger");
+						$this.html("<i class='fa fa-fw fa-ban'></i> Pending");
 					}
 				});
 			});
@@ -59,7 +63,16 @@
 	<!-- Tab panes -->
 	<div class="tab-content">
 		<div class="tab-pane{% if active == 'summary' %} active{% endif %}" id="summary">
-			{% include "brambling/event/organizer/_admin_order_summary.html" %}
+			<div class='row'>
+				<div class='col-sm-6'>
+					{% for txn, txn_dict in transactions.iteritems %}
+						{% include "brambling/event/organizer/_transaction_receipt.html" %}
+					{% endfor %}
+				</div>
+				<div class='col-sm-6'>
+					{% include "brambling/event/order/_attendee_summary.html" %}
+				</div>
+			</div>
 		</div>
 		<div class="tab-pane{% if active == 'payment' %} active{% endif %}" id="payment">
 			<div class='row'>

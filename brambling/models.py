@@ -1,7 +1,7 @@
 # encoding: utf8
 from __future__ import unicode_literals
 
-from datetime import timedelta, datetime
+from datetime import timedelta
 from decimal import Decimal
 import itertools
 import json
@@ -26,7 +26,6 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 import floppyforms.__future__ as forms
 import pytz
-import stripe
 
 from brambling.mail import send_fancy_mail
 from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
@@ -891,56 +890,64 @@ class Order(AbstractDwollaModel):
     def get_summary_data(self):
         if self.cart_is_expired():
             self.delete_cart()
-        transactions = self.transactions.prefetch_related('bought_items').order_by('timestamp')
-        payments = [t for t in transactions
-                    if t.transaction_type == Transaction.PURCHASE]
-        refunds = [t for t in transactions
-                   if t.transaction_type == Transaction.REFUND]
-        payment_items = [t.bought_items.select_related('item_option__item') for t in payments]
-        bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
-        attendees = []
-        for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
-            items = [item.get_summary_data() for item in g]
 
-            gross_cost = sum((item['gross_cost'] for item in items))
-            total_savings = sum((item['total_savings'] for item in items))
-            net_cost = gross_cost - total_savings
-            attendees.append({
-                'attendee': k,
-                'bought_items': items,
-                'gross_cost': gross_cost,
-                'total_savings': total_savings,
-                'net_cost': net_cost,
+        # First fetch BoughtItems and group by transaction.
+        bought_items_qs = self.bought_items.select_related(
+            'item_option__item',
+            'discounts__discount'
+        ).prefetch_related('transactions').order_by('added')
+
+        transactions = SortedDict()
+
+        def add_item(txn, item):
+            txn_dict = transactions.setdefault(txn, {
+                'items': [],
+                'discounts': [],
+                'gross_cost': 0,
+                'total_savings': 0,
+                'net_cost': 0,
             })
-        unpaid_items = [item for item in bought_items_qs
-                        if item.status == BoughtItem.UNPAID or
-                        item.status == BoughtItem.RESERVED]
+            txn_dict['items'].append(item)
+            multiplier = -1 if txn and txn.transaction_type == Transaction.REFUND else 1
+            txn_dict['gross_cost'] += multiplier * item.item_option.price
+            txn_dict['discounts'].extend(item.discounts.all())
+            for discount in txn_dict['discounts']:
+                txn_dict["total_savings"] -= multiplier * discount.savings()
+            txn_dict['net_cost'] = txn_dict['gross_cost'] + txn_dict['total_savings']
 
-        gross_cost = sum((item.item_option.price for item in bought_items_qs))
-        gross_payments = sum((payment.amount for payment in payments))
-        total_savings = sum((attendee['total_savings']
-                             for attendee in attendees))
-        total_refunds = abs(sum((refund.amount
-                                 for refund in refunds)))
-        net_cost = gross_cost - total_refunds - total_savings
-        net_payments = gross_payments - total_refunds
-        net_balance = net_cost - net_payments
-        unconfirmed_check_payments = any((payment.method == Transaction.CHECK and
-                                          not payment.is_confirmed
-                                          for payment in payments))
+        for item in bought_items_qs:
+            if not item.transactions.all():
+                add_item(None, item)
+            else:
+                for txn in item.transactions.all():
+                    add_item(txn, item)
+
+        gross_cost = 0
+        total_savings = 0
+        net_cost = 0
+        total_payments = 0
+        total_refunds = 0
+        unconfirmed_check_payments = False
+
+        for txn, txn_dict in transactions.iteritems():
+            gross_cost += txn_dict['gross_cost']
+            total_savings += txn_dict['total_savings']
+            net_cost += txn_dict['net_cost']
+            if txn:
+                if txn.transaction_type == Transaction.REFUND:
+                    total_refunds += txn.amount
+                else:
+                    total_payments += txn.amount
+                    if not unconfirmed_check_payments and txn and txn.method == Transaction.CHECK and not txn.is_confirmed:
+                        unconfirmed_check_payments = True
+
         return {
-            'attendees': attendees,
-            'payment_items': payment_items,
-            'unpaid_items': unpaid_items,
-            'payments': payments,
-            'refunds': refunds,
+            'transactions': transactions,
             'gross_cost': gross_cost,
-            'gross_payments': gross_payments,
             'total_savings': total_savings,
             'total_refunds': total_refunds,
             'net_cost': net_cost,
-            'net_payments': net_payments,
-            'net_balance': net_balance,
+            'net_balance': net_cost - total_payments,
             'unconfirmed_check_payments': unconfirmed_check_payments
         }
 
@@ -1174,20 +1181,6 @@ class BoughtItem(models.Model):
         return u"{} – {} ({})".format(self.item_option.name,
                                       self.order.code,
                                       self.pk)
-
-    def get_summary_data(self):
-        gross_cost = self.item_option.price
-        discounts = self.discounts.order_by('timestamp')
-        total_savings = sum((discount.savings() for discount in discounts))
-        net_cost = gross_cost - total_savings
-
-        return {
-            'bought_item': self,
-            'discounts': discounts,
-            'gross_cost': gross_cost,
-            'total_savings': total_savings,
-            'net_cost': net_cost,
-        }
 
 
 class OrderDiscount(models.Model):
