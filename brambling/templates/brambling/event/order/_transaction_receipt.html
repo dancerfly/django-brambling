@@ -19,7 +19,13 @@
 			<li class='list-group-item'>
 				{{ item.item_option.name }} ({{ item.item_option.item.name }})
 				<span class='pull-right'>
-					{{ item.item_option.price|format_money:event.currency }}
+					{% with amount=item.item_option.price|format_money:event.currency %}
+					{% if txn.transaction_type == txn.REFUND %}
+						({{ amount }})
+					{% else %}
+						{{ amount }}
+					{% endif %}
+					{% endwith %}
 				</span>
 			</li>
 		{% endfor %}
@@ -37,7 +43,13 @@
 		<li class='list-group-item'>
 			<strong>Subtotal</strong>
 			<strong class='pull-right'>
-				{{ gross_cost|format_money:event.currency }}
+				{% with amount=txn_dict.gross_cost|absolute_value|format_money:event.currency %}
+					{% if txn_dict.gross_cost > 0 %}
+						{{ amount }}
+					{% else %}
+						({{ amount }})
+					{% endif %}
+				{% endwith %}
 			</strong>
 		</li>
 	</ul>
@@ -55,7 +67,13 @@
 						{% endif %}
 					</h4>
 					<p>
-						{{ txn.amount|format_money:event.currency }}
+						{% with amount=txn.amount|absolute_value|format_money:event.currency %}
+							{% if txn.amount > 0 %}
+								{{ amount }}
+							{% else %}
+								({{ amount }})
+							{% endif %}
+						{% endwith %}
 					</p>
 				</div>
 				<div class='col-xs-6'>
