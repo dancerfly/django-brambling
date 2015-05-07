@@ -171,3 +171,57 @@ class Step(object):
 
     def get_errors(self):
         return []
+
+
+class WorkflowMixin(object):
+    current_step_slug = None
+    workflow_class = None
+
+    def get_reverse_kwargs(self):
+        return self.kwargs
+
+    def _reverse(self, view_name):
+        return reverse(view_name, kwargs={
+            key: value
+            for key, value in self.get_reverse_kwargs().items()
+            if value is not None
+        })
+
+    def dispatch(self, request, *args, **kwargs):
+        self.workflow = self.get_workflow()
+        if self.workflow is None or self.current_step_slug is None:
+            self.current_step = None
+        else:
+            self.current_step = self.workflow.steps.get(self.current_step_slug)
+            if (not self.current_step or
+                    not self.current_step.is_active() or
+                    not self.current_step.is_accessible()):
+                for step in reversed(self.workflow.steps.values()):
+                    if step.is_accessible() and step.is_active():
+                        return HttpResponseRedirect(self._reverse(step.view_name))
+        return super(WorkflowMixin, self).dispatch(request, *args, **kwargs)
+
+    def get_workflow_class(self):
+        return self.workflow_class
+
+    def get_workflow_kwargs(self):
+        return {}
+
+    def get_workflow(self):
+        return self.get_workflow_class()(**self.get_workflow_kwargs())
+
+    def get_success_url(self):
+        if self.current_step.errors:
+            view_name = self.current_step.view_name
+        else:
+            view_name = self.current_step.next_step.view_name
+        return self._reverse(view_name)
+
+    def get_context_data(self, **kwargs):
+        context = super(WorkflowMixin, self).get_context_data(**kwargs)
+        context.update({
+            'workflow': self.workflow,
+            'current_step': self.current_step,
+            'next_step': self.current_step.next_step if self.current_step else None,
+        })
+        return context

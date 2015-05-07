@@ -218,5 +218,9 @@
 				<div class="col-sm-4"><div class='alert {% if check %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if check %}fa-check{% else %}fa-ban{% endif %}'></i> Check</div></div>
 			{% endwith %}
 		</div>{# /.row #}
+
+		{% if event.is_demo %}
+			<p class='text-muted'>Note: This is a demo event which uses test APIs. None of the transactions made through this event can result in real money changing hands.</p>
+		{% endif %}
 	</div>{# /.panel-body #}
 </div>{# /.panel #}

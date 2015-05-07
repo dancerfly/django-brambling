@@ -66,8 +66,7 @@ class OrganizationUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return reverse('brambling_organization_update',
-                       kwargs={'organization_slug': self.object.slug})
+        return self.request.path
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
@@ -264,7 +263,7 @@ class EventSummaryView(TemplateView):
             itemoption_map[itemoption.pk] = itemoption
             itemoption.boughtitem__count = BoughtItem.objects.filter(
                 item_option=itemoption,
-                order__status__in=(Order.PENDING, Order.COMPLETED)
+                status=BoughtItem.BOUGHT
             ).count()
             gross_sales += itemoption.price * itemoption.boughtitem__count
 
@@ -801,7 +800,7 @@ class OrganizerApplyDiscountView(ApplyDiscountView):
 class RemoveDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
     def post(self, request, *args, **kwargs):
-        if not self.is_admin_request:
+        if not self.event.editable_by(self.request.user):
             raise Http404
         try:
             boughtitemdiscount = BoughtItemDiscount.objects.get(
@@ -813,9 +812,6 @@ class RemoveDiscountView(OrderMixin, View):
         else:
             boughtitemdiscount.delete()
         return JsonResponse({'success': True})
-
-    def get_workflow(self):
-        return None
 
     def get_order(self):
         return Order.objects.get(event=self.event, code=self.kwargs['code'])
@@ -908,9 +904,6 @@ class TogglePaymentConfirmationView(View):
         self.object = self.get_object()
         self.object.is_confirmed = not self.object.is_confirmed
         self.object.save()
-        all_confirmed = not self.order.transactions.filter(is_confirmed=False).exists()
-        self.order.status = Order.COMPLETED if all_confirmed else Order.PENDING
-        self.order.save()
         return JsonResponse({'success': True, 'is_confirmed': self.object.is_confirmed})
 
 

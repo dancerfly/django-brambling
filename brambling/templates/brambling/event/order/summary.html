@@ -234,9 +234,30 @@
 								<form novalidate action="" method="post">
 									{% csrf_token %}
 									<input name='choose_card' value='1' type='hidden'>
-									{% formrow choose_card_form.card %}
+									{% with id=choose_card_form.card.id_for_label name=choose_card_form.card.html_name %}
+									<div class='row'>
+										{% for card in choose_card_form.fields.card.queryset %}
+											<div class='col-sm-3 col-xs-6'>
+												<div class='radio'>
+													<label for="{{ id }}_{{ forloop.counter }}">
+														<input type="radio" id="{{ id }}_{{ forloop.counter }}"
+															value="{{ card.pk }}" name="{{ name }}" required
+															{% if card.pk in value %}checked{% endif %}>
+														<i class='fa fa-fw fa-{{ card.get_icon }}'></i>
+														{{ card.brand }} &bull;&bull;&bull;&bull;{{ card.last4 }}
+														<br />
+														Expires {{ card.exp_month }}/{{ card.exp_year }}
+													</label>
+												</div>
+											</div>
+										{% endfor %}
+									</div>
+									{% endwith %}
 
-									<p><button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
+									<p>
+										<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
+										<a class='btn btn-link' href="{% url 'brambling_user_profile' %}">Manage saved cards</a>
+									</p>
 								</form>
 								{% include 'brambling/_stripe_note.html' %}
 							</div>
@@ -254,7 +275,7 @@
 							<div class="panel-body">
 			{% endif %}
 
-			{% include 'brambling/_stripe_form.html' %}
+			{% include 'brambling/_stripe_form.html' with api_type=event.api_type %}
 			<form novalidate action="" method="post" id='card-form'>
 				{% csrf_token %}
 				<input name='new_card' value='1' type='hidden'>
@@ -263,7 +284,6 @@
 
 				<p><button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
 			</form>
-			{% include 'brambling/_stripe_note.html' %}
 
 			{% if has_cards %}
 							</div>

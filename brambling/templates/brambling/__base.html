@@ -7,9 +7,9 @@
 {% block body-classes %}dancerfly brambling {{ block.super }}{% endblock %}
 
 {% block stylesheets %}
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 	{% compress css %}
 		<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
-		<link rel="stylesheet" type="text/css" href="{% static "zenaida/css/styles.css" %}" />
 		<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
 	{% endcompress %}
 	{% compress css %}

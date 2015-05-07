@@ -261,6 +261,8 @@ def create_defaults(app_config, **kwargs):
 
 
 class Organization(AbstractDwollaModel):
+    DEMO_SLUG = 'demo'
+
     name = models.CharField(max_length=50)
     slug = models.SlugField(max_length=50,
                             validators=[RegexValidator("^[a-z0-9-]+$")],
@@ -347,6 +349,9 @@ class Organization(AbstractDwollaModel):
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
                                      content_id=self.pk)
+
+    def is_demo(self):
+        return self.slug == Organization.DEMO_SLUG
 
 
 class Event(models.Model):
@@ -479,6 +484,9 @@ class Event(models.Model):
         if self.api_type == Event.LIVE:
             return self.organization.dwolla_live_can_connect()
         return self.organization.dwolla_test_can_connect()
+
+    def is_demo(self):
+        return self.organization.is_demo()
 
     def get_housing_dates(self):
         return [
@@ -659,9 +667,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
-    default_card = models.OneToOneField('CreditCard', blank=True, null=True,
-                                        related_name='default_for',
-                                        on_delete=models.SET_NULL)
 
     # Internal tracking
     modified_directly = models.BooleanField(default=False)
@@ -699,6 +704,12 @@ class CreditCard(models.Model):
         (LIVE, 'Live'),
         (TEST, 'Test'),
     )
+    ICONS = {
+        'Visa': 'cc-visa',
+        'American Express': 'cc-amex',
+        'Discover': 'cc-discover',
+        'MasterCard': 'cc-mastercard',
+    }
     stripe_card_id = models.CharField(max_length=40)
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
     person = models.ForeignKey(Person, related_name='cards', blank=True, null=True)
@@ -710,25 +721,13 @@ class CreditCard(models.Model):
     last4 = models.CharField(max_length=4)
     brand = models.CharField(max_length=16)
 
-    def is_default(self):
-        return self.person.default_card_id == self.id
+    is_saved = models.BooleanField(default=False)
 
     def __unicode__(self):
         return (u"{} " + u"\u2022" * 4 + u"{}").format(self.brand, self.last4)
 
-
-@receiver(signals.pre_delete, sender=CreditCard)
-def delete_stripe_card(sender, instance, **kwargs):
-    from django.conf import settings
-    customer = None
-    if instance.stripe_api == CreditCard.LIVE and instance.person.stripe_customer_id:
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_customer_id)
-    if instance.stripe_api == CreditCard.TEST and instance.person.stripe_test_customer_id:
-        stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-        customer = stripe.Customer.retrieve(instance.person.stripe_test_customer_id)
-    if customer is not None:
-        customer.cards.retrieve(instance.stripe_card_id).delete()
+    def get_icon(self):
+        return self.ICONS.get(self.brand, 'credit-card')
 
 
 class Order(AbstractDwollaModel):
@@ -759,19 +758,6 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
-    # TODO: Add partial_refund status.
-    IN_PROGRESS = 'in_progress'
-    PENDING = 'pending'
-    COMPLETED = 'completed'
-    REFUNDED = 'refunded'
-
-    STATUS_CHOICES = (
-        (IN_PROGRESS, _('In progress')),
-        (PENDING, _('Payment pending')),
-        (COMPLETED, _('Completed')),
-        (REFUNDED, _('Refunded')),
-    )
-
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -794,8 +780,6 @@ class Order(AbstractDwollaModel):
     send_flyers_country = CountryField(verbose_name='country', blank=True)
 
     providing_housing = models.BooleanField(default=False)
-
-    status = models.CharField(max_length=11, choices=STATUS_CHOICES)
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
@@ -868,7 +852,7 @@ class Order(AbstractDwollaModel):
             self.cart_start_time = None
             self.save()
 
-    def mark_cart_paid(self, status, payment):
+    def mark_cart_paid(self, payment):
         bought_items = self.bought_items.filter(
             status__in=(BoughtItem.RESERVED, BoughtItem.UNPAID)
         )
@@ -876,8 +860,7 @@ class Order(AbstractDwollaModel):
         bought_items.update(status=BoughtItem.BOUGHT)
         if self.cart_start_time is not None:
             self.cart_start_time = None
-        self.status = status
-        self.save()
+            self.save()
 
     def cart_expire_time(self):
         if self.cart_start_time is None:
@@ -1018,7 +1001,7 @@ class Transaction(models.Model):
     related_transaction = models.ForeignKey('self', blank=True, null=True, related_name='related_transaction_set')
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
-    card = models.ForeignKey('CreditCard', blank=True, null=True)
+    card = models.ForeignKey('CreditCard', blank=True, null=True, on_delete=models.SET_NULL)
     bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
 
     class Meta:
@@ -1253,7 +1236,7 @@ def create_request_nights(sender, instance, **kwargs):
     annotate each night with specific information. For now, for simplicity,
     we're sticking with the relationship that already exists.
     """
-    date_set = set(instance.get_housing_dates)
+    date_set = set(instance.get_housing_dates())
     seen = set(HousingRequestNight.objects.filter(date__in=date_set).values_list('date', flat=True))
     to_create = date_set - seen
     if to_create:
