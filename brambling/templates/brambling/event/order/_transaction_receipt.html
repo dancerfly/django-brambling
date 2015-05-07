@@ -10,7 +10,7 @@
 					{{ txn.timestamp|date:"F jS, Y" }}
 				</span>
 			{% else %}
-				<i class='fa fa-cart fa-fw'></i> Cart
+				<i class='fa fa-shopping-cart fa-fw'></i> Cart
 			{% endif %}
 		</h3>
 	</div>
@@ -20,7 +20,7 @@
 				{{ item.item_option.name }} ({{ item.item_option.item.name }})
 				<span class='pull-right'>
 					{% with amount=item.item_option.price|format_money:event.currency %}
-					{% if txn.transaction_type == txn.REFUND %}
+					{% if txn and txn.transaction_type == txn.REFUND %}
 						({{ amount }})
 					{% else %}
 						{{ amount }}
@@ -93,6 +93,20 @@
 				</div>
 			</div>
 		</div>
+	{% else %}
+		{% block cart_footer %}
+			<div class='panel-footer'>
+				{% include "brambling/event/order/_payment.html" %}
+
+				<p>A receipt for this purchase will be sent to
+					{% if order.person %}
+					<strong>{{ order.person.get_full_name }} ({{ order.person.email }})</strong>.
+					{% elif order.email %}
+					<strong>{{ order.email }}</strong>.
+					{% endif %}
+				</p>
+			</div>
+		{% endblock %}
 	{% endif %}
 </div>
 {% endtimezone %}

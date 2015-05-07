@@ -895,7 +895,7 @@ class Order(AbstractDwollaModel):
         bought_items_qs = self.bought_items.select_related(
             'item_option__item',
             'discounts__discount'
-        ).prefetch_related('transactions').order_by('added')
+        ).prefetch_related('transactions').order_by('-added')
 
         transactions = SortedDict()
 
