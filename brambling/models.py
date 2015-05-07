@@ -913,8 +913,8 @@ class Order(AbstractDwollaModel):
             txn_dict['items'].append(item)
             multiplier = -1 if txn and txn.transaction_type == Transaction.REFUND else 1
             txn_dict['gross_cost'] += multiplier * item.item_option.price
-            txn_dict['discounts'].extend(item.discounts.all())
-            for discount in txn_dict['discounts']:
+            for discount in item.discounts.all():
+                txn_dict['discounts'].append(discount)
                 txn_dict["total_savings"] -= multiplier * discount.savings()
             txn_dict['net_cost'] = txn_dict['gross_cost'] + txn_dict['total_savings']
 

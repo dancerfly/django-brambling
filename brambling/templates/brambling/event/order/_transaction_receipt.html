@@ -31,10 +31,19 @@
 		{% endfor %}
 		{% for discount in txn_dict.discounts %}
 			<li class='list-group-item'>
-				{{ discount.name }}
+				{{ discount.discount.name }}
+				<span class='text-muted'>
+					{{ discount.discount.code }}
+				</span>
 				<span class='pull-right'>
 					({{ discount.savings|absolute_value|format_money:event.currency }})
 				</span>
+				<br />
+				<small class='text-muted'>
+					Discount for
+					{{ discount.bought_item.item_option.name }}
+					({{ discount.bought_item.item_option.item.name }})
+				</small>
 			</li>
 		{% endfor %}
 	</ul>
@@ -43,8 +52,8 @@
 		<li class='list-group-item'>
 			<strong>Subtotal</strong>
 			<strong class='pull-right'>
-				{% with amount=txn_dict.gross_cost|absolute_value|format_money:event.currency %}
-					{% if txn_dict.gross_cost > 0 %}
+				{% with amount=txn_dict.net_cost|absolute_value|format_money:event.currency %}
+					{% if txn_dict.net_cost > 0 %}
 						{{ amount }}
 					{% else %}
 						({{ amount }})
