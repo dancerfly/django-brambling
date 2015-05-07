@@ -16,7 +16,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
                                     SurveyDataForm, CheckPaymentForm)
-from brambling.mail import send_order_receipt, send_order_alert
+from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing, Event, Transaction)
@@ -743,13 +743,14 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                     self.event.is_frozen = True
                     self.event.save()
                 summary_data = self.order.get_summary_data()
-                send_order_receipt(self.order, summary_data,
-                                   get_current_site(self.request),
-                                   event=self.event,
-                                   secure=self.request.is_secure())
-                send_order_alert(self.order, summary_data,
-                                 get_current_site(self.request),
-                                 secure=self.request.is_secure())
+                email_kwargs = {
+                    'order': self.order,
+                    'summary_data': summary_data,
+                    'site': get_current_site(self.request),
+                    'secure': self.request.is_secure()
+                }
+                OrderReceiptMailer(**email_kwargs).send()
+                OrderAlertMailer(**email_kwargs).send()
 
                 session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
                 if str(self.event.pk) in session_orders:

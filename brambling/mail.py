@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Q
+from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.template.defaultfilters import striptags
 from django.utils.encoding import force_bytes
@@ -9,71 +10,159 @@ from django.utils.http import urlsafe_base64_encode
 from brambling.tokens import token_generators
 
 
-def send_fancy_mail(recipient_list, subject_template, body_template, context,
-                    from_email=None):
-    subject = render_to_string(subject_template, context)
-    # Email subject *must not* contain newlines
-    subject = ''.join(subject.splitlines())
-
-    body = render_to_string(body_template, context)
-
-    send_mail(
-        subject=subject,
-        message=striptags(body),
-        html_message=body,
-        from_email=from_email or settings.DEFAULT_FROM_EMAIL,
-        recipient_list=recipient_list,
-        fail_silently=False,
-    )
+TEMPLATE_DIR = 'brambling/mail'
 
 
-def send_confirmation_email(person, site, secure=False,
-                            generator=token_generators['email_confirm'],
-                            subject_template="brambling/mail/email_confirm_subject.txt",
-                            body_template="brambling/mail/email_confirm_body.html"):
-    if person.email == person.confirmed_email:
-        return
-    context = {
-        'person': person,
-        'pkb64': urlsafe_base64_encode(force_bytes(person.pk)),
-        'email': person.email,
-        'token': generator.make_token(person),
-        'site': site,
-        'protocol': 'https' if secure else 'http',
-    }
+class FancyMailer(object):
+    key = None
+    from_email = settings.DEFAULT_FROM_EMAIL
 
-    send_fancy_mail([person.email], subject_template, body_template, context)
+    def __init__(self, site, secure=False, key=None, from_email=None):
+        if key:
+            self.key = key
+        if from_email:
+            self.from_email = from_email
+        self.site = site
+        self.secure = secure
+
+    def get_template_name(self, kind):
+        if kind == 'subject':
+            ext = 'txt'
+        else:
+            ext = 'html'
+        return "{dir}/{key}/{kind}.{ext}".format(
+            dir=TEMPLATE_DIR,
+            key=self.key,
+            kind=kind,
+            ext=ext,
+        )
+
+    def get_context_data(self):
+        return {
+            'site': self.site,
+            'protocol': 'https' if self.secure else 'http',
+        }
+
+    def render_body(self, context, inline=False):
+        template_name = self.get_template_name('body_inlined')
+        if not inline:
+            template_name = [
+                self.get_template_name('body'),
+                template_name
+            ]
+        return render_to_string(template_name, context)
+
+    def render_subject(self, context):
+        template_name = self.get_template_name('subject')
+        subject = render_to_string(template_name, context)
+        # Email subject *must not* contain newlines
+        return ''.join(subject.splitlines())
+
+    def render_to_response(self):
+        return HttpResponse(self.render_body(self.get_context_data()))
+
+    def send(self, recipient_list=None):
+        if recipient_list is None:
+            recipient_list = self.get_recipients()
+        context = self.get_context_data()
+        subject = self.render_subject(context)
+        body = self.render_body(context, inline=True)
+        send_mail(
+            subject=subject,
+            message=striptags(body),
+            html_message=body,
+            from_email=self.from_email,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+
+    def get_recipients(self):
+        raise NotImplementedError("Subclasses must receive a recipient list "
+                                  "or implement get_recipients")
 
 
-def send_order_receipt(order, summary_data, site, secure=False, event=None,
-                       subject_template="brambling/mail/order_receipt_subject.txt",
-                       body_template="brambling/mail/order_receipt_body.html"):
-    context = {
-        'order': order,
-        'person': order.person,
-        'event': event or order.event,
-        'site': site,
-        'protocol': 'https' if secure else 'http',
-    }
-    context.update(summary_data)
-    email = order.person.email if order.person else order.email
-    send_fancy_mail([email], subject_template, body_template, context)
+class ConfirmationMailer(FancyMailer):
+    key = "email_confirm"
+    generator = token_generators['email_confirm']
+
+    def __init__(self, person, *args, **kwargs):
+        self.person = person
+        super(ConfirmationMailer, self).__init__(*args, **kwargs)
+
+    def get_context_data(self):
+        context = super(ConfirmationMailer, self).get_context_data()
+        context.update({
+            'person': self.person,
+            'pkb64': urlsafe_base64_encode(force_bytes(self.person.pk)),
+            'email': self.person.email,
+            'token': self.generator.make_token(self.person),
+        })
+        return context
 
 
-def send_order_alert(order, summary_data, site, secure=False,
-                     subject_template="brambling/mail/order_alert_subject.txt",
-                     body_template="brambling/mail/order_alert_body.html"):
-    context = {
-        'order': order,
-        'person': order.person,
-        'event': order.event,
-        'site': site,
-        'protocol': 'https' if secure else 'http',
-    }
-    context.update(summary_data)
-    from brambling.models import Person
-    emails = Person.objects.filter(Q(owner_orgs=order.event.organization) |
-                                   Q(editor_orgs=order.event.organization) |
-                                   Q(editor_events=order.event)
-                                   ).values_list('email', flat=True)
-    send_fancy_mail(emails, subject_template, body_template, context)
+class OrderReceiptMailer(FancyMailer):
+    key = "order_receipt"
+
+    def __init__(self, order, summary_data, *args, **kwargs):
+        self.order = order
+        self.summary_data = summary_data
+        super(OrderReceiptMailer, self).__init__(*args, **kwargs)
+
+    def get_context_data(self):
+        context = super(OrderReceiptMailer, self).get_context_data()
+        context.update({
+            'order': self.order,
+            'person': self.order.person,
+            'event': self.order.event,
+        })
+        context.update(self.summary_data)
+        return context
+
+    def get_recipients(self):
+        order = self.order
+        return [order.person.email if order.person else order.email]
+
+
+class OrderAlertMailer(FancyMailer):
+    key = "order_alert"
+
+    def __init__(self, order, summary_data, *args, **kwargs):
+        self.order = order
+        self.summary_data = summary_data
+        super(OrderAlertMailer, self).__init__(*args, **kwargs)
+
+    def get_context_data(self):
+        context = super(OrderAlertMailer, self).get_context_data()
+        context.update({
+            'order': self.order,
+            'person': self.order.person,
+            'event': self.order.event
+        })
+        context.update(self.summary_data)
+        return context
+
+    def get_recipients(self):
+        from brambling.models import Person
+        return Person.objects.filter(
+            Q(owner_orgs=self.order.event.organization) |
+            Q(editor_orgs=self.order.event.organization) |
+            Q(editor_events=self.order.event)
+        ).values_list('email', flat=True).distinct()
+
+
+class InviteMailer(FancyMailer):
+    def __init__(self, invite, content=None, *args, **kwargs):
+        self.invite = invite
+        self.content = content
+        super(InviteMailer, self).__init__(*args, **kwargs)
+
+    def get_context_data(self):
+        context = super(InviteMailer, self).get_context_data()
+        context.update({
+            'invite': self.invite,
+            'content': self.content,
+        })
+        return context
+
+    def get_recipients(self):
+        return [self.invite.email]

@@ -27,7 +27,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
                                        CustomFormForm, CustomFormFieldFormSet,
                                        OrderNotesForm, OrganizationPaymentForm)
-from brambling.mail import send_order_receipt
+from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -919,9 +919,14 @@ class SendReceiptView(View):
                                       code=self.kwargs['code'])
         except Order.DoesNotExist:
             raise Http404
-        send_order_receipt(order, order.get_summary_data(),
-                           get_current_site(request),
-                           event=event, secure=request.is_secure())
+
+        OrderReceiptMailer(
+            order=order,
+            summary_data=order.get_summary_data(),
+            site=get_current_site(request),
+            secure=request.is_secure(),
+        ).send()
+
         messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
         return HttpResponseRedirect(reverse(
             'brambling_event_order_detail',

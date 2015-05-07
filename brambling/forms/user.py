@@ -9,7 +9,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
-from brambling.mail import send_confirmation_email
+from brambling.mail import ConfirmationMailer
 from brambling.models import Person, Home, DanceStyle, Invite
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE
@@ -38,10 +38,11 @@ class BasePersonForm(forms.ModelForm):
 
     def email_confirmation(self):
         if 'email' in self.changed_data:
-            send_confirmation_email(
-                self.instance,
+            ConfirmationMailer(
+                person=self.instance,
                 site=get_current_site(self.request),
-                secure=self.request.is_secure())
+                secure=self.request.is_secure()
+            ).send([self.instance.email])
 
 
 class SignUpForm(BasePersonForm):

@@ -28,7 +28,7 @@ import floppyforms.__future__ as forms
 import pytz
 import stripe
 
-from brambling.mail import send_fancy_mail
+from brambling.mail import InviteMailer
 from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
@@ -1467,23 +1467,14 @@ class Invite(models.Model):
     class Meta:
         unique_together = (('email', 'content_id', 'kind'),)
 
-    def send(self, site, body_template_name='brambling/mail/invite_{kind}_body.html',
-             subject_template_name='brambling/mail/invite_{kind}_subject.txt',
-             content=None, secure=False):
-        context = {
-            'invite': self,
-            'site': site,
-            'protocol': 'https' if secure else 'http',
-        }
-        if content is not None:
-            context['content'] = content
-
-        send_fancy_mail(
-            recipient_list=[self.email],
-            subject_template=subject_template_name.format(kind=self.kind),
-            body_template=body_template_name.format(kind=self.kind),
-            context=context,
-        )
+    def send(self, site, content=None, secure=False):
+        InviteMailer(
+            site=site,
+            secure=secure,
+            invite=self,
+            content=content,
+            key="invite_{}".format(self.kind),
+        ).send()
         self.is_sent = True
         self.save()
 
