@@ -10,22 +10,31 @@ from floppyforms.__future__.models import FORMFIELD_OVERRIDES
 import six
 
 from brambling.forms.organizer import AttendeeFilterSetForm
-from brambling.models import Attendee, Order
+from brambling.models import Attendee, Order, BoughtItem
 
 
 FILTER_FIELD_OVERRIDES = copy.deepcopy(FORMFIELD_OVERRIDES)
 FILTER_FIELD_OVERRIDES[models.BooleanField] = {'form_class': forms.NullBooleanField}
 
 
-class ExtraBooleanFilter(django_filters.BooleanFilter):
+class BoughtItemStatusFilter(django_filters.BooleanFilter):
     field_class = forms.NullBooleanField
+
+    def __init__(self, status, prefix='', *args, **kwargs):
+        self.status = status
+        self.prefix = prefix
+        self.suffix = '__exact' if isinstance(status, basestring) else '__in'
+        super(BoughtItemStatusFilter, self).__init__(status)
 
     def filter(self, qs, value):
         if value is None:
             return qs
+        kwargs = {
+            '{}bought_items__status{}'.format(self.prefix, self.suffix): self.status,
+        }
         if value:
-            return qs.extra(where=['{} > 0'.format(self.name)])
-        return qs.extra(where=['{} = 0'.format(self.name)])
+            return qs.filter(**kwargs)
+        return qs.exclude(**kwargs)
 
 
 class FloppyFilterSet(django_filters.FilterSet):
@@ -66,9 +75,9 @@ class AttendeeFilterSet(django_filters.FilterSet):
     FilterSet for attendees of an event. Requires the event as its first argument.
 
     """
-    order_pending_count = ExtraBooleanFilter(label="Order has active cart")
-    order_purchased_count = ExtraBooleanFilter(label="Order has purchased items")
-    order_refunded_count = ExtraBooleanFilter(label="Order has refunded items")
+    order_has_active_cart = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID], prefix='order__')
+    order_has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT, prefix='order__')
+    order_has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED, prefix='order__')
 
     def __init__(self, event, *args, **kwargs):
         "Limit the Item Option list to items belonging to this event."
@@ -100,19 +109,18 @@ class AttendeeFilterSet(django_filters.FilterSet):
         model = Attendee
         form = AttendeeFilterSetForm
         fields = ['bought_items__item_option', 'housing_status',
-                  'bought_items__discounts__discount', 'order_pending_count',
-                  'order_purchased_count', 'order_refunded_count']
+                  'bought_items__discounts__discount']
         order_by = ['surname', '-surname', 'given_name', '-given_name']
 
 
 class OrderFilterSet(FloppyFilterSet):
-    pending_count = ExtraBooleanFilter(label="Has active cart")
-    purchased_count = ExtraBooleanFilter(label="Has purchased items")
-    refunded_count = ExtraBooleanFilter(label="Has refunded items")
+    has_active_cart = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID])
+    has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT)
+    has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED)
 
     class Meta:
         model = Order
-        fields = ['providing_housing', 'send_flyers', 'pending_count']
+        fields = ['providing_housing', 'send_flyers']
         form = forms.Form
         order_by = ['code', '-code']
 # Workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145
