@@ -949,6 +949,7 @@ class Order(AbstractDwollaModel):
             'gross_cost': gross_cost,
             'total_savings': total_savings,
             'total_refunds': total_refunds,
+            'total_payments': total_payments,
             'net_cost': net_cost,
             'net_balance': net_cost - (total_payments + total_refunds),
             'unconfirmed_check_payments': unconfirmed_check_payments
