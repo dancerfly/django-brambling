@@ -738,11 +738,10 @@ class EventTableView(ModelTableView):
             del qd['delete_report']
             return HttpResponseRedirect("{}?{}".format(request.path, qd.urlencode()))
 
-        if 'save_report' in request.GET and request.GET.get('report_name'):
+        if request.GET.get('save_report'):
             qd = request.GET.copy()
-            name = qd['report_name']
+            name = qd['save_report']
             del qd['save_report']
-            del qd['report_name']
             report = SavedReport.objects.create(
                 report_type=self.report_type,
                 event=self.event,

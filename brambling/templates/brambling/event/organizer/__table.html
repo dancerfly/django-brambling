@@ -59,11 +59,11 @@
                             <li role="presentation" class="divider"></li>
                         {% endif %}
                         <li>
-                            <label for="id_report_name">Save this report</label>
+                            <label for="id_save_report">Save this report</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_report_name" name="report_name" />
+                                <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_save_report" name="save_report" />
                                 <span class="input-group-btn">
-                                    <button class="btn btn-default" type="submit" name='save_report'><i class="fa fa-save"></i><span class='sr-only'>Save</span></button>
+                                    <button class="btn btn-default" type="submit"><i class="fa fa-save"></i><span class='sr-only'>Save</span></button>
                                 </span>
                             </div>
                         </li>
@@ -164,7 +164,7 @@
     {{ block.super }}
     <script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
     <script>
-        $('#id_report_name').on('click', function(e) {
+        $('#id_save_report').on('click', function(e) {
             e.stopPropagation();
         });
     </script>
