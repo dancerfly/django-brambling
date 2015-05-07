@@ -815,7 +815,10 @@ class Order(AbstractDwollaModel):
             bought_items = BoughtItem.objects.filter(
                 order=self,
                 item_option__discount=discount,
-            ).exclude(status=BoughtItem.REFUNDED)
+            ).filter(status__in=(
+                BoughtItem.UNPAID,
+                BoughtItem.RESERVED,
+            )).distinct()
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount,
                                    bought_item=bought_item)
