@@ -5,41 +5,84 @@
 {% block title %}Pricing – {{ block.super }}{% endblock %}
 
 {% block before %}
-	<h1>Pricing</h1>
+	<h1 class='margin-trailer'>Pricing</h1>
 {% endblock before %}
 
 {% block main %}
-	<h1><small>We charge</small> 1.5% <small>of online payments.</small></h1>
+	<div class='text-jumbo'>
+		<p>
+			<span class="dancerfly-brand">Dancerfly</span> is free for free events!
+		</p>
+		<p>
+			For everyone else, we add a fee of <strong>1.5%</strong> to credit and Dwolla transactions.
+		</p>
+	</div>
 
-	<p><em class='text-muted'>After the current beta ends at the end of 2015, this will go up to 2.5%. Organizations that have opened registration by the end of 2015 will be locked in for 1.5% through the end of 2017.</em></p>
+	<p class='text-muted'>This fee is going up to 2.5% in 2016 – but sign up now and you'll be locked in at 1.5% for two years!</p>
 
-	<p>
-		<strong>Payment processors may charge additional fees.</strong>
-		We currently support three payment methods: <a href="http://stripe.com/">Stripe</a> (credit cards), <a href="http://dwolla.com/">Dwolla</a>, and mailed checks.
-		Any combination of these payment methods can be enabled for your event.
-		Processing fees are as follows:
-	</p>
+	<p><a href='mailto:hello@littleweaverweb.com' class='btn btn-xl btn-primary'>Email us to get started!</a></p>
 
-	<h4>Stripe <a href="http://stripe.com/us/pricing/">2.9% + 30¢ on all transactions</a></h4>
-	<h4>Dwolla <a href="http://dwolla.com/fees/">25¢ for transactions over $10</a></h4>
-
-	<p>
-		You must register for an account with Stripe or Dwolla if you choose to use them.
-		Sales will go directly to you with the processing and facilitation fees automatically subtracted.
-		We don't charge fees on check payments.
-	</p>
+	<h3>Payment processors</h3>
 
 	<p>
-		We do not allow events to pass fees on to their attendees.
-		This is because of a strong feeling on our part that the user's
-		experience is more pleasant if there aren't any hidden costs.
+		We currently support three payment methods: <a href="http://stripe.com/">Stripe</a>, <a href="http://dwolla.com/">Dwolla</a>, and mailed checks.
+		Any combination of these payment methods can be enabled for your events.
 	</p>
 
 	<p>
-		If you have any questions, or if you believe you have a compelling reason
-		to request a different rate / payment arrangement for your event, please
-		get in touch with us via email at <a href="hello@littleweaverweb.com">hello@littleweaverweb.com</a>.
+		We've chosen our payment processors carefully to make running an event as seamless as possible.
+		Sales from your event are transferred directly into your Stripe or Dwolla accounts,
+		and our percentage comes directly to us! No hassle, no invoices.
 	</p>
+
+	<table class='table'>
+		<tbody>
+			<tr>
+				<td style="min-width: 125px">
+					<p><strong>Stripe</strong></p>
+					<p><i class='fa fa-fw fa-globe text-muted'></i> <a href="https://stripe.com">stripe.com</a></p>
+					<p><i class='fa fa-fw fa-map-marker text-muted'></i> <a href='https://stripe.com/global'>19 countries</a></p>
+				</td>
+				<td>
+					<p><a href="http://stripe.com/us/pricing/">2.9% + 30¢ on all transactions</a></p>
+					<p>Stripe allows users to pay with credit cards – like PayPal, and at the <a href='https://www.paypal.com/webapps/mpp/paypal-fees'>same fee</a>.</p>
+					<p>Sensitive data is stored on Stripe's <a href='https://stripe.com/help/security'>secure servers</a>,
+					   and attendees don't have to leave our site or create any accounts!</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<p><strong>Dwolla</strong></p>
+					<p><i class='fa fa-fw fa-globe text-muted'></i> <a href="https://dwolla.com">dwolla.com</a></p>
+					<p><i class='fa fa-fw fa-map-marker text-muted'></i> <a href='https://dwolla.com/global/'>US-only</a></p>
+				</td>
+				<td>
+					<p><a href="http://dwolla.com/fees/">25¢ for transactions over $10</a></p>
+					<p>
+						Attendees can pay with their Dwolla balance or directly from their bank account.
+						On the plus side, the fees for Dwolla are dirt cheap – but they <em>do</em> require that attendees
+						create a Dwolla account first.
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<p><strong>Checks</strong></p>
+				</td>
+				<td>
+					<p>No fee! Not even a Dancerfly fee!</p>
+					<p>Checks are mailed directly to you for processing.</p>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<div class='alert alert-danger'>
+		You <strong>must</strong> create an account with Stripe or Dwolla if you choose to use them.
+		<strong>Signup is easy,</strong> but it will take <strong>several days</strong> for your
+		account to be verified so you can accept payments, so don't put it off!
+	</div>
+
 {% endblock main %}
 
 {% block side %}
