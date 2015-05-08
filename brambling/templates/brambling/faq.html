@@ -1,10 +1,14 @@
-{% extends "brambling/layouts/12_xs.html" %}
+{% extends "brambling/layouts/6_6.html" %}
+
+{% load staticfiles %}
 
 {% block title %}FAQ – {{ block.super }}{% endblock %}
 
-{% block main %}
-	<h2>FAQ</h2>
+{% block before %}
+	<h1>FAQ</h1>
+{% endblock before %}
 
+{% block main %}
 	<p><em class='text-muted'>Don't see your question? Use the feedback
 		form in the lower right hand corner of the window to ask us!
 		Or just email us at <a href="mailto:hello@littleweaverweb.com">hello@littleweaverweb.com</a>.</em></p>
@@ -36,4 +40,8 @@
 		We have tried to do our best to choose names that unambiguously represent what the event is actually offering.
 		If you think there's a better phrasing we could use, please let us know!
 	</p>
-{% endblock %}
+{% endblock main %}
+
+{% block side %}
+	<img src="{% static 'brambling/images/WatcherTwoWings.jpeg' %}" class="img-responsive">
+{% endblock side %}

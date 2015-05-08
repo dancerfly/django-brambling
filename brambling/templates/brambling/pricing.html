@@ -1,13 +1,17 @@
-{% extends "brambling/layouts/12_xs.html" %}
+{% extends "brambling/layouts/6_6.html" %}
+
+{% load staticfiles %}
 
 {% block title %}Pricing – {{ block.super }}{% endblock %}
 
-{% block main %}
-	<h2>Pricing</h2>
+{% block before %}
+	<h1>Pricing</h1>
+{% endblock before %}
 
+{% block main %}
 	<h1><small>We charge</small> 1.5% <small>of online payments.</small></h1>
 
-	<p><em class='text-muted'>After the current beta ends, this will go up to 2.5%.</em></p>
+	<p><em class='text-muted'>After the current beta ends at the end of 2015, this will go up to 2.5%. Organizations that have opened registration by the end of 2015 will be locked in for 1.5% through the end of 2017.</em></p>
 
 	<p>
 		<strong>Payment processors may charge additional fees.</strong>
@@ -36,4 +40,8 @@
 		to request a different rate / payment arrangement for your event, please
 		get in touch with us via email at <a href="hello@littleweaverweb.com">hello@littleweaverweb.com</a>.
 	</p>
-{% endblock %}
+{% endblock main %}
+
+{% block side %}
+	<img src="{% static 'brambling/images/BluesWings.jpeg' %}" class="img-responsive">
+{% endblock side %}
