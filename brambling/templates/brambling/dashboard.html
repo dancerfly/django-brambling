@@ -2,7 +2,7 @@
 
 {% load staticfiles hints %}
 
-{% block title %}Your events – {{ block.super }}{% endblock %}
+{% block title %}{% if request.user.is_authenticated %}Your events – {% endif %}{{ block.super }}{% endblock %}
 
 {% block main %}
 
