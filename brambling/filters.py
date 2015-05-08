@@ -75,9 +75,9 @@ class AttendeeFilterSet(django_filters.FilterSet):
     FilterSet for attendees of an event. Requires the event as its first argument.
 
     """
-    order_has_active_cart = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID], prefix='order__')
-    order_has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT, prefix='order__')
-    order_has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED, prefix='order__')
+    has_cart_items = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID])
+    has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT)
+    has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED)
 
     def __init__(self, event, *args, **kwargs):
         "Limit the Item Option list to items belonging to this event."
@@ -114,7 +114,7 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
 
 class OrderFilterSet(FloppyFilterSet):
-    has_active_cart = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID])
+    has_cart_items = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID])
     has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT)
     has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED)
 

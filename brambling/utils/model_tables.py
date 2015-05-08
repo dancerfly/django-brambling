@@ -382,6 +382,8 @@ class AttendeeTable(CustomDataTable):
     fieldsets = (
         ('Identification',
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
+        ('Status',
+         ('cart_items', 'purchased_items', 'refunded_items')),
         ('Contact',
          ('email', 'phone')),
         ('Housing',
@@ -389,8 +391,7 @@ class AttendeeTable(CustomDataTable):
           'environment_avoid', 'environment_cause', 'person_prefer',
           'person_avoid', 'other_needs')),
         ('Order',
-         ('order_code', 'order_placed_by', 'order_balance',
-          'order_pending_count', 'order_purchased_count', 'order_refunded_count')),
+         ('order_code', 'order_placed_by', 'order_balance')),
         ('Miscellaneous',
          ('liability_waiver', 'photo_consent')),
     )
@@ -409,9 +410,6 @@ class AttendeeTable(CustomDataTable):
         'order_placed_by': 'Order Placed By',
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
-        'order_pending_count': 'Order pending items',
-        'order_purchased_count': 'Order current items',
-        'order_refunded_count': 'Order refunded items'
     }
     search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
                      'email', 'order__email', 'order__person__email')
@@ -456,19 +454,19 @@ class AttendeeTable(CustomDataTable):
                     order_balance=Sum('order__transactions__amount')
                 )
         queryset = queryset.extra(select={
-            'order_pending_count': """
+            'cart_items': """
                 SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.order_id = brambling_order.id AND
+                brambling_boughtitem.attendee_id = brambling_attendee.id AND
                 brambling_boughtitem.status IN ('reserved', 'unpaid')
             """,
-            'order_purchased_count': """
+            'purchased_items': """
                 SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.order_id = brambling_order.id AND
+                brambling_boughtitem.attendee_id = brambling_attendee.id AND
                 brambling_boughtitem.status = 'bought'
             """,
-            'order_refunded_count': """
+            'refunded_items': """
                 SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.order_id = brambling_order.id AND
+                brambling_boughtitem.attendee_id = brambling_attendee.id AND
                 brambling_boughtitem.status = 'refunded'
             """,
         })
@@ -496,8 +494,8 @@ class AttendeeTable(CustomDataTable):
 class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
-         ('code', 'person', 'balance', 'pending_count',
-          'purchased_count', 'refunded_count')),
+         ('code', 'person', 'balance', 'cart_items',
+          'purchased_items', 'refunded_items')),
     )
     survey_fieldsets = (
         ('Survey',
@@ -616,17 +614,17 @@ class OrderTable(CustomDataTable):
                     balance=Sum('transactions__amount'),
                 )
         queryset = queryset.extra(select={
-            'pending_count': """
+            'cart_items': """
                 SELECT COUNT(*) FROM brambling_boughtitem WHERE
                 brambling_boughtitem.order_id = brambling_order.id AND
                 brambling_boughtitem.status IN ('reserved', 'unpaid')
             """,
-            'purchased_count': """
+            'purchased_items': """
                 SELECT COUNT(*) FROM brambling_boughtitem WHERE
                 brambling_boughtitem.order_id = brambling_order.id AND
                 brambling_boughtitem.status = 'bought'
             """,
-            'refunded_count': """
+            'refunded_items': """
                 SELECT COUNT(*) FROM brambling_boughtitem WHERE
                 brambling_boughtitem.order_id = brambling_order.id AND
                 brambling_boughtitem.status = 'refunded'
