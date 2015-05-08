@@ -2,36 +2,41 @@ body.marketing-page
     padding-top: 40px
 
 .marketing
-    padding: $font-size-base * 5 $font-size-base * 5
     font-size: $font-size-base * 1.25
-
-    .col-sm-4
-        padding: 0 3 * $font-size-base
+    padding: $line-height-computed 0
 
     .btn-xl
         font-size: 1.5 * $font-size-base
-        padding: $font-size-base 2 * $font-size-base
+        padding: $font-size-base 2*$font-size-base
 
-    @media (max-width: $screen-sm-max)
-        padding: $font-size-base * 3 $font-size-base * 3
-
+    @media (max-width: $screen-xs-max)
         .col-sm-4
-            padding: 0
             text-align: center
+
+    @media (min-width: $screen-sm-min)
+        padding: 2*$line-height-computed 2*$line-height-computed
+
+    @media (min-width: $screen-md-min)
+        padding: 3*$line-height-computed 3*$line-height-computed
+        .col-sm-4
+            padding: 0 2*$line-height-computed
 
 .marketing-grey
     background: #eee
 
 .marketing-brand
-    background: $brand-primary
+    background: $yellow-darker
     color: #fff
 
 .marketing-brand-link
     color: lighten($yellow-light, 30%)
 
-.marketing-brand-dark
-    background: saturate(darken($brand-primary, 10%), 30%)
-    color: #fff
+.marketing-brand-btn, .marketing-brand-btn:hover
+    border-color: darken($yellow-darker,10%)
 
 .marketing-icon-header .fa
     vertical-align: middle
+
+.marketing-dancers-img
+    @media(min-width: $screen-sm-min)
+        margin: -20px auto
