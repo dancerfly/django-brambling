@@ -453,23 +453,30 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.annotate(
                     order_balance=Sum('order__transactions__amount')
                 )
-        queryset = queryset.extra(select={
-            'cart_items': """
-                SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.attendee_id = brambling_attendee.id AND
-                brambling_boughtitem.status IN ('reserved', 'unpaid')
-            """,
-            'purchased_items': """
-                SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.attendee_id = brambling_attendee.id AND
-                brambling_boughtitem.status = 'bought'
-            """,
-            'refunded_items': """
-                SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.attendee_id = brambling_attendee.id AND
-                brambling_boughtitem.status = 'refunded'
-            """,
-        })
+            elif field == 'cart_items':
+                queryset = queryset.extra(select={
+                    'cart_items': """
+                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                        brambling_boughtitem.attendee_id = brambling_attendee.id AND
+                        brambling_boughtitem.status IN ('reserved', 'unpaid')
+                    """,
+                })
+            elif field == 'purchased_items':
+                queryset = queryset.extra(select={
+                    'purchased_items': """
+                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                        brambling_boughtitem.attendee_id = brambling_attendee.id AND
+                        brambling_boughtitem.status = 'bought'
+                    """,
+                })
+            elif field == 'refunded_items':
+                queryset = queryset.extra(select={
+                    'refunded_items': """
+                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                        brambling_boughtitem.attendee_id = brambling_attendee.id AND
+                        brambling_boughtitem.status = 'refunded'
+                    """,
+                })
         return queryset, use_distinct
 
     # Methods to be used as fields
@@ -613,23 +620,30 @@ class OrderTable(CustomDataTable):
                 queryset = queryset.annotate(
                     balance=Sum('transactions__amount'),
                 )
-        queryset = queryset.extra(select={
-            'cart_items': """
-                SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.order_id = brambling_order.id AND
-                brambling_boughtitem.status IN ('reserved', 'unpaid')
-            """,
-            'purchased_items': """
-                SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.order_id = brambling_order.id AND
-                brambling_boughtitem.status = 'bought'
-            """,
-            'refunded_items': """
-                SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                brambling_boughtitem.order_id = brambling_order.id AND
-                brambling_boughtitem.status = 'refunded'
-            """,
-        })
+            elif field == 'cart_items':
+                queryset = queryset.extra(select={
+                    'cart_items': """
+                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                        brambling_boughtitem.order_id = brambling_order.id AND
+                        brambling_boughtitem.status IN ('reserved', 'unpaid')
+                    """,
+                })
+            elif field == 'purchased_items':
+                queryset = queryset.extra(select={
+                    'purchased_items': """
+                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                        brambling_boughtitem.order_id = brambling_order.id AND
+                        brambling_boughtitem.status = 'bought'
+                    """,
+                })
+            elif field == 'refunded_items':
+                queryset = queryset.extra(select={
+                    'refunded_items': """
+                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
+                        brambling_boughtitem.order_id = brambling_order.id AND
+                        brambling_boughtitem.status = 'refunded'
+                    """,
+                })
         return queryset, use_distinct
 
     def send_flyers_full_address(self, obj):
