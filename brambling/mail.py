@@ -43,9 +43,9 @@ class FancyMailer(object):
             'protocol': 'https' if self.secure else 'http',
         }
 
-    def render_body(self, context, inline=False):
+    def render_body(self, context, inlined=False):
         template_name = self.get_template_name('body_inlined')
-        if not inline:
+        if not inlined:
             template_name = [
                 self.get_template_name('body'),
                 template_name
@@ -58,15 +58,15 @@ class FancyMailer(object):
         # Email subject *must not* contain newlines
         return ''.join(subject.splitlines())
 
-    def render_to_response(self):
-        return HttpResponse(self.render_body(self.get_context_data()))
+    def render_to_response(self, inlined=False):
+        return HttpResponse(self.render_body(self.get_context_data(), inlined))
 
     def send(self, recipient_list=None):
         if recipient_list is None:
             recipient_list = self.get_recipients()
         context = self.get_context_data()
         subject = self.render_subject(context)
-        body = self.render_body(context, inline=True)
+        body = self.render_body(context, inlined=True)
         send_mail(
             subject=subject,
             message=striptags(body),

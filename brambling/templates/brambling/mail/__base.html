@@ -698,8 +698,15 @@
       
     </style>
     <style type="text/css">
-      {% block styles %}
-      {% endblock %}
+      .header {
+        height: 10px;
+        background: #de8e0f;
+        margin-bottom: 10px;
+      }
+
+      .muted {
+        color: #888;
+      }
     </style>
   </head>
   <body>
@@ -709,6 +716,28 @@
           <center>
             {% block content %}
             {% endblock %}
+
+            <table class="container">
+              <tr>
+                <td>
+                  <table class="row">
+                    <tr>
+                      <td class="wrapper last">
+                        <table class="twelve columns">
+                          <tr>
+                            <td class="center">
+                              <center>
+                                <p class='muted'><a href='https://dancerfly.com'>Dancerfly</a> is a project of <a href="http://littleweaverweb.com">Little Weaver Web Collective, LLC</a></p>
+                              </center>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
           </center>
         </td>
       </tr>

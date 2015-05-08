@@ -20,7 +20,7 @@ class PreviewView(View):
         if not request.user.is_superuser:
             raise Http404
         mailer = self.mailer(**self.get_mailer_kwargs())
-        return mailer.render_to_response()
+        return mailer.render_to_response(inlined=request.GET.get('inlined'))
 
 
 class ConfirmationPreviewView(PreviewView):
