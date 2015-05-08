@@ -1,1 +1,11 @@
-{% include "brambling/mail/invite_editor_body.html" %}
+<p>You've been invited to help edit {{ content.name }}!</p>
+
+<p>Click on the following link to accept the invitation and get cracking!</p>
+
+{% url "brambling_invite_accept" code=invite.code as url %}
+
+<p><a href="{{ protocol }}://{{ site.domain }}{{ url }}">{{ protocol }}://{{ site.domain }}{{ url }}</a></p>
+
+<p>Happy editing!</p>
+
+<p>The {{ site.name }} Team</p>

@@ -1478,6 +1478,17 @@ class Invite(models.Model):
         self.is_sent = True
         self.save()
 
+    def get_content(self):
+        if self.kind == Invite.EVENT_EDITOR:
+            model = Event
+        elif self.kind == Invite.HOME:
+            model = Home
+        elif self.kind == Invite.ORGANIZATION_EDITOR:
+            model = Organization
+        else:
+            raise ValueError('Unknown kind.')
+        return model.objects.get(pk=self.content_id)
+
 
 class CustomForm(models.Model):
     ATTENDEE = 'attendee'
