@@ -2,7 +2,7 @@
 
 {% load staticfiles hints %}
 
-{% block title %}Your events – {{ block.super }}{% endblock %}
+{% block title %}{% if request.user.is_authenticated %}Your events – {% endif %}{{ block.super }}{% endblock %}
 
 {% block main %}
 
@@ -127,6 +127,7 @@
 			</div>
 		</div>
 	{% endif %}
+	<img src="{% static 'brambling/images/watcher-cropped.jpg' %}" width="202" class="img-responsive hidden-xs hidden-sm">
 {% endblock %}
 
 {% block javascripts %}

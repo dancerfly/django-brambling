@@ -1,10 +1,14 @@
-{% extends "brambling/layouts/12_xs.html" %}
+{% extends "brambling/layouts/6_6.html" %}
+
+{% load staticfiles %}
 
 {% block title %}FAQ – {{ block.super }}{% endblock %}
 
-{% block main %}
-	<h2>FAQ</h2>
+{% block before %}
+	<h1>FAQ</h1>
+{% endblock before %}
 
+{% block main %}
 	<p><em class='text-muted'>Don't see your question? Use the feedback
 		form in the lower right hand corner of the window to ask us!
 		Or just email us at <a href="mailto:hello@littleweaverweb.com">hello@littleweaverweb.com</a>.</em></p>
@@ -12,8 +16,8 @@
 	<h3>Why doesn't Dancerfly use PayPal?</h3>
 
 	<p>
-		We use <a href='http://stripe.com'>Stripe</a> for processing credit card payments
-		rather than PayPal. This is because fee is the same (<a href="http://stripe.com/us/pricing">2.9% + 30¢</a>)
+		It's true! We use <a href='http://stripe.com'>Stripe</a> for processing credit card payments
+		rather than PayPal. The fee is the same (<a href="http://stripe.com/us/pricing">2.9% + 30¢</a>)
 		and Stripe has a couple distinct advantages.
 	</p>
 
@@ -26,7 +30,13 @@
 	<p>
 		Second, Stripe has a well-documented, well-supported, clean API – something
 		PayPal sorely lacks. This means that we can spend less time debugging
-		payment and more time developing amazing features!
+		payment and more time developing amazing features.
+	</p>
+
+	<p>
+		Third, Stripe lets us easily subtract our percentage from sales,
+		instead of requiring us to invoice you later – which saves everyone
+		time and hassle.
 	</p>
 
 	<h3>Why is my dance style called X instead&nbsp;of&nbsp;Y?</h3>
@@ -36,4 +46,17 @@
 		We have tried to do our best to choose names that unambiguously represent what the event is actually offering.
 		If you think there's a better phrasing we could use, please let us know!
 	</p>
-{% endblock %}
+
+
+	<h3>Can I pass fees on to attendees?</h3>
+	<p>
+		No, we don't allow events to pass fees on to their attendees.
+		We feel strongly that an accurate sticker price contributes to
+		a more pleasant experience for the user, and thus a better impression
+		of your event.
+	</p>
+{% endblock main %}
+
+{% block side %}
+	<img src="{% static 'brambling/images/ContraWings.jpeg' %}" class="img-responsive">
+{% endblock side %}

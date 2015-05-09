@@ -1,4 +1,4 @@
-<div class="stepbar stepbar-{{ workflow.active_steps|length }}-up{% if event.banner_image and not no_hug %} stepbar-hug-masthead{% endif %}">
+<div class="stepbar stepbar-{{ workflow.active_steps|length }}-up{% if not no_hug %} stepbar-hug-masthead{% endif %}">
 	{% for step in workflow.active_steps %}
 		{% if code_in_url %}
 			{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug code=order.code as step_url %}

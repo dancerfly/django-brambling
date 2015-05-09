@@ -24,7 +24,7 @@ $cover-image-padding-vertical: $line-height-computed
     +text-light($brand-primary)
 
 .masthead-light
-    background: #E5E5E5 linear-gradient(bottom, #D5D5D5 0%, #E5E5E5 10%)
+    background: #E5E5E5 linear-gradient(#E5E5E5 90%, #D5D5D5 100%)
 
 // SUBCOMPONENTS
 
@@ -37,6 +37,7 @@ $cover-image-padding-vertical: $line-height-computed
     padding: $cover-image-padding-vertical $grid-gutter-width/2
     margin-bottom: -$masthead-padding-vertical
     margin-top: 0
+    background-image: url("/static/brambling/images/banner.jpg")
     background-size: cover
     background-position: center
     background-repeat: no-repeat
@@ -56,7 +57,7 @@ $cover-image-padding-vertical: $line-height-computed
         left: 0
         right: 0
         height: 150px
-        background: linear-gradient(bottom, rgba(0,0,0,.5), rgba(0,0,0,0))
+        background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.5))
 
 .masthead-link
     font-weight: bold
