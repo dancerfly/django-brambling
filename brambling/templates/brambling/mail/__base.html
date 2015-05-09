@@ -1,4 +1,3 @@
-{# Based on Zurb's Ink – http://zurb.com/ink #}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -709,7 +708,7 @@
       }
     </style>
   </head>
-  <body>
+  <body>{% load staticfiles %}
     <table class="body">
       <tr>
         <td class="center" align="center" valign="top">
@@ -738,6 +737,14 @@
                       </td>
                     </tr>
                   </table>
+                </td>
+              </tr>
+            </table>
+
+            <table class='row'>
+              <tr>
+                <td class="wrapper last">
+                  <img src="{{ protocol }}://{{ site.domain }}{% static 'brambling/images/all-dancers.gif' %}" />
                 </td>
               </tr>
             </table>
