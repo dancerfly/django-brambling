@@ -379,7 +379,10 @@ class AddToOrderView(OrderMixin, View):
 class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
     def post(self, request, *args, **kwargs):
-        bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+        try:
+            bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+        except BoughtItem.DoesNotExist:
+            return JsonResponse({'success': True})
 
         if ((request.user.is_authenticated() and not bought_item.order.person == request.user) or
                 (not request.user.is_authenticated() and bought_item.order.person is not None)):
