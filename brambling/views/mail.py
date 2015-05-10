@@ -1,5 +1,7 @@
 from django.contrib.sites.shortcuts import get_current_site
-from django.http import Http404
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.http import Http404, HttpResponse
 from django.views.generic import View
 
 from brambling.mail import (ConfirmationMailer, OrderReceiptMailer,
@@ -20,6 +22,14 @@ class PreviewView(View):
         if not request.user.is_superuser:
             raise Http404
         mailer = self.mailer(**self.get_mailer_kwargs())
+        if request.GET.get('email'):
+            try:
+                validate_email(request.GET['email'])
+            except ValidationError:
+                return HttpResponse('Invalid email address')
+            else:
+                mailer.send([request.GET['email']])
+                return HttpResponse('Email sent to ' + request.GET['email'])
         return mailer.render_to_response(inlined=request.GET.get('inlined'))
 
 
