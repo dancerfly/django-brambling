@@ -66,8 +66,17 @@
 											</tbody>
 										</table>
 
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+
+
+							<table class="twelve columns">
+								<tr>
+									<td class='panel'>
 										{% if unconfirmed_check_payments %}
-											<p>Note: Your passes are reserved, but the organizer has not yet received your payment by mail.</p>
+											<p><strong>Note:</strong> Your passes are reserved, but the organizer has not yet received your payment by mail.</p>
 											{% include "brambling/event/order/_check_payment_info.html" %}
 											<p>If you believe this is in error, please contact the event organizer directly.</p>
 										{% endif %}
@@ -75,7 +84,6 @@
 									<td class='expander'></td>
 								</tr>
 							</table>
-
 						</td>
 					</tr>
 				</table>
