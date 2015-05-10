@@ -1,0 +1,36 @@
+{% autoescape off %}Thanks for registering for {{ event.name }}!
+
+Here's a short summary of your registration:
+
+
+Order {{ order.code }}
+
+Net payments{% load zenaida %}
+{{ net_payments|format_money:event.currency }}
+
+Attendees
+{% for attendee in attendees %}
+{{ attendee.attendee.get_full_name }}
+{% endfor %}
+
+Items
+{% for attendee in attendees %}{% for item in attendee.bought_items %}{% with item=item.bought_item %}{% if item.status == item.BOUGHT %}
+{{ item.item_option.item.name }} ({{ item.item_option.name }})
+{% endif %}{% endwith %}{% endfor %}{% endfor %}
+
+{% if unconfirmed_check_payments %}
+Note: Your passes are reserved, but the organizer has not yet received your payment by mail.
+{% include "brambling/event/order/_check_payment_info.html" %}
+If you believe this is in error, please contact the event organizer directly.
+{% endif %}
+
+{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug as url %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url%}{% endif %}
+View and edit your order at the following URL:
+{{ protocol }}://{{ site.domain }}{{ url }}
+
+Have a fantastic time at {{ event.name }}! Remember, it starts on {{ event.start_date|date:"F jS, Y" }}.
+
+The Dancerfly Team{% endautoescape %}
+
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)

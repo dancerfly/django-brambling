@@ -30,7 +30,8 @@ class PreviewView(View):
             else:
                 mailer.send([request.GET['email']])
                 return HttpResponse('Email sent to ' + request.GET['email'])
-        return mailer.render_to_response(inlined=request.GET.get('inlined'))
+        return mailer.render_to_response(inlined=request.GET.get('inlined'),
+                                         plaintext=request.GET.get('plaintext'))
 
 
 class ConfirmationPreviewView(PreviewView):

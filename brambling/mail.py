@@ -25,11 +25,12 @@ class FancyMailer(object):
         self.site = site
         self.secure = secure
 
-    def get_template_name(self, kind):
-        if kind == 'subject':
-            ext = 'txt'
-        else:
-            ext = 'html'
+    def get_template_name(self, kind, ext=None):
+        if ext is None:
+            if kind == 'subject':
+                ext = 'txt'
+            else:
+                ext = 'html'
         return "{dir}/{key}/{kind}.{ext}".format(
             dir=TEMPLATE_DIR,
             key=self.key,
@@ -43,13 +44,13 @@ class FancyMailer(object):
             'protocol': 'https' if self.secure else 'http',
         }
 
-    def render_body(self, context, inlined=False):
-        template_name = self.get_template_name('body_inlined')
-        if not inlined:
-            template_name = [
-                self.get_template_name('body'),
-                template_name
-            ]
+    def render_body(self, context, inlined=False, plaintext=False):
+        if inlined:
+            template_name = self.get_template_name('body_inlined')
+        elif plaintext:
+            template_name = self.get_template_name('body_plaintext', 'txt')
+        else:
+            template_name = self.get_template_name('body')
         return render_to_string(template_name, context)
 
     def render_subject(self, context):
@@ -58,19 +59,18 @@ class FancyMailer(object):
         # Email subject *must not* contain newlines
         return ''.join(subject.splitlines())
 
-    def render_to_response(self, inlined=False):
-        return HttpResponse(self.render_body(self.get_context_data(), inlined))
+    def render_to_response(self, inlined=False, plaintext=False):
+        return HttpResponse(self.render_body(self.get_context_data(), inlined, plaintext))
 
     def send(self, recipient_list=None):
         if recipient_list is None:
             recipient_list = self.get_recipients()
         context = self.get_context_data()
         subject = self.render_subject(context)
-        body = self.render_body(context, inlined=True)
         send_mail(
             subject=subject,
-            message=striptags(body),
-            html_message=body,
+            message=self.render_body(context, plaintext=True),
+            html_message=self.render_body(context, inlined=True),
             from_email=self.from_email,
             recipient_list=recipient_list,
             fail_silently=False,
