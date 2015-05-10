@@ -1,0 +1,120 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+	{% load zenaida %}
+	{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
+	<table class='container'>
+		<tr>
+			<td>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p class='lede'>
+											You've gotten a new order! Here's the summary.
+										</p>
+
+										<h4>Order {{ order.code }}</h4>
+
+										<br />
+
+										<table style="width:100%;">
+											<tbody>
+												<tr>
+													<th>Net payments</th>
+													<th>Attendees</th>
+													<th>Items</th>
+												</tr>
+												<tr>
+													<th>{{ net_payments|format_money:event.currency }}</th>
+													<td>
+														<p>
+															{% for attendee in attendees %}
+																{{ attendee.attendee.get_full_name }}
+																{% if not forloop.last %}<br />{% endif %}
+															{% endfor %}
+														</p>
+													</td>
+													<td>
+														<p>
+															{% for attendee in attendees %}
+																{% for item in attendee.bought_items %}
+																	{% with item=item.bought_item %}
+																		{% if item.status == item.BOUGHT %}
+																			{{ item.item_option.item.name }} ({{ item.item_option.name }})
+																			{% if not forloop.last %}<br />{% endif %}
+																		{% endif %}
+																	{% endwith %}
+																{% endfor %}
+																{% if not forloop.last %}<br />{% endif %}
+															{% endfor %}
+														</p>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+							<table class='six columns'>
+								<tr>
+									<td>
+										<table class='button success radius'>
+											<tr>
+												<td>
+													<a href="{{ protocol }}://{{ site.domain }}{{ url }}">
+														View more details on Dancerfly
+													</a>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p>You can also copy-paste the link directly into your browser's URL bar:</p>
+
+										<p>{{ protocol }}://{{ site.domain }}{{ url }}</p>
+
+										<p>Congrats!</p>
+
+										<p class='lede'>The Dancerfly Team</p>
+
+										{% if unconfirmed_check_payments %}
+											<p>P.S. This order has outstanding check payments, so keep an eye on your mail!</p>
+										{% endif %}
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+			</td>
+		</tr>
+	</table>
+{% endblock %}
