@@ -87,7 +87,7 @@ class AttendeeStep(OrderStep):
             if len(attendees) == 1:
                 error = '{} has too many passes (more than one).'.format(attendees[0])
             else:
-                error = 'The following attendees have too many passes (more than one): ' + ", ".join(attendees)
+                error = 'The following attendees have too many passes (more than one): ' + ", ".join((a.get_full_name() for a in attendees))
             errors.append(error)
 
         # All attendees must have basic data filled out.
