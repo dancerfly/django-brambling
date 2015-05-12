@@ -987,6 +987,17 @@ class Transaction(models.Model):
         (REFUND, _('Refunded purchase')),
         (OTHER, _('Other')),
     )
+
+    REMOTE_URLS = {
+        (STRIPE, PURCHASE, LIVE): 'https://dashboard.stripe.com/payments/{remote_id}',
+        (STRIPE, PURCHASE, TEST): 'https://dashboard.stripe.com/test/payments/{remote_id}',
+        (STRIPE, REFUND, LIVE): 'https://dashboard.stripe.com/payments/{related_remote_id}',
+        (STRIPE, REFUND, TEST): 'https://dashboard.stripe.com/test/payments/{related_remote_id}',
+        (DWOLLA, PURCHASE, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
+        (DWOLLA, PURCHASE, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
+        (DWOLLA, REFUND, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
+        (DWOLLA, REFUND, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
+    }
     amount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     application_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     processing_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -1006,6 +1017,15 @@ class Transaction(models.Model):
 
     class Meta:
         get_latest_by = 'timestamp'
+
+    def get_remote_url(self):
+        key = (self.method, self.transaction_type, self.api_type)
+        if self.remote_id and key in Transaction.REMOTE_URLS:
+            return Transaction.REMOTE_URLS[key].format(
+                remote_id=self.remote_id,
+                related_remote_id=self.related_transaction.remote_id if self.related_transaction else ''
+            )
+        return None
 
     @classmethod
     def from_stripe_charge(cls, charge, **kwargs):
