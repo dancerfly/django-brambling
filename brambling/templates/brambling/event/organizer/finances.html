@@ -38,7 +38,7 @@
                         <td>{{ transaction.processing_fee|format_money:event.currency }}</td>
                         <td>
                             {% if transaction.get_remote_url %}
-                                <a class='btn btn-primary' href="{{ transaction.get_remote_url }}" target='_blank'>
+                                <a class='btn btn-default' href="{{ transaction.get_remote_url }}" target='_blank'>
                                     View on {{ transaction.get_method_display }}
                                     <i class='fa fa-fw fa-external-link'></i>
                                 </a>
