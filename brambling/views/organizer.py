@@ -81,15 +81,7 @@ class OrganizationPaymentView(OrganizationUpdateView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
 
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
-                self.object, self.request, LIVE)
-
-        if self.object.stripe_live_can_connect():
-            context['stripe_oauth_url'] = stripe_organization_oauth_url(
-                self.object, self.request, LIVE)
-
-        if self.request.user.is_superuser:
+        if self.object.is_demo():
             if self.object.dwolla_test_can_connect():
                 context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
                     self.object, self.request, TEST)
@@ -97,6 +89,14 @@ class OrganizationPaymentView(OrganizationUpdateView):
             if self.object.stripe_test_can_connect():
                 context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
                     self.object, self.request, TEST)
+        else:
+            if self.object.dwolla_live_can_connect():
+                context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
+                    self.object, self.request, LIVE)
+
+            if self.object.stripe_live_can_connect():
+                context['stripe_oauth_url'] = stripe_organization_oauth_url(
+                    self.object, self.request, LIVE)
 
         return context
 
@@ -949,7 +949,7 @@ class FinancesView(ListView):
         return super(FinancesView, self).get_queryset().filter(
             event=self.event,
             api_type=self.event.api_type,
-        ).select_related('created_by', 'order').order_by('-timestamp')
+        ).select_related('created_by', 'order', 'related_transaction').order_by('-timestamp')
 
     def get_context_data(self, **kwargs):
         context = super(FinancesView, self).get_context_data(**kwargs)
