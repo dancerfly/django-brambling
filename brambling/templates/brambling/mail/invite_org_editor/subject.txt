@@ -1,1 +1,1 @@
-{% include "brambling/mail/invite_editor_subject.txt" %}
+{{ invite.user.get_full_name }} has invited you to help manage {{ content.name }}
