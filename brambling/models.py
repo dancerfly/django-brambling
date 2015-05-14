@@ -1330,10 +1330,6 @@ class Home(models.Model):
                                                 null=True,
                                                 verbose_name="My/Our home is (a/an)")
 
-    def get_invites(self):
-        return Invite.objects.filter(kind=Invite.HOME,
-                                     content_id=self.pk)
-
 
 class EventHousing(models.Model):
     event = models.ForeignKey(Event)
@@ -1423,11 +1419,9 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
-    HOME = 'home'
     EVENT_EDITOR = 'editor'
     ORGANIZATION_EDITOR = 'org_editor'
     KIND_CHOICES = (
-        (HOME, _("Home")),
         (EVENT_EDITOR, _("Event Editor")),
         (ORGANIZATION_EDITOR, _("Organization Editor")),
     )

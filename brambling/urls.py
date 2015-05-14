@@ -71,7 +71,6 @@ from brambling.views.payment import (
 from brambling.views.user import (
     PersonView,
     HomeView,
-    RemoveResidentView,
     SignUpView,
     EmailConfirmView,
     send_confirmation_email_view,
@@ -308,9 +307,6 @@ urlpatterns = patterns('',
     url(r'^home/$',
         HomeView.as_view(),
         name="brambling_home"),
-    url(r'^home/remove_resident/(?P<pk>\d+)/$',
-        RemoveResidentView.as_view(),
-        name='brambling_home_remove_resident'),
 
     url(r'^daguerre/', include('daguerre.urls')),
     url(r'^404/$', 'django.views.defaults.page_not_found'),

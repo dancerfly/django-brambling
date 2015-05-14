@@ -10,9 +10,7 @@
 	{% if invite %}
 		<h2>
 			You've been invited
-			{% if invite.kind == invite.HOME %}
-				to edit a home!
-			{% elif invite.kind == invite.EVENT_EDITOR %}
+			{% if invite.kind == invite.EVENT_EDITOR %}
 				to edit an event!
 			{% else %}
 				to edit an organization!
