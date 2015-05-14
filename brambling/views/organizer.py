@@ -865,6 +865,7 @@ class OrderDetailView(DetailView):
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'active': active,
+            'attendees': self.order.attendees.all(),
         })
         context.update(self.order.get_summary_data())
         return context
