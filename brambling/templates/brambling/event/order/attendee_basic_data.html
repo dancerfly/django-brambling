@@ -30,8 +30,12 @@
 		</div>
 		<div class="col-md-8">
 			<h3 class="margin-leader-0">
-				<span class="text-muted">Attendee information for</span><br>
-				{{ attendee.get_full_name }}
+				{% if attendee.pk %}
+					<span class="text-muted">Attendee information for</span><br>
+					{{ attendee.get_full_name }}
+				{% else %}
+					New Attendee
+				{% endif %}
 			</h3>
 
 			<form action="{{ request.path }}" method="post" novalidate>
