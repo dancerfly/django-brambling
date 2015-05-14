@@ -6,17 +6,15 @@ Here's a short summary of your registration:
 Order {{ order.code }}
 
 Net payments{% load zenaida %}
-{{ net_payments|format_money:event.currency }}
+{{ total_payments|format_money:event.currency }}
 
 Attendees
-{% for attendee in attendees %}
-{{ attendee.attendee.get_full_name }}
-{% endfor %}
+{% for attendee in order.attendees.all %}
+{{ attendee.get_full_name }}{% endfor %}
 
 Items
-{% for attendee in attendees %}{% for item in attendee.bought_items %}{% with item=item.bought_item %}{% if item.status == item.BOUGHT %}
-{{ item.item_option.item.name }} ({{ item.item_option.name }})
-{% endif %}{% endwith %}{% endfor %}{% endfor %}
+{% for txn, txn_dict in transactions.iteritems %}{% for item in txn_dict.items %}{% if item.status == item.BOUGHT %}
+{{ item.item_option.item.name }} ({{ item.item_option.name }}){% endif %}{% endfor %}{% endfor %}
 
 {% if unconfirmed_check_payments %}
 Note: Your passes are reserved, but the organizer has not yet received your payment by mail.
