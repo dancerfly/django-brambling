@@ -114,7 +114,13 @@ class AbstractNamedModel(models.Model):
             'middle': self.middle_name,
             'surname': self.surname,
         }
-        return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+        name_order = self.name_order
+        if not self.middle_name:
+            if name_order == 'GMS':
+                name_order = 'GS'
+            elif name_order == 'SGM':
+                name_order = 'SG'
+        return self.NAME_ORDER_PATTERNS[name_order].format(**name_dict)
     get_full_name.short_description = 'Name'
 
     def get_short_name(self):
