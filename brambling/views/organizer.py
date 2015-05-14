@@ -944,7 +944,7 @@ class FinancesView(ListView):
         return super(FinancesView, self).get_queryset().filter(
             event=self.event,
             api_type=self.event.api_type,
-        ).select_related('created_by', 'order').order_by('-timestamp')
+        ).select_related('created_by', 'order', 'related_transaction').order_by('-timestamp')
 
     def get_context_data(self, **kwargs):
         context = super(FinancesView, self).get_context_data(**kwargs)
