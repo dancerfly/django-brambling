@@ -98,7 +98,6 @@ class InviteAcceptView(TemplateView):
                     content.additional_editors.add(request.user)
                     url = reverse('brambling_event_update', kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug})
                 elif invite.kind == Invite.ORGANIZATION_EDITOR:
-                    content = Organization.objects.get(pk=invite.content_id)
                     content.editors.add(request.user)
                     url = reverse('brambling_organization_update', kwargs={'organization_slug': content.slug})
                 invite.delete()
