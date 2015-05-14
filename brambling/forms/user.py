@@ -199,3 +199,10 @@ class HomeForm(forms.ModelForm):
                 del cleaned_data['zip_code']
                 self.add_error('zip_code', e)
         return cleaned_data
+
+    def save(self, commit=True):
+        instance = super(HomeForm, self).save(commit)
+        if self.request.user.home_id is None:
+            self.request.user.home = instance
+            self.request.user.save()
+        return instance
