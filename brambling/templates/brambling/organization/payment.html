@@ -74,43 +74,41 @@
 					{% endif %}
 				{% else %}
 					{# Stripe / Dwolla Test: #}
-					{% if request.user.is_superuser %}
-						{% if organization.stripe_test_connected or stripe_test_oauth_url %}
-							<tr>
-								<th>
-									<i class="fa fa-fw fa-credit-card"></i>
-									Stripe (Test)
-									<a href="javascript:void(0);" class="popped" data-container="body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
-								</th>
-								{% if organization.stripe_test_connected %}
-									<td>Enabled ({{ organization.stripe_test_user_id }})</td>
-									<td>{% formrow form.disconnect_stripe_test with label="Disconnect" %}</td>
-								{% else %}
-									<td>Not Enabled</td>
-									<td>
-										<a href='{{ stripe_test_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
-									</td>
-								{% endif %}
-							</tr>
-						{% endif %}
-						{% if organization.dwolla_test_connected or dwolla_test_oauth_url %}
-							<tr class="active">
-								<th>
-									<i class="fa fa-fw fa-money"></i>
-									Dwolla (Test)
-									<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
-								</th>
-								{% if organization.dwolla_test_connected %}
-									<td>Enabled ({{ organization.dwolla_test_user_id }})</td>
-									<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
-								{% else %}
-									<td>Not Enabled</td>
-									<td>
-										<a href='{{ dwolla_test_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
-									</td>
-								{% endif %}
-							</tr>
-						{% endif %}
+					{% if organization.stripe_test_connected or stripe_test_oauth_url %}
+						<tr>
+							<th>
+								<i class="fa fa-fw fa-credit-card"></i>
+								Stripe (Test)
+								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Stripe allows payment by credit card. They charge an additional 2.9% + 30¢ per transaction."><i class="fa fa-info-circle"></i></a>
+							</th>
+							{% if organization.stripe_test_connected %}
+								<td>Enabled ({{ organization.stripe_test_user_id }})</td>
+								<td>{% formrow form.disconnect_stripe_test with label="Disconnect" %}</td>
+							{% else %}
+								<td>Not Enabled</td>
+								<td>
+									<a href='{{ stripe_test_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
+								</td>
+							{% endif %}
+						</tr>
+					{% endif %}
+					{% if organization.dwolla_test_connected or dwolla_test_oauth_url %}
+						<tr class="active">
+							<th>
+								<i class="fa fa-fw fa-money"></i>
+								Dwolla (Test)
+								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They charge an additional 25¢ per transaction or no fee for transactions under $10."><i class="fa fa-info-circle"></i></a>
+							</th>
+							{% if organization.dwolla_test_connected %}
+								<td>Enabled ({{ organization.dwolla_test_user_id }})</td>
+								<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
+							{% else %}
+								<td>Not Enabled</td>
+								<td>
+									<a href='{{ dwolla_test_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
+								</td>
+							{% endif %}
+						</tr>
 					{% endif %}
 				{% endif %}
 
