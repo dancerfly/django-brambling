@@ -1,0 +1,13 @@
+Thanks for signing up for Dancerfly, {{ person.given_name }}!
+{% url 'brambling_email_confirm' pkb64=pkb64 token=token as url %}
+Please use the following URL to verify your email address!
+{{ protocol }}://{{ site.domain }}{{ url }}
+
+Happy dancing!
+
+The Dancerfly Team
+
+P.S. If you didn't register for Dancerfly or believe this message was intended for someone else, please email hello@littleweaverweb.com.
+
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)

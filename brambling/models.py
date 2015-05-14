@@ -27,7 +27,7 @@ from django_countries.fields import CountryField
 import floppyforms.__future__ as forms
 import pytz
 
-from brambling.mail import send_fancy_mail
+from brambling.mail import InviteMailer
 from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
@@ -114,7 +114,13 @@ class AbstractNamedModel(models.Model):
             'middle': self.middle_name,
             'surname': self.surname,
         }
-        return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+        name_order = self.name_order
+        if not self.middle_name:
+            if name_order == 'GMS':
+                name_order = 'GS'
+            elif name_order == 'SGM':
+                name_order = 'SG'
+        return self.NAME_ORDER_PATTERNS[name_order].format(**name_dict)
     get_full_name.short_description = 'Name'
 
     def get_short_name(self):
@@ -1460,25 +1466,27 @@ class Invite(models.Model):
     class Meta:
         unique_together = (('email', 'content_id', 'kind'),)
 
-    def send(self, site, body_template_name='brambling/mail/invite_{kind}_body.html',
-             subject_template_name='brambling/mail/invite_{kind}_subject.txt',
-             content=None, secure=False):
-        context = {
-            'invite': self,
-            'site': site,
-            'protocol': 'https' if secure else 'http',
-        }
-        if content is not None:
-            context['content'] = content
-
-        send_fancy_mail(
-            recipient_list=[self.email],
-            subject_template=subject_template_name.format(kind=self.kind),
-            body_template=body_template_name.format(kind=self.kind),
-            context=context,
-        )
+    def send(self, site, content=None, secure=False):
+        InviteMailer(
+            site=site,
+            secure=secure,
+            invite=self,
+            content=content,
+            key="invite_{}".format(self.kind),
+        ).send()
         self.is_sent = True
         self.save()
+
+    def get_content(self):
+        if self.kind == Invite.EVENT_EDITOR:
+            model = Event
+        elif self.kind == Invite.HOME:
+            model = Home
+        elif self.kind == Invite.ORGANIZATION_EDITOR:
+            model = Organization
+        else:
+            raise ValueError('Unknown kind.')
+        return model.objects.get(pk=self.content_id)
 
 
 class CustomForm(models.Model):

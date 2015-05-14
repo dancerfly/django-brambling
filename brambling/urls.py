@@ -12,7 +12,7 @@ from brambling.forms.organizer import (
     OrganizationProfileForm,
     OrganizationEventDefaultsForm,
 )
-from brambling.models import Discount
+from brambling.models import Discount, Invite
 from brambling.views.orders import (
     AddToOrderView,
     RemoveFromOrderView,
@@ -32,6 +32,12 @@ from brambling.views.core import (
     InviteAcceptView,
     InviteSendView,
     InviteDeleteView,
+)
+from brambling.views.mail import (
+    ConfirmationPreviewView,
+    OrderReceiptPreviewView,
+    OrderAlertPreviewView,
+    InvitePreviewView
 )
 from brambling.views.organizer import (
     OrganizationUpdateView,
@@ -313,6 +319,12 @@ urlpatterns = patterns('',
     url(r'^418/$', TemplateView.as_view(template_name='418.html')),
     url(r'^500/$', 'django.views.defaults.server_error'),
     url(r'^500/raise/$', ExceptionView.as_view()),
+    url(r'^mail/confirmation/$', ConfirmationPreviewView.as_view()),
+    url(r'^mail/order_receipt/$', OrderReceiptPreviewView.as_view()),
+    url(r'^mail/order_alert/$', OrderAlertPreviewView.as_view()),
+    url(r'^mail/invite_home/$', InvitePreviewView.as_view(kind=Invite.HOME)),
+    url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind=Invite.EVENT_EDITOR)),
+    url(r'^mail/invite_org/$', InvitePreviewView.as_view(kind=Invite.ORGANIZATION_EDITOR)),
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 
