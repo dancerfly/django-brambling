@@ -20,26 +20,20 @@ and edit your order information at any time on
 			<th>Order code</th>
 		</tr>
 		<tr>
-			<td>{{ net_payments|format_money:event.currency }}</td>
+			<td>{{ total_payments|format_money:event.currency }}</td>
 			<td>{{ order.code }}</td>
 		</tr>
 	</tbody>
 </table>
 
-{% for attendee in attendees %}
-	{% if attendee.attendee %}
-		<h3>{{ attendee.attendee.get_full_name }}</h3>
-	{% else %}
-		<h3>Unattached items</h3>
-	{% endif %}
+{% for attendee in order.attendees.all %}
+	<h3>{{ attendee.get_full_name }}</h3>
 
-	{% with bought_items=attendee.bought_items %}
-		{% for item in attendee.bought_items %}
-			{% if not item.refunds %}
-				<li>{{ item.bought_item.item_option.item.name }} ({{ item.bought_item.item_option.name }})</li>
-			{% endif %}
-		{% endfor %}
-	{% endwith %}
+	{% for item in attendee.bought_items.all %}
+		{% if item.status != item.REFUNDED %}
+			<li>{{ item.item_option.item.name }} ({{ item.item_option.name }})</li>
+		{% endif %}
+	{% endfor %}
 {% endfor %}
 
 <p><em>View more details on <a href="{{ protocol }}://{{ site.domain }}{% if order.person %}{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug %}{% else %}{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug code=order.code %}{% endif %}">Dancerfly</a>.</em></p>

@@ -1,24 +1,39 @@
 // Styles for divs used in layout
 
-.container
+.container, .max-width-md
 	max-width: 970px
 
 .max-width-sm
 	max-width: 750px
 
-.container-sm
-	@extend .container
-	max-width: 750px
+.full-width
+	width: 100%
+
+.block-center
+	display: block
+	margin-left: auto
+	margin-right: auto
 
 .container-xs
 	@extend .container
 	max-width: 480px
+
+.container-sm
+	@extend .container
+	max-width: 750px
+
+.container-xl
+	@extend .container-fluid
+	max-width: 1400px
 
 .margin-leader-0
 	margin-top: 0
 
 .margin-leader-tiny
 	margin-top: 4px
+
+.margin-leader
+	margin-top: $line-height-computed
 
 .margin-leader-dbl
 	margin-top: 2*$line-height-computed
@@ -29,9 +44,15 @@
 .margin-trailer-tiny
 	margin-bottom: 4px
 
+.margin-trailer
+	margin-bottom: $line-height-computed
+
 .margin-trailer-dbl
 	margin-bottom: 2*$line-height-computed
 
+@media (min-width: $screen-sm-min)
+	.margin-leader-dbl-sm
+		margin-top: 2*$line-height-computed
 @media (min-width: $screen-md-min)
 	.margin-leader-md
 		margin-top: $line-height-computed
@@ -45,8 +66,12 @@
 .hug
 	+hug
 
-.visible-inline-block
+.inline-block, .visible-inline-block
 	display: inline-block
+
+@media (max-width: $screen-xxs-max)
+	.hidden-xxs
+		display: none
 
 .relative
 	position: relative

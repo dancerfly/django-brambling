@@ -1,5 +1,5 @@
 $yellow-dark: #de8e0f
-$yellow-darker: darken($yellow-dark,10%)
+$yellow-darker: saturate(darken($yellow-dark,10%),10%)
 $yellow-light: #E8A500
 $brand-primary: $yellow-dark
 
@@ -29,3 +29,6 @@ $navbar-default-toggle-border-color: $yellow-darker
 $panel-primary-text: darken(desaturate($brand-primary,5%),25%)
 $panel-primary-heading-bg: lighten($brand-primary,25%)
 $panel-primary-border: darken(adjust-hue($panel-primary-heading-bg, -10), 5%)
+
+$screen-xxs-max: 480px
+$screen-xs-min: $screen-xxs-max + 1

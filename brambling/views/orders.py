@@ -365,7 +365,10 @@ class AddToOrderView(OrderMixin, View):
 class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
     def post(self, request, *args, **kwargs):
-        bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+        try:
+            bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+        except BoughtItem.DoesNotExist:
+            return JsonResponse({'success': True})
 
         if ((request.user.is_authenticated() and not bought_item.order.person == request.user) or
                 (not request.user.is_authenticated() and bought_item.order.person is not None)):
@@ -776,7 +779,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         context = super(SummaryView, self).get_context_data(**kwargs)
 
         context.update({
-            'has_cards': self.order.person.cards.exists() if self.order.person_id else False,
+            'attendees': self.order.attendees.all(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'dwolla_form': getattr(self, 'dwolla_form', None),

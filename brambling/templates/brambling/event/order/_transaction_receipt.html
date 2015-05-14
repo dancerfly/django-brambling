@@ -1,0 +1,121 @@
+{% load zenaida tz %}
+
+{% timezone event.timezone %}
+<div class='panel panel-default'>
+	<div class='panel-heading'>
+		<h3 class='panel-title'>
+			{% if txn %}
+				{{ txn.get_transaction_type_display }}
+				<span class='pull-right'>
+					{{ txn.timestamp|date:"F jS, Y" }}
+				</span>
+			{% else %}
+				<i class='fa fa-shopping-cart fa-fw'></i> Cart
+			{% endif %}
+		</h3>
+	</div>
+	<ul class='list-group'>
+		{% for item in txn_dict.items %}
+			<li class='list-group-item'>
+				{{ item.item_option.name }} ({{ item.item_option.item.name }})
+				<span class='pull-right'>
+					{% with amount=item.item_option.price|format_money:event.currency %}
+					{% if txn and txn.transaction_type == txn.REFUND %}
+						({{ amount }})
+					{% else %}
+						{{ amount }}
+					{% endif %}
+					{% endwith %}
+				</span>
+			</li>
+		{% endfor %}
+		{% for discount in txn_dict.discounts %}
+			<li class='list-group-item'>
+				{{ discount.discount.name }}
+				<span class='text-muted'>
+					{{ discount.discount.code }}
+				</span>
+				<span class='pull-right'>
+					({{ discount.savings|absolute_value|format_money:event.currency }})
+				</span>
+				<br />
+				<small class='text-muted'>
+					Discount for
+					{{ discount.bought_item.item_option.name }}
+					({{ discount.bought_item.item_option.item.name }})
+				</small>
+			</li>
+		{% endfor %}
+	</ul>
+
+	<ul class='list-group'>
+		<li class='list-group-item'>
+			<strong>Subtotal</strong>
+			<strong class='pull-right'>
+				{% with amount=txn_dict.net_cost|absolute_value|format_money:event.currency %}
+					{% if txn_dict.net_cost > 0 %}
+						{{ amount }}
+					{% else %}
+						({{ amount }})
+					{% endif %}
+				{% endwith %}
+			</strong>
+		</li>
+	</ul>
+	{% if txn %}
+		<div class='panel-footer'>
+			<div class='row'>
+				<div class='col-xs-6'>
+					<h4>
+						{% if txn.card %}
+							<i class='fa fa-fw fa-{{ txn.card.get_icon }}'></i>
+							{{ txn.card.brand }}
+							&bull;&bull;&bull;&bull;{{ txn.card.last4 }}
+						{% else %}
+							{{ txn.get_method_display }}
+						{% endif %}
+					</h4>
+					<p>
+						{% with amount=txn.amount|absolute_value|format_money:event.currency %}
+							{% if txn.amount > 0 %}
+								{{ amount }}
+							{% else %}
+								({{ amount }})
+							{% endif %}
+						{% endwith %}
+					</p>
+				</div>
+				<div class='col-xs-6'>
+					<div class='pull-right text-right'>
+						{% block actions %}
+							{% if txn.is_confirmed %}
+								<p class='alert alert-success pull-right'>
+									<i class='fa fa-check'></i> Confirmed
+								</p>
+							{% else %}
+								<p class='alert alert-danger pull-right'>
+									<i class='fa fa-ban'></i> Pending
+								</p>
+							{% endif %}
+						{% endblock %}
+					</div>
+				</div>
+			</div>
+		</div>
+	{% else %}
+		{% block cart_footer %}
+			<div class='panel-footer'>
+				{% include "brambling/event/order/_payment.html" %}
+
+				<p>A receipt for this purchase will be sent to
+					{% if order.person %}
+					<strong>{{ order.person.get_full_name }} ({{ order.person.email }})</strong>.
+					{% elif order.email %}
+					<strong>{{ order.email }}</strong>.
+					{% endif %}
+				</p>
+			</div>
+		{% endblock %}
+	{% endif %}
+</div>
+{% endtimezone %}

@@ -1,0 +1,34 @@
+<div class='panel panel-primary'>
+	<header class='panel-heading'>
+		<div class='panel-title'>
+			Attendees
+		</div>
+	</header>
+	<ul class='list-group'>
+		{% for attendee in attendees %}
+			<li class='list-group-item'>
+				<h4>
+					{{ attendee.get_full_name }}
+
+					{% block actions %}
+						{% if code_in_url %}
+							{% url "brambling_event_attendee_edit" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
+						{% else %}
+							{% url "brambling_event_attendee_edit" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
+						{% endif %}
+						<a class='pull-right' href='{{ attendee_url }}'>
+							<i class='fa fa-pencil fa-fw pull-right'></i>
+							<span class='sr-only'>Edit {{ attendee.get_full_name }}</span>
+						</a>
+					{% endblock %}
+				</h4>
+				<p>
+					{% for item in attendee.bought_items.all %}
+						{{ item.item_option.name }}
+						({{ item.item_option.item.name }}){% if not forloop.last %},{% endif %}
+					{% endfor %}
+				</p>
+			</li>
+		{% endfor %}
+	</ul>
+</div>

@@ -3,7 +3,7 @@
 <ul>
 	<li><strong>Order code:</strong> {{ order.code }}</li>
 	<li><strong>Net cost:</strong> {{ net_cost|format_money:event.currency }}</li>
-	<li><strong>Net payments:</strong> {{ net_payments|format_money:event.currency }}</li>
+	<li><strong>Net payments:</strong> {{ total_payments|format_money:event.currency }}</li>
 </ul>
 
 {% if unconfirmed_check_payments %}
