@@ -1,6 +1,6 @@
 {% extends 'brambling/event/order/__base.html' %}
 
-{% load floppyforms zenaida %}
+{% load zenaida %}
 
 {% block title %}Order summary – {{ block.super }}{% endblock %}
 
@@ -27,12 +27,25 @@
 			$(set_stripe_key);
 		</script>
 	{% endif %}
+	<script>
+		$(function() {
+			if (!$('#accordion .in').length) {
+				$('#accordion .panel-collapse').eq(0).addClass('in');
+			}
+		});
+	</script>
 {% endblock %}
 
 {% block main %}
 	{% with next_step=1 %}
 		{{ block.super }}
 	{% endwith %}
+
+	{% if not event.stripe_connected and not event.dwolla_connected and not event.organization.check_payment_allowed %}
+		<div class='alert alert-danger'>
+			<p>No payment methods are currently available. Please alert the event organizers if you think this is in error.</p>
+		</div>
+	{% endif %}
 
 	{% if net_balance > 0 %}
 		<div class="alert alert-warning">
@@ -55,299 +68,13 @@
 	<h2>Order {% if order and not order.person %}<a href="{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug code=order.code %}">{% endif %}{{ order.code }}{% if order and not order.person %}</a>{% endif %}</h2>
 
 	<div class="row">
-		<div class="col-md-6">
-			<div class="scroll-x">
-				<table class='table'>
-					<thead>
-						<tr>
-							<th>Item</th>
-							<th class='text-right'>Cost</th>
-						</tr>
-					</thead>
-					<tfoot>
-						<tr class='active'>
-							<th>Gross cost</th>
-							<td class='text-right'><strong>{{ gross_cost|format_money:event.currency }}</strong></td
-						</tr>
-					</tfoot>
-					<tbody>
-						{% for items in payment_items %}
-							{% for item in items %}
-								{% with summary_data=item.get_summary_data %}
-								<tr>
-									<td>{{ item.item_option.name }} ({{ item.item_option.item.name }})</td>
-									<td class='text-right'>{{ summary_data.gross_cost|format_money:event.currency }}</td>
-								</tr>
-								{% for discount in summary_data.discounts %}
-									<tr>
-										<td><em>{{ discount.name }}</em></td>
-										<td class='text-right'><em>{{ discount.savings|format_money:event.currency }}</em></td>
-									</tr>
-								{% endfor %}
-								{% endwith %}
-							{% endfor %}
-						{% endfor %}
-						{% for item in unpaid_items %}
-							{% with summary_data=item.get_summary_data %}
-							<tr>
-								<td>{{ item.item_option.name }} ({{ item.item_option.item.name }})</td>
-								<td class='text-right'>{{ summary_data.gross_cost|format_money:event.currency }}</td>
-							</tr>
-							{% for discount in summary_data.discounts %}
-								<tr>
-									<td><em>{{ discount.name }}</em></td>
-									<td class='text-right'><em>{{ discount.savings|format_money:event.currency }}</em></td>
-								</tr>
-							{% endfor %}
-							{% endwith %}
-						{% endfor %}
-					</tbody>
-				</table>
-				<table class='table'>
-					<thead>
-						<tr>
-							<th class="col-sm-4">Payments</th>
-							<th class='col-sm-2'>Received</th>
-							<th class="col-sm-3">Timestamp</th>
-							<th></th>
-							<th class='text-right'>Amount ({{ event.currency }})</th>
-						</tr>
-					</thead>
-					<tfoot>
-						<tr class='active'>
-							<th colspan="4">Balance</th>
-							<td class='text-right{% if net_balance < 0 %} text-success{% elif net_balance > 0 %} text-danger{% endif %}'>{% if net_balance < 0 %}Owed {% elif net_balance > 0 %}Owe {% endif %}<strong>{{ net_balance|absolute_value|format_money:event.currency }}</strong></td
-						</tr>
-					</tfoot>
-					<tbody>
-						{% for payment in payments %}
-							<tr title="{% for bought_item in payment.bought_items.all %}{{ bought_item.item_option.name }} – {{ bought_item.attendee }}, {% endfor %}">
-								<td>{{ payment.get_method_display }}{% if payment.card %}: {{ payment.card|default:"" }}{% endif %}</td>
-								<td>{% block payment_is_confirmed %}{% if payment.is_confirmed %}<i class='fa fa-check text-success'></i>{% else %}<i class='fa fa-ban text-danger'></i>{% endif %}{% endblock %}</td>
-								<td class='text-muted'>{{ payment.timestamp|date:"n/j/Y H:i:s" }}</td>
-								<td>{% block payment_actions %}{% endblock %}</td>
-								<td class='text-right'>({{ payment.amount|format_money:event.currency }})</td>
-							</tr>
-						{% endfor %}
-						{% for refund in refunds %}
-							<tr>
-								<td>Refund</td>
-								<td></td>
-								<td class='text-muted'>{{ refund.timestamp|date:"n/j/Y H:i:s" }}</td>
-								<td></td>
-								<td class='text-right'>{{ refund.amount|format_money:event.currency }}</td>
-							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
-
-			<form class='margin-trailer'>
-				<div class='input-group input-group-lg'>
-					<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
-					<span class='input-group-btn'>
-						<button id='discountCodeButton' class='btn btn-success' type='submit'><span class='fa fa-plus'></span></button>
-					</span>
-				</div>
-			</form>
-		</div>{# /.col-md-6 #}
-		<div class="col-md-6">
-			{% for attendee in attendees %}
-				<div class='panel panel-primary'>
-					<header class='panel-heading'>
-						<div class='panel-title'>
-							{% if attendee.attendee %}
-								{{ attendee.attendee.get_full_name }}
-								{% block attendee_actions %}
-								{% if code_in_url %}
-									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
-								{% else %}
-									{% url "brambling_event_attendee_edit" pk=attendee.attendee.event_pass_id event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
-								{% endif %}
-								<a class='pull-right' href='{{ attendee_url }}'><i class='fa fa-pencil fa-fw'></i></a>
-								{% endblock %}
-							{% else %}
-								Unattached items
-							{% endif %}
-						</div>
-					</header>
-					<div class="scroll-x">
-						<table class='table'>
-							<tfoot class="bg-primary-light">
-								<th>Total cost</th>
-								<th class='text-right'>{{ attendee.net_cost|format_money:event.currency }}</th>
-							</tfoot>
-							<tbody>
-								{% for item in attendee.bought_items %}
-									{% cycle 0 1 as is_active silent %}
-									<tr{% if is_active %} class='active'{% endif %}>
-										{% with bought_item=item.bought_item %}
-											<th>{{ bought_item.item_option.item.name }} ({{ bought_item.item_option.name }})</th>
-											<td class='text-right'>{{ bought_item.item_option.price|format_money:event.currency }}</td>
-										{% endwith %}
-									</tr>
-									{% for discount in item.discounts %}
-										<tr{% if is_active %} class='active'{% endif %}>
-											<td>Discount: {{ discount.discount.name }} <em class='text-muted'>{{ discount.discount.code }}</em></td>
-											<td class='text-right text-success'>({{ discount.savings|format_money:event.currency }})</td>
-										</tr>
-									{% endfor %}
-									{% for refund in item.refunds %}
-										<tr{% if is_active %} class='active'{% endif %}>
-											<td>Refund</td>
-											<td class='text-right text-success'>({{ refund.amount|format_money:event.currency }})</td>
-										</tr>
-									{% endfor %}
-								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-				</div>
+		<div class="col-sm-6">
+			{% for txn, txn_dict in transactions.iteritems %}
+				{% include "brambling/event/order/_transaction_receipt.html" %}
 			{% endfor %}
-		</div>{# /.col-md-6#}
+		</div>{# /.col-sm-6 #}
+		<div class="col-sm-6">
+			{% include "brambling/event/order/_attendee_summary.html" %}
+		</div>{# /.col-sm-6#}
 	</div>{# /.row #}
-
-	{# START PAYMENT OPTIONS #}
-
-	{% if net_balance > 0 %}
-		<p>A receipt for this purchase will be sent to
-			{% if order.person %}
-			<strong>{{ order.person.name }} ({{ order.person.email }})</strong>.
-			{% elif order.email %}
-			<strong>{{ order.email }}</strong>.
-			{% endif %}
-		</p>
-
-		{% if event.stripe_connected %}
-			{% if has_cards %}
-				<div class="panel-group" id="accordion">
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							<h4 class="panel-title">
-								<a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-									Pay with a saved card
-								</a>
-							</h4>
-						</div>
-						<div id="collapseOne" class="panel-collapse collapse{% if not request.POST.new_card %} in{% endif %}">
-							<div class="panel-body">
-								<form novalidate action="" method="post">
-									{% csrf_token %}
-									<input name='choose_card' value='1' type='hidden'>
-									{% with id=choose_card_form.card.id_for_label name=choose_card_form.card.html_name %}
-									<div class='row'>
-										{% for card in choose_card_form.fields.card.queryset %}
-											<div class='col-sm-3 col-xs-6'>
-												<div class='radio'>
-													<label for="{{ id }}_{{ forloop.counter }}">
-														<input type="radio" id="{{ id }}_{{ forloop.counter }}"
-															value="{{ card.pk }}" name="{{ name }}" required
-															{% if card.pk in value %}checked{% endif %}>
-														<i class='fa fa-fw fa-{{ card.get_icon }}'></i>
-														{{ card.brand }} &bull;&bull;&bull;&bull;{{ card.last4 }}
-														<br />
-														Expires {{ card.exp_month }}/{{ card.exp_year }}
-													</label>
-												</div>
-											</div>
-										{% endfor %}
-									</div>
-									{% endwith %}
-
-									<p>
-										<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-										<a class='btn btn-link' href="{% url 'brambling_user_profile' %}">Manage saved cards</a>
-									</p>
-								</form>
-								{% include 'brambling/_stripe_note.html' %}
-							</div>
-						</div>
-					</div>
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							<h4 class="panel-title">
-								<a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">
-									Pay with a new card
-								</a>
-							</h4>
-						</div>
-						<div id="collapseTwo" class="panel-collapse collapse{% if request.POST.new_card %} in{% endif %}">
-							<div class="panel-body">
-			{% endif %}
-
-			{% include 'brambling/_stripe_form.html' with api_type=event.api_type %}
-			<form novalidate action="" method="post" id='card-form'>
-				{% csrf_token %}
-				<input name='new_card' value='1' type='hidden'>
-
-				{% if new_card_form.save_card %}{% formrow new_card_form.save_card %}{% endif %}
-
-				<p><button type="submit" id='card-submit' class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button></p>
-			</form>
-
-			{% if has_cards %}
-							</div>
-						</div>
-					</div>
-				</div>
-			{% endif %}
-		{% endif %}
-		{% if event.dwolla_connected %}
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">
-						Pay with Dwolla
-					</h4>
-				</div>
-				<div class="panel-body">
-					{% if dwolla_is_connected %}
-						<p>Connected account: {{dwolla_user_id }}</p>
-						<form novalidate action="" method="post">
-							{% csrf_token %}
-							<input name='dwolla' value='1' type='hidden'>
-
-							{% formrow dwolla_form.dwolla_pin with autocomplete="off" %}
-							{% formrow dwolla_form.source %}
-
-							<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-						</form>
-					{% else %}
-						<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
-					{% endif %}
-				</div>
-			</div>
-		{% endif %}
-
-		{# Payment by check #}
-		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}
-		{% if event.organization.check_payment_allowed and event.organization.check_postmark_cutoff %}
-			{% td_to_dict event.organization.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
-			{% if time_until_check_cutoff.days >= 0 %}
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							Pay with check
-						</h4>
-					</div>
-					<div class="panel-body">
-						{% include "brambling/event/order/_check_payment_info.html" %}
-						<form novalidate action="" method="post">
-							{% csrf_token %}
-							<input name='check' value='1' type='hidden'>
-
-							<button type="submit" class="btn btn-primary">Complete Order ({{ net_balance|format_money:event.currency }})</button>
-						</form>
-					</div>
-				</div>
-			{% endif %}
-		{% endif %}
-
-	{% elif order.has_cart %}
-		<form novalidate action="" method="post">
-			{% csrf_token %}
-			<button type="submit" class="btn btn-primary">Confirm cart purchases</button>
-		</form>
-	{% endif %}
-
-	{# END PAYMENT OPTIONS #}
 {% endblock %}

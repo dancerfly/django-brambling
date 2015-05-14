@@ -807,7 +807,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         context = super(SummaryView, self).get_context_data(**kwargs)
 
         context.update({
-            'has_cards': self.order.person.cards.exists() if self.order.person_id else False,
+            'attendees': self.order.attendees.all(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'dwolla_form': getattr(self, 'dwolla_form', None),
