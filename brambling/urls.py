@@ -322,7 +322,6 @@ urlpatterns = patterns('',
     url(r'^mail/confirmation/$', ConfirmationPreviewView.as_view()),
     url(r'^mail/order_receipt/$', OrderReceiptPreviewView.as_view()),
     url(r'^mail/order_alert/$', OrderAlertPreviewView.as_view()),
-    url(r'^mail/invite_home/$', InvitePreviewView.as_view(kind=Invite.HOME)),
     url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind=Invite.EVENT_EDITOR)),
     url(r'^mail/invite_org/$', InvitePreviewView.as_view(kind=Invite.ORGANIZATION_EDITOR)),
 

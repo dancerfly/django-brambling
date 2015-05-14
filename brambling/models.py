@@ -1480,8 +1480,6 @@ class Invite(models.Model):
     def get_content(self):
         if self.kind == Invite.EVENT_EDITOR:
             model = Event
-        elif self.kind == Invite.HOME:
-            model = Home
         elif self.kind == Invite.ORGANIZATION_EDITOR:
             model = Organization
         else:
