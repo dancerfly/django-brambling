@@ -17,7 +17,7 @@
 {% elif net_balance > 0 %}
 	<div class="panel-group" id="accordion">
 		{% if event.stripe_connected %}
-			{% if has_cards %}
+			{% if choose_card_form and choose_card_form.fields.card.queryset %}
 				<div class="panel panel-default">
 					<div class="panel-heading">
 						<h4 class="panel-title">
