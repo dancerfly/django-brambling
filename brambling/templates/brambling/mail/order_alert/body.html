@@ -19,42 +19,6 @@
 										</p>
 
 										<h4>Order {{ order.code }}</h4>
-
-										<br />
-
-										<table style="width:100%;">
-											<tbody>
-												<tr>
-													<th>Net payments</th>
-													<th>Attendees</th>
-													<th>Items</th>
-												</tr>
-												<tr>
-													<th>{{ total_payments|format_money:event.currency }}</th>
-													<td>
-														<p>
-															{% for attendee in order.attendees.all %}
-																{{ attendee.get_full_name }}
-																{% if not forloop.last %}<br />{% endif %}
-															{% endfor %}
-														</p>
-													</td>
-													<td>
-														<p>
-															{% for txn, txn_dict in transactions.iteritems %}
-																{% for item in txn_dict.items %}
-																	{% if item.status == item.BOUGHT %}
-																		{{ item.item_option.item.name }} ({{ item.item_option.name }})
-																		{% if not forloop.last %}<br />{% endif %}
-																	{% endif %}
-																{% endfor %}
-																{% if not forloop.last %}<br />{% endif %}
-															{% endfor %}
-														</p>
-													</td>
-												</tr>
-											</tbody>
-										</table>
 									</td>
 									<td class='expander'></td>
 								</tr>
@@ -62,6 +26,41 @@
 
 						</td>
 					</tr>
+				</table>
+
+
+				<table style="width:100%;">
+					<tbody>
+						<tr>
+							<th>Net payments</th>
+							<th>Attendees</th>
+							<th>Items</th>
+						</tr>
+						<tr>
+							<th>{{ total_payments|format_money:event.currency }}</th>
+							<td>
+								<p>
+									{% for attendee in order.attendees.all %}
+										{{ attendee.get_full_name }}
+										{% if not forloop.last %}<br />{% endif %}
+									{% endfor %}
+								</p>
+							</td>
+							<td>
+								<p>
+									{% for txn, txn_dict in transactions.iteritems %}
+										{% for item in txn_dict.items %}
+											{% if item.status == item.BOUGHT %}
+												{{ item.item_option.item.name }} ({{ item.item_option.name }})
+												{% if not forloop.last %}<br />{% endif %}
+											{% endif %}
+										{% endfor %}
+										{% if not forloop.last %}<br />{% endif %}
+									{% endfor %}
+								</p>
+							</td>
+						</tr>
+					</tbody>
 				</table>
 
 				<table class='row'>
