@@ -137,7 +137,7 @@ class InviteSendView(View):
             content = Organization.objects.get(pk=invite.content_id)
             if content.owner_id != self.request.user.pk:
                 raise Http404
-            url = reverse('brambling_organization_update', kwargs={'organization_slug': content.slug})
+            url = reverse('brambling_organization_update_permissions', kwargs={'organization_slug': content.slug})
         else:
             raise Http404
         invite.send(
