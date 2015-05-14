@@ -30,25 +30,23 @@
 													<th>Items</th>
 												</tr>
 												<tr>
-													<th>{{ net_payments|format_money:event.currency }}</th>
+													<th>{{ total_payments|format_money:event.currency }}</th>
 													<td>
 														<p>
-															{% for attendee in attendees %}
-																{{ attendee.attendee.get_full_name }}
+															{% for attendee in order.attendees.all %}
+																{{ attendee.get_full_name }}
 																{% if not forloop.last %}<br />{% endif %}
 															{% endfor %}
 														</p>
 													</td>
 													<td>
 														<p>
-															{% for attendee in attendees %}
-																{% for item in attendee.bought_items %}
-																	{% with item=item.bought_item %}
-																		{% if item.status == item.BOUGHT %}
-																			{{ item.item_option.item.name }} ({{ item.item_option.name }})
-																			{% if not forloop.last %}<br />{% endif %}
-																		{% endif %}
-																	{% endwith %}
+															{% for txn, txn_dict in transactions.iteritems %}
+																{% for item in txn_dict.items %}
+																	{% if item.status == item.BOUGHT %}
+																		{{ item.item_option.item.name }} ({{ item.item_option.name }})
+																		{% if not forloop.last %}<br />{% endif %}
+																	{% endif %}
 																{% endfor %}
 																{% if not forloop.last %}<br />{% endif %}
 															{% endfor %}
