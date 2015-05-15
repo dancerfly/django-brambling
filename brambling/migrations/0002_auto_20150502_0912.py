@@ -16,7 +16,7 @@ def event_pass_backwards(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0001_squashed_0042_remove_person_default_card'),
+        ('brambling', '0001_initial'),
     ]
 
     operations = [
