@@ -114,7 +114,7 @@ class OrganizationAdmin(admin.ModelAdmin):
             'classes': ('grp-collapse grp-closed',),
             'fields': (
                 "check_payment_allowed",
-                ("check_payable_to", "check_postmark_cutoff"),
+                "check_payable_to",
                 "check_recipient",
                 "check_address", "check_address_2",
                 ("check_city", "check_state_or_province"),
@@ -146,6 +146,7 @@ class EventAdmin(admin.ModelAdmin):
                 'country',
                 'dance_styles',
                 'currency',
+                'check_postmark_cutoff',
             ),
         }),
         ("Dates", {

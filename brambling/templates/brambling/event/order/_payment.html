@@ -116,8 +116,8 @@
 
 		{# Payment by check #}
 		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}
-		{% if event.organization.check_payment_allowed and event.organization.check_postmark_cutoff %}
-			{% td_to_dict event.organization.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
+		{% if event.organization.check_payment_allowed and event.check_postmark_cutoff %}
+			{% td_to_dict event.check_postmark_cutoff|td_timeuntil as time_until_check_cutoff %}
 			{% if time_until_check_cutoff.days >= 0 %}
 				<div class="panel panel-default">
 					<div class="panel-heading">

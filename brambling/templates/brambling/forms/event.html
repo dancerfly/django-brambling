@@ -206,7 +206,7 @@
 	</header>
 	<div class="panel-body">
 		{% if organization_editable_by %}
-			<p>Payment methods for an event can be changed in the <a href="{% url 'brambling_organization_update_payment' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
+			<p>Payment methods can be managed in the <a href="{% url 'brambling_organization_update_payment' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
 		{% else %}
 			Payment methods can only be updated by people with permission to edit the organization.
 		{% endif %}
@@ -218,6 +218,10 @@
 				<div class="col-sm-4"><div class='alert {% if check %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if check %}fa-check{% else %}fa-ban{% endif %}'></i> Check</div></div>
 			{% endwith %}
 		</div>{# /.row #}
+
+		{% if event.organization.check_payment_allowed %}
+			{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}
+		{% endif %}
 
 		{% if event.is_demo %}
 			<p class='text-muted'>Note: This is a demo event which uses test APIs. None of the transactions made through this event can result in real money changing hands.</p>

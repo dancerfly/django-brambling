@@ -310,7 +310,6 @@ class Organization(AbstractDwollaModel):
 
     check_payment_allowed = models.BooleanField(default=False)
     check_payable_to = models.CharField(max_length=50, blank=True)
-    check_postmark_cutoff = models.DateField(blank=True, null=True)
 
     check_recipient = models.CharField(max_length=50, blank=True)
     check_address = models.CharField(max_length=200, blank=True)
@@ -422,6 +421,7 @@ class Event(models.Model):
 
     collect_housing_data = models.BooleanField(default=True)
     collect_survey_data = models.BooleanField(default=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
 
     # Time in minutes.
     cart_timeout = models.PositiveSmallIntegerField(default=15,
