@@ -1,16 +1,14 @@
-from django.conf import settings
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import (AuthenticationForm, PasswordResetForm,
                                        SetPasswordForm)
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
 from brambling.mail import ConfirmationMailer
-from brambling.models import Person, Home, DanceStyle, Invite
+from brambling.models import Person, Home, DanceStyle
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE
 

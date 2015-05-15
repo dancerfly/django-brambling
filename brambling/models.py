@@ -3,9 +3,7 @@ from __future__ import unicode_literals
 
 from datetime import timedelta
 from decimal import Decimal
-import itertools
 import json
-import operator
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)

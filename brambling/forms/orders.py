@@ -9,7 +9,7 @@ from zenaida.forms import MemoModelForm
 
 from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
-                              Attendee, HousingSlot, BoughtItem, Item,
+                              Attendee, HousingSlot, BoughtItem,
                               Order, Event, CustomForm)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,

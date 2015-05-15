@@ -3,7 +3,6 @@ from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from django.template.defaultfilters import striptags
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 

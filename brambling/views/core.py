@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from brambling.models import (Event, BoughtItem, Invite, Home, Order, Person,
+from brambling.models import (Event, BoughtItem, Invite, Order, Person,
                               Organization)
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
