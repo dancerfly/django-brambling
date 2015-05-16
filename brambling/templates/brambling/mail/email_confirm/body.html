@@ -1,0 +1,82 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+    {% url 'brambling_email_confirm' pkb64=pkb64 token=token as url %}
+    <table class='container'>
+        <tr>
+            <td>
+
+                <table class='row'>
+                    <tr>
+                        <td class='wrapper last'>
+
+                            <table class="twelve columns">
+                                <tr>
+                                    <td>
+                                        <p class='lede'>
+                                            Thanks for signing up for Dancerfly, {{ person.given_name }}!
+                                        </p>
+
+                                        <p>
+                                            Please click on the button below to verify your email address!
+                                        </p>
+                                    </td>
+                                    <td class='expander'></td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+                </table>
+
+                <table class='row'>
+                    <tr>
+                        <td class='wrapper last'>
+                            <table class='six columns'>
+                                <tr>
+                                    <td>
+                                        <table class='button success radius'>
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ protocol }}://{{ site.domain }}{{ url }}">
+                                                        Verify your email address
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class='row'>
+                    <tr>
+                        <td class='wrapper last'>
+
+                            <table class="twelve columns">
+                                <tr>
+                                    <td>
+                                        <p>Or you can copy-paste the link directly into your browser's URL bar:</p>
+                                        <p>{{ protocol }}://{{ site.domain }}{{ url }}</p>
+
+                                        <p>Happy dancing!</p>
+
+                                        <p class='lede'>The Dancerfly Team</p>
+
+                                        <p>
+                                            P.S. If you didn't register for Dancerfly or believe this message was intended for someone else, please email <a href='mailto:hello@littleweaverweb.com'>hello@littleweaverweb.com</a>.
+                                        </p>
+                                    </td>
+                                    <td class='expander'></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+{% endblock %}

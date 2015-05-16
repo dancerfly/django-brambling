@@ -18,14 +18,6 @@
 	{% endif %}
 {% endblock %}
 
-{% block top %}
-	{% if event.banner_image %}
-		{{ block.super }}
-	{% else %}
-		{% include "brambling/_navbar.html" with navbar_class="navbar navbar-default navbar-fixed-top orange-barred navbar-hugged" %}
-	{% endif %}
-{% endblock %}
-
 {% block messages %}{% endblock %}{# blank the messages here and put them lower down #}
 
 {% block main %}
@@ -105,7 +97,7 @@
 
 {% block javascripts %}
 	{# This bit of javascript needs to run pretty early to avoid a flash of content and jump. #}
-	{% if event.banner_image and current_step.name != "Shop" %}
+	{% if current_step.name != "Shop" %}
 		<script type="text/javascript">
 			(function () {
 				var scroll_to = document.getElementById("mastheadDetails").getBoundingClientRect().top + window.pageYOffset - document.documentElement.clientTop - 10;

@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from brambling.models import (Event, BoughtItem, Invite, Home, Order, Person,
+from brambling.models import (Event, BoughtItem, Invite, Order, Person,
                               Organization)
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
@@ -93,22 +93,13 @@ class InviteAcceptView(TemplateView):
                 if request.user.confirmed_email != request.user.email:
                     request.user.confirmed_email = request.user.email
                     request.user.save()
+                content = invite.get_content()
                 if invite.kind == Invite.EVENT_EDITOR:
-                    event = Event.objects.get(pk=invite.content_id)
-                    event.additional_editors.add(request.user)
+                    content.additional_editors.add(request.user)
                     url = reverse('brambling_event_update', kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug})
-                elif invite.kind == Invite.HOME:
-                    old_home = request.user.home
-                    home = Home.objects.get(pk=invite.content_id)
-                    request.user.home = home
-                    request.user.save()
-                    if old_home and not old_home.residents.exists():
-                        old_home.delete()
-                    url = reverse('brambling_home')
                 elif invite.kind == Invite.ORGANIZATION_EDITOR:
-                    organization = Organization.objects.get(pk=invite.content_id)
-                    organization.editors.add(request.user)
-                    url = reverse('brambling_organization_update', kwargs={'organization_slug': organization.slug})
+                    content.editors.add(request.user)
+                    url = reverse('brambling_organization_update', kwargs={'organization_slug': content.slug})
                 invite.delete()
                 return HttpResponseRedirect(url)
         self.invite = invite
@@ -142,16 +133,11 @@ class InviteSendView(View):
             if content.organization.owner_id != self.request.user.pk:
                 raise Http404
             url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
-        elif invite.kind == Invite.HOME:
-            if not Home.objects.filter(pk=invite.content_id, residents=request.user).exists():
-                raise Http404
-            content = Home.objects.get(pk=invite.content_id)
-            url = reverse('brambling_home')
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
             content = Organization.objects.get(pk=invite.content_id)
             if content.owner_id != self.request.user.pk:
                 raise Http404
-            url = reverse('brambling_organization_update', kwargs={'organization_slug': content.slug})
+            url = reverse('brambling_organization_update_permissions', kwargs={'organization_slug': content.slug})
         else:
             raise Http404
         invite.send(
@@ -173,10 +159,6 @@ class InviteDeleteView(View):
             if not event.organization.editable_by(self.request.user):
                 raise Http404
             url = reverse('brambling_event_update', kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug})
-        elif invite.kind == Invite.HOME:
-            if not Home.objects.filter(pk=invite.content_id, residents=request.user).exists():
-                raise Http404
-            url = reverse('brambling_home')
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
             organization = Organization.objects.get(pk=invite.content_id)
             if organization.owner_id != self.request.user.pk:

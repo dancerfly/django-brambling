@@ -16,7 +16,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
                                     SurveyDataForm, CheckPaymentForm)
-from brambling.mail import send_order_receipt, send_order_alert
+from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (Item, BoughtItem, ItemOption,
                               BoughtItemDiscount, Discount, Order,
                               Attendee, EventHousing, Event, Transaction)
@@ -64,31 +64,17 @@ class AttendeeStep(OrderStep):
     def _is_completed(self):
         if not self.workflow.order:
             return False
-        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exists()
+        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exclude(status=BoughtItem.REFUNDED).exists()
 
     def get_errors(self):
         errors = []
         order = self.workflow.order
-        # All attendees must have at least one class or pass
+        # All attendees must have at least one non-refunded item
         total_count = order.attendees.count()
-        with_count = order.attendees.filter(bought_items__item_option__item__category=Item.PASS).count()
+        valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
+        with_count = order.attendees.filter(bought_items__status__in=valid_statuses).distinct().count()
         if with_count != total_count:
-            errors.append('All attendees must have exactly one pass')
-
-        # Attendees may not have more than one pass.
-        attendees = order.attendees.filter(
-            bought_items__item_option__item__category=Item.PASS
-        ).distinct().annotate(
-            Count('bought_items')
-        ).filter(
-            bought_items__count__gte=2
-        )
-        if len(attendees) > 0:
-            if len(attendees) == 1:
-                error = '{} has too many passes (more than one).'.format(attendees[0])
-            else:
-                error = 'The following attendees have too many passes (more than one): ' + ", ".join(attendees)
-            errors.append(error)
+            errors.append('All attendees must have at least one item')
 
         # All attendees must have basic data filled out.
         missing_data = order.attendees.filter(basic_completed=False)
@@ -100,7 +86,7 @@ class AttendeeStep(OrderStep):
             errors.append(error)
 
         # All items must be assigned to an attendee.
-        if order.bought_items.filter(attendee__isnull=True).exists():
+        if order.bought_items.filter(attendee__isnull=True).exclude(status=BoughtItem.REFUNDED).exists():
             errors.append('All items in order must be assigned to an attendee.')
         return errors
 
@@ -379,7 +365,10 @@ class AddToOrderView(OrderMixin, View):
 class RemoveFromOrderView(View):
     @method_decorator(ajax_required)
     def post(self, request, *args, **kwargs):
-        bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+        try:
+            bought_item = BoughtItem.objects.get(pk=kwargs['pk'])
+        except BoughtItem.DoesNotExist:
+            return JsonResponse({'success': True})
 
         if ((request.user.is_authenticated() and not bought_item.order.person == request.user) or
                 (not request.user.is_authenticated() and bought_item.order.person is not None)):
@@ -471,33 +460,30 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
     workflow_class = RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
-        try:
-            unassigned_pass = self.order.bought_items.filter(
-                item_option__item__category=Item.PASS,
-                attendee__isnull=True,
-            ).exclude(
-                status=BoughtItem.REFUNDED,
-            ).order_by('added')[:1][0]
-        except IndexError:
+        self.attendees = self.order.attendees.all()
+        if self.attendees:
             return self.render_to_response(self.get_context_data())
-        else:
-            kwargs = {
-                'event_slug': self.event.slug,
-                'organization_slug': self.event.organization.slug,
-                'pk': unassigned_pass.pk,
-            }
-            if self.kwargs.get('code') and not self.request.user.is_authenticated():
-                kwargs['code'] = self.order.code
-            return HttpResponseRedirect(reverse('brambling_event_attendee_edit',
-                                                kwargs=kwargs))
+
+        kwargs = {
+            'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
+        }
+        if self.kwargs.get('code') and not self.request.user.is_authenticated():
+            kwargs['code'] = self.order.code
+        return HttpResponseRedirect(reverse('brambling_event_attendee_add',
+                                            kwargs=kwargs))
 
     def get_context_data(self, **kwargs):
         context = super(AttendeesView, self).get_context_data(**kwargs)
 
         context.update({
             'errors': self.current_step.errors,
-            'attendees': self.order.attendees.all(),
-            'unassigned_items': self.order.bought_items.filter(attendee__isnull=True).order_by('item_option__item', 'item_option'),
+            'attendees': self.attendees,
+            'unassigned_items': self.order.bought_items.filter(
+                attendee__isnull=True
+            ).exclude(
+                status=BoughtItem.REFUNDED
+            ).order_by('item_option__item', 'item_option'),
         })
         return context
 
@@ -507,6 +493,12 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
     form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
     workflow_class = RegistrationWorkflow
+    model = Attendee
+
+    def get_object(self):
+        if 'pk' not in self.kwargs:
+            return None
+        return super(AttendeeBasicDataView, self).get_object()
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
@@ -515,23 +507,9 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
             fields += ('housing_status',)
         return forms.models.modelform_factory(Attendee, self.form_class, fields=fields)
 
-    def get_object(self):
-        try:
-            self.event_pass = self.order.bought_items.select_related('attendee').exclude(
-                status=BoughtItem.REFUNDED,
-            ).get(
-                pk=self.kwargs['pk'],
-                item_option__item__category=Item.PASS,
-            )
-        except BoughtItem.DoesNotExist:
-            raise Http404
-        self.event_pass.order = self.order
-        return self.event_pass.attendee
-
     def get_initial(self):
         initial = super(AttendeeBasicDataView, self).get_initial()
-        pass_count = self.order.bought_items.filter(item_option__item__category=Item.PASS).count()
-        if pass_count == 1 and self.request.user.is_authenticated():
+        if self.order.attendees.count() == 0 and self.request.user.is_authenticated():
             person = self.request.user
             initial.update({
                 'given_name': person.given_name,
@@ -545,7 +523,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super(AttendeeBasicDataView, self).get_form_kwargs()
-        kwargs['event_pass'] = self.event_pass
+        kwargs['order'] = self.order
         return kwargs
 
     def form_valid(self, form):
@@ -559,12 +537,9 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
-        context['event_pass'] = self.event_pass
-        context['ordered_passes'] = self.order.bought_items.filter(
-            item_option__item__category=Item.PASS,
-        ).exclude(
-            status=BoughtItem.REFUNDED,
-        ).order_by('added')
+        context.update({
+            'attendees': Attendee.objects.filter(order=self.order).order_by('pk')
+        })
         return context
 
 
@@ -743,13 +718,14 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                     self.event.is_frozen = True
                     self.event.save()
                 summary_data = self.order.get_summary_data()
-                send_order_receipt(self.order, summary_data,
-                                   get_current_site(self.request),
-                                   event=self.event,
-                                   secure=self.request.is_secure())
-                send_order_alert(self.order, summary_data,
-                                 get_current_site(self.request),
-                                 secure=self.request.is_secure())
+                email_kwargs = {
+                    'order': self.order,
+                    'summary_data': summary_data,
+                    'site': get_current_site(self.request),
+                    'secure': self.request.is_secure()
+                }
+                OrderReceiptMailer(**email_kwargs).send()
+                OrderAlertMailer(**email_kwargs).send()
 
                 session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
                 if str(self.event.pk) in session_orders:
@@ -804,7 +780,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         context = super(SummaryView, self).get_context_data(**kwargs)
 
         context.update({
-            'has_cards': self.order.person.cards.exists() if self.order.person_id else False,
+            'attendees': self.order.attendees.all(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
             'dwolla_form': getattr(self, 'dwolla_form', None),

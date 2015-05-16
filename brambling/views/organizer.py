@@ -27,7 +27,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
                                        CustomFormForm, CustomFormFieldFormSet,
                                        OrderNotesForm, OrganizationPaymentForm)
-from brambling.mail import send_order_receipt
+from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
@@ -82,15 +82,7 @@ class OrganizationPaymentView(OrganizationUpdateView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
 
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
-                self.object, self.request, LIVE)
-
-        if self.object.stripe_live_can_connect():
-            context['stripe_oauth_url'] = stripe_organization_oauth_url(
-                self.object, self.request, LIVE)
-
-        if self.request.user.is_superuser:
+        if self.object.is_demo():
             if self.object.dwolla_test_can_connect():
                 context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
                     self.object, self.request, TEST)
@@ -98,6 +90,14 @@ class OrganizationPaymentView(OrganizationUpdateView):
             if self.object.stripe_test_can_connect():
                 context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
                     self.object, self.request, TEST)
+        else:
+            if self.object.dwolla_live_can_connect():
+                context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
+                    self.object, self.request, LIVE)
+
+            if self.object.stripe_live_can_connect():
+                context['stripe_oauth_url'] = stripe_organization_oauth_url(
+                    self.object, self.request, LIVE)
 
         return context
 
@@ -903,6 +903,7 @@ class OrderDetailView(DetailView):
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'active': active,
+            'attendees': self.order.attendees.all(),
         })
         context.update(self.order.get_summary_data())
         return context
@@ -957,9 +958,14 @@ class SendReceiptView(View):
                                       code=self.kwargs['code'])
         except Order.DoesNotExist:
             raise Http404
-        send_order_receipt(order, order.get_summary_data(),
-                           get_current_site(request),
-                           event=event, secure=request.is_secure())
+
+        OrderReceiptMailer(
+            order=order,
+            summary_data=order.get_summary_data(),
+            site=get_current_site(request),
+            secure=request.is_secure(),
+        ).send()
+
         messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
         return HttpResponseRedirect(reverse(
             'brambling_event_order_detail',
@@ -981,7 +987,7 @@ class FinancesView(ListView):
         return super(FinancesView, self).get_queryset().filter(
             event=self.event,
             api_type=self.event.api_type,
-        ).select_related('created_by', 'order').order_by('-timestamp')
+        ).select_related('created_by', 'order', 'related_transaction').order_by('-timestamp')
 
     def get_context_data(self, **kwargs):
         context = super(FinancesView, self).get_context_data(**kwargs)

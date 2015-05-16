@@ -1,11 +1,9 @@
 # encoding: utf8
 from __future__ import unicode_literals
 
-from datetime import timedelta, datetime
+from datetime import timedelta
 from decimal import Decimal
-import itertools
 import json
-import operator
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
@@ -26,9 +24,8 @@ from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
 import floppyforms.__future__ as forms
 import pytz
-import stripe
 
-from brambling.mail import send_fancy_mail
+from brambling.mail import InviteMailer
 from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
@@ -115,7 +112,13 @@ class AbstractNamedModel(models.Model):
             'middle': self.middle_name,
             'surname': self.surname,
         }
-        return self.NAME_ORDER_PATTERNS[self.name_order].format(**name_dict)
+        name_order = self.name_order
+        if not self.middle_name:
+            if name_order == 'GMS':
+                name_order = 'GS'
+            elif name_order == 'SGM':
+                name_order = 'SG'
+        return self.NAME_ORDER_PATTERNS[name_order].format(**name_dict)
     get_full_name.short_description = 'Name'
 
     def get_short_name(self):
@@ -307,7 +310,6 @@ class Organization(AbstractDwollaModel):
 
     check_payment_allowed = models.BooleanField(default=False)
     check_payable_to = models.CharField(max_length=50, blank=True)
-    check_postmark_cutoff = models.DateField(blank=True, null=True)
 
     check_recipient = models.CharField(max_length=50, blank=True)
     check_address = models.CharField(max_length=200, blank=True)
@@ -419,6 +421,7 @@ class Event(models.Model):
 
     collect_housing_data = models.BooleanField(default=True)
     collect_survey_data = models.BooleanField(default=True)
+    check_postmark_cutoff = models.DateField(blank=True, null=True)
 
     # Time in minutes.
     cart_timeout = models.PositiveSmallIntegerField(default=15,
@@ -456,10 +459,7 @@ class Event(models.Model):
         return True
 
     def can_be_published(self):
-        # See https://github.com/littleweaver/django-brambling/issues/150
-        # At least one pass / class must exist before the event can be published.
-        pass_class_count = ItemOption.objects.filter(item__event=self, item__category__in=(Item.CLASS, Item.PASS)).count()
-        return pass_class_count >= 1
+        return ItemOption.objects.filter(item__event=self).exists()
 
     def get_invites(self):
         return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
@@ -496,21 +496,8 @@ class Event(models.Model):
 
 
 class Item(models.Model):
-    MERCHANDISE = 'merch'
-    COMPETITION = 'comp'
-    CLASS = 'class'
-    PASS = 'pass'
-
-    CATEGORIES = (
-        (MERCHANDISE, _("Merchandise")),
-        (COMPETITION, _("Competition")),
-        (CLASS, _("Class/Lesson a la carte")),
-        (PASS, _("Pass")),
-    )
-
     name = models.CharField(max_length=30)
     description = models.TextField(blank=True)
-    category = models.CharField(max_length=7, choices=CATEGORIES)
     event = models.ForeignKey(Event, related_name='items')
 
     created_timestamp = models.DateTimeField(auto_now_add=True)
@@ -816,7 +803,10 @@ class Order(AbstractDwollaModel):
             bought_items = BoughtItem.objects.filter(
                 order=self,
                 item_option__discount=discount,
-            ).exclude(status=BoughtItem.REFUNDED)
+            ).filter(status__in=(
+                BoughtItem.UNPAID,
+                BoughtItem.RESERVED,
+            )).distinct()
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount,
                                    bought_item=bought_item)
@@ -891,56 +881,65 @@ class Order(AbstractDwollaModel):
     def get_summary_data(self):
         if self.cart_is_expired():
             self.delete_cart()
-        transactions = self.transactions.prefetch_related('bought_items').order_by('timestamp')
-        payments = [t for t in transactions
-                    if t.transaction_type == Transaction.PURCHASE]
-        refunds = [t for t in transactions
-                   if t.transaction_type == Transaction.REFUND]
-        payment_items = [t.bought_items.select_related('item_option__item') for t in payments]
-        bought_items_qs = self.bought_items.select_related('item_option', 'attendee', 'event_pass_for', 'discounts', 'discounts__discount').order_by('attendee', 'added')
-        attendees = []
-        for k, g in itertools.groupby(bought_items_qs, operator.attrgetter('attendee')):
-            items = [item.get_summary_data() for item in g]
 
-            gross_cost = sum((item['gross_cost'] for item in items))
-            total_savings = sum((item['total_savings'] for item in items))
-            net_cost = gross_cost - total_savings
-            attendees.append({
-                'attendee': k,
-                'bought_items': items,
-                'gross_cost': gross_cost,
-                'total_savings': total_savings,
-                'net_cost': net_cost,
+        # First fetch BoughtItems and group by transaction.
+        bought_items_qs = self.bought_items.select_related(
+            'item_option__item',
+            'discounts__discount'
+        ).prefetch_related('transactions').order_by('-added')
+
+        transactions = SortedDict()
+
+        def add_item(txn, item):
+            txn_dict = transactions.setdefault(txn, {
+                'items': [],
+                'discounts': [],
+                'gross_cost': 0,
+                'total_savings': 0,
+                'net_cost': 0,
             })
-        unpaid_items = [item for item in bought_items_qs
-                        if item.status == BoughtItem.UNPAID or
-                        item.status == BoughtItem.RESERVED]
+            txn_dict['items'].append(item)
+            multiplier = -1 if txn and txn.transaction_type == Transaction.REFUND else 1
+            txn_dict['gross_cost'] += multiplier * item.item_option.price
+            for discount in item.discounts.all():
+                txn_dict['discounts'].append(discount)
+                txn_dict["total_savings"] -= multiplier * discount.savings()
+            txn_dict['net_cost'] = txn_dict['gross_cost'] + txn_dict['total_savings']
 
-        gross_cost = sum((item.item_option.price for item in bought_items_qs))
-        gross_payments = sum((payment.amount for payment in payments))
-        total_savings = sum((attendee['total_savings']
-                             for attendee in attendees))
-        total_refunds = abs(sum((refund.amount
-                                 for refund in refunds)))
-        net_cost = gross_cost - total_refunds - total_savings
-        net_payments = gross_payments - total_refunds
-        net_balance = net_cost - net_payments
-        unconfirmed_check_payments = any((payment.method == Transaction.CHECK and
-                                          not payment.is_confirmed
-                                          for payment in payments))
+        for item in bought_items_qs:
+            if not item.transactions.all():
+                add_item(None, item)
+            else:
+                for txn in item.transactions.all():
+                    add_item(txn, item)
+
+        gross_cost = 0
+        total_savings = 0
+        net_cost = 0
+        total_payments = 0
+        total_refunds = 0
+        unconfirmed_check_payments = False
+
+        for txn, txn_dict in transactions.iteritems():
+            gross_cost += txn_dict['gross_cost']
+            total_savings += txn_dict['total_savings']
+            net_cost += txn_dict['net_cost']
+            if txn:
+                if txn.transaction_type == Transaction.REFUND:
+                    total_refunds += txn.amount
+                else:
+                    total_payments += txn.amount
+                    if not unconfirmed_check_payments and txn and txn.method == Transaction.CHECK and not txn.is_confirmed:
+                        unconfirmed_check_payments = True
+
         return {
-            'attendees': attendees,
-            'payment_items': payment_items,
-            'unpaid_items': unpaid_items,
-            'payments': payments,
-            'refunds': refunds,
+            'transactions': transactions,
             'gross_cost': gross_cost,
-            'gross_payments': gross_payments,
             'total_savings': total_savings,
             'total_refunds': total_refunds,
+            'total_payments': total_payments,
             'net_cost': net_cost,
-            'net_payments': net_payments,
-            'net_balance': net_balance,
+            'net_balance': net_cost - (total_payments + total_refunds),
             'unconfirmed_check_payments': unconfirmed_check_payments
         }
 
@@ -987,6 +986,17 @@ class Transaction(models.Model):
         (REFUND, _('Refunded purchase')),
         (OTHER, _('Other')),
     )
+
+    REMOTE_URLS = {
+        (STRIPE, PURCHASE, LIVE): 'https://dashboard.stripe.com/payments/{remote_id}',
+        (STRIPE, PURCHASE, TEST): 'https://dashboard.stripe.com/test/payments/{remote_id}',
+        (STRIPE, REFUND, LIVE): 'https://dashboard.stripe.com/payments/{related_remote_id}',
+        (STRIPE, REFUND, TEST): 'https://dashboard.stripe.com/test/payments/{related_remote_id}',
+        (DWOLLA, PURCHASE, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
+        (DWOLLA, PURCHASE, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
+        (DWOLLA, REFUND, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
+        (DWOLLA, REFUND, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
+    }
     amount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     application_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     processing_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -1006,6 +1016,15 @@ class Transaction(models.Model):
 
     class Meta:
         get_latest_by = 'timestamp'
+
+    def get_remote_url(self):
+        key = (self.method, self.transaction_type, self.api_type)
+        if self.remote_id and key in Transaction.REMOTE_URLS:
+            return Transaction.REMOTE_URLS[key].format(
+                remote_id=self.remote_id,
+                related_remote_id=self.related_transaction.remote_id if self.related_transaction else ''
+            )
+        return None
 
     @classmethod
     def from_stripe_charge(cls, charge, **kwargs):
@@ -1175,20 +1194,6 @@ class BoughtItem(models.Model):
                                       self.order.code,
                                       self.pk)
 
-    def get_summary_data(self):
-        gross_cost = self.item_option.price
-        discounts = self.discounts.order_by('timestamp')
-        total_savings = sum((discount.savings() for discount in discounts))
-        net_cost = gross_cost - total_savings
-
-        return {
-            'bought_item': self,
-            'discounts': discounts,
-            'gross_cost': gross_cost,
-            'total_savings': total_savings,
-            'net_cost': net_cost,
-        }
-
 
 class OrderDiscount(models.Model):
     """Tracks whether a person has entered a code for an event."""
@@ -1247,8 +1252,7 @@ def create_request_nights(sender, instance, **kwargs):
 
 class Attendee(AbstractNamedModel):
     """
-    This model represents information attached to an event pass. It is
-    by default copied from the pass buyer (if they don't already have a pass).
+    This model represents information about someone attending an event.
 
     """
     NEED = 'need'
@@ -1264,7 +1268,6 @@ class Attendee(AbstractNamedModel):
     order = models.ForeignKey(Order, related_name='attendees')
     person = models.ForeignKey(Person, blank=True, null=True)
     person_confirmed = models.BooleanField(default=False)
-    event_pass = models.OneToOneField(BoughtItem, related_name='event_pass_for')
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
@@ -1350,10 +1353,6 @@ class Home(models.Model):
                                                 blank=True,
                                                 null=True,
                                                 verbose_name="My/Our home is (a/an)")
-
-    def get_invites(self):
-        return Invite.objects.filter(kind=Invite.HOME,
-                                     content_id=self.pk)
 
 
 class EventHousing(models.Model):
@@ -1444,11 +1443,9 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
-    HOME = 'home'
     EVENT_EDITOR = 'editor'
     ORGANIZATION_EDITOR = 'org_editor'
     KIND_CHOICES = (
-        (HOME, _("Home")),
         (EVENT_EDITOR, _("Event Editor")),
         (ORGANIZATION_EDITOR, _("Organization Editor")),
     )
@@ -1467,25 +1464,25 @@ class Invite(models.Model):
     class Meta:
         unique_together = (('email', 'content_id', 'kind'),)
 
-    def send(self, site, body_template_name='brambling/mail/invite_{kind}_body.html',
-             subject_template_name='brambling/mail/invite_{kind}_subject.txt',
-             content=None, secure=False):
-        context = {
-            'invite': self,
-            'site': site,
-            'protocol': 'https' if secure else 'http',
-        }
-        if content is not None:
-            context['content'] = content
-
-        send_fancy_mail(
-            recipient_list=[self.email],
-            subject_template=subject_template_name.format(kind=self.kind),
-            body_template=body_template_name.format(kind=self.kind),
-            context=context,
-        )
+    def send(self, site, content=None, secure=False):
+        InviteMailer(
+            site=site,
+            secure=secure,
+            invite=self,
+            content=content,
+            key="invite_{}".format(self.kind),
+        ).send()
         self.is_sent = True
         self.save()
+
+    def get_content(self):
+        if self.kind == Invite.EVENT_EDITOR:
+            model = Event
+        elif self.kind == Invite.ORGANIZATION_EDITOR:
+            model = Organization
+        else:
+            raise ValueError('Unknown kind.')
+        return model.objects.get(pk=self.content_id)
 
 
 class CustomForm(models.Model):

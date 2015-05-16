@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from brambling.models import Person
 
+
 class PersonCreationForm(forms.ModelForm):
     """A form for creating new users. Includes all the required
     fields, plus a repeated password."""
@@ -27,7 +28,6 @@ class PersonCreationForm(forms.ModelForm):
         if commit:
             user.save()
         return user
-
 
 
 class PersonChangeForm(forms.ModelForm):

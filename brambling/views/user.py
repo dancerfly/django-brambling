@@ -12,7 +12,7 @@ from brambling.forms.orders import AddCardForm
 from brambling.forms.user import PersonForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard
 from brambling.tokens import token_generators
-from brambling.mail import send_confirmation_email
+from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
@@ -40,7 +40,11 @@ class SignUpView(CreateView):
 def send_confirmation_email_view(request, *args, **kwargs):
     if not request.user.is_authenticated():
         raise Http404
-    send_confirmation_email(request.user, site=get_current_site(request), secure=request.is_secure())
+    ConfirmationMailer(
+        request.user,
+        site=get_current_site(request),
+        secure=request.is_secure(),
+    ).send([request.user.email])
     messages.add_message(request, messages.SUCCESS, "Confirmation email sent.")
     return HttpResponseRedirect('/')
 
@@ -201,24 +205,3 @@ class HomeView(UpdateView):
 
     def get_success_url(self):
         return reverse('brambling_home')
-
-
-class RemoveResidentView(View):
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated():
-            raise Http404
-        try:
-            home = Home.objects.get(residents=self.request.user)
-        except Home.DoesNotExist:
-            pass
-        else:
-            try:
-                person = Person.objects.get(pk=kwargs['pk'])
-            except Person.DoesNotExist:
-                pass
-            else:
-                home.residents.remove(person)
-                if not home.residents.exists():
-                    home.delete()
-            messages.success(request, 'Removed resident successfully.')
-        return HttpResponseRedirect(reverse('brambling_home'))

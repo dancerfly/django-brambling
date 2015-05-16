@@ -101,8 +101,7 @@ class OrganizationPaymentForm(forms.ModelForm):
     class Meta:
         model = Organization
         fields = (
-            'check_payment_allowed', 'check_payable_to',
-            'check_postmark_cutoff', 'check_recipient',
+            'check_payment_allowed', 'check_payable_to', 'check_recipient',
             'check_address', 'check_address_2', 'check_city',
             'check_state_or_province', 'check_zip', 'check_country',
         )
@@ -127,10 +126,9 @@ class OrganizationPaymentForm(forms.ModelForm):
     def clean_check_payment_allowed(self):
         cpa = self.cleaned_data['check_payment_allowed']
         if cpa:
-            for field in ('check_payable_to', 'check_postmark_cutoff',
-                          'check_recipient', 'check_address',
-                          'check_city', 'check_zip', 'check_state_or_province',
-                          'check_country'):
+            for field in ('check_payable_to', 'check_recipient',
+                          'check_address', 'check_city', 'check_zip',
+                          'check_state_or_province', 'check_country'):
                 self.fields[field].required = True
         return cpa
 
@@ -181,7 +179,8 @@ class EventForm(forms.ModelForm):
                   'currency', 'start_time', 'end_time', 'dance_styles',
                   'has_dances', 'has_classes', 'liability_waiver', 'privacy',
                   'collect_housing_data', 'collect_survey_data',
-                  'cart_timeout', 'start_date', 'end_date')
+                  'cart_timeout', 'start_date', 'end_date',
+                  'check_postmark_cutoff')
         widgets = {
             'country': forms.Select,
         }
@@ -202,6 +201,11 @@ class EventForm(forms.ModelForm):
 
         if self.instance.is_demo() and self.instance.pk:
             del self.fields['slug']
+
+        if self.instance.organization.check_payment_allowed:
+            self.fields['check_postmark_cutoff'].required = True
+        else:
+            del self.fields['check_postmark_cutoff']
 
     def clean_editors(self):
         editors = self.cleaned_data['editors']

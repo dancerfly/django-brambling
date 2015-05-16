@@ -15,20 +15,6 @@
 {% block main %}
 	{{ block.super }}
 
-	{% if not user.is_authenticated %}
-		<div class="alert alert-warning">
-			<div class="row">
-				<div class="col-sm-8">
-					<strong>{{ event.name }}</strong> is using Dancerfly to manage event registration. <a href="{% url "login" %}" class="alert-link">Log in</a> with your Dancerfly account or <a href="{% url "brambling_signup" %}" class="alert-link">create an account</a> to more easily and securely manage your registrations. It&#8217;s free and easy and only takes a minute.
-				</div>
-				<div class="col-sm-4">
-					<a href="{% url "brambling_signup" %}?next={{ request.path }}" class="btn btn-primary btn-block">Create an Account</a>
-					<a href="{% url "login" %}?next={{ request.path }}" class="btn btn-default btn-block">Log In</a>
-				</div>
-			</div>
-		</div>
-	{% endif %}
-
 	{% if item_options %}
 
 		<h1 class="margin-leader-dbl">Register for {{ event.name }}</h1>
@@ -188,7 +174,7 @@
 	{% include "brambling/event/order/_masthead.html" %}
 	{% with dance_styles=event.dance_styles.all %}
 		{% if event.description or event.website_url or event.facebook_url or dance_styles %}
-			<div class="{% if event.banner_image %}hug {% endif %}panel panel-dark">
+			<div class="hug panel panel-dark">
 				<div class="panel-body">
 					{% if event.description %}
 						<div class="row">

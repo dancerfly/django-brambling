@@ -9,7 +9,7 @@ from zenaida.forms import MemoModelForm
 
 from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
-                              Attendee, HousingSlot, BoughtItem, Item,
+                              Attendee, HousingSlot, BoughtItem,
                               Order, Event, CustomForm)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
@@ -47,7 +47,7 @@ class CustomDataForm(forms.ModelForm):
 
 
 class AttendeeBasicDataForm(CustomDataForm):
-    additional_items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
+    items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
 
     class Meta:
         model = Attendee
@@ -56,25 +56,24 @@ class AttendeeBasicDataForm(CustomDataForm):
             'housing_status': forms.RadioSelect,
         }
 
-    def __init__(self, event_pass, *args, **kwargs):
-        self.event_pass = event_pass
-        self.order = event_pass.order
+    def __init__(self, order, *args, **kwargs):
+        self.order = order
         super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
         self.fields['liability_waiver'].required = True
-        additional_items = self.order.bought_items.filter(
-            Q(attendee__isnull=True) | Q(attendee=event_pass.attendee_id)
-        ).exclude(item_option__item__category=Item.PASS)
-        self.has_additional_items = bool(additional_items)
-        if self.has_additional_items:
-            self.fields['additional_items'].queryset = additional_items
+        items = self.order.bought_items.filter(
+            Q(attendee__isnull=True) | Q(attendee=self.instance)
+        ).exclude(status=BoughtItem.REFUNDED)
+        self.has_items = bool(items)
+        if self.has_items:
+            self.fields['items'].queryset = items
             if self.instance.pk:
-                self.fields['additional_items'].initial = self.order.bought_items.filter(
-                    attendee=event_pass.attendee_id
-                ).exclude(item_option__item__category=Item.PASS)
+                self.fields['items'].initial = self.order.bought_items.filter(
+                    attendee=self.instance
+                ).exclude(status=BoughtItem.REFUNDED)
             else:
-                self.fields['additional_items'].initial = additional_items
+                self.fields['items'].initial = items
         else:
-            del self.fields['additional_items']
+            del self.fields['items']
 
         if 'housing_status' in self.fields:
             self.fields['housing_status'].label = "Housing"
@@ -97,18 +96,13 @@ class AttendeeBasicDataForm(CustomDataForm):
 
     def save(self):
         self.instance.order = self.order
-        self.instance.event_pass = self.event_pass
         self.instance.basic_completed = True
         instance = super(AttendeeBasicDataForm, self).save()
-        if self.has_additional_items:
-            old_additional = self.order.bought_items.filter(
-                                 attendee=self.event_pass.attendee
-                             ).exclude(item_option__item__category=Item.PASS)
+        if self.has_items:
+            old_additional = self.order.bought_items.filter(attendee=instance)
             old_additional.update(attendee=None)
-            if self.cleaned_data.get('additional_items'):
-                self.cleaned_data['additional_items'].update(attendee=instance)
-        self.event_pass.attendee = instance
-        self.event_pass.save()
+            if self.cleaned_data.get('items'):
+                self.cleaned_data['items'].update(attendee=instance)
         return instance
 
 

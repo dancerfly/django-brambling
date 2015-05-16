@@ -1,0 +1,30 @@
+{% autoescape off %}You've gotten a new order! Here's the summary.
+
+Order {{ order.code }}
+
+
+Net payments{% load zenaida %}
+{{ total_payments|format_money:event.currency }}
+
+
+Attendees
+{% for attendee in order.attendees.all %}
+{{ attendee.get_full_name }}{% endfor %}
+
+
+Items
+{% for txn, txn_dict in transactions.iteritems %}{% for item in txn_dict.items %}{% if item.status == item.BOUGHT %}
+{{ item.item_option.item.name }} ({{ item.item_option.name }}){% endif %}{% endfor %}{% endfor %}
+{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
+View more details at the following URL:
+{{ protocol }}://{{ site.domain }}{{ url }}
+
+Congrats!
+The Dancerfly Team
+
+{% if unconfirmed_check_payments %}
+P.S. This order has outstanding check payments, so keep an eye on your mail!
+{% endif %}{% endautoescape %}
+
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)

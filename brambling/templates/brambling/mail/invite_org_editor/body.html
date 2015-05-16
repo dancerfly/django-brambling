@@ -1,0 +1,84 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+    {% url "brambling_invite_accept" code=invite.code as url %}
+
+    <table class='container'>
+        <tr>
+            <td>
+
+                <table class='row'>
+                    <tr>
+                        <td class='wrapper last'>
+
+                            <table class="twelve columns">
+                                <tr>
+                                    <td>
+                                        <p class='lede'>
+                                            You've been invited to help manage an organization on Dancerfly!
+                                        </p>
+
+                                        <p>
+                                            {{ invite.user.given_name }} is running events for their organization, {{ content.name }}, on <a href='https://dancerfly.com/'>Dancerfly</a>,
+                                            and added you as an editor! That means you have access to all the
+                                            information and tools you need to give them a hand setting up
+                                            and running events for this organization. The power... THE POWER!  ...ahem.
+                                        </p>
+                                        <p>Ready to get cracking?</p>
+                                    </td>
+                                    <td class='expander'></td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+                </table>
+
+                <table class='row'>
+                    <tr>
+                        <td class='wrapper last'>
+                            <table class='six columns'>
+                                <tr>
+                                    <td>
+                                        <table class='button success radius'>
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ protocol }}://{{ site.domain }}{{ url }}">
+                                                        Accept your invitation
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class='row'>
+                    <tr>
+                        <td class='wrapper last'>
+
+                            <table class="twelve columns">
+                                <tr>
+                                    <td>
+                                        <p>Happy editing!</p>
+
+                                        <p class='lede'>The Dancerfly Team</p>
+
+                                        <p>P.S. If the button's not working for you, you can also accept your invitation
+                                            by copy-pasting the following link into your browser's URL bar:</p>
+                                        <p>{{ protocol }}://{{ site.domain }}{{ url }}</p>
+                                    </td>
+                                    <td class='expander'></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+{% endblock %}
