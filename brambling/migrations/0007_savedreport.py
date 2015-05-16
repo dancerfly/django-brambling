@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0001_squashed_0042_remove_person_default_card'),
+        ('brambling', '0006_remove_organization_check_postmark_cutoff'),
     ]
 
     operations = [
