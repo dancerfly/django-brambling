@@ -270,13 +270,11 @@ class OrderMixin(object):
                         # checked out yet, assume that the user created an
                         # account mid-order and re-assign it.
                         try:
-                            order = Order.objects.extra(select={
-                                'pending_count': """
-                                    SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                                    brambling_boughtitem.order_id = brambling_order.id AND
-                                    brambling_boughtitem.status IN ('reserved', 'unpaid')
-                                """
-                            }, where=['pending_count > 0']).get(
+                            order = Order.objects.get(
+                                bought_items__status__in=[
+                                    BoughtItem.RESERVED,
+                                    BoughtItem.UNPAID,
+                                ],
                                 event=self.event,
                                 person__isnull=True,
                                 code=order_kwargs['code']
