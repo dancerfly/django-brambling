@@ -51,14 +51,14 @@
                         <div id="reportPopover">
                             <div class="list-group list-group-unbordered popover-hugger">
                                 {% if report in saved_reports %}
-                                    <a class="list-group-item" href="{{ request.path }}"><i class="fa fa-times"></i> Return to Default View</a>
+                                    <a class="list-group-item" href="{{ request.path }}"><i class="fa fa-fw fa-times"></i> Return to Default View</a>
                                 {% else %}
                                     <div class="list-group-item">
                                         <label for="id_save_report">Save current columns and filters</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_save_report" name="save_report" />
                                             <span class="input-group-btn">
-                                                <button class="btn btn-default" type="submit"><i class="fa fa-plus"></i> Create</button>
+                                                <button class="btn btn-default" type="submit"><i class="fa fa-fw fa-plus"></i> Create</button>
                                             </span>
                                         </div>
                                     </div>
