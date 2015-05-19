@@ -52,17 +52,9 @@
                             <div class="list-group list-group-unbordered popover-hugger">
                                 {% if report in saved_reports %}
                                     <a class="list-group-item" href="{{ request.path }}"><i class="fa fa-times"></i> Return to Default View</a>
-                                {% endif %}
-                                {% for r in saved_reports %}
-                                    <div class="list-group-item {% if r == report %} active{% endif %}">
-                                        <button type="submit" name="delete_report" value="{{ r.pk }}" class='btn-link pull-right tipped' data-container="body" title="Delete Report"><i class='fa fa-fw fa-trash text-muted'></i><span class='sr-only'>Delete Report "{{ r.name }}"</span></button>
-                                        <a href="{{ request.path }}?choose_report={{ r.pk }}" class="a-uncolored">{{ r.name }}</a>
-                                    </div>
-                                {% endfor %}
-                                {# Display the save report form if no such report has been saved: #}
-                                {% if not report in saved_reports %}
+                                {% else %}
                                     <div class="list-group-item">
-                                        <label for="id_save_report">Save these columns and filters</label>
+                                        <label for="id_save_report">Save current columns and filters</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_save_report" name="save_report" />
                                             <span class="input-group-btn">
@@ -71,6 +63,13 @@
                                         </div>
                                     </div>
                                 {% endif %}
+                                {% for r in saved_reports %}
+                                    <div class="list-group-item {% if r == report %} active{% endif %}">
+                                        <button type="submit" name="delete_report" value="{{ r.pk }}" class='btn-link pull-right tipped' data-container="body" title="Delete Report"><i class='fa fa-fw fa-trash text-muted'></i><span class='sr-only'>Delete Report "{{ r.name }}"</span></button>
+                                        <a href="{{ request.path }}?choose_report={{ r.pk }}" class="a-uncolored">{{ r.name }}</a>
+                                    </div>
+                                {% endfor %}
+                                {# Display the save report form if no such report has been saved: #}
                             </div>
                         </div>
                     </div>
