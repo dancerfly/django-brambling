@@ -31,7 +31,7 @@
             </form>
         </div>
         <div class="col-md-8">
-            <form action="" method="get">
+            <form action="" method="get" id="filtersForm">
                 <div class='text-right form-inline'>
                     <div class='form-group'>
                         <label class='sr-only' for='search'>Search</label>
@@ -43,31 +43,36 @@
                         </div>{# /.input-group #}
                     </div>{# /.form-group #}
                     <div class="btn-group">
-                      <button type="button" class="btn btn-sm {% if report %}btn-primary{% else %}btn-default{% endif %} dropdown-toggle tipped" data-toggle="dropdown" aria-expanded="false" title="Saved reports" data-container="body">
-                        <i class="fa fa-bars"></i>
-                        <span class='hidden-sm hidden-md'>Saved reports</span>
-                        <span class="caret"></span>
-                      </button>
-                      <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        {% for r in saved_reports %}
-                            <li{% if r == report %} class="active"{% endif %}>
-                                <a href="{{ request.path }}?choose_report={{ r.pk }}">{{ r.name }}</a>
-                                <button type="submit" name="delete_report" value="{{ r.pk }}" class='btn btn-link dropdown-action'><i class='fa fa-fw fa-remove text-danger'></i><span class='sr-only'>Remove</span></button>
-                            </li>
-                        {% endfor %}
-                        {% if saved_reports %}
-                            <li role="presentation" class="divider"></li>
-                        {% endif %}
-                        <li>
-                            <label for="id_save_report">Save this report</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_save_report" name="save_report" />
-                                <span class="input-group-btn">
-                                    <button class="btn btn-default" type="submit"><i class="fa fa-save"></i><span class='sr-only'>Save</span></button>
-                                </span>
+                        <button data-popover-target="#reportPopover" data-placement="bottom" data-container="#filtersForm" type="button" class="btn btn-sm {% if report %}btn-primary{% else %}btn-default{% endif %} dropdown-toggle tipped" aria-expanded="false">
+                            <i class="fa fa-bars"></i>
+                            <span class='hidden-sm hidden-md'>Saved reports</span>
+                            <span class="caret"></span>
+                        </button>
+                        <div id="reportPopover">
+                            <div class="list-group list-group-unbordered popover-hugger">
+                                {% if report in saved_reports %}
+                                    <a class="list-group-item" href="{{ request.path }}"><i class="fa fa-times"></i> Return to Default View</a>
+                                {% endif %}
+                                {% for r in saved_reports %}
+                                    <div class="list-group-item {% if r == report %} active{% endif %}">
+                                        <button type="submit" name="delete_report" value="{{ r.pk }}" class='btn-link pull-right tipped' data-container="body" title="Delete Report"><i class='fa fa-fw fa-trash text-muted'></i><span class='sr-only'>Delete Report "{{ r.name }}"</span></button>
+                                        <a href="{{ request.path }}?choose_report={{ r.pk }}" class="a-uncolored">{{ r.name }}</a>
+                                    </div>
+                                {% endfor %}
+                                {# Display the save report form if no such report has been saved: #}
+                                {% if not report in saved_reports %}
+                                    <div class="list-group-item">
+                                        <label for="id_save_report">Save these columns and filters</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder='"Housing", etc.' id="id_save_report" name="save_report" />
+                                            <span class="input-group-btn">
+                                                <button class="btn btn-default" type="submit"><i class="fa fa-plus"></i> Create</button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
-                        </li>
-                      </ul>
+                        </div>
                     </div>
                     <button class="btn btn-sm btn-default tipped" data-toggle="modal" data-target="#filterModal" type='button' title="Change columns and filters" data-container="body">
                         <i class="fa fa-filter"></i>

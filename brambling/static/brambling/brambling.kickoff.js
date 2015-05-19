@@ -40,10 +40,17 @@ $(function() {
     $('.disabled a').on('click', function(e){e.preventDefault();});
 
     // Add tooltips to elements with class "tipped".
-    $('.tipped').tooltip();
+    $('body').tooltip({selector: '.tipped'});
 
     // Add dismissable popovers to elements with class "popped".
     $('.popped').popover({trigger: "focus"});
+    // Add popovers that swipe their html content from another element.
+    $('[data-popover-target]').each(function () { $($(this).data('popover-target')).hide(); });
+    $('[data-popover-target]').popover({
+        trigger: "click",
+        html: true,
+        content: function () { return $($(this).data('popover-target')).html(); }
+    })
 
     // Add datepickers to date fields.
     if (!Modernizr.inputtypes.date) {
