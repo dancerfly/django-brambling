@@ -174,5 +174,8 @@
         $('.form-inline .tipped').tooltip({
             placement: 'top'
         });
+        $('[data-toggle="modal"]').on('click', function(e) {
+            $('[data-popover-target]').popover('hide');
+        });
     </script>
 {% endblock %}
