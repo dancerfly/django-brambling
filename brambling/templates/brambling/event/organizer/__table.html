@@ -43,7 +43,7 @@
                         </div>{# /.input-group #}
                     </div>{# /.form-group #}
                     <div class="btn-group">
-                        <button data-popover-target="#reportPopover" data-placement="bottom" data-container="#filtersForm" type="button" class="btn btn-sm {% if report %}btn-primary{% else %}btn-default{% endif %} dropdown-toggle tipped" aria-expanded="false">
+                        <button data-popover-target="#reportPopover" data-placement="bottom" data-container="#filtersForm" type="button" class="btn btn-sm {% if report %}btn-primary{% else %}btn-default{% endif %} dropdown-toggle tipped" aria-expanded="false" title="Saved reports">
                             <i class="fa fa-bars"></i>
                             <span class='hidden-sm hidden-md'>Saved reports</span>
                             <span class="caret"></span>
@@ -170,6 +170,9 @@
     <script>
         $('#id_save_report').on('click', function(e) {
             e.stopPropagation();
+        });
+        $('.form-inline .tipped').tooltip({
+            placement: 'top'
         });
     </script>
 {% endblock %}
