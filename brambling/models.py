@@ -319,6 +319,10 @@ class Organization(AbstractDwollaModel):
     check_zip = models.CharField(max_length=12, blank=True, verbose_name="zip / postal code")
     check_country = CountryField(default='US')
 
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -417,8 +421,6 @@ class Event(models.Model):
                                                 related_name='editor_events',
                                                 blank=True, null=True)
 
-    last_modified = models.DateTimeField(auto_now=True)
-
     collect_housing_data = models.BooleanField(default=True)
     collect_survey_data = models.BooleanField(default=True)
     check_postmark_cutoff = models.DateField(blank=True, null=True)
@@ -430,6 +432,10 @@ class Event(models.Model):
     # This is a secret value set by admins
     application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
+
+    # Internal tracking fields
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -500,7 +506,8 @@ class Item(models.Model):
     description = models.TextField(blank=True)
     event = models.ForeignKey(Event, related_name='items')
 
-    created_timestamp = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return smart_text(self.name)
@@ -585,7 +592,7 @@ class PersonManager(BaseUserManager):
             raise ValueError('Email must be given')
         email = self.normalize_email(email)
         person = self.model(email=email, is_superuser=is_superuser,
-                            last_login=now, created_timestamp=now, **extra_fields)
+                            last_login=now, **extra_fields)
         person.set_password(password)
         person.save(using=self._db)
         return person
@@ -604,7 +611,8 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
 
-    created_timestamp = models.DateTimeField(default=timezone.now, editable=False)
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
 
     ### Start custom user requirements
     USERNAME_FIELD = 'email'

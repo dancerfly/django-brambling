@@ -12,7 +12,7 @@ class PersonAdmin(UserAdmin):
 
     form = PersonChangeForm
     add_form = PersonCreationForm
-    list_display = ('get_full_name', 'email', 'email_confirmed', 'is_active',)
+    list_display = ('get_full_name', 'email', 'email_confirmed', 'is_active', 'created')
     list_filter = ('is_active',)
 
     add_fieldsets = (
@@ -51,7 +51,7 @@ class PersonAdmin(UserAdmin):
     )
 
     search_fields = ('email', 'given_name', 'middle_name', 'surname')
-    ordering = ('-created_timestamp',)
+    ordering = ('-created',)
 
     def email_confirmed(self, obj):
         return obj.email == obj.confirmed_email
@@ -128,6 +128,8 @@ class OrganizationAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ('owner',)
     filter_horizontal = ("dance_styles", "default_event_dance_styles", "editors")
+    list_display = ('name', 'created')
+    ordering = ('-created',)
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -176,6 +178,8 @@ class EventAdmin(admin.ModelAdmin):
     raw_id_fields = ('organization',)
     filter_horizontal = ("dance_styles", "additional_editors")
     radio_fields = {'api_type': admin.HORIZONTAL}
+    list_display = ('name', 'created')
+    ordering = ('-created',)
 
 
 class CustomFormFieldInline(admin.TabularInline):

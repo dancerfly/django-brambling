@@ -21,7 +21,7 @@
 				<tr>
 					<td><a href="{% url 'brambling_item_update' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk %}">{{ item.name }}</a></td>
 					<td>{{ item.get_category_display }}</td>
-					<td>{{ item.created_timestamp }}</td>
+					<td>{{ item.created }}</td>
 					<td>{{ item.option_count }}</td>
 				</tr>
 			{% endfor %}
