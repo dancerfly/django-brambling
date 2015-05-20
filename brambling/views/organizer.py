@@ -31,7 +31,8 @@ from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
-                              Person, CustomForm, Organization)
+                              Person, CustomForm, Organization,
+                              SavedReport)
 from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
@@ -703,33 +704,99 @@ class ModelTableView(ListView):
         return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
 
 
-class AttendeeFilterView(ModelTableView):
-    template_name = 'brambling/event/organizer/attendees.html'
-    context_object_name = 'attendees'
-    model = Attendee
-    model_table = AttendeeTable
+class EventTableView(ModelTableView):
+    report_type = None
 
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
         if not self.event.editable_by(self.request.user):
             raise Http404
-        qs = super(AttendeeFilterView, self).get_queryset()
-        return qs.filter(order__event=self.event).distinct()
+
+        report = None
+        if 'choose_report' in request.GET:
+            try:
+                report = SavedReport.objects.get(
+                    pk=request.GET['choose_report'],
+                    report_type=self.report_type
+                )
+            except SavedReport.DoesNotExist:
+                return HttpResponseRedirect(request.path)
+
+        if 'delete_report' in request.GET:
+            qd = request.GET.copy()
+            try:
+                report = SavedReport.objects.get(
+                    pk=request.GET['delete_report'],
+                    report_type=self.report_type
+                )
+            except SavedReport.DoesNotExist:
+                pass
+            else:
+                report.delete()
+            del qd['delete_report']
+            return HttpResponseRedirect("{}?{}".format(request.path, qd.urlencode()))
+
+        if request.GET.get('save_report'):
+            qd = request.GET.copy()
+            name = qd['save_report']
+            del qd['save_report']
+            report = SavedReport.objects.create(
+                report_type=self.report_type,
+                event=self.event,
+                name=name,
+                querystring=qd.urlencode()
+            )
+
+        if report is not None:
+            return HttpResponseRedirect("{}?report={}&{}".format(
+                request.path, report.pk, report.querystring
+            ))
+
+        return super(EventTableView, self).get(request, *args, **kwargs)
 
     def get_table_kwargs(self, queryset):
-        kwargs = super(AttendeeFilterView, self).get_table_kwargs(queryset)
+        kwargs = super(EventTableView, self).get_table_kwargs(queryset)
         kwargs['event'] = self.event
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(AttendeeFilterView, self).get_context_data(**kwargs)
+        context = super(EventTableView, self).get_context_data(**kwargs)
         context.update({
             'event': self.event,
-            'event_admin_nav': get_event_admin_nav(self.event, self.request)
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'saved_reports': SavedReport.objects.filter(event=self.event, report_type=self.report_type),
         })
+        if self.request.GET.get('report'):
+            for report in context['saved_reports']:
+                if str(report.pk) == self.request.GET['report']:
+                    context['report'] = report
         return context
+
+
+class AttendeeFilterView(EventTableView):
+    template_name = 'brambling/event/organizer/attendees.html'
+    context_object_name = 'attendees'
+    model = Attendee
+    model_table = AttendeeTable
+    report_type = SavedReport.ATTENDEE
+
+    def get_queryset(self):
+        qs = super(AttendeeFilterView, self).get_queryset()
+        return qs.filter(order__event=self.event).distinct()
+
+
+class OrderFilterView(EventTableView):
+    template_name = 'brambling/event/organizer/orders.html'
+    context_object_name = 'orders'
+    model = Order
+    model_table = OrderTable
+    report_type = SavedReport.ORDER
+
+    def get_queryset(self):
+        qs = super(OrderFilterView, self).get_queryset()
+        return qs.filter(event=self.event)
 
 
 class RefundView(View):
@@ -761,35 +828,6 @@ class RefundView(View):
                               'organization_slug': self.event.organization.slug,
                               'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
-
-
-class OrderFilterView(ModelTableView):
-    template_name = 'brambling/event/organizer/orders.html'
-    context_object_name = 'orders'
-    model = Order
-    model_table = OrderTable
-
-    def get_queryset(self):
-        self.event = get_object_or_404(Event.objects.select_related('organization'),
-                                       slug=self.kwargs['event_slug'],
-                                       organization__slug=self.kwargs['organization_slug'])
-        if not self.event.editable_by(self.request.user):
-            raise Http404
-        qs = super(OrderFilterView, self).get_queryset()
-        return qs.filter(event=self.event)
-
-    def get_table_kwargs(self, queryset):
-        kwargs = super(OrderFilterView, self).get_table_kwargs(queryset)
-        kwargs['event'] = self.event
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super(OrderFilterView, self).get_context_data(**kwargs)
-        context.update({
-            'event': self.event,
-            'event_admin_nav': get_event_admin_nav(self.event, self.request)
-        })
-        return context
 
 
 class OrganizerApplyDiscountView(ApplyDiscountView):
