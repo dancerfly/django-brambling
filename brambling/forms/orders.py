@@ -556,8 +556,9 @@ class DwollaPaymentForm(BasePaymentForm):
             if self.amount > 0:
                 try:
                     self._charge = dwolla_charge(
-                        user_or_order=self.user if self.user.is_authenticated() else self.order,
+                        sender=self.user if self.user.is_authenticated() else self.order,
                         amount=float(self.amount),
+                        order=self.order,
                         event=self.order.event,
                         pin=self.cleaned_data['dwolla_pin'],
                         source=self.cleaned_data['source']

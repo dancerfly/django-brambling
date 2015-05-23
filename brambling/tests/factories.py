@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.utils.timezone import now
 import factory
+import pytz
 
 from brambling.models import (Event, Person, Order, CreditCard, Invite,
                               Organization, Transaction)
@@ -39,8 +40,9 @@ class PersonFactory(factory.DjangoModelFactory):
 
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
-    dwolla_test_access_token_expires = now() + timedelta(days=2)
-    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
+    dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_REFRESH_TOKEN'))
+    dwolla_test_access_token_expires = datetime(2015, 5, 23, 22, 29, 24, 745430, tzinfo=pytz.utc)
+    dwolla_test_refresh_token_expires = datetime(2015, 7, 22, 21, 29, 24, 745452, tzinfo=pytz.utc)
 
 
 class OrganizationFactory(factory.DjangoModelFactory):
@@ -58,8 +60,9 @@ class OrganizationFactory(factory.DjangoModelFactory):
 
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN'))
-    dwolla_test_access_token_expires = now() + timedelta(days=2)
-    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
+    dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN'))
+    dwolla_test_access_token_expires = datetime(2015, 5, 23, 22, 22, 27, 144345, tzinfo=pytz.utc)
+    dwolla_test_refresh_token_expires = datetime(2015, 7, 22, 21, 22, 27, 144376, tzinfo=pytz.utc)
 
 
 class EventFactory(factory.DjangoModelFactory):
@@ -80,6 +83,7 @@ class OrderFactory(factory.DjangoModelFactory):
     class Meta:
         model = Order
 
+    code = factory.Sequence(lambda n: str(n).zfill(6))
     event = factory.SubFactory(EventFactory)
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))

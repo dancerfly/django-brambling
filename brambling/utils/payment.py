@@ -131,12 +131,12 @@ def dwolla_get_sources(user_or_order, event):
     )
 
 
-def dwolla_charge(user_or_order, amount, event, pin, source):
+def dwolla_charge(sender, amount, order, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
     dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(user_or_order, event.api_type)
+    access_token = dwolla_get_token(sender, event.api_type)
     organization_access_token = dwolla_get_token(event.organization, event.api_type)
     if event.api_type == LIVE:
         destination = event.organization.dwolla_user_id
@@ -150,8 +150,9 @@ def dwolla_charge(user_or_order, amount, event, pin, source):
         alternate_pin=pin,
         params={
             'facilitatorAmount': float(get_fee(event, amount)),
-            'fundsSource': source
-        }
+            'fundsSource': source,
+            'notes': "Order {} for {}".format(order.code, event.name),
+        },
     )
     # Charge id returned by send_funds is the transaction ID
     # for the user; the event has a different transaction ID.
