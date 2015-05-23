@@ -166,7 +166,7 @@ def dwolla_charge(sender, amount, order, event, pin, source):
     return event_charge
 
 
-def dwolla_refund(event, payment_id, amount, pin):
+def dwolla_refund(order, event, payment_id, amount, pin):
     """
     Returns id of refund transaction.
     """
@@ -177,7 +177,10 @@ def dwolla_refund(event, payment_id, amount, pin):
         fundingsource="Balance",
         amount="%.2f" % amount,
         alternate_token=access_token,
-        alternate_pin=int(pin)
+        alternate_pin=int(pin),
+        params={
+            'notes': "Order {} for {}".format(order.code, event.name),
+        },
     )
 
 

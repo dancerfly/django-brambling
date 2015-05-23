@@ -1147,6 +1147,7 @@ class Transaction(models.Model):
             txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
         elif self.method == Transaction.DWOLLA:
             refund = dwolla_refund(
+                order=self.order,
                 event=self.order.event,
                 payment_id=self.remote_id,
                 amount=refundable,
