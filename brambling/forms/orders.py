@@ -480,6 +480,7 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
         kwargs = {
             'amount': self.amount,
             'event': self.order.event,
+            'order': self.order,
         }
         try:
             if self.cleaned_data.get('save_card'):
@@ -523,6 +524,7 @@ class SavedCardPaymentForm(BasePaymentForm):
                 self.card.stripe_card_id,
                 amount=self.amount,
                 event=self.order.event,
+                order=self.order,
                 customer=customer_id
             )
         except stripe.error.CardError, e:

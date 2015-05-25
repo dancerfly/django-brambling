@@ -141,7 +141,8 @@ class PaymentFormTestCase(TestCase):
         stripe_charge.assert_called_once_with(
             token,
             amount=Decimal('42.15'),
-            event=event
+            event=event,
+            order=order,
         )
         self.assertEqual(stripe_prep.call_count, 0)
         txn = form.save()
@@ -168,6 +169,7 @@ class PaymentFormTestCase(TestCase):
             card.stripe_card_id,
             amount=Decimal('42.15'),
             event=event,
+            order=order,
             customer='FAKE_CUSTOMER_ID'
         )
         self.assertEqual(stripe_prep.call_count, 0)

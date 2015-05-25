@@ -1141,6 +1141,7 @@ class Transaction(models.Model):
         if self.method == Transaction.STRIPE:
             refund = stripe_refund(
                 event=self.order.event,
+                order=self.order,
                 payment_id=self.remote_id,
                 amount=refundable,
             )
