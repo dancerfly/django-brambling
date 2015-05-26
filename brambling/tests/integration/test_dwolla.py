@@ -2,10 +2,11 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.test import TestCase
+from dwolla import transactions
 
 from brambling.models import Event, Transaction
-from brambling.tests.factories import EventFactory, PersonFactory
-from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
+from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
+from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund, dwolla_get_token
 
 
 CHARGE_DATA = {
@@ -44,11 +45,20 @@ class DwollaChargeTestCase(TestCase):
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
-        charge = dwolla_charge(person, 42.15, event, settings.DWOLLA_TEST_USER_PIN, 'Balance')
+        order = OrderFactory(person=person, event=event)
+        charge = dwolla_charge(
+            sender=person,
+            amount=42.15,
+            order=order,
+            event=event,
+            pin=settings.DWOLLA_TEST_USER_PIN,
+            source='Balance',
+        )
 
         self.assertIsInstance(charge, dict)
         self.assertEqual(charge["Type"], "money_received")
         self.assertEqual(len(charge['Fees']), 2)
+        self.assertEqual(charge["Notes"], "Order {} for {}".format(order.code, event.name))
 
         txn = Transaction.from_dwolla_charge(charge, event=event)
         # 42.15 * 0.025 = 1.05
@@ -56,10 +66,22 @@ class DwollaChargeTestCase(TestCase):
         # 0.25
         self.assertEqual(Decimal(txn.processing_fee), Decimal('0.25'))
 
-        refund = dwolla_refund(event, txn.remote_id, txn.amount, settings.DWOLLA_TEST_EVENT_PIN)
+        refund = dwolla_refund(
+            order=order,
+            event=event,
+            payment_id=txn.remote_id,
+            amount=txn.amount,
+            pin=settings.DWOLLA_TEST_ORGANIZATION_PIN
+        )
 
         self.assertIsInstance(refund, dict)
         self.assertEqual(refund["Amount"], txn.amount)
+
+        refund_info = transactions.info(
+            tid=str(refund['TransactionId']),
+            alternate_token=dwolla_get_token(event.organization, event.api_type)
+        )
+        self.assertEqual(refund_info["Notes"], "Order {} for {}".format(order.code, event.name))
 
         refund_txn = Transaction.from_dwolla_refund(refund, txn, event=event)
         self.assertEqual(refund_txn.amount, -1 * txn.amount)

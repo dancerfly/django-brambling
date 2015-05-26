@@ -480,6 +480,7 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
         kwargs = {
             'amount': self.amount,
             'event': self.order.event,
+            'order': self.order,
         }
         try:
             if self.cleaned_data.get('save_card'):
@@ -523,6 +524,7 @@ class SavedCardPaymentForm(BasePaymentForm):
                 self.card.stripe_card_id,
                 amount=self.amount,
                 event=self.order.event,
+                order=self.order,
                 customer=customer_id
             )
         except stripe.error.CardError, e:
@@ -556,8 +558,9 @@ class DwollaPaymentForm(BasePaymentForm):
             if self.amount > 0:
                 try:
                     self._charge = dwolla_charge(
-                        user_or_order=self.user if self.user.is_authenticated() else self.order,
+                        sender=self.user if self.user.is_authenticated() else self.order,
                         amount=float(self.amount),
+                        order=self.order,
                         event=self.order.event,
                         pin=self.cleaned_data['dwolla_pin'],
                         source=self.cleaned_data['source']

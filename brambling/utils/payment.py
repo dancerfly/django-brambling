@@ -131,12 +131,12 @@ def dwolla_get_sources(user_or_order, event):
     )
 
 
-def dwolla_charge(user_or_order, amount, event, pin, source):
+def dwolla_charge(sender, amount, order, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
     dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(user_or_order, event.api_type)
+    access_token = dwolla_get_token(sender, event.api_type)
     organization_access_token = dwolla_get_token(event.organization, event.api_type)
     if event.api_type == LIVE:
         destination = event.organization.dwolla_user_id
@@ -150,8 +150,9 @@ def dwolla_charge(user_or_order, amount, event, pin, source):
         alternate_pin=pin,
         params={
             'facilitatorAmount': float(get_fee(event, amount)),
-            'fundsSource': source
-        }
+            'fundsSource': source,
+            'notes': "Order {} for {}".format(order.code, event.name),
+        },
     )
     # Charge id returned by send_funds is the transaction ID
     # for the user; the event has a different transaction ID.
@@ -165,7 +166,7 @@ def dwolla_charge(user_or_order, amount, event, pin, source):
     return event_charge
 
 
-def dwolla_refund(event, payment_id, amount, pin):
+def dwolla_refund(order, event, payment_id, amount, pin):
     """
     Returns id of refund transaction.
     """
@@ -176,7 +177,10 @@ def dwolla_refund(event, payment_id, amount, pin):
         fundingsource="Balance",
         amount="%.2f" % amount,
         alternate_token=access_token,
-        alternate_pin=int(pin)
+        alternate_pin=int(pin),
+        params={
+            'notes': "Order {} for {}".format(order.code, event.name),
+        },
     )
 
 
@@ -218,7 +222,7 @@ def stripe_prep(api_type):
         stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 
 
-def stripe_charge(card_or_token, amount, event, customer=None):
+def stripe_charge(card_or_token, amount, order, event, customer=None):
     if amount <= 0:
         return None
     stripe_prep(event.api_type)
@@ -239,11 +243,15 @@ def stripe_charge(card_or_token, amount, event, customer=None):
         currency=event.currency,
         card=card_or_token,
         application_fee=int(get_fee(event, amount) * 100),
-        expand=['balance_transaction']
+        expand=['balance_transaction'],
+        metadata={
+            'order': order.code,
+            'event': event.name,
+        },
     )
 
 
-def stripe_refund(event, payment_id, amount):
+def stripe_refund(order, event, payment_id, amount):
     stripe_prep(event.api_type)
     if event.api_type == LIVE:
         access_token = event.organization.stripe_access_token
@@ -256,6 +264,10 @@ def stripe_refund(event, payment_id, amount):
         amount=int(amount*100),
         refund_application_fee=True,
         expand=['balance_transaction'],
+        metadata={
+            'order': order.code,
+            'event': event.name,
+        },
     )
 
     # Retrieving the application fee data requires the application api token.

@@ -1141,12 +1141,14 @@ class Transaction(models.Model):
         if self.method == Transaction.STRIPE:
             refund = stripe_refund(
                 event=self.order.event,
+                order=self.order,
                 payment_id=self.remote_id,
                 amount=refundable,
             )
             txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
         elif self.method == Transaction.DWOLLA:
             refund = dwolla_refund(
+                order=self.order,
                 event=self.order.event,
                 payment_id=self.remote_id,
                 amount=refundable,

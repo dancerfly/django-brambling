@@ -4,7 +4,7 @@ from django.test import TestCase
 import stripe
 
 from brambling.models import Event, Transaction
-from brambling.tests.factories import EventFactory
+from brambling.tests.factories import EventFactory, OrderFactory
 from brambling.utils.payment import stripe_prep, stripe_charge, stripe_refund
 
 
@@ -12,6 +12,7 @@ class StripeTestCase(TestCase):
     def test_charge__no_customer(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
+        order = OrderFactory(event=event)
         self.assertTrue(event.stripe_connected())
         stripe_prep(Event.TEST)
         stripe.api_key = event.organization.stripe_test_access_token
@@ -24,10 +25,16 @@ class StripeTestCase(TestCase):
                 "cvc": '123'
             },
         )
-        charge = stripe_charge(token, 42.15, event)
+        charge = stripe_charge(
+            token,
+            amount=42.15,
+            order=order,
+            event=event,
+        )
         self.assertIsInstance(charge.balance_transaction, stripe.StripeObject)
         self.assertEqual(charge.balance_transaction.object, "balance_transaction")
         self.assertEqual(len(charge.balance_transaction.fee_details), 2)
+        self.assertEqual(charge.metadata, {'order': order.code, 'event': event.name})
 
         txn = Transaction.from_stripe_charge(charge, api_type=event.api_type, event=event)
         # 42.15 * 0.025 = 1.05
@@ -35,7 +42,13 @@ class StripeTestCase(TestCase):
         # (42.15 * 0.029) + 0.30 = 1.52
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
-        refund = stripe_refund(event, txn.remote_id, txn.amount)
+        refund = stripe_refund(
+            order=order,
+            event=event,
+            payment_id=txn.remote_id,
+            amount=txn.amount
+        )
+        self.assertEqual(refund['refund'].metadata, {'order': order.code, 'event': event.name})
 
         refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn, event=event)
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
@@ -45,6 +58,7 @@ class StripeTestCase(TestCase):
     def test_charge__customer(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
+        order = OrderFactory(event=event)
         self.assertTrue(event.stripe_connected())
         stripe_prep(Event.TEST)
 
@@ -60,10 +74,17 @@ class StripeTestCase(TestCase):
             card=token,
         )
         card = customer.default_card
-        charge = stripe_charge(card, 42.15, event, customer)
+        charge = stripe_charge(
+            card,
+            amount=42.15,
+            event=event,
+            order=order,
+            customer=customer
+        )
         self.assertIsInstance(charge.balance_transaction, stripe.StripeObject)
         self.assertEqual(charge.balance_transaction.object, "balance_transaction")
         self.assertEqual(len(charge.balance_transaction.fee_details), 2)
+        self.assertEqual(charge.metadata, {'order': order.code, 'event': event.name})
 
         txn = Transaction.from_stripe_charge(charge, api_type=event.api_type, event=event)
         # 42.15 * 0.025 = 1.05
@@ -71,7 +92,13 @@ class StripeTestCase(TestCase):
         # (42.15 * 0.029) + 0.30 = 1.52
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
-        refund = stripe_refund(event, txn.remote_id, txn.amount)
+        refund = stripe_refund(
+            order=order,
+            event=event,
+            payment_id=txn.remote_id,
+            amount=txn.amount
+        )
+        self.assertEqual(refund['refund'].metadata, {'order': order.code, 'event': event.name})
 
         refund_txn = Transaction.from_stripe_refund(refund, api_type=event.api_type, related_transaction=txn, event=event)
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
