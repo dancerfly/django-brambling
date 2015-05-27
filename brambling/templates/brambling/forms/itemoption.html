@@ -5,13 +5,16 @@
 
 {% block rows %}
 	<div class='row form--single-row'>
-		<div class='col-sm-1'><span class="js-sortable-handle btn btn-link pull-right"><i class="fa fa-bars"></i></span></div>
-		<div class='col-sm-4'>{% formrow form.name using "brambling/forms/rows/no_label.html" with placeholder="Name" %}</div>
-		<div class='col-sm-3'>
+		<div class='col-sm-1 hidden-xs'>
+			<span class="js-sortable-handle btn btn-link btn-block a-secret pull-right"><i class="fa fa-bars"></i></span>
+		</div>
+		<div class='margin-trailer-half-xs col-sm-4'>
+			{% formrow form.name using "brambling/forms/rows/no_label.html" with placeholder="Name" %}</div>
+		<div class='margin-trailer-half-xs col-sm-3'>
 			{% formrow form.price using "brambling/forms/rows/no_label.html" with append=event.currency placeholder="0.00" %}
 		</div>
 		<div class="col-sm-4 js-actions">
-			<a class="btn btn-default" href="#{{ form.prefix }}-advanced" data-toggle="collapse" aria-expanded="false" aria-controls="{{ form.prefix }}-advanced"><i class="fa fa-cog"></i> Advanced Options</a>
+			<a class="btn btn-default" href="#{{ form.prefix }}-advanced" data-toggle="collapse" aria-expanded="false" aria-controls="{{ form.prefix }}-advanced"><i class="fa fa-cog"></i> <span class="hidden-md hidden-sm">Advanced</span> Settings</a>
 		</div>
 	</div>
 
@@ -34,10 +37,8 @@
 			<div class='col-xs-6'>{% formrow form.total_number %}</div>
 			<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
 		</div>
-		<div class='row js-hide'>
-			<div class='col-md-6'>{% formrow form.order %}</div>
-			<div class='col-md-6'>{% formrow form.DELETE %}</div>
-		</div>
+		{# The following form fields are controlled with javascript: #}
+		<div class='hide'>{% formrow form.order %}{% formrow form.DELETE %}</div>
 	</div>
 
 	{% for field in form.hidden_fields %}
