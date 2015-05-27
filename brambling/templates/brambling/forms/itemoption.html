@@ -6,9 +6,9 @@
 {% block rows %}
 	<div class='row form--single-row'>
 		<div class='col-sm-1'><span class="js-sortable-handle btn btn-link pull-right"><i class="fa fa-bars"></i></span></div>
-		<div class='col-sm-4'>{% formrow form.name using "brambling/forms/rows/no_label.html" %}</div>
+		<div class='col-sm-4'>{% formrow form.name using "brambling/forms/rows/no_label.html" with placeholder="Name" %}</div>
 		<div class='col-sm-3'>
-			{% formrow form.price using "brambling/forms/rows/no_label.html" with append=event.currency %}
+			{% formrow form.price using "brambling/forms/rows/no_label.html" with append=event.currency placeholder="0.00" %}
 		</div>
 		<div class="col-sm-4 js-actions">
 			<a class="btn btn-default" href="#{{ form.prefix }}-advanced" data-toggle="collapse" aria-expanded="false" aria-controls="{{ form.prefix }}-advanced"><i class="fa fa-cog"></i> Advanced Options</a>

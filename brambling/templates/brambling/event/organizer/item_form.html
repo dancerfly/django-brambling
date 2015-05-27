@@ -81,12 +81,9 @@
 			</header>
 		</div>
 
-
-		<h3>Item Options</h3>
-
 		{{ itemoption_formset.management_form }}
 
-		<p class="text-muted">Click on an option to expand it. Drag and drop to reorder.</p>
+		<p class="text-muted">Add different prices, sizes, pass types, or other variations.</p>
 
 		{% if itemoption_formset.non_form_errors %}
 			{% for error in itemoption_formset.non_form_errors %}
@@ -96,28 +93,23 @@
 
 		{# template for additional item option forms #}
 		<div class="hidden">
-			<div class='panel panel-default item-option item-option-template'>
-				<div class='panel-body'>
-					{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
-				</div>
+			<div class='list-group-item item-option item-option-template'>
+				{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
 			</div>
 		</div>
 
-		<div class="item-options-list panel-group">
-			{% for form in itemoption_formset.forms %}
-				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} item-option'>
-					<div class='panel-body'>
+		<div class="panel panel-default">
+			<div class="item-options-list list-group">
+				{% for form in itemoption_formset.forms %}
+					<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} item-option'>
 						{% form form using "brambling/forms/itemoption.html" %}
 					</div>
-				</div>
-			{% endfor %}
-		</div>
-
-		<div class='panel panel-default'>
-			<header class='panel-heading'>
-				<div class='panel-title js-formset-add option-add'>
-				</div>{# /.panel-title #}
-			</header>
+				{% endfor %}
+			</div>
+			<div class="panel-footer">
+				<div class='js-formset-add option-add'>
+				</div>{# /.list-group-item #}
+			</div>
 		</div>
 
 		<button class='btn btn-primary' type="submit">Save</button>
@@ -161,7 +153,7 @@
 				prefix: '{{ itemoption_formset.prefix }}',
 				deleteTrigger: '<a href="#" class="btn btn-link pull-right"><i class="fa fa-trash"></i></a>',
 				deleteWrapper: '.js-actions',
-				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add an Option</a>',
+				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an Option</a>',
 				addWrapper: '.js-formset-add.option-add',
 				formTemplate: '.item-option-template',
 				sortableHandle: '.panel-heading',
