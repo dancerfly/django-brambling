@@ -1,7 +1,6 @@
 {% extends "floppyforms/layouts/bootstrap.html" %}
 
 {% load floppyforms tz %}
-{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 {% block rows %}
 	<div class='row form--single-row'>
@@ -37,11 +36,16 @@
 			<div class='col-xs-6'>{% formrow form.total_number %}</div>
 			<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
 		</div>
-		{# The following form fields are controlled with javascript: #}
-		<div class='hide'>{% formrow form.order %}{% formrow form.DELETE %}</div>
 	</div>
 
 	{% for field in form.hidden_fields %}
 		{% formfield field %}
 	{% endfor %}
+
+	{# The following form fields are controlled with javascript: #}
+	<div class='hide'>
+		{% formrow form.order %}
+		{# Don't render delete box if this is a dynamic form. We'll delete those by removing the DOM element with javascript. #}
+		{% if not "__prefix__" in form.prefix %}{% formrow form.DELETE %}{% endif %}
+	</div>
 {% endblock %}
