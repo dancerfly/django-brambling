@@ -1,31 +1,41 @@
 {% extends 'brambling/event/organizer/__base.html' %}
 
+{% load static %}
+
 {% block title %}Items – {{ block.super }}{% endblock %}
 
 {% block main %}
 	{{ block.super }}
 
-	<p><a class="btn btn-primary" href="{% url 'brambling_item_create' event_slug=event.slug organization_slug=event.organization.slug %}">Create item</a></p>
-	{% if items %}
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Category</th>
-					<th>Created</th>
-					<th>Number of options</th>
-				</tr>
-			</thead>
-			<tbody>
-			{% for item in items %}
-				<tr>
-					<td><a href="{% url 'brambling_item_update' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk %}">{{ item.name }}</a></td>
-					<td>{{ item.get_category_display }}</td>
-					<td>{{ item.created }}</td>
-					<td>{{ item.option_count }}</td>
-				</tr>
-			{% endfor %}
-			</tbody>
-		</table>
-	{% endif %}
+	<div class="row">
+		{% if items %}
+			<div class="col-md-4">
+					<div class="panel panel-default">
+						<header class="panel-heading">
+							<h4 class="panel-title">Items</h4>
+						</header>
+						<div class="list-group">
+							{% for item in items %}
+								<a class="list-group-item" href="{% url 'brambling_item_update' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk %}">{{ item.name }} <span class="badge">{{ item.option_count }} option{{ item.option_count|pluralize }}</span></a>
+							{% endfor %}
+						</div>
+					</div>
+			</div>
+		{% endif %}
+		<div class="col-md-8">
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Create Item</h4>
+				</header>
+				<div class="panel-body">
+					{% url 'brambling_item_create' event_slug=event.slug organization_slug=event.organization.slug  as action %}
+					{% include "brambling/event/organizer/_item_form.html" with action=action %}
+				</div>
+			</div>
+		</div>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% include "brambling/event/organizer/_item_form_js.html" %}
 {% endblock %}

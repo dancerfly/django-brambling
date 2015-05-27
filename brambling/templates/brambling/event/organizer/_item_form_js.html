@@ -1,0 +1,62 @@
+{# TODO: Abstract this to a better place. #}
+<script type="text/javascript">
+	$(function () {
+		"use strict";
+		var item_images_renumber = function () {
+			$('.item-images-list .item-image:visible').each(function(i){
+				$(this).find('.count').html(i+1);
+			});
+		};
+
+		$('.item-images-list').on('row_added.formset row_removed.formset reordered.formset', item_images_renumber);
+
+		$('.item-images-list').formset({
+			prefix: '{{ itemimage_formset.prefix }}',
+			deleteTrigger: '<a href="#"><i class="fa fa-trash"></i></a>',
+			deleteWrapper: '.actions',
+			addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an Image</a>',
+			addWrapper: '.js-formset-add.image-add',
+			formTemplate: '.item-image-template',
+			sortableHandle: '.panel-heading',
+			sortableField: 'order'
+		});
+
+		var item_options_renumber = function () {
+			$('.item-options-list .item-option:visible').each(function(i){
+				$(this).find('.count').html(i+1);
+			});
+		};
+
+		$('.item-options-list').on('row_added.formset row_removed.formset reordered.formset', item_options_renumber);
+
+		$('.item-options-list').formset({
+			prefix: '{{ itemoption_formset.prefix }}',
+			deleteTrigger: '<a href="#" class="btn btn-link pull-right"><i class="fa fa-trash"></i></a>',
+			deleteWrapper: '.js-actions',
+			addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an Option</a>',
+			addWrapper: '.js-formset-add.option-add',
+			formTemplate: '.item-option-template',
+			sortableHandle: '.panel-heading',
+			sortableField: 'order'
+		});
+
+		// Handle limit row display/hide on itemoption forms.
+		$('.item-options-list').on('change', 'input[type=checkbox]', function() {
+			var prefix = this.id.substr(0, this.id.length - 13),
+				total_number = $("#id_" + prefix + "-total_number");
+			if (this.checked) {
+				if (total_number.val() === '') {
+					total_number.val(100);
+				}
+				$("#" + prefix + "-limitRow").collapse('show');
+			} else {
+				$("#id_" + prefix + "-total_number").val('');
+				$("#" + prefix + "-limitRow").collapse('hide');
+			}
+		});
+		$('.item-options-list').on('row_added.formset', function(e, row) {
+			$(row).find('.limitRow').collapse({toggle: false});
+			$(row).find('input[type=checkbox]').trigger('change');
+		});
+	}());
+</script>

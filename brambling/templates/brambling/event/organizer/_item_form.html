@@ -1,0 +1,84 @@
+{% load floppyforms %}
+
+{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
+<form action="{{ action }}" id="itemForm" method="post" novalidate enctype="multipart/form-data">
+	{% csrf_token %}
+	{% form item_form using %}
+		<div class="row">
+			<div class="col-md-6">
+				{% formrow form.name %}
+				{% formrow form.description %}
+			</div>
+			<div class="col-md-6">
+				<p class="text-muted">Images will be scaled to fit in a 598 pixel square box.</p>
+
+				{{ itemimage_formset.management_form }}
+
+				{# template for additional item image forms: #}
+				<div class="hidden">
+					<div class='list-group-item item-image item-image-template form--single-row'>
+						{% with form=itemimage_formset.empty_form %}
+							{% form form using "brambling/forms/itemimage.html" %}
+						{% endwith %}
+					</div>
+				</div>
+
+				{# item images forms: #}
+				<div class="panel panel-default">
+					{% if itemimage_formset.non_form_errors %}
+						<div class="panel-body">
+							{% for error in itemimage_formset.non_form_errors %}
+								<p class='text-danger'>{{ error }}</p>
+							{% endfor %}
+						</div>
+					{% endif %}
+					<div class="item-images-list list-group form--single-row">
+						{% for form in itemimage_formset.forms %}
+							<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} item-image'>
+								{% form form using "brambling/forms/itemimage.html" %}
+							</div>
+						{% endfor %}
+					</div>{# /.item-imges-list #}
+					<div class="panel-footer">
+						<div class='js-formset-add image-add'></div>
+					</div>
+				</div>{# /.panel #}
+			</div>{# /.col-md-6 #}
+		</div>{# /.row #}
+
+	{% endform %}
+
+	{{ itemoption_formset.management_form }}
+
+	<p class="text-muted">Add different prices, sizes, pass types, or other variations.</p>
+
+	{% if itemoption_formset.non_form_errors %}
+		{% for error in itemoption_formset.non_form_errors %}
+			<p class='text-danger'>{{ error }}</p>
+		{% endfor %}
+	{% endif %}
+
+	{# template for additional item option forms #}
+	<div class="hidden">
+		<div class='list-group-item item-option item-option-template'>
+			{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
+		</div>
+	</div>
+
+	<div class="panel panel-default">
+		<div class="item-options-list list-group">
+			{% for form in itemoption_formset.forms %}
+				<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} item-option'>
+					{% form form using "brambling/forms/itemoption.html" %}
+				</div>
+			{% endfor %}
+		</div>
+		<div class="panel-footer">
+			<div class='js-formset-add option-add'>
+			</div>{# /.list-group-item #}
+		</div>
+	</div>
+
+	<button class='btn btn-primary' type="submit">Save</button>
+	{% if item.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
+</form>

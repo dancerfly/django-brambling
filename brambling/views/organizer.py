@@ -534,6 +534,17 @@ class ItemListView(ListView):
         return qs.filter(event=self.event
                          ).annotate(option_count=Count('options'))
 
+    def get_forms(self):
+        item = Item()
+        item_form = ItemForm(self.event, instance=item)
+        image_formset = ItemImageFormSet(instance=item, prefix='image')
+        option_formset = ItemOptionFormSet(self.event, instance=item, prefix='option')
+        return {
+            'item_form': item_form,
+            'itemimage_formset': image_formset,
+            'itemoption_formset': option_formset,
+        }
+
     def get_context_data(self, **kwargs):
         context = super(ItemListView, self).get_context_data(**kwargs)
         context.update({
@@ -541,6 +552,7 @@ class ItemListView(ListView):
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
+        context.update(self.get_forms())
         return context
 
 

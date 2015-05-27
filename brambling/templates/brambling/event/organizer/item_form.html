@@ -1,6 +1,6 @@
 {% extends 'brambling/event/organizer/__narrow.html' %}
 
-{% load floppyforms %}
+{% load floppyforms static %}
 
 {% block title %}{% if item.pk %}Edit {{ item.name }}{% else %}Add an item{% endif %} – {{ block.super }}{% endblock %}
 
@@ -9,151 +9,10 @@
 
 	<h2>{% if item.pk %}{{ item.name }}{% else %}Add an item{% endif %}</h2>
 
-	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
-	<form action="{{ request.path }}" id="itemForm" method="post" novalidate enctype="multipart/form-data">
-		{% csrf_token %}
-		{% form item_form using %}
-			<div class="row">
-				<div class="col-md-6">
-					{% formrow form.name %}
-					{% formrow form.description %}
-				</div>
-				<div class="col-md-6">
-					<p class="text-muted">Images will be scaled to fit in a 598 pixel square box.</p>
-
-					{{ itemimage_formset.management_form }}
-
-					{# template for additional item image forms: #}
-					<div class="hidden">
-						<div class='list-group-item item-image item-image-template form--single-row'>
-							{% with form=itemimage_formset.empty_form %}
-								{% form form using "brambling/forms/itemimage.html" %}
-							{% endwith %}
-						</div>
-					</div>
-
-					{# item images forms: #}
-					<div class="panel panel-default">
-						{% if itemimage_formset.non_form_errors %}
-							<div class="panel-body">
-								{% for error in itemimage_formset.non_form_errors %}
-									<p class='text-danger'>{{ error }}</p>
-								{% endfor %}
-							</div>
-						{% endif %}
-						<div class="item-images-list list-group form--single-row">
-							{% for form in itemimage_formset.forms %}
-								<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} item-image'>
-									{% form form using "brambling/forms/itemimage.html" %}
-								</div>
-							{% endfor %}
-						</div>{# /.item-imges-list #}
-						<div class="panel-footer">
-							<div class='js-formset-add image-add'></div>
-						</div>
-					</div>{# /.panel #}
-				</div>{# /.col-md-6 #}
-			</div>{# /.row #}
-
-		{% endform %}
-
-		{{ itemoption_formset.management_form }}
-
-		<p class="text-muted">Add different prices, sizes, pass types, or other variations.</p>
-
-		{% if itemoption_formset.non_form_errors %}
-			{% for error in itemoption_formset.non_form_errors %}
-				<p class='text-danger'>{{ error }}</p>
-			{% endfor %}
-		{% endif %}
-
-		{# template for additional item option forms #}
-		<div class="hidden">
-			<div class='list-group-item item-option item-option-template'>
-				{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
-			</div>
-		</div>
-
-		<div class="panel panel-default">
-			<div class="item-options-list list-group">
-				{% for form in itemoption_formset.forms %}
-					<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} item-option'>
-						{% form form using "brambling/forms/itemoption.html" %}
-					</div>
-				{% endfor %}
-			</div>
-			<div class="panel-footer">
-				<div class='js-formset-add option-add'>
-				</div>{# /.list-group-item #}
-			</div>
-		</div>
-
-		<button class='btn btn-primary' type="submit">Save</button>
-		{% if item.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
-	</form>
+	{% include "brambling/event/organizer/_item_form.html" with action=request.path %}
 {% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
-	<script type="text/javascript">
-		(function () {
-			"use strict";
-			var item_images_renumber = function () {
-				$('.item-images-list .item-image:visible').each(function(i){
-					$(this).find('.count').html(i+1);
-				});
-			};
-
-			$('.item-images-list').on('row_added.formset row_removed.formset reordered.formset', item_images_renumber);
-
-			$('.item-images-list').formset({
-				prefix: '{{ itemimage_formset.prefix }}',
-				deleteTrigger: '<a href="#"><i class="fa fa-trash"></i></a>',
-				deleteWrapper: '.actions',
-				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an Image</a>',
-				addWrapper: '.js-formset-add.image-add',
-				formTemplate: '.item-image-template',
-				sortableHandle: '.panel-heading',
-				sortableField: 'order'
-			});
-
-			var item_options_renumber = function () {
-				$('.item-options-list .item-option:visible').each(function(i){
-					$(this).find('.count').html(i+1);
-				});
-			};
-
-			$('.item-options-list').on('row_added.formset row_removed.formset reordered.formset', item_options_renumber);
-
-			$('.item-options-list').formset({
-				prefix: '{{ itemoption_formset.prefix }}',
-				deleteTrigger: '<a href="#" class="btn btn-link pull-right"><i class="fa fa-trash"></i></a>',
-				deleteWrapper: '.js-actions',
-				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an Option</a>',
-				addWrapper: '.js-formset-add.option-add',
-				formTemplate: '.item-option-template',
-				sortableHandle: '.panel-heading',
-				sortableField: 'order'
-			});
-
-			// Handle limit row display/hide on itemoption forms.
-			$('.item-options-list').on('change', 'input[type=checkbox]', function() {
-				var prefix = this.id.substr(0, this.id.length - 13),
-					total_number = $("#id_" + prefix + "-total_number");
-				if (this.checked) {
-					if (total_number.val() === '') {
-						total_number.val(100);
-					}
-					$("#" + prefix + "-limitRow").collapse('show');
-				} else {
-					$("#id_" + prefix + "-total_number").val('');
-					$("#" + prefix + "-limitRow").collapse('hide');
-				}
-			});
-			$('.item-options-list').on('row_added.formset', function(e, row) {
-				$(row).find('.limitRow').collapse({toggle: false});
-				$(row).find('input[type=checkbox]').trigger('change');
-			});
-		}());
-	</script>
+	{% include "brambling/event/organizer/_item_form_js.html" %}
 {% endblock %}
