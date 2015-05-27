@@ -14,72 +14,65 @@
 		{% csrf_token %}
 		{% form item_form using %}
 			<div class="row">
-				<div class="col-md-6">{% formrow form.name %}</div>
-				<div class="col-md-6">{% formrow form.category %}</div>
-			</div>
-
-			{% formrow form.description %}
-		{% endform %}
-
-		<h3>Images</h3>
-		<p>Images will be scaled to fit in a 598 pixel square box.</p>
-		<p class="text-muted">Drag and drop to reorder.</p>
-
-		{{ itemimage_formset.management_form }}
-
-		{% if itemimage_formset.non_form_errors %}
-			{% for error in itemimage_formset.non_form_errors %}
-				<p class='text-danger'>{{ error }}</p>
-			{% endfor %}
-		{% endif %}
-
-		{# template for additional item image forms #}
-		<div class="hidden">
-			<div class='panel panel-default item-image item-image-template'>
-				<header class='panel-heading'>
-					<div class="actions pull-right"></div>
-					{% with form=itemimage_formset.empty_form %}
-						{% form form using %}
-							{% formrow form.image %}
-							<div class='row js-hide'>
-								<div class='col-md-6'>{% formrow form.order %}</div>
-								<div class='col-md-6'>{% formrow form.DELETE %}</div>
-							</div>
-							{% for field in form.hidden_fields %}
-								{% formfield field %}
-							{% endfor %}
-						{% endform %}
-					{% endwith %}
-				</header>
-			</div>
-		</div>
-
-		<div class="item-images-list panel-group">
-			{% for form in itemimage_formset.forms %}
-				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} item-image'>
-					<header class='panel-heading'>
-						<div class="actions pull-right"></div>
-						{% form form using %}
-							{% formrow form.image with display_image=1 %}
-							<div class='row js-hide'>
-								<div class='col-md-6'>{% formrow form.order %}</div>
-								<div class='col-md-6'>{% formrow form.DELETE %}</div>
-							</div>
-							{% for field in form.hidden_fields %}
-								{% formfield field %}
-							{% endfor %}
-						{% endform %}
-					</header>
+				<div class="col-md-6">
+					{% formrow form.name %}
+					{% formrow form.description %}
 				</div>
-			{% endfor %}
-		</div>
+				<div class="col-md-6">
+					<p class="text-muted">Images will be scaled to fit in a 598 pixel square box.</p>
 
-		<div class='panel panel-default'>
-			<header class='panel-heading'>
-				<div class='panel-title js-formset-add image-add'>
-				</div>{# /.panel-title #}
-			</header>
-		</div>
+					{{ itemimage_formset.management_form }}
+
+					{# template for additional item image forms: #}
+					<div class="hidden">
+						<div class='list-group-item item-image item-image-template form--single-row'>
+							<div class="actions pull-right"></div>
+							{% with form=itemimage_formset.empty_form %}
+								{% form form using %}
+									{% formrow form.image using "brambling/forms/rows/no_label.html" %}
+									<div class='hide'>{% formrow form.order %}{% formrow form.DELETE %}</div>
+									{% for field in form.hidden_fields %}
+										{% formfield field %}
+									{% endfor %}
+								{% endform %}
+							{% endwith %}
+						</div>
+					</div>
+
+					{# item images forms: #}
+					<div class="panel panel-default">
+						{% if itemimage_formset.non_form_errors %}
+							<div class="panel-body">
+								{% for error in itemimage_formset.non_form_errors %}
+									<p class='text-danger'>{{ error }}</p>
+								{% endfor %}
+							</div>
+						{% endif %}
+						<div class="item-images-list list-group form--single-row">
+							{% for form in itemimage_formset.forms %}
+								<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} item-image'>
+									<div class="actions pull-right"></div>
+									{% form form using %}
+										{% formrow form.image with display_image=1 %}
+										<div class='row js-hide'>
+											<div class='col-md-6'>{% formrow form.order %}</div>
+											<div class='col-md-6'>{% formrow form.DELETE %}</div>
+										</div>
+										{% for field in form.hidden_fields %}
+											{% formfield field %}
+										{% endfor %}
+									{% endform %}
+								</div>
+							{% endfor %}
+						</div>{# /.item-imges-list #}
+						<div class="panel-footer">
+							<div class='js-formset-add image-add'></div>
+						</div>
+					</div>{# /.panel #}
+				</div>{# /.col-md-6 #}
+			</div>{# /.row #}
+
+		{% endform %}
 
 		{{ itemoption_formset.management_form }}
 
@@ -132,9 +125,9 @@
 
 			$('.item-images-list').formset({
 				prefix: '{{ itemimage_formset.prefix }}',
-				deleteTrigger: '<a href="#" class="btn btn-link"><i class="fa fa-times"></i></a>',
+				deleteTrigger: '<a href="#"><i class="fa fa-trash"></i></a>',
 				deleteWrapper: '.actions',
-				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add an Image</a>',
+				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an Image</a>',
 				addWrapper: '.js-formset-add.image-add',
 				formTemplate: '.item-image-template',
 				sortableHandle: '.panel-heading',
