@@ -1,41 +1,43 @@
 {% extends "floppyforms/layouts/bootstrap.html" %}
 
 {% load floppyforms tz %}
-{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 {% block rows %}
-	<div class='row'>
-		<div class='col-sm-6'>{% formrow form.name %}</div>
-		<div class='col-sm-6'>
-			{% formrow form.price with append=event.currency %}
+	<div class='row form--single-row'>
+		<div class='col-sm-1'><span class="js-sortable-handle btn btn-link pull-right"><i class="fa fa-bars"></i></span></div>
+		<div class='col-sm-4'>{% formrow form.name using "brambling/forms/rows/no_label.html" %}</div>
+		<div class='col-sm-3'>
+			{% formrow form.price using "brambling/forms/rows/no_label.html" with append=event.currency %}
+		</div>
+		<div class="col-sm-4 js-actions">
+			<a class="btn btn-default" href="#{{ form.prefix }}-advanced" data-toggle="collapse" aria-expanded="false" aria-controls="{{ form.prefix }}-advanced"><i class="fa fa-cog"></i> Advanced Options</a>
 		</div>
 	</div>
-	{% timezone event.timezone %}
-		<div class='row'>
-			{% get_current_timezone as TIME_ZONE_CURRENT %}
-			<div class='col-xs-6'>
-				{% formrow form.available_start %}
-				<div class='help-block'>
-					Timezone: {{ TIME_ZONE_CURRENT }}
+
+	<div class="collapse margin-leader" id="{{ form.prefix }}-advanced">
+		{{ form.id }}
+		{% timezone event.timezone %}
+			<div class='row'>
+				{% get_current_timezone as TIME_ZONE_CURRENT %}
+				<div class='col-xs-6'>
+					{% formrow form.available_start %}
+					<div class='help-block'>
+						Timezone: {{ TIME_ZONE_CURRENT }}
+					</div>
 				</div>
+				<div class='col-xs-6'>{% formrow form.available_end %}</div>
 			</div>
-			<div class='col-xs-6'>{% formrow form.available_end %}</div>
+		{% endtimezone %}
+
+		<div id="{{ form.prefix }}-limitRow" class='row limitRow'>
+			<div class='col-xs-6'>{% formrow form.total_number %}</div>
+			<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
 		</div>
-	{% endtimezone %}
-
-	<div class="checkbox">
-		<label for="{{ form.prefix }}-toggleLimits">
-			<input type="checkbox" id="{{ form.prefix }}-toggleLimits"{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} checked{% endif %}> Limit number of items available
-		</label>
-	</div>
-
-	<div id="{{ form.prefix }}-limitRow" class='row limitRow collapse{% if form.instance.total_number or form.errors.total_number or form.errors.remaining_display %} in{% endif %}'>
-		<div class='col-xs-6'>{% formrow form.total_number %}</div>
-		<div class='col-xs-6'>{% formrow form.remaining_display with label="Display remaining / total?" %}</div>
-	</div>
-	<div class='row js-hide'>
-		<div class='col-md-6'>{% formrow form.order %}</div>
-		<div class='col-md-6'>{% formrow form.DELETE %}</div>
+		<div class='row js-hide'>
+			<div class='col-md-6'>{% formrow form.order %}</div>
+			<div class='col-md-6'>{% formrow form.DELETE %}</div>
+		</div>
 	</div>
 
 	{% for field in form.hidden_fields %}
