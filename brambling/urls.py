@@ -223,13 +223,15 @@ organization_urlpatterns = patterns('',
     url(r'^edit/event_defaults/$',
         OrganizationUpdateView.as_view(
             form_class=OrganizationEventDefaultsForm,
-            template_name='brambling/organization/event_defaults.html'
+            template_name='brambling/organization/event_defaults.html',
+            success_view_name='brambling_organization_update_event_defaults',
         ),
         name='brambling_organization_update_event_defaults'),
     url(r'^edit/permissions/$',
         OrganizationUpdateView.as_view(
             form_class=OrganizationPermissionForm,
-            template_name='brambling/organization/permissions.html'
+            template_name='brambling/organization/permissions.html',
+            success_view_name='brambling_organization_update_permissions',
         ),
         name='brambling_organization_update_permissions'),
     url(r'^edit/payment/$',

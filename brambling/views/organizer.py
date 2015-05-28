@@ -47,6 +47,7 @@ from brambling.utils.payment import (dwolla_organization_oauth_url,
 class OrganizationUpdateView(UpdateView):
     model = Organization
     context_object_name = 'organization'
+    success_view_name = 'brambling_organization_update'
 
     def get_object(self):
         obj = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
@@ -67,7 +68,7 @@ class OrganizationUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return reverse('brambling_organization_update',
+        return reverse(self.success_view_name,
                        kwargs={'organization_slug': self.object.slug})
 
     def get_context_data(self, **kwargs):
