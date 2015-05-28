@@ -352,7 +352,7 @@ background: #970b0e !important;
                   {% for txn, txn_dict in transactions.iteritems %}
                     {% for item in txn_dict.items %}
                       {% if item.status == item.BOUGHT %}
-                        {{ item.item_option.item.name }} ({{ item.item_option.name }})
+                        {{ item.item_name }} ({{ item.item_option_name }})
                         {% if not forloop.last %}<br />{% endif %}
                       {% endif %}
                     {% endfor %}

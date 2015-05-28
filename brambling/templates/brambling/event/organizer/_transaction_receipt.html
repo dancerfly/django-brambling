@@ -28,7 +28,7 @@
 						<div class="modal-body">
 							<form action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=txn.pk %}' method='post' class='form-inline'>
 								{% csrf_token %}
-								<h4 id="Label{{ bought_item.item_option.item.pk }}">Are you sure you want to refund {{ txn.amount|format_money:event.currency }} and all related purchases?</h4>
+								<h4 id="Label{{ txn.pk }}">Are you sure you want to refund {{ txn.amount|format_money:event.currency }} and all related purchases?</h4>
 								{% if txn.has_dwolla_payments %}
 									<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
 								{% endif %}

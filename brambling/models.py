@@ -884,7 +884,7 @@ class Order(AbstractDwollaModel):
     def get_groupable_cart(self):
         return self.bought_items.filter(
             status=BoughtItem.RESERVED
-        ).order_by('item_option__item', 'item_option__order', '-added')
+        ).order_by('item_name', 'item_option_name', '-added')
 
     def get_summary_data(self):
         if self.cart_is_expired():
@@ -892,7 +892,6 @@ class Order(AbstractDwollaModel):
 
         # First fetch BoughtItems and group by transaction.
         bought_items_qs = self.bought_items.select_related(
-            'item_option__item',
             'discounts__discount'
         ).prefetch_related('transactions').order_by('-added')
 
@@ -908,7 +907,7 @@ class Order(AbstractDwollaModel):
             })
             txn_dict['items'].append(item)
             multiplier = -1 if txn and txn.transaction_type == Transaction.REFUND else 1
-            txn_dict['gross_cost'] += multiplier * item.item_option.price
+            txn_dict['gross_cost'] += multiplier * item.price
             for discount in item.discounts.all():
                 txn_dict['discounts'].append(discount)
                 txn_dict["total_savings"] -= multiplier * discount.savings()
@@ -1208,7 +1207,7 @@ class BoughtItem(models.Model):
                                  related_name='bought_items', on_delete=models.SET_NULL)
 
     def __unicode__(self):
-        return u"{} – {} ({})".format(self.item_option.name,
+        return u"{} – {} ({})".format(self.item_option_name,
                                       self.order.code,
                                       self.pk)
 
@@ -1333,7 +1332,7 @@ class Attendee(AbstractNamedModel):
         return self.get_full_name()
 
     def get_groupable_items(self):
-        return self.bought_items.order_by('item_option__item', 'item_option__order', '-added')
+        return self.bought_items.order_by('item_name', 'item_option_name', '-added')
 
 
 class Home(models.Model):
