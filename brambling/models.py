@@ -1224,12 +1224,29 @@ class OrderDiscount(models.Model):
 
 class BoughtItemDiscount(models.Model):
     """"Tracks whether an item has had a discount applied to it."""
-    discount = models.ForeignKey(Discount)
+    PERCENT = 'percent'
+    FLAT = 'flat'
+
+    TYPE_CHOICES = (
+        (FLAT, _('Flat')),
+        (PERCENT, _('Percent')),
+    )
+    discount = models.ForeignKey(Discount, blank=True, null=True, on_delete=models.SET_NULL)
     bought_item = models.ForeignKey(BoughtItem, related_name='discounts')
     timestamp = models.DateTimeField(default=timezone.now)
 
+    # Values cached at creation time, in case the values change / the
+    # referenced items are deleted.
+    name = models.CharField(max_length=40)
+    code = models.CharField(max_length=20)
+    discount_type = models.CharField(max_length=7,
+                                     choices=TYPE_CHOICES,
+                                     default=FLAT)
+    amount = models.DecimalField(max_digits=5, decimal_places=2,
+                                 validators=[MinValueValidator(0)])
+
     class Meta:
-        unique_together = ('bought_item', 'discount')
+        unique_together = ('bought_item', 'code')
 
     def savings(self):
         discount = self.discount
