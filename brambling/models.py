@@ -1186,12 +1186,20 @@ class BoughtItem(models.Model):
         (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
     )
-    item_option = models.ForeignKey(ItemOption)
+    item_option = models.ForeignKey(ItemOption, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order, related_name='bought_items')
     added = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=8,
                               choices=STATUS_CHOICES,
                               default=UNPAID)
+
+    # Values cached at creation time, in case the values change / the
+    # referenced items are deleted.
+    item_name = models.CharField(max_length=30)
+    item_description = models.TextField(blank=True)
+    item_option_name = models.CharField(max_length=30)
+    price = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
+
     # BoughtItem has a single attendee, but attendee can have
     # more than one BoughtItem. Basic example: Attendee can
     # have more than one class. Or, hypothetically, merch bought
