@@ -817,7 +817,11 @@ class Order(AbstractDwollaModel):
             )).distinct()
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount,
-                                   bought_item=bought_item)
+                                   bought_item=bought_item,
+                                   name=discount.name,
+                                   code=discount.code,
+                                   discount_type=discount.discount_type,
+                                   amount=discount.amount)
                 for bought_item in bought_items
             ])
         return created
@@ -828,7 +832,11 @@ class Order(AbstractDwollaModel):
         bought_item = BoughtItem.objects.create(
             item_option=item_option,
             order=self,
-            status=BoughtItem.RESERVED
+            status=BoughtItem.RESERVED,
+            item_name=item_option.item.name,
+            item_description=item_option.item.description,
+            item_option_name=item_option.name,
+            price=item_option.price,
         )
         discounts = self.discounts.filter(
             discount__item_options=item_option
@@ -836,7 +844,11 @@ class Order(AbstractDwollaModel):
         if discounts:
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount.discount,
-                                   bought_item=bought_item)
+                                   bought_item=bought_item,
+                                   name=discount.discount.name,
+                                   code=discount.discount.code,
+                                   discount_type=discount.discount.discount_type,
+                                   amount=discount.discount.amount)
                 for discount in discounts
             ])
         if self.cart_start_time is None:
