@@ -502,7 +502,7 @@ class Event(models.Model):
 
 
 class Item(models.Model):
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=30, help_text="Full pass, dance-only pass, T-shirt, socks, etc.")
     description = models.TextField(blank=True)
     event = models.ForeignKey(Event, related_name='items')
 

@@ -1,0 +1,24 @@
+{% extends "floppyforms/layouts/bootstrap.html" %}
+
+{% load floppyforms %}
+
+{% block rows %}
+	<div class="actions pull-right"></div>
+
+	{% if not "__prefix__" in form.prefix %}
+		{% formrow form.image with display_image=1 %}
+	{% else %}
+		{% formrow form.image with display_image=0 %}
+	{% endif %}
+
+	{% for field in form.hidden_fields %}
+		{% formfield field %}
+	{% endfor %}
+
+	{# The following form fields are controlled with javascript: #}
+	<div class='hide'>
+		{% formrow form.order %}
+		{# Don't render delete box if this is a dynamic form. We'll delete those by removing the DOM element with javascript. #}
+		{% if not "__prefix__" in form.prefix %}{% formrow form.DELETE %}{% endif %}
+	</div>
+{% endblock %}
