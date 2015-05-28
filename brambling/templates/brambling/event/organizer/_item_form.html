@@ -5,7 +5,7 @@
 	{% csrf_token %}
 	{% form item_form using %}
 		<div class="row">
-			<div class="col-md-6">
+			<div class="col-md-6 margin-trailer-dbl">
 				{% formrow form.name %}
 				{% formrow form.description %}
 			</div>
@@ -50,7 +50,7 @@
 
 	{{ itemoption_formset.management_form }}
 
-	<p class="text-muted">Add different prices, sizes, pass types, or other variations.</p>
+	<p class="text-muted">Add different price points, sizes, or other variations.</p>
 
 	{% if itemoption_formset.non_form_errors %}
 		{% for error in itemoption_formset.non_form_errors %}
