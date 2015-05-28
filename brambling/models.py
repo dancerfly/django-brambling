@@ -892,7 +892,7 @@ class Order(AbstractDwollaModel):
 
         # First fetch BoughtItems and group by transaction.
         bought_items_qs = self.bought_items.select_related(
-            'discounts__discount'
+            'discounts'
         ).prefetch_related('transactions').order_by('-added')
 
         transactions = SortedDict()
@@ -1249,12 +1249,10 @@ class BoughtItemDiscount(models.Model):
         unique_together = ('bought_item', 'code')
 
     def savings(self):
-        discount = self.discount
-        item_option = self.bought_item.item_option
-        return min(discount.amount
-                   if discount.discount_type == Discount.FLAT
-                   else discount.amount / 100 * item_option.price,
-                   item_option.price)
+        return min(self.amount
+                   if self.discount_type == BoughtItemDiscount.FLAT
+                   else self.amount / 100 * self.bought_item.price,
+                   self.bought_item.price)
 
 
 class HousingRequestNight(models.Model):

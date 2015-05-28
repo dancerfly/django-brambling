@@ -31,9 +31,9 @@
 		{% endfor %}
 		{% for discount in txn_dict.discounts %}
 			<li class='list-group-item'>
-				{{ discount.discount.name }}
+				{{ discount.name }}
 				<span class='text-muted'>
-					{{ discount.discount.code }}
+					{{ discount.code }}
 				</span>
 				<span class='pull-right'>
 					({{ discount.savings|absolute_value|format_money:event.currency }})
