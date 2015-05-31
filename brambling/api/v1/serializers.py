@@ -9,19 +9,19 @@ from brambling.models import (Order, Person, EventHousing, BoughtItem,
 class HousingCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = HousingCategory
-        fields = ('id', 'name')
+        fields = ('name',)
 
 
 class EnvironmentalFactorSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnvironmentalFactor
-        fields = ('id', 'name')
+        fields = ('name',)
 
 
 class DanceStyleSerializer(serializers.ModelSerializer):
     class Meta:
         model = DanceStyle
-        fields = ('id', 'name')
+        fields = ('name',)
 
 
 class PersonSerializer(serializers.ModelSerializer):
@@ -34,6 +34,12 @@ class PersonSerializer(serializers.ModelSerializer):
 
 class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
     """Serializes public data for an organization."""
+    dance_styles = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=DanceStyle.objects.all(),
+        many=True,
+    )
+
     class Meta:
         model = Organization
         fields = (
@@ -45,6 +51,12 @@ class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
 
 class EventSerializer(serializers.HyperlinkedModelSerializer):
     """Serializes public data for an event."""
+    dance_styles = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=DanceStyle.objects.all(),
+        many=True,
+    )
+
     class Meta:
         model = Event
         fields = (
@@ -56,6 +68,17 @@ class EventSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
+    ef_cause = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=EnvironmentalFactor.objects.all(),
+        many=True,
+    )
+    ef_avoid = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=EnvironmentalFactor.objects.all(),
+        many=True,
+    )
+
     class Meta:
         model = Attendee
         fields = (
@@ -69,6 +92,22 @@ class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
+    ef_prevent = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=EnvironmentalFactor.objects.all(),
+        many=True,
+    )
+    ef_avoid = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=EnvironmentalFactor.objects.all(),
+        many=True,
+    )
+    housing_categories = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=HousingCategory.objects.all(),
+        many=True,
+    )
+
     class Meta:
         model = EventHousing
         fields = (

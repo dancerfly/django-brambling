@@ -1,5 +1,8 @@
 from rest_framework import viewsets
 
+from brambling.api.v1.permissions import (
+    IsAdminUserOrReadOnly,
+)
 from brambling.api.v1.serializers import (
     HousingCategorySerializer,
     EnvironmentalFactorSerializer,
@@ -24,16 +27,19 @@ from brambling.models import (Order, Person, EventHousing, BoughtItem,
 class HousingCategoryViewSet(viewsets.ModelViewSet):
     queryset = HousingCategory.objects.all()
     serializer_class = HousingCategorySerializer
+    permission_classes = [IsAdminUserOrReadOnly]
 
 
 class EnvironmentalFactorViewSet(viewsets.ModelViewSet):
     queryset = EnvironmentalFactor.objects.all()
     serializer_class = EnvironmentalFactorSerializer
+    permission_classes = [IsAdminUserOrReadOnly]
 
 
 class DanceStyleViewSet(viewsets.ModelViewSet):
     queryset = DanceStyle.objects.all()
     serializer_class = DanceStyleSerializer
+    permission_classes = [IsAdminUserOrReadOnly]
 
 
 class PersonViewSet(viewsets.ModelViewSet):
