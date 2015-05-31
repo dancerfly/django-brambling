@@ -329,5 +329,7 @@ urlpatterns = patterns('',
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 
+    url(r'^api/', include('brambling.api.urls')),
+
     url(r'^(?P<organization_slug>[\w-]+)/', include(organization_urlpatterns)),
 )
