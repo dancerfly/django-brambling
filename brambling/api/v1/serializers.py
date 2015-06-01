@@ -111,7 +111,7 @@ class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
         queryset=EnvironmentalFactor.objects.all(),
         many=True,
     )
-    order = serializers.ReadOnlyField()
+    order = serializers.HyperlinkedRelatedField(view_name='order-detail', read_only=True)
     link = serializers.HyperlinkedIdentityField(view_name='attendee-detail')
 
     class Meta:
@@ -142,7 +142,7 @@ class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
         queryset=HousingCategory.objects.all(),
         many=True,
     )
-    order = serializers.ReadOnlyField()
+    order = serializers.HyperlinkedRelatedField(view_name='order-detail', read_only=True)
     link = serializers.HyperlinkedIdentityField(view_name='eventhousing-detail')
 
     class Meta:
@@ -158,7 +158,7 @@ class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
 
 class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
     status = serializers.ReadOnlyField()
-    order = serializers.ReadOnlyField()
+    order = serializers.HyperlinkedRelatedField(view_name='order-detail', read_only=True)
     link = serializers.HyperlinkedIdentityField(view_name='boughtitem-detail')
 
     class Meta:
