@@ -1,6 +1,7 @@
 {# This whole template is verbatim - use ractive, not Django. #}
 {% verbatim %}
 
+{{#if event}}
 <div class="masthead clearfix masthead-light">
   <div class="masthead-cover-image"{{#if event.banner_image }} style="background-image: url({{ event.banner_image }})"{{/if}}>
     <div class="relative">
@@ -30,6 +31,8 @@
     </div>{{!-- /.relative --}}
   </div>{{!-- /.masthead-cover-image --}}
 </div>{{!-- /.masthead --}}
+
+{{/if}}
 
 {{#if event.description || event.website_url || event.facebook_url || event.dance_styles }}
   <div class="hug panel panel-dark">
