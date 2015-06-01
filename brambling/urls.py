@@ -25,6 +25,7 @@ from brambling.views.orders import (
     HostingView,
     OrderEmailView,
     SummaryView,
+    RactiveShopView,
 )
 from brambling.views.core import (
     ExceptionView,
@@ -86,6 +87,7 @@ from brambling.views.user import (
 
 
 order_urlpatterns = patterns('',
+    url(r'^ractive-shop/$', RactiveShopView.as_view()),
     url(r'^shop/$',
         ChooseItemsView.as_view(),
         name="brambling_event_shop"),

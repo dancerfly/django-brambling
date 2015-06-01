@@ -30,6 +30,26 @@ ORDER_CODE_SESSION_KEY = '_brambling_order_code'
 ORDER_CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 
+class RactiveShopView(TemplateView):
+    template_name = 'brambling/event/order/register.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(RactiveShopView, self).get_context_data(**kwargs)
+        event = get_object_or_404(Event.objects.select_related('organization'),
+                                  slug=kwargs['event_slug'],
+                                  organization__slug=kwargs['organization_slug'])
+
+        editable_by_user = event.editable_by(self.request.user)
+
+        if not event.is_published and not editable_by_user:
+            raise Http404
+
+        clear_expired_carts(event)
+        context['event'] = event
+        context['editable_by_user'] = editable_by_user
+        return context
+
+
 class OrderStep(Step):
     view_name = None
 

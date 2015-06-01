@@ -1,0 +1,63 @@
+{% extends 'brambling/layouts/12.html' %}
+
+{% load staticfiles floppyforms zenaida daguerre %}
+
+{% block title %}Register – {{ event.name }} – {{ block.super }}{% endblock %}
+
+{% block meta %}
+	<meta name="description" content="{{ event.description }}" />
+	<meta property="og:site_name" content="Dancerfly" />
+
+	<meta property="og:title" content="{{ event.name }}" />
+	<meta property="og:description" content="{{ event.description }}" />
+	<meta property="og:url" content="https://{{ site.domain }}{% url 'brambling_event_shop' event_slug=event.slug organization_slug=event.organization.slug %}" />
+	{% if event.banner_image %}
+		<meta property="og:image" content="{% if MEDIA_URL|slice:':7' != 'http://' and MEDIA_URL|slice:':8' != 'https://' %}https://{{ site.domain }}{% endif %}{{ MEDIA_URL }}{{ event.banner_image }}" />
+		<meta property="og:image:width" content="{{ event.banner_image.width }}" />
+		<meta property="og:image:height" content="{{ event.banner_image.height }}" />
+	{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	<script type="text/javascript">
+		var dancerfly = dancerfly || {};
+		dancerfly.apiEndpoints = {
+			"root": "{% url 'api-root' %}",
+		    "housingcategory": "{% url 'housingcategory-list' %}",
+		    "environmentalfactor": "{% url 'environmentalfactor-list' %}",
+		    "dancestyle": "{% url 'dancestyle-list' %}",
+		    "organization": "{% url 'organization-list' %}",
+		    "event": "{% url 'event-list' %}",
+		    "attendee": "{% url 'attendee-list' %}",
+		    "eventhousing": "{% url 'eventhousing-list' %}",
+		    "order": "{% url 'order-list' %}",
+		    "boughtitem": "{% url 'boughtitem-list' %}",
+		    "item": "{% url 'item-list' %}",
+		    "itemimage": "{% url 'itemimage-list' %}",
+		    "itemoption": "{% url 'itemoption-list' %}"
+		};
+		dancerfly.currentEventId = "{{ event.pk }}";
+		dancerfly.currentUserId = {% if request.user.is_authenticated %}{{ request.user.pk }}{% else %}null{% endif %};
+		dancerfly.editable_by_user = {% if editable_by_user %}true{% else %}false{% endif %};
+	</script>
+
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ractive/0.7.3/ractive.js"></script>
+
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
+	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
+
+	<script type="text/javascript" src="{% static "brambling/register.ractive.js" %}"></script>
+{% endblock %}
+
+{% block main %}
+	<div id='ractiveContainer'></div>
+
+	<script id='ractiveTemplate' type='text/ractive'>
+		{% include "brambling/event/order/_register_ractive.html" %}
+	</script>
+{% endblock main %}
+
+
+{% block countdown_next %}{% endblock %}
