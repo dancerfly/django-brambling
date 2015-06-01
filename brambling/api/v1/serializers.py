@@ -96,7 +96,7 @@ class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
-    ef_prevent = serializers.SlugRelatedField(
+    ef_present = serializers.SlugRelatedField(
         slug_field='name',
         queryset=EnvironmentalFactor.objects.all(),
         many=True,
@@ -139,7 +139,7 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
 
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     bought_items = BoughtItemSerializer(many=True)
-    eventhousing = EventHousingSerializer(many=True)
+    eventhousing = EventHousingSerializer()
     person = serializers.StringRelatedField()
     link = serializers.HyperlinkedIdentityField(view_name='order-detail')
 
