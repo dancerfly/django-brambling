@@ -108,7 +108,7 @@ class OrderPermission(BasePermission):
                 return True
         else:
             # Allow if this order is in their session for this event.
-            session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+            session_orders = request.session.get(ORDER_CODE_SESSION_KEY, {})
             if session_orders.get(str(order.event.pk), None) == order.code:
                 return True
 
