@@ -199,7 +199,7 @@
           <div class='list-group relative'>
             {{#options}}
               {{! This SHOULD add items to the cart}}
-              <a href='javascript://' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
+              <a on-click='addToCart(this)' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
                 <div class='row'>
                   <div class='col-xs-12 col-sm-6'>
                     {{ name }}

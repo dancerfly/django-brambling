@@ -149,9 +149,9 @@ class EventHousingPermission(OrderPermission):
 
 class BoughtItemPermission(OrderPermission):
     def has_permission(self, request, view):
-        # For now, disallow creation via the API.
         if request.method == 'POST':
-            return False
+            order = view.get_serializer().fields['order'].to_internal_value(request.data.get('order'))
+            return self._has_order_permission(request, order)
         return True
 
     def has_object_permission(self, request, view, boughtitem):

@@ -125,6 +125,18 @@ class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
+class BoughtItemCreateSerializer(serializers.HyperlinkedModelSerializer):
+    status = serializers.ReadOnlyField()
+    order = serializers.HyperlinkedRelatedField(view_name='order-detail', queryset=Order.objects.all())
+    link = serializers.HyperlinkedIdentityField(view_name='boughtitem-detail')
+
+    class Meta:
+        model = BoughtItem
+        fields = (
+            'id', 'link', 'item_option', 'order', 'added', 'status', 'attendee'
+        )
+
+
 class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
     status = serializers.ReadOnlyField()
     order = serializers.HyperlinkedRelatedField(view_name='order-detail', read_only=True)
