@@ -172,12 +172,18 @@ class ItemImageSerializer(serializers.HyperlinkedModelSerializer):
 
 class ItemOptionSerializer(serializers.HyperlinkedModelSerializer):
     link = serializers.HyperlinkedIdentityField(view_name='itemoption-detail')
+    taken = serializers.SerializerMethodField()
 
     class Meta:
         model = ItemOption
         fields = ('id', 'link', 'item', 'name', 'price', 'total_number',
                   'available_start', 'available_end', 'remaining_display',
-                  'order')
+                  'order', 'taken')
+
+    def get_taken(self, obj):
+        if hasattr(obj, 'taken'):
+            return obj.taken
+        return obj.boughtitem_set.exclude(status=BoughtItem.REFUNDED).count()
 
 
 class ItemSerializer(serializers.HyperlinkedModelSerializer):

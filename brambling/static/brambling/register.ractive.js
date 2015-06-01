@@ -5,12 +5,14 @@ var ractive = new Ractive({
             editable_by_user: dancerfly.editable_by_user,
             has_cart: function(order) {
                 var has_cart = false;
-                $.each(order.bought_items, function(idx, item) {
-                    if (item.status == 'reserved') {
-                        has_cart = true;
-                        return false;
-                    }
-                });
+                if (order) {
+                    $.each(order.bought_items, function(idx, item) {
+                        if (item.status == 'reserved') {
+                            has_cart = true;
+                            return false;
+                        }
+                    });
+                }
                 return has_cart;
             },
             fetch: function(link) {

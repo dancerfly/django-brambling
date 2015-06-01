@@ -199,7 +199,7 @@
           <div class='list-group relative'>
             {{#options}}
               {{! This SHOULD add items to the cart}}
-              <a href='javascript://' class="list-group-item {{#if total_number && remaining <= 0 }} disabled{{/if}}">
+              <a href='javascript://' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
                 <div class='row'>
                   <div class='col-xs-12 col-sm-6'>
                     {{ name }}
@@ -208,18 +208,18 @@
                   <div class='col-xs-8 col-sm-3 text-left text-right-sm'>
                     {{#if total_number && remaining_display != 'hidden' }}
                       {{#if remaining_display == 'both' }}
-                        {{ remaining }} / {{ total_number }} left
+                        {{ total_number - taken }} / {{ total_number }} left
                       {{elseif remaining_display == 'total' }}
                         {{ total_number }} total
                       {{else}}
-                        {{ remaining }} left
+                        {{ total_number - taken }} left
                       {{/if}}
                     {{else}}
                       &nbsp;
                     {{/if}}
                   </div>
                   <div class='col-xs-4 col-sm-2 text-right'>{{ format_money(price, fetch(event).currency) }}</div>
-                  <div class='col-sm-1 text-right hidden-xs'>{{#if !total_number || remaining > 0 }}<span class='fa fa-plus'></span>{{/if}}</div>
+                  <div class='col-sm-1 text-right hidden-xs'>{{#if !total_number || taken < total_number }}<span class='fa fa-plus'></span>{{/if}}</div>
                 </div>
               </a>
             {{/options}}

@@ -89,6 +89,17 @@ class ItemOptionViewSet(viewsets.ModelViewSet):
     serializer_class = ItemOptionSerializer
     permission_classes = [ItemOptionPermission]
 
+    def get_queryset(self):
+        qs = super(ItemOptionViewSet, self).get_queryset()
+        qs = qs.extra(select={
+            'taken': """
+SELECT COUNT(*) FROM brambling_boughtitem WHERE
+brambling_boughtitem.item_option_id = brambling_itemoption.id AND
+brambling_boughtitem.status != 'refunded'
+"""
+        })
+        return qs
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -106,7 +117,10 @@ class OrderViewSet(viewsets.ModelViewSet):
             qs = qs.filter(event=self.request.GET['event'])
 
         if 'user' in self.request.GET:
-            qs = qs.filter(person=self.request.GET['user'])
+            if self.request.GET['user']:
+                qs = qs.filter(person=self.request.GET['user'])
+            else:
+                qs = qs.filter(person__isnull=True)
 
         if 'code' in self.request.GET:
             qs = qs.filter(code=self.request.GET['code'])
