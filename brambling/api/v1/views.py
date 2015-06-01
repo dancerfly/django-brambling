@@ -69,6 +69,14 @@ class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
     permission_classes = [ItemPermission]
 
+    def get_queryset(self):
+        qs = Item.objects.all()
+
+        if 'event' in self.request.GET:
+            qs = qs.filter(event=self.request.GET['event'])
+
+        return qs
+
 
 class ItemImageViewSet(viewsets.ModelViewSet):
     queryset = ItemImage.objects.all()
@@ -93,6 +101,15 @@ class OrderViewSet(viewsets.ModelViewSet):
         ).select_related(
             'event', 'person', 'eventhousing',
         )
+
+        if 'event' in self.request.GET:
+            qs = qs.filter(event=self.request.GET['event'])
+
+        if 'user' in self.request.GET:
+            qs = qs.filter(person=self.request.GET['user'])
+
+        if 'code' in self.request.GET:
+            qs = qs.filter(code=self.request.GET['code'])
 
         # Superusers can see all the things.
         if self.request.user.is_superuser:
