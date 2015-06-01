@@ -2,12 +2,20 @@ from rest_framework import viewsets
 
 from brambling.api.v1.permissions import (
     IsAdminUserOrReadOnly,
+    OrganizationPermission,
+    EventPermission,
+    ItemPermission,
+    ItemImagePermission,
+    ItemOptionPermission,
+    OrderPermission,
+    AttendeePermission,
+    EventHousingPermission,
+    BoughtItemPermission,
 )
 from brambling.api.v1.serializers import (
     HousingCategorySerializer,
     EnvironmentalFactorSerializer,
     DanceStyleSerializer,
-    PersonSerializer,
     OrganizationSerializer,
     EventSerializer,
     AttendeeSerializer,
@@ -18,7 +26,7 @@ from brambling.api.v1.serializers import (
     ItemImageSerializer,
     ItemOptionSerializer,
 )
-from brambling.models import (Order, Person, EventHousing, BoughtItem,
+from brambling.models import (Order, EventHousing, BoughtItem,
                               EnvironmentalFactor, HousingCategory,
                               ItemOption, Item, ItemImage, Attendee, Event,
                               Organization, DanceStyle)
@@ -42,29 +50,34 @@ class DanceStyleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUserOrReadOnly]
 
 
-class PersonViewSet(viewsets.ModelViewSet):
-    queryset = Person.objects.all()
-    serializer_class = PersonSerializer
-
-
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    permission_classes = [OrganizationPermission]
 
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
+    permission_classes = [EventPermission]
 
 
-class AttendeeViewSet(viewsets.ModelViewSet):
-    queryset = Attendee.objects.all()
-    serializer_class = AttendeeSerializer
+class ItemViewSet(viewsets.ModelViewSet):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+    permission_classes = [ItemPermission]
 
 
-class EventHousingViewSet(viewsets.ModelViewSet):
-    queryset = EventHousing.objects.all()
-    serializer_class = EventHousingSerializer
+class ItemImageViewSet(viewsets.ModelViewSet):
+    queryset = ItemImage.objects.all()
+    serializer_class = ItemImageSerializer
+    permission_classes = [ItemImagePermission]
+
+
+class ItemOptionViewSet(viewsets.ModelViewSet):
+    queryset = ItemOption.objects.all()
+    serializer_class = ItemOptionSerializer
+    permission_classes = [ItemOptionPermission]
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -74,23 +87,22 @@ class OrderViewSet(viewsets.ModelViewSet):
         'event', 'person', 'eventhousing'
     )
     serializer_class = OrderSerializer
+    permission_classes = [OrderPermission]
+
+
+class AttendeeViewSet(viewsets.ModelViewSet):
+    queryset = Attendee.objects.all()
+    serializer_class = AttendeeSerializer
+    permission_classes = [AttendeePermission]
+
+
+class EventHousingViewSet(viewsets.ModelViewSet):
+    queryset = EventHousing.objects.all()
+    serializer_class = EventHousingSerializer
+    permission_classes = [EventHousingPermission]
 
 
 class BoughtItemViewSet(viewsets.ModelViewSet):
     queryset = BoughtItem.objects.all()
     serializer_class = BoughtItemSerializer
-
-
-class ItemViewSet(viewsets.ModelViewSet):
-    queryset = Item.objects.all()
-    serializer_class = ItemSerializer
-
-
-class ItemImageViewSet(viewsets.ModelViewSet):
-    queryset = ItemImage.objects.all()
-    serializer_class = ItemImageSerializer
-
-
-class ItemOptionViewSet(viewsets.ModelViewSet):
-    queryset = ItemOption.objects.all()
-    serializer_class = ItemOptionSerializer
+    permission_classes = [BoughtItemPermission]

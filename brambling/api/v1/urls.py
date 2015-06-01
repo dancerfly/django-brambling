@@ -5,7 +5,6 @@ from brambling.api.v1.views import (
     HousingCategoryViewSet,
     EnvironmentalFactorViewSet,
     DanceStyleViewSet,
-    PersonViewSet,
     OrganizationViewSet,
     EventViewSet,
     AttendeeViewSet,
@@ -22,7 +21,6 @@ router = DefaultRouter()
 router.register('housingcategory', HousingCategoryViewSet)
 router.register('environmentalfactor', EnvironmentalFactorViewSet)
 router.register('dancestyle', DanceStyleViewSet)
-router.register('person', PersonViewSet)
 router.register('organization', OrganizationViewSet)
 router.register('event', EventViewSet)
 router.register('attendee', AttendeeViewSet)
