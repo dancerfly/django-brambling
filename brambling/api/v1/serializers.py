@@ -65,39 +65,8 @@ class EventSerializer(serializers.HyperlinkedModelSerializer):
             'country', 'start_date', 'end_date', 'start_time', 'end_time',
             'dance_styles', 'has_dances', 'has_classes', 'liability_waiver',
             'organization', 'collect_housing_data', 'collect_survey_data',
+            'timezone', 'currency',
         )
-
-
-class OrderSerializer(serializers.HyperlinkedModelSerializer):
-    bought_items = serializers.HyperlinkedRelatedField(
-        many=True,
-        view_name='boughtitem-detail',
-        queryset=BoughtItem.objects.all(),
-    )
-    eventhousing = serializers.HyperlinkedRelatedField(
-        view_name='eventhousing-detail',
-        queryset=EventHousing.objects.all(),
-    )
-    person = serializers.StringRelatedField()
-    link = serializers.HyperlinkedIdentityField(view_name='order-detail')
-
-    class Meta:
-        model = Order
-        fields = (
-            'id', 'link', 'event', 'person', 'email', 'code', 'cart_start_time',
-            'bought_items', 'survey_completed', 'heard_through', 'heard_through_other',
-            'send_flyers', 'send_flyers_address', 'send_flyers_address_2',
-            'send_flyers_city', 'send_flyers_state_or_province',
-            'send_flyers_zip', 'send_flyers_country', 'providing_housing',
-            'notes', 'eventhousing',
-        )
-
-    def to_representation(self, obj):
-        data = super(OrderSerializer, self).to_representation(obj)
-        # Workaround for https://github.com/SmileyChris/django-countries/issues/106
-        if data['send_flyers_country'] == '':
-            data['send_flyers_country'] = ''
-        return data
 
 
 class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
@@ -168,13 +137,29 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class ItemSerializer(serializers.HyperlinkedModelSerializer):
-    link = serializers.HyperlinkedIdentityField(view_name='item-detail')
+class OrderSerializer(serializers.HyperlinkedModelSerializer):
+    bought_items = BoughtItemSerializer(many=True)
+    eventhousing = EventHousingSerializer(many=True)
+    person = serializers.StringRelatedField()
+    link = serializers.HyperlinkedIdentityField(view_name='order-detail')
 
     class Meta:
-        model = Item
-        fields = ('id', 'link', 'name', 'description', 'event', 'created',
-                  'last_modified')
+        model = Order
+        fields = (
+            'id', 'link', 'event', 'person', 'email', 'code', 'cart_start_time',
+            'bought_items', 'survey_completed', 'heard_through', 'heard_through_other',
+            'send_flyers', 'send_flyers_address', 'send_flyers_address_2',
+            'send_flyers_city', 'send_flyers_state_or_province',
+            'send_flyers_zip', 'send_flyers_country', 'providing_housing',
+            'notes', 'eventhousing',
+        )
+
+    def to_representation(self, obj):
+        data = super(OrderSerializer, self).to_representation(obj)
+        # Workaround for https://github.com/SmileyChris/django-countries/issues/106
+        if data['send_flyers_country'] == '':
+            data['send_flyers_country'] = ''
+        return data
 
 
 class ItemImageSerializer(serializers.HyperlinkedModelSerializer):
@@ -193,3 +178,14 @@ class ItemOptionSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'link', 'item', 'name', 'price', 'total_number',
                   'available_start', 'available_end', 'remaining_display',
                   'order')
+
+
+class ItemSerializer(serializers.HyperlinkedModelSerializer):
+    link = serializers.HyperlinkedIdentityField(view_name='item-detail')
+    options = ItemOptionSerializer(many=True)
+    images = ItemImageSerializer(many=True)
+
+    class Meta:
+        model = Item
+        fields = ('id', 'link', 'name', 'description', 'event', 'created',
+                  'last_modified', 'options', 'images')
