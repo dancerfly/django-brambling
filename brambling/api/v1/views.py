@@ -118,14 +118,77 @@ class AttendeeViewSet(viewsets.ModelViewSet):
     serializer_class = AttendeeSerializer
     permission_classes = [AttendeePermission]
 
+    def get_queryset(self):
+        qs = self.queryset.all()
+
+        # Superusers can see all the things.
+        if self.request.user.is_superuser:
+            return qs
+
+        # Otherwise, if you're authenticated, you can see them
+        # if the order is yours or you administer the related event.
+        if self.request.user.is_authenticated():
+            return qs.filter(
+                Q(order__person=self.request.user) |
+                Q(order__event__additional_editors=self.request.user) |
+                Q(order__event__organization__editors=self.request.user) |
+                Q(order__event__organization__owner=self.request.user)
+            )
+
+        # Otherwise, you can view for orders in your session.
+        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        return qs.filter(order__code__in=session_orders.values())
+
 
 class EventHousingViewSet(viewsets.ModelViewSet):
     queryset = EventHousing.objects.all()
     serializer_class = EventHousingSerializer
     permission_classes = [EventHousingPermission]
 
+    def get_queryset(self):
+        qs = self.queryset.all()
+
+        # Superusers can see all the things.
+        if self.request.user.is_superuser:
+            return qs
+
+        # Otherwise, if you're authenticated, you can see them
+        # if the order is yours or you administer the related event.
+        if self.request.user.is_authenticated():
+            return qs.filter(
+                Q(order__person=self.request.user) |
+                Q(order__event__additional_editors=self.request.user) |
+                Q(order__event__organization__editors=self.request.user) |
+                Q(order__event__organization__owner=self.request.user)
+            )
+
+        # Otherwise, you can view for orders in your session.
+        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        return qs.filter(order__code__in=session_orders.values())
+
 
 class BoughtItemViewSet(viewsets.ModelViewSet):
     queryset = BoughtItem.objects.all()
     serializer_class = BoughtItemSerializer
     permission_classes = [BoughtItemPermission]
+
+    def get_queryset(self):
+        qs = self.queryset.all()
+
+        # Superusers can see all the things.
+        if self.request.user.is_superuser:
+            return qs
+
+        # Otherwise, if you're authenticated, you can see them
+        # if the order is yours or you administer the related event.
+        if self.request.user.is_authenticated():
+            return qs.filter(
+                Q(order__person=self.request.user) |
+                Q(order__event__additional_editors=self.request.user) |
+                Q(order__event__organization__editors=self.request.user) |
+                Q(order__event__organization__owner=self.request.user)
+            )
+
+        # Otherwise, you can view for orders in your session.
+        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        return qs.filter(order__code__in=session_orders.values())
