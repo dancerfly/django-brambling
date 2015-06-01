@@ -127,14 +127,11 @@
             {{#each order.bought_items}}
               {{#if status == 'reserved'}}
                 <li class='list-group-item'>
-                  {{#with fetch(item_option)}}
-                    {{#with fetch(item)}}
-                      {{ name }}
-                    {{/with}}
+                  {{#with fetchObject(item_option)}}
+                    {{ fetchObject(item).name }}
                     ({{ name }})
-                    {{!-- This SHOULD run a delete BoughtItem action. --}}
-                    <a on-click='alert("hi!")' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
                   {{/with}}
+                    <a on-click='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
                 </li>
               {{/if}}
             {{/each}}
@@ -198,8 +195,7 @@
           </header>
           <div class='list-group relative'>
             {{#options}}
-              {{! This SHOULD add items to the cart}}
-              <a on-click='addToCart(this)' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
+              <a on-click='addToCart(this)' href='javascript://' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
                 <div class='row'>
                   <div class='col-xs-12 col-sm-6'>
                     {{ name }}
@@ -218,7 +214,7 @@
                       &nbsp;
                     {{/if}}
                   </div>
-                  <div class='col-xs-4 col-sm-2 text-right'>{{ format_money(price, fetch(event).currency) }}</div>
+                  <div class='col-xs-4 col-sm-2 text-right'>{{ format_money(price, fetchObject(event).currency) }}</div>
                   <div class='col-sm-1 text-right hidden-xs'>{{#if !total_number || taken < total_number }}<span class='fa fa-plus'></span>{{/if}}</div>
                 </div>
               </a>
