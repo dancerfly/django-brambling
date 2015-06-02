@@ -1,7 +1,6 @@
 from django.db.models import Q
-from django.utils import timezone
-from rest_framework import viewsets
-from rest_framework.decorators import detail_route
+from rest_framework import viewsets, serializers, status
+from rest_framework.response import Response
 
 from brambling.api.v1.permissions import (
     IsAdminUserOrReadOnly,
@@ -36,7 +35,7 @@ from brambling.models import (Order, EventHousing, BoughtItem,
                               EnvironmentalFactor, HousingCategory,
                               ItemOption, Item, ItemImage, Attendee, Event,
                               Organization, DanceStyle, OrderDiscount,
-                              Discount)
+                              Discount, Event)
 from brambling.views.orders import ORDER_CODE_SESSION_KEY
 
 
@@ -114,22 +113,10 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Order.objects.prefetch_related(
-            'bought_items',
+            'bought_items', 'discounts',
         ).select_related(
             'event', 'person', 'eventhousing',
         )
-
-        if 'event' in self.request.GET:
-            qs = qs.filter(event=self.request.GET['event'])
-
-        if 'user' in self.request.GET:
-            if self.request.GET['user']:
-                qs = qs.filter(person=self.request.GET['user'])
-            else:
-                qs = qs.filter(person__isnull=True)
-
-        if 'code' in self.request.GET:
-            qs = qs.filter(code=self.request.GET['code'])
 
         # Superusers can see all the things.
         if self.request.user.is_superuser:
@@ -148,6 +135,72 @@ class OrderViewSet(viewsets.ModelViewSet):
         # Otherwise, you can view orders in your session.
         session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
         return qs.filter(code__in=session_orders.values())
+
+    def create(self, request, *args, **kwargs):
+        # Bypass the serializer altogether. This actually performs
+        # a get_or_create (essentially) and returns a 201 or 200 response
+        # accordingly.
+        if not request.data.get('event'):
+            raise serializers.ValidationError('Event must be provided')
+
+        try:
+            event = Event.objects.get(pk=request.data['event'])
+        except Event.DoesNotExist:
+            raise serializers.ValidationError('Invalid event id.')
+
+        if len(request.data) > 1:
+            raise serializers.ValidationError('Endpoint only accepts event id.')
+
+        order = None
+        created = False
+
+        # First, check if the user is authenticated and has an order for this event.
+        if request.user.is_authenticated():
+            try:
+                order = Order.objects.get(
+                    event=event,
+                    person=request.user,
+                )
+            except Order.DoesNotExist:
+                pass
+
+        # Next, check if there's a session-stored order. Transfer it
+        # if the order hasn't checked out yet and the user is authenticated.
+        if order is None:
+            session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+            if str(event.pk) in session_orders:
+                code = session_orders[str(event.pk)]
+                try:
+                    order = Order.objects.get(
+                        event=event,
+                        person__isnull=True,
+                        code=code,
+                    )
+                except Order.DoesNotExist:
+                    pass
+                else:
+                    if request.user.is_authenticated():
+                        if not order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED)).exists():
+                            order.person = request.user
+                            order.save()
+                        else:
+                            order = None
+
+        if order is None:
+            # Okay, then create for this user.
+            created = True
+            person = request.user if request.user.is_authenticated() else None
+
+            code = Order.get_valid_code(event)
+            order = Order.objects.create(event=event, person=person, code=code)
+
+            if not request.user.is_authenticated():
+                session_orders = request.session.get(ORDER_CODE_SESSION_KEY, {})
+                session_orders[str(event.pk)] = code
+                request.session[ORDER_CODE_SESSION_KEY] = session_orders
+
+        serializer = self.get_serializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class AttendeeViewSet(viewsets.ModelViewSet):

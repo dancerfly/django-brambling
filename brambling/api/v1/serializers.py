@@ -215,6 +215,7 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
     eventhousing = EventHousingSerializer()
     person = serializers.StringRelatedField()
     link = serializers.HyperlinkedIdentityField(view_name='order-detail')
+    event = serializers.HyperlinkedRelatedField(view_name='event-detail', read_only=True)
 
     class Meta:
         model = Order
@@ -224,7 +225,7 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
             'send_flyers', 'send_flyers_address', 'send_flyers_address_2',
             'send_flyers_city', 'send_flyers_state_or_province',
             'send_flyers_zip', 'send_flyers_country', 'providing_housing',
-            'notes', 'eventhousing',
+            'notes', 'eventhousing', 'discounts',
         )
 
     def to_representation(self, obj):

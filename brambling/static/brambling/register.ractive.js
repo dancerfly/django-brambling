@@ -108,19 +108,15 @@ $.getJSON(dancerfly.apiEndpoints['item'], {
     });
 });
 
-$.getJSON(dancerfly.apiEndpoints['order'], {
-    event: dancerfly.currentEventId,
-    user: dancerfly.currentUserId
-}, function (data) {
-    var order = data[0];
-    ractive.set('order', order);
 
-    if (order) {
-        $.getJSON(dancerfly.apiEndpoints['orderdiscount'], {
-            order: order.link
-        }, function (data) {
-            ractive.set('orderdiscounts', data);
-        });
+$.ajax({
+    url: dancerfly.apiEndpoints['order'],
+    method: 'post',
+    data: {
+        event: dancerfly.currentEventId
+    },
+    success: function(data) {
+        ractive.set('order', data);
     }
 });
 

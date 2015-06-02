@@ -79,12 +79,6 @@ class ItemOptionPermission(EventPermission):
 
 
 class OrderPermission(BasePermission):
-    def has_permission(self, request, view):
-        # For now, disallow creation via the API.
-        if request.method == 'POST':
-            return False
-        return True
-
     def _has_order_permission(self, request, order):
         if order.event.editable_by(request.user):
             return True

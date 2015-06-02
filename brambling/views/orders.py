@@ -27,7 +27,6 @@ from brambling.views.utils import (get_event_admin_nav, ajax_required,
 
 
 ORDER_CODE_SESSION_KEY = '_brambling_order_code'
-ORDER_CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 
 class RactiveShopView(TemplateView):
@@ -308,10 +307,8 @@ class OrderMixin(object):
 
     def create_order(self):
         person = self.request.user if self.request.user.is_authenticated() else None
-        code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
 
-        while Order.objects.filter(event=self.event, code=code).exists():
-            code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
+        code = Order.get_valid_code(self.event)
         order = Order.objects.create(event=self.event, person=person, code=code)
 
         if not self.request.user.is_authenticated():

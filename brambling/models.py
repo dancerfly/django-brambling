@@ -753,6 +753,8 @@ class Order(AbstractDwollaModel):
         (OTHER, 'Other'),
     )
 
+    CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
     email = models.EmailField(blank=True)
@@ -783,6 +785,13 @@ class Order(AbstractDwollaModel):
 
     class Meta:
         unique_together = ('event', 'code')
+
+    @classmethod
+    def get_valid_code(cls, event):
+        code = get_random_string(8, cls.CODE_ALLOWED_CHARS)
+        while cls.objects.filter(event=event, code=code).exists():
+            code = get_random_string(8, cls.CODE_ALLOWED_CHARS)
+        return code
 
     def get_dwolla_connect_url(self):
         return reverse('brambling_order_dwolla_connect',

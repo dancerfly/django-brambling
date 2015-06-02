@@ -40,7 +40,6 @@
 		    "orderdiscount": "{% url 'orderdiscount-list' %}"
 		};
 		dancerfly.currentEventId = "{{ event.pk }}";
-		dancerfly.currentUserId = {% if request.user.is_authenticated %}{{ request.user.pk }}{% else %}null{% endif %};
 		dancerfly.editable_by_user = {% if editable_by_user %}true{% else %}false{% endif %};
 	</script>
 
