@@ -148,13 +148,16 @@
           </div>
         </header>
         <div class='list-group relative'>
-          {{#each order.orderdiscounts}}
+          {{#each order.discounts}}
             <div class='list-group-item'>
               {{ discount_name }} <em class='text-muted'>{{ discount_code }}</em>
             </div>
           {{/each}}
           <div class='list-group-item'>
-            <input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off' value="{{ discountCode }}" lazy>
+            <div class='form-group{{#if discountError}} has-error{{/if}}'>
+              <input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off' value="{{ discountCode }}" lazy="500">
+              {{#if discountError}}<div class='help-block'>{{ discountError }}</div>{{/if}}
+            </div>
           </div>
         </div>{{! /.list-group }}
       </div>

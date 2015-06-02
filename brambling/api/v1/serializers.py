@@ -154,7 +154,7 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
 
 class OrderDiscountSerializer(serializers.HyperlinkedModelSerializer):
     discount_name = serializers.CharField(read_only=True)
-    discount_code = serializers.CharField(max_length=20, validators=[RegexValidator("^{}$".format(Discount.CODE_REGEX))])
+    discount_code = serializers.CharField()
     link = serializers.HyperlinkedIdentityField(view_name='orderdiscount-detail')
     order = serializers.HyperlinkedRelatedField(view_name='order-detail', queryset=Order.objects.all())
 
@@ -166,20 +166,24 @@ class OrderDiscountSerializer(serializers.HyperlinkedModelSerializer):
             self.fields['order'].read_only = True
 
     def to_representation(self, instance):
-        ret = super(OrderDiscountSerializer, self).to_representation(instance)
-        ret.update({
-            'discount_name': instance.discount.name,
-            'discount_code': instance.discount.code,
-        })
-        return ret
+        instance.discount_name = instance.discount.name
+        instance.discount_code = instance.discount.code
+        return super(OrderDiscountSerializer, self).to_representation(instance)
 
     def validate(self, data):
-        self.discount = Discount.objects.get(code=data['discount_code'])
-        if data.order.event != self.discount.event:
+        if not data.get('discount_code'):
+            raise serializers.ValidationError('Discount code is required.')
+        try:
+            self.discount = Discount.objects.get(code=data['discount_code'])
+        except Discount.DoesNotExist:
+            raise serializers.ValidationError("No discount with this code.")
+        if data['order'].event != self.discount.event:
             raise serializers.ValidationError("Order and discount are for different events.")
         now = timezone.now()
         if self.discount.available_start > now or self.discount.available_end < now:
             raise serializers.ValidationError("Discount is not currently available.")
+        if OrderDiscount.objects.filter(order=data['order'], discount=self.discount):
+            raise serializers.ValidationError("Code has already been used.")
         return data
 
     def create(self, validated_data):
@@ -188,7 +192,7 @@ class OrderDiscountSerializer(serializers.HyperlinkedModelSerializer):
         instance = super(OrderDiscountSerializer, self).create(validated_data)
 
         bought_items = BoughtItem.objects.filter(
-            order=self,
+            order=validated_data['order'],
             item_option__discount=self.discount,
         ).filter(status__in=(
             BoughtItem.UNPAID,
@@ -206,7 +210,7 @@ class OrderDiscountSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = OrderDiscount
-        fields = ('discount', 'order', 'timestamp')
+        fields = ('discount_name', 'discount_code', 'order', 'timestamp', 'link')
 
 
 class OrderSerializer(serializers.HyperlinkedModelSerializer):

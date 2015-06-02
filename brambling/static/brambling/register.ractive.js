@@ -121,6 +121,7 @@ $.ajax({
 });
 
 ractive.observe("discountCode", function (newValue, oldValue) {
+    ractive.set('discountError', '');
     if (newValue) {
         $.ajax({
             url: dancerfly.apiEndpoints['orderdiscount'],
@@ -132,8 +133,13 @@ ractive.observe("discountCode", function (newValue, oldValue) {
             success: function (data) {
                 ractive.storeObject(data);
                 ractive.push('order.discounts', data)
+                ractive.set('discountCode', '');
                 // TODO: At some point we may also want to display
                 // or at least have accessible the changes to BoughtItemDiscounts.
+            },
+            error: function (data) {
+                var data = data.responseJSON;
+                ractive.set('discountError', data.non_field_errors[0])
             }
         })
     }
