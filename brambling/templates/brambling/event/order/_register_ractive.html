@@ -45,7 +45,12 @@
                 <i class="fa fa-clock-o fa-fw"></i>
               </div>
               <div class="media-body">
-                {{ event.start_date }} at {{ event.start_time }}
+                {{ event.start_date }}
+                {{#if event.start_date != event.end_date}}
+                  &#8211; {{ event.end_date }}
+                {{elseif event.start_time}}
+                   at {{ event.start_time }}
+                {{/if}}
               </div>
             </div>
             <div class="media text-large">
