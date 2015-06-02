@@ -1,4 +1,3 @@
-from django.core.validators import RegexValidator
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -138,6 +137,21 @@ class BoughtItemCreateSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'id', 'link', 'item_option', 'order', 'added', 'status', 'attendee'
         )
+
+    def create(self, validated_data):
+        instance = super(BoughtItemCreateSerializer, self).create(validated_data)
+
+        discounts = OrderDiscount.objects.filter(
+            order=validated_data['order'],
+            discount__item_options=instance.item_option
+        ).select_related('discount').distinct()
+        if discounts:
+            BoughtItemDiscount.objects.bulk_create([
+                BoughtItemDiscount(discount=discount.discount,
+                                   bought_item=instance)
+                for discount in discounts
+            ])
+        return instance
 
 
 class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
