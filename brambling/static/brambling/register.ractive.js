@@ -112,9 +112,36 @@ $.getJSON(dancerfly.apiEndpoints['order'], {
     event: dancerfly.currentEventId,
     user: dancerfly.currentUserId
 }, function (data) {
-    ractive.set('order', data[0]);
+    var order = data[0];
+    ractive.set('order', order);
+
+    if (order) {
+        $.getJSON(dancerfly.apiEndpoints['orderdiscount'], {
+            order: order.link
+        }, function (data) {
+            ractive.set('orderdiscounts', data);
+        });
+    }
 });
 
+ractive.observe("discountCode", function (newValue, oldValue) {
+    if (newValue) {
+        $.ajax({
+            url: dancerfly.apiEndpoints['orderdiscount'],
+            method: 'post',
+            data: {
+                discount_code: newValue,
+                order: ractive.get('order').link
+            },
+            success: function (data) {
+                ractive.storeObject(data);
+                ractive.push('order.discounts', data)
+                // TODO: At some point we may also want to display
+                // or at least have accessible the changes to BoughtItemDiscounts.
+            }
+        })
+    }
+});
 
 // URI parsing
 /*! URI.js v1.15.1 http://medialize.github.io/URI.js/ */

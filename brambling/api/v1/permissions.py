@@ -160,3 +160,18 @@ class BoughtItemPermission(OrderPermission):
             return False
 
         return self._has_order_permission(request, boughtitem.order)
+
+
+class OrderDiscountPermission(OrderPermission):
+    def has_permission(self, request, view):
+        if request.method == 'POST':
+            order = view.get_serializer().fields['order'].to_internal_value(request.data.get('order'))
+            return self._has_order_permission(request, order)
+        return True
+
+    def has_object_permission(self, request, view, orderdiscount):
+        # For now, don't allow deletion via the API.
+        if request.method == 'DELETE':
+            return False
+
+        return self._has_order_permission(request, orderdiscount.order)

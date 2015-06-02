@@ -141,6 +141,23 @@
           </ul>
         </div>
       {{/if}}
+      <div class='panel panel-default' id='discounts'>
+        <header class='panel-heading'>
+          <div class='panel-title'>
+            <i class="fa fa-fw fa-gift"></i> Discounts
+          </div>
+        </header>
+        <div class='list-group relative'>
+          {{#each order.orderdiscounts}}
+            <div class='list-group-item'>
+              {{ discount_name }} <em class='text-muted'>{{ discount_code }}</em>
+            </div>
+          {{/each}}
+          <div class='list-group-item'>
+            <input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off' value="{{ discountCode }}" lazy>
+          </div>
+        </div>{{! /.list-group }}
+      </div>
     </div>
     <div class="col-md-7 col-md-pull-5 margin-leader margin-leader-md-0">
       {{#each items }}

@@ -14,6 +14,7 @@ from brambling.api.v1.views import (
     ItemViewSet,
     ItemImageViewSet,
     ItemOptionViewSet,
+    OrderDiscountViewSet,
 )
 
 
@@ -30,6 +31,7 @@ router.register('boughtitem', BoughtItemViewSet)
 router.register('item', ItemViewSet)
 router.register('itemimage', ItemImageViewSet)
 router.register('itemoption', ItemOptionViewSet)
+router.register('orderdiscount', OrderDiscountViewSet)
 
 
 urlpatterns = patterns('',

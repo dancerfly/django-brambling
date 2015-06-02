@@ -36,7 +36,8 @@
 		    "boughtitem": "{% url 'boughtitem-list' %}",
 		    "item": "{% url 'item-list' %}",
 		    "itemimage": "{% url 'itemimage-list' %}",
-		    "itemoption": "{% url 'itemoption-list' %}"
+		    "itemoption": "{% url 'itemoption-list' %}",
+		    "orderdiscount": "{% url 'orderdiscount-list' %}"
 		};
 		dancerfly.currentEventId = "{{ event.pk }}";
 		dancerfly.currentUserId = {% if request.user.is_authenticated %}{{ request.user.pk }}{% else %}null{% endif %};

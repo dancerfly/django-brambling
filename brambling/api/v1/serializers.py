@@ -1,9 +1,12 @@
+from django.core.validators import RegexValidator
+from django.utils import timezone
 from rest_framework import serializers
 
 from brambling.models import (Order, EventHousing, BoughtItem,
                               EnvironmentalFactor, HousingCategory,
                               ItemOption, Item, ItemImage, Attendee, Event,
-                              Organization, DanceStyle)
+                              Organization, DanceStyle, Discount, OrderDiscount,
+                              BoughtItemDiscount)
 
 
 class HousingCategorySerializer(serializers.ModelSerializer):
@@ -149,8 +152,66 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
+class OrderDiscountSerializer(serializers.HyperlinkedModelSerializer):
+    discount_name = serializers.CharField(read_only=True)
+    discount_code = serializers.CharField(max_length=20, validators=[RegexValidator("^{}$".format(Discount.CODE_REGEX))])
+    link = serializers.HyperlinkedIdentityField(view_name='orderdiscount-detail')
+    order = serializers.HyperlinkedRelatedField(view_name='order-detail', queryset=Order.objects.all())
+
+    def __init__(self, *args, **kwargs):
+        super(OrderDiscountSerializer, self).__init__(*args, **kwargs)
+        # If this is not a creation, set discount_code and order to read_only.
+        if self.instance is not None:
+            self.fields['discount_code'].read_only = True
+            self.fields['order'].read_only = True
+
+    def to_representation(self, instance):
+        ret = super(OrderDiscountSerializer, self).to_representation(instance)
+        ret.update({
+            'discount_name': instance.discount.name,
+            'discount_code': instance.discount.code,
+        })
+        return ret
+
+    def validate(self, data):
+        self.discount = Discount.objects.get(code=data['discount_code'])
+        if data.order.event != self.discount.event:
+            raise serializers.ValidationError("Order and discount are for different events.")
+        now = timezone.now()
+        if self.discount.available_start > now or self.discount.available_end < now:
+            raise serializers.ValidationError("Discount is not currently available.")
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('discount_code')
+        validated_data['discount'] = self.discount
+        instance = super(OrderDiscountSerializer, self).create(validated_data)
+
+        bought_items = BoughtItem.objects.filter(
+            order=self,
+            item_option__discount=self.discount,
+        ).filter(status__in=(
+            BoughtItem.UNPAID,
+            BoughtItem.RESERVED,
+        )).distinct()
+        BoughtItemDiscount.objects.bulk_create([
+            BoughtItemDiscount(discount=self.discount,
+                               bought_item=bought_item)
+            for bought_item in bought_items
+        ])
+        return instance
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError("Order discounts can't be updated. They just exist.")
+
+    class Meta:
+        model = OrderDiscount
+        fields = ('discount', 'order', 'timestamp')
+
+
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     bought_items = BoughtItemSerializer(many=True)
+    discounts = OrderDiscountSerializer(many=True)
     eventhousing = EventHousingSerializer()
     person = serializers.StringRelatedField()
     link = serializers.HyperlinkedIdentityField(view_name='order-detail')
