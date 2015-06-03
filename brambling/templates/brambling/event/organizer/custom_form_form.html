@@ -107,6 +107,10 @@
 				setChoicesDisabled(this);
 			});
 
+			$('.field-list').on('row_added.formset', function(e, $row) {
+				setChoicesDisabled($row.find('select[id$=field_type]'));
+			});
+
 			var fields_renumber = function () {
 				$('.field-list .field:visible').each(function(i){
 					$(this).find('.count').html(i+1);
