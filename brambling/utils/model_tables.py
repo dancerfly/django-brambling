@@ -66,9 +66,6 @@ class Cell(object):
     def is_boolean(self):
         return isinstance(self.value, bool)
 
-    def is_iterable(self):
-        return hasattr(self.value, '__iter__')
-
 
 class Row(object):
     def __init__(self, data, obj=None):
