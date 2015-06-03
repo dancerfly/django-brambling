@@ -65,7 +65,7 @@ class Cell(object):
         """
 
         if hasattr(self.value, '__iter__'):
-            return  unicode(", ".join(self.value))
+            return  u", ".join([unicode(x) for x in self.value])
         return unicode(self.value)
 
     def __repr__(self):
