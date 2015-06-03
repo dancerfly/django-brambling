@@ -31,8 +31,8 @@
 		{% endif %}
 
 		{# template for additional field forms #}
-		<div class="hidden">
-			<div class='panel panel-default field field-template'>
+		<script type="text/html" class="field-template">
+			<div class='panel panel-default field'>
 				<header class='panel-heading'>
 					<div class='panel-title'>
 						<a href="#{{ formset.empty_form.prefix }}-collapse" data-toggle="collapse">
@@ -47,7 +47,7 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		</script>
 
 		<div class="field-list panel-group">
 			{% for form in formset.forms %}
@@ -119,6 +119,10 @@
 
 			$('.field-list').on('row_added.formset row_removed.formset reordered.formset', fields_renumber);
 
+			var form_field_chosen = function (e, $row) {
+				$row.find('.chosen-select').chosen({width: "100%"})
+			};
+
 			$('.field-list').formset({
 				prefix: '{{ formset.prefix }}',
 				deleteTrigger: '<a href="#"><i class="fa fa-times"></i></a>',
@@ -129,6 +133,7 @@
 				sortableHandle: '.panel-heading',
 				sortableField: 'index'
 			});
+			$('.field-list').on('row_added.formset', form_field_chosen)
 		}());
 	</script>
 {% endblock %}
