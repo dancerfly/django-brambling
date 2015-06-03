@@ -1587,6 +1587,7 @@ class CustomFormField(models.Model):
     index = models.PositiveSmallIntegerField(default=0)
     # Choices are linebreak-separated values
     choices = models.TextField(help_text='Put each choice on its own line', default='', blank=True)
+    help_text = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ('index',)
@@ -1600,6 +1601,7 @@ class CustomFormField(models.Model):
             'required': self.required,
             'initial': self.default,
             'label': self.name,
+            'help_text': self.help_text,
         }
         if self.field_type in self.CHOICE_TYPES:
             choices = self.choices.splitlines()
