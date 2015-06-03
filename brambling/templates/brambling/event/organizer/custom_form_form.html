@@ -91,11 +91,11 @@
 
 			var setChoicesDisabled = function(ele) {
 				var $ele = $(ele),
-					$choices = $ele.parent().parent().find('textarea[id$=choices]');
+					$choices = $ele.parent().parent().find('textarea[id$=choices]').parent();
 				if (choice_types.indexOf($ele.val()) !== -1) {
-					$choices.prop('disabled', false);
+					$choices.removeClass('hidden');
 				} else {
-					$choices.prop('disabled', true);
+					$choices.addClass('hidden');
 				}
 			}
 
