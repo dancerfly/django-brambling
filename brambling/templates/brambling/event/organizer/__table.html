@@ -143,6 +143,10 @@
                                             <i class='fa fa-times fa-inverse fa-stack-1x'></i>
                                         </span>
                                     {% endif %}
+                                {% elif cell.is_iterable %}
+                                    {% for value in cell.value %}
+                                        {{ value }}<br />
+                                    {% endfor %}
                                 {% else %}
                                     {{ cell }}
                                 {% endif %}
