@@ -87,6 +87,26 @@
 		(function () {
 			"use strict";
 
+			var choice_types = ['radio', 'select', 'checkboxes', 'select_multiple'];
+
+			var setChoicesDisabled = function(ele) {
+				var $ele = $(ele),
+					$choices = $ele.parent().parent().find('textarea[id$=choices]');
+				if (choice_types.indexOf($ele.val()) !== -1) {
+					$choices.prop('disabled', false);
+				} else {
+					$choices.prop('disabled', true);
+				}
+			}
+
+			$('select[id$=field_type]').each(function (idx, ele) {
+				setChoicesDisabled(ele);
+			});
+
+			$('body').on('change', 'select[id$=field_type]', function() {
+				setChoicesDisabled(this);
+			});
+
 			var fields_renumber = function () {
 				$('.field-list .field:visible').each(function(i){
 					$(this).find('.count').html(i+1);

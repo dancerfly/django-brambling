@@ -1562,21 +1562,31 @@ class CustomFormField(models.Model):
     TEXT = 'text'
     TEXTAREA = 'textarea'
     BOOLEAN = 'boolean'
+    RADIO = 'radio'
+    SELECT = 'select'
+    CHECKBOXES = 'checkboxes'
+    SELECT_MULTIPLE = 'select_multiple'
+
+    CHOICE_TYPES = (RADIO, SELECT, CHECKBOXES, SELECT_MULTIPLE)
 
     FIELD_TYPE_CHOICES = (
         (TEXT, _('Text')),
         (TEXTAREA, _('Paragraph text')),
         (BOOLEAN, _('Checkbox')),
+        (RADIO, _('Radio buttons')),
+        (SELECT, _('Dropdown')),
+        (CHECKBOXES, _('Multiple checkboxes')),
+        (SELECT_MULTIPLE, _('Dropdown (Multiple)')),
     )
-    field_type = models.CharField(max_length=8, choices=FIELD_TYPE_CHOICES, default=TEXT)
+    field_type = models.CharField(max_length=15, choices=FIELD_TYPE_CHOICES, default=TEXT)
 
     form = models.ForeignKey(CustomForm, related_name='fields')
     name = models.CharField(max_length=255)
-    # Choices will be a comma-separated value field, not a relation.
-    #choices = models.CharField(max_length=255)
     default = models.CharField(max_length=255, blank=True)
     required = models.BooleanField(default=False)
     index = models.PositiveSmallIntegerField(default=0)
+    # Choices are linebreak-separated values
+    choices = models.TextField(help_text='Put each choice on its own line', default='', blank=True)
 
     class Meta:
         ordering = ('index',)
@@ -1591,6 +1601,10 @@ class CustomFormField(models.Model):
             'initial': self.default,
             'label': self.name,
         }
+        if self.field_type in self.CHOICE_TYPES:
+            choices = self.choices.splitlines()
+            kwargs['choices'] = zip(choices, choices)
+
         if self.field_type == self.TEXT:
             field_class = forms.CharField
         elif self.field_type == self.TEXTAREA:
@@ -1598,6 +1612,16 @@ class CustomFormField(models.Model):
             kwargs['widget'] = forms.Textarea
         elif self.field_type == self.BOOLEAN:
             field_class = forms.BooleanField
+        elif self.field_type == self.RADIO:
+            field_class = forms.ChoiceField
+            kwargs['widget'] = forms.RadioSelect
+        elif self.field_type == self.SELECT:
+            field_class = forms.ChoiceField
+        elif self.field_type == self.CHECKBOXES:
+            field_class = forms.MultipleChoiceField
+            kwargs['widget'] = forms.CheckboxSelectMultiple
+        elif self.field_type == self.SELECT_MULTIPLE:
+            field_class = forms.MultipleChoiceField
 
         return field_class(**kwargs)
 
