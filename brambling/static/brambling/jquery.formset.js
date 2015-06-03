@@ -162,6 +162,38 @@
         return (options.rowSelector === null) ? this.$el.children() : this.$el.find(options.rowSelector);
     };
 
+    Formset.prototype.getNewRow = function () {
+        var options = this.options,
+            template, script;
+
+        // If a template is specified and it's DOM template:
+        if (options.formTemplate && $(options.formTemplate).is(':not("script")')) {
+            // If a form template was specified, we'll clone it to generate new form instances:
+            template = (options.formTemplate instanceof $) ? options.formTemplate : $(options.formTemplate);
+        // If a template is specified and it's a script element:
+        } else if (options.formTemplate && $(options.formTemplate).is('script')) {
+            script = $(options.formTemplate);
+            template = $(script.html());
+        } else {
+            // Otherwise, use the last form in the formset; this works much better if you've got
+            // extra (>= 1) forms (thnaks to justhamade for pointing this out):
+            template = $('.' + options.formCssClass + ':last').clone(true).removeAttr('id');
+            template.find('input:hidden[id $= "-DELETE"]').remove();
+            // Clear all cloned fields, except those the user wants to keep (thanks to brunogola for the suggestion):
+            template.find(Formset.childElementSelector).not(options.keepFieldValues).each(function() {
+                var elem = $(this);
+                // If this is a checkbox or radiobutton, uncheck it.
+                // This fixes Issue 1, reported by Wilson.Andrew.J:
+                if (elem.is('input:checkbox') || elem.is('input:radio')) {
+                    elem.attr('checked', false);
+                } else {
+                    elem.val('');
+                }
+            });
+        }
+        return template;
+    };
+
     Formset.prototype.insertAddLink = function () {
         // Generate the add button:
         var formset = this, // useful for subscope below
@@ -171,27 +203,7 @@
             hideAddButton = !this.showAddButton(),
                 addButton, template;
 
-            // TODO: This template deducing code should be more robust and separate from the insertAddLink function
-            if (options.formTemplate) {
-                // If a form template was specified, we'll clone it to generate new form instances:
-                template = (options.formTemplate instanceof $) ? options.formTemplate : $(options.formTemplate);
-            } else {
-                // Otherwise, use the last form in the formset; this works much better if you've got
-                // extra (>= 1) forms (thnaks to justhamade for pointing this out):
-                template = $('.' + options.formCssClass + ':last').clone(true).removeAttr('id');
-                template.find('input:hidden[id $= "-DELETE"]').remove();
-                // Clear all cloned fields, except those the user wants to keep (thanks to brunogola for the suggestion):
-                template.find(Formset.childElementSelector).not(options.keepFieldValues).each(function() {
-                    var elem = $(this);
-                    // If this is a checkbox or radiobutton, uncheck it.
-                    // This fixes Issue 1, reported by Wilson.Andrew.J:
-                    if (elem.is('input:checkbox') || elem.is('input:radio')) {
-                        elem.attr('checked', false);
-                    } else {
-                        elem.val('');
-                    }
-                });
-            }
+            template = this.getNewRow();
             // FIXME: Perhaps using $.data would be a better idea?
             options.formTemplate = template;
 
