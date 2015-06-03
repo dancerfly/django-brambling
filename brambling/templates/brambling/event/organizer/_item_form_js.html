@@ -27,7 +27,12 @@
 			});
 		};
 
+		var item_options_chosen = function (e, $row) {
+			$row.find('.chosen-select').chosen({width: "100%"})
+		};
+
 		$('.item-options-list').on('row_added.formset row_removed.formset reordered.formset', item_options_renumber);
+		$('.item-options-list').on('row_added.formset', item_options_chosen);
 
 		$('.item-options-list').formset({
 			prefix: '{{ itemoption_formset.prefix }}',
