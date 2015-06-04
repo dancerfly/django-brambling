@@ -20,7 +20,7 @@ def cache_boughtitemdiscount_values(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0013_auto_20150528_1846'),
+        ('brambling', '0015_auto_20150528_1846'),
     ]
 
     operations = [

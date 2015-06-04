@@ -9,7 +9,7 @@ import django.core.validators
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0010_auto_20150528_1805'),
+        ('brambling', '0012_customformfield_help_text'),
     ]
 
     operations = [
