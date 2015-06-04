@@ -708,7 +708,7 @@ class ModelTableView(ListView):
             table = context['table']
             pseudo_buffer = Echo()
             writer = csv.writer(pseudo_buffer)
-            response = StreamingHttpResponse((writer.writerow([force_text(cell.value) for cell in row])
+            response = StreamingHttpResponse((writer.writerow([unicode(cell) for cell in row])
                                               for row in itertools.chain((table.header_row(),), table)),
                                              content_type="text/csv")
             response['Content-Disposition'] = 'attachment; filename="export.csv"'

@@ -37,6 +37,8 @@
 					New Attendee
 				{% endif %}
 			</h3>
+			
+			{% include "brambling/forms/_top_error_list.html" %}
 
 			<form action="{{ request.path }}" method="post" novalidate>
 				{% csrf_token %}

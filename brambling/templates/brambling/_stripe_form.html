@@ -22,16 +22,16 @@
 		<div class='form-group'>
 			<label for='card-cvc'>Expiration Date</label>
 			<div class='row'>
-				<div class='col-xs-5'>
+				<div class='col-sm-6 margin-trailer'>
 					<input type='text' class='form-control' id='card-expiry-month' placeholder='MM' maxlength='2'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
 				</div>
-				<div class='col-xs-5'>
+				<div class='col-sm-6'>
 					<input type='text' class='form-control' id='card-expiry-year' placeholder='YY' maxlength='2'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class='col-sm-6'>
+	<div class='col-xs-6'>
 		{% include 'brambling/_stripe_note.html' %}
 		<p class='text-muted'>A CVC code is an additional three or four digit number found on the back of your card.</p>
 	</div>

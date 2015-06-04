@@ -59,11 +59,11 @@
 	{% endif %}
 
 	{# template for additional item option forms #}
-	<div class="hidden">
+	<script type="text/html" class="item-option-template">
 		<div class='list-group-item item-option item-option-template'>
 			{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
 		</div>
-	</div>
+	</script>
 
 	<div class="panel panel-default">
 		<div class="item-options-list list-group">
