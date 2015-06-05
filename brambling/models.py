@@ -200,7 +200,7 @@ class DanceStyle(models.Model):
 
 
 class EnvironmentalFactor(models.Model):
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=30, unique=True)
 
     class Meta:
         ordering = ('name',)
@@ -210,7 +210,7 @@ class EnvironmentalFactor(models.Model):
 
 
 class DietaryRestriction(models.Model):
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, unique=True)
 
     class Meta:
         ordering = ('name',)
@@ -220,7 +220,7 @@ class DietaryRestriction(models.Model):
 
 
 class HousingCategory(models.Model):
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, unique=True)
 
     class Meta:
         ordering = ('name',)
@@ -499,6 +499,20 @@ class Event(models.Model):
             self.start_date + timedelta(n-1)
             for n in xrange((self.end_date - self.start_date).days + 2)
         ]
+
+    def create_order(self, user):
+        """
+        Creates an order for this person and event. Be sure to check
+        for an existing order *first*, as this method doesn't.
+        """
+        person = user if user and user.is_authenticated() else None
+        while True:
+            code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
+
+            if not Order.objects.filter(event=self, code=code).exists():
+                break
+
+        return Order.objects.create(event=self, code=code, person=person)
 
 
 class Item(models.Model):
@@ -785,13 +799,6 @@ class Order(AbstractDwollaModel):
 
     class Meta:
         unique_together = ('event', 'code')
-
-    @classmethod
-    def get_valid_code(cls, event):
-        code = get_random_string(8, cls.CODE_ALLOWED_CHARS)
-        while cls.objects.filter(event=event, code=code).exists():
-            code = get_random_string(8, cls.CODE_ALLOWED_CHARS)
-        return code
 
     def get_dwolla_connect_url(self):
         return reverse('brambling_order_dwolla_connect',
@@ -1286,7 +1293,6 @@ class Attendee(AbstractNamedModel):
     # Internal tracking data
     order = models.ForeignKey(Order, related_name='attendees')
     person = models.ForeignKey(Person, blank=True, null=True)
-    person_confirmed = models.BooleanField(default=False)
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
@@ -1571,21 +1577,32 @@ class CustomFormField(models.Model):
     TEXT = 'text'
     TEXTAREA = 'textarea'
     BOOLEAN = 'boolean'
+    RADIO = 'radio'
+    SELECT = 'select'
+    CHECKBOXES = 'checkboxes'
+    SELECT_MULTIPLE = 'select_multiple'
+
+    CHOICE_TYPES = (RADIO, SELECT, CHECKBOXES, SELECT_MULTIPLE)
 
     FIELD_TYPE_CHOICES = (
         (TEXT, _('Text')),
         (TEXTAREA, _('Paragraph text')),
         (BOOLEAN, _('Checkbox')),
+        (RADIO, _('Radio buttons')),
+        (SELECT, _('Dropdown')),
+        (CHECKBOXES, _('Multiple checkboxes')),
+        (SELECT_MULTIPLE, _('Dropdown (Multiple)')),
     )
-    field_type = models.CharField(max_length=8, choices=FIELD_TYPE_CHOICES, default=TEXT)
+    field_type = models.CharField(max_length=15, choices=FIELD_TYPE_CHOICES, default=TEXT)
 
     form = models.ForeignKey(CustomForm, related_name='fields')
     name = models.CharField(max_length=255)
-    # Choices will be a comma-separated value field, not a relation.
-    #choices = models.CharField(max_length=255)
     default = models.CharField(max_length=255, blank=True)
     required = models.BooleanField(default=False)
     index = models.PositiveSmallIntegerField(default=0)
+    # Choices are linebreak-separated values
+    choices = models.TextField(help_text='Put each choice on its own line', default='', blank=True)
+    help_text = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ('index',)
@@ -1599,7 +1616,12 @@ class CustomFormField(models.Model):
             'required': self.required,
             'initial': self.default,
             'label': self.name,
+            'help_text': self.help_text,
         }
+        if self.field_type in self.CHOICE_TYPES:
+            choices = self.choices.splitlines()
+            kwargs['choices'] = zip(choices, choices)
+
         if self.field_type == self.TEXT:
             field_class = forms.CharField
         elif self.field_type == self.TEXTAREA:
@@ -1607,6 +1629,16 @@ class CustomFormField(models.Model):
             kwargs['widget'] = forms.Textarea
         elif self.field_type == self.BOOLEAN:
             field_class = forms.BooleanField
+        elif self.field_type == self.RADIO:
+            field_class = forms.ChoiceField
+            kwargs['widget'] = forms.RadioSelect
+        elif self.field_type == self.SELECT:
+            field_class = forms.ChoiceField
+        elif self.field_type == self.CHECKBOXES:
+            field_class = forms.MultipleChoiceField
+            kwargs['widget'] = forms.CheckboxSelectMultiple
+        elif self.field_type == self.SELECT_MULTIPLE:
+            field_class = forms.MultipleChoiceField
 
         return field_class(**kwargs)
 

@@ -58,6 +58,14 @@ class Cell(object):
         self.value = value
 
     def __unicode__(self):
+        """
+        Return a comma-separated list if value is an iterable. Otherwise, return
+        the value as a string.
+
+        """
+
+        if hasattr(self.value, '__iter__'):
+            return  u", ".join([unicode(x) for x in self.value])
         return unicode(self.value)
 
     def __repr__(self):

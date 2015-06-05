@@ -33,33 +33,33 @@
 		<div class='form-group'>
 				{% if registered %}
 					{% if event.order and event.order.has_cart %}
-						<a href="{{ event.get_absolute_url }}" class="btn btn-warning tipped" title="Complete your registration now!">
+						<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Complete your registration now!">
 							<i class="fa fa-exclamation-circle"></i> Almost Registered
 						</a>
 					{% else %}
-						<a href="{{ event.get_absolute_url }}" class="btn btn-success tipped" title="Modify your registration">
+						<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-success tipped" title="Modify your registration">
 							<i class="fa fa-check"></i> Registered
 						</a>
 					{% endif %}
 				{% else %}
-					<a href="{{ event.get_absolute_url }}" class="btn btn-default">
-						<i class="fa fa-ticket"></i> Register for <strong>{{ event.name }}</strong>!
+					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default">
+						<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm">for <strong>{{ event.name }}</strong>!</span>
 					</a>
 				{% endif %}
 			{% if event in admin_events %}
-				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-default">
+				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="margin-trailer-half btn btn-default">
 					<i class="fa fa-cog"></i>
 					Manage Event
 				</a>
 			{% endif %}
 			{% if event.website_url %}
-				<a target="_blank" href="{{ event.website_url }}" class="btn btn-default-dark">
+				<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
 					<i class="fa fa-fw fa-globe"></i>
 					Website
 				</a>
 			{% endif %}
 			{% if event.facebook_url %}
-				<a target="_blank" href="{{ event.facebook_url }}" class="btn btn-default-dark">
+				<a target="_blank" href="{{ event.facebook_url }}" class="margin-trailer-half btn btn-default-dark">
 					<i class="fa fa-fw fa-facebook"></i>
 					Facebook
 				</a>

@@ -189,10 +189,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if order is None:
             # Okay, then create for this user.
             created = True
-            person = request.user if request.user.is_authenticated() else None
-
-            code = Order.get_valid_code(event)
-            order = Order.objects.create(event=event, person=person, code=code)
+            event.create_order(request.user)
 
             if not request.user.is_authenticated():
                 session_orders = request.session.get(ORDER_CODE_SESSION_KEY, {})

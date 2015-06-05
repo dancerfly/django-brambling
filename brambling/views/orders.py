@@ -306,14 +306,11 @@ class OrderMixin(object):
         return order
 
     def create_order(self):
-        person = self.request.user if self.request.user.is_authenticated() else None
-
-        code = Order.get_valid_code(self.event)
-        order = Order.objects.create(event=self.event, person=person, code=code)
+        order = self.event.create_order(self.request.user)
 
         if not self.request.user.is_authenticated():
             session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-            session_orders[str(self.event.pk)] = code
+            session_orders[str(self.event.pk)] = order.code
             self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
         return order
 
@@ -545,9 +542,6 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
         if (self.request.user.is_authenticated() and
                 form.instance.email == self.request.user.email):
             form.instance.person = self.request.user
-            form.instance.person_confirmed = True
-
-        self.object = form.save()
         return super(AttendeeBasicDataView, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
