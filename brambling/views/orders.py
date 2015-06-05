@@ -27,7 +27,6 @@ from brambling.views.utils import (get_event_admin_nav, ajax_required,
 
 
 ORDER_CODE_SESSION_KEY = '_brambling_order_code'
-ORDER_CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 
 class OrderStep(Step):
@@ -287,16 +286,11 @@ class OrderMixin(object):
         return order
 
     def create_order(self):
-        person = self.request.user if self.request.user.is_authenticated() else None
-        code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
-
-        while Order.objects.filter(event=self.event, code=code).exists():
-            code = get_random_string(8, ORDER_CODE_ALLOWED_CHARS)
-        order = Order.objects.create(event=self.event, person=person, code=code)
+        order = self.event.create_order(self.request.user)
 
         if not self.request.user.is_authenticated():
             session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-            session_orders[str(self.event.pk)] = code
+            session_orders[str(self.event.pk)] = order.code
             self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
         return order
 
