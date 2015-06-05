@@ -200,7 +200,7 @@ class DanceStyle(models.Model):
 
 
 class EnvironmentalFactor(models.Model):
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=30, unique=True)
 
     class Meta:
         ordering = ('name',)
@@ -210,7 +210,7 @@ class EnvironmentalFactor(models.Model):
 
 
 class DietaryRestriction(models.Model):
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, unique=True)
 
     class Meta:
         ordering = ('name',)
@@ -220,7 +220,7 @@ class DietaryRestriction(models.Model):
 
 
 class HousingCategory(models.Model):
-    name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, unique=True)
 
     class Meta:
         ordering = ('name',)
@@ -1311,7 +1311,6 @@ class Attendee(AbstractNamedModel):
     # Internal tracking data
     order = models.ForeignKey(Order, related_name='attendees')
     person = models.ForeignKey(Person, blank=True, null=True)
-    person_confirmed = models.BooleanField(default=False)
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)

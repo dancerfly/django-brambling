@@ -528,9 +528,6 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
         if (self.request.user.is_authenticated() and
                 form.instance.email == self.request.user.email):
             form.instance.person = self.request.user
-            form.instance.person_confirmed = True
-
-        self.object = form.save()
         return super(AttendeeBasicDataView, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
