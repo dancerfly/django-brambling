@@ -1458,7 +1458,7 @@ class InviteManager(models.Manager):
                 allowed_chars='abcdefghijkmnpqrstuvwxyz'
                               'ABCDEFGHJKLMNPQRSTUVWXYZ23456789-~'
             )
-            if not Invite.objects.filter(code=code):
+            if not Invite.objects.filter(code=code).exists():
                 break
         defaults = {
             'user': user,
@@ -1468,9 +1468,11 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
+    EVENT = 'event'
     EVENT_EDITOR = 'editor'
     ORGANIZATION_EDITOR = 'org_editor'
     KIND_CHOICES = (
+        (EVENT, _('Event')),
         (EVENT_EDITOR, _("Event Editor")),
         (ORGANIZATION_EDITOR, _("Organization Editor")),
     )
@@ -1501,7 +1503,9 @@ class Invite(models.Model):
         self.save()
 
     def get_content(self):
-        if self.kind == Invite.EVENT_EDITOR:
+        if self.kind == Invite.EVENT:
+            model = Event
+        elif self.kind == Invite.EVENT_EDITOR:
             model = Event
         elif self.kind == Invite.ORGANIZATION_EDITOR:
             model = Organization
