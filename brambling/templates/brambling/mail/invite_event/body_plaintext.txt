@@ -1,0 +1,11 @@
+You've been invited to attend {{ content.name }}!
+{% url "brambling_invite_accept" code=invite.code as url %}
+Use the following URL to accept your invitation:
+{{ protocol }}://{{ site.domain }}{{ url }}
+
+Happy dancing!
+
+The Dancerfly Team
+
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
