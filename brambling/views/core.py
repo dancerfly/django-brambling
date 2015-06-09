@@ -20,7 +20,7 @@ class DashboardView(TemplateView):
         today = timezone.now().date()
 
         upcoming_events = Event.objects.filter(
-            privacy=Event.PUBLIC,
+            privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
             is_published=True,
         ).filter(start_date__gte=today).order_by('start_date').distinct()
 
@@ -30,7 +30,7 @@ class DashboardView(TemplateView):
 
         if user.is_authenticated():
             upcoming_events_interest = Event.objects.filter(
-                privacy=Event.PUBLIC,
+                privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
                 dance_styles__person=user,
                 is_published=True,
             ).filter(start_date__gte=today).order_by('start_date').distinct()

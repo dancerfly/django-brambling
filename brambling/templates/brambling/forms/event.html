@@ -77,7 +77,11 @@
 		<h4 class="panel-title">Registration</h4>
 	</header>
 	<div class="panel-body">
-		{% formrow form.privacy %}
+		{% if form.instance.is_published %}
+			{% formrow form.privacy %}
+		{% else %}
+			{% formrow form.privacy with help_text="This setting only has an effect once the event is published. For now, the event is only visible to admins." %}
+		{% endif %}
 		{% formrow form.cart_timeout %}
 		<div class='form-group'>
 			{% with field=form.collect_housing_data %}

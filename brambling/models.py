@@ -363,10 +363,14 @@ class Organization(AbstractDwollaModel):
 class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
+    HALF_PUBLIC = 'half-public'
+    INVITED = 'invited'
 
     PRIVACY_CHOICES = (
-        (PUBLIC, _("List publicly")),
-        (LINK, _("Visible to anyone with the link")),
+        (PUBLIC, _("Anyone can find and view the event")),
+        (LINK, _("Anyone with a direct link can view the event")),
+        (HALF_PUBLIC, _("Anyone can find and view the event, but only people who are invited can register")),
+        (INVITED, _("Only people invited to the event can see the event and register")),
     )
 
     LIVE = 'live'
@@ -406,8 +410,8 @@ class Event(models.Model):
                                                   "document. I am aware that it is legally binding and I accept it out "
                                                   "of my own free will."), help_text=_("'{event}' and '{organization}' will be automatically replaced with your event and organization names respectively when users are presented with the waiver."))
 
-    privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PUBLIC, help_text="Who can view this event once it's published.")
+    privacy = models.CharField(max_length=11, choices=PRIVACY_CHOICES,
+                               default=PUBLIC)
     is_published = models.BooleanField(default=False)
     # If an event is "frozen", it can no longer be edited or unpublished.
     is_frozen = models.BooleanField(default=False)
@@ -459,7 +463,13 @@ class Event(models.Model):
         )
 
     def viewable_by(self, user):
-        if not self.is_published and not self.editable_by(user):
+        if self.editable_by(user):
+            return True
+
+        if not self.is_published:
+            return False
+
+        if self.privacy == self.INVITED and not Order.objects.filter(user=user, event=event).exists():
             return False
 
         return True
