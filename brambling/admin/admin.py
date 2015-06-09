@@ -178,8 +178,13 @@ class EventAdmin(admin.ModelAdmin):
     raw_id_fields = ('organization',)
     filter_horizontal = ("dance_styles", "additional_editors")
     radio_fields = {'api_type': admin.HORIZONTAL}
-    list_display = ('name', 'created')
+    list_display = ('name', 'organization', 'is_published', 'is_frozen', 'created', 'application_fee_percent')
+    list_filter = ('organization', 'is_published', 'is_frozen')
     ordering = ('-created',)
+
+    def get_queryset(self, request):
+        qs = super(EventAdmin, self).get_queryset(request)
+        return qs.select_related('organization')
 
 
 class CustomFormFieldInline(admin.TabularInline):
