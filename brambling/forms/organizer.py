@@ -194,6 +194,11 @@ class EventForm(forms.ModelForm):
         if not self.organization_editable_by:
             del self.fields['editors']
 
+        if self.instance.pk is None:
+            self.instance.application_fee_percent = organization.default_application_fee_percent
+
+        # Always display the timezone that is currently chosen,
+        # even if it wouldn't otherwise be displayed.
         if self.instance.pk is not None:
             timezone = self.instance.timezone
             if (timezone, timezone) not in self.fields['timezone'].choices:
