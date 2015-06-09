@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import Count
 from brambling.models import (Person, Event, DanceStyle,
                               EnvironmentalFactor, DietaryRestriction,
                               HousingCategory, CustomForm, CustomFormField,
@@ -128,8 +129,24 @@ class OrganizationAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ('owner',)
     filter_horizontal = ("dance_styles", "default_event_dance_styles", "editors")
-    list_display = ('name', 'created')
+    list_display = ('name', 'created', 'default_application_fee_percent', 'published_events', 'all_events')
     ordering = ('-created',)
+
+    def get_queryset(self, request):
+        qs = super(OrganizationAdmin, self).get_queryset(request)
+        return qs.annotate(all_events=Count('event')).extra(select={
+            'published_events': """
+            SELECT COUNT(*) FROM brambling_event WHERE
+            brambling_event.organization_id = brambling_organization.id AND
+            brambling_event.is_published = 1
+            """
+        })
+
+    def all_events(self, obj):
+        return obj.all_events
+
+    def published_events(self, obj):
+        return obj.published_events
 
 
 class EventAdmin(admin.ModelAdmin):
