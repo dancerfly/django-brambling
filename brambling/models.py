@@ -478,6 +478,10 @@ class Event(models.Model):
         return ItemOption.objects.filter(item__event=self).exists()
 
     def get_invites(self):
+        return Invite.objects.filter(kind=Invite.EVENT,
+                                     content_id=self.pk)
+
+    def get_editor_invites(self):
         return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
                                      content_id=self.pk)
 
