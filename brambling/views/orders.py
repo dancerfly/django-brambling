@@ -269,7 +269,7 @@ class OrderMixin(object):
                         # checked out yet, assume that the user created an
                         # account mid-order and re-assign it.
                         try:
-                            order = Order.objects.get(
+                            order = Order.objects.filter(
                                 bought_items__status__in=[
                                     BoughtItem.RESERVED,
                                     BoughtItem.UNPAID,
@@ -277,7 +277,7 @@ class OrderMixin(object):
                                 event=self.event,
                                 person__isnull=True,
                                 code=order_kwargs['code']
-                            )
+                            ).distinct().get()
                         except Order.DoesNotExist:
                             pass
                         else:
