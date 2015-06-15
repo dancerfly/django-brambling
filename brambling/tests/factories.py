@@ -5,7 +5,8 @@ import factory
 import pytz
 
 from brambling.models import (Event, Person, Order, CreditCard, Invite,
-                              Organization, Transaction)
+                              Organization, Transaction, Item, ItemOption,
+                              Discount)
 
 
 def lazy_setting(setting):
@@ -104,3 +105,44 @@ class TransactionFactory(factory.DjangoModelFactory):
         model = Transaction
 
     event = factory.SubFactory(EventFactory)
+
+
+class ItemFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Item
+
+    name = factory.Sequence(lambda n: "Item {}".format(n))
+    event = factory.SubFactory(EventFactory)
+
+
+class ItemOptionFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = ItemOption
+
+    name = factory.Sequence(lambda n: "ItemOption {}".format(n))
+    item = factory.SubFactory(ItemFactory)
+    price = 1
+    available_end = now() + timedelta(days=2)
+    order = 1
+
+
+class DiscountFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Discount
+
+    name = factory.Sequence(lambda n: "Discount {}".format(n))
+    code = factory.Sequence(lambda n: unicode(n))
+    available_end = now() + timedelta(days=2)
+    amount = 1
+    event = factory.SubFactory(EventFactory)
+
+    @factory.post_generation
+    def item_options(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if not extracted:
+            extracted = [ItemOptionFactory()]
+
+        for item_option in extracted:
+            self.item_options.add(item_option)

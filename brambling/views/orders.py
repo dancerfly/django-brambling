@@ -475,7 +475,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
                 attendee__isnull=True
             ).exclude(
                 status=BoughtItem.REFUNDED
-            ).order_by('item_option__item', 'item_option'),
+            ).order_by('item_name', 'item_option_name'),
         })
         return context
 

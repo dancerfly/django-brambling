@@ -14,7 +14,7 @@ Attendees
 
 Items
 {% for txn, txn_dict in transactions.iteritems %}{% for item in txn_dict.items %}{% if item.status == item.BOUGHT %}
-{{ item.item_option.item.name }} ({{ item.item_option.name }}){% endif %}{% endfor %}{% endfor %}
+{{ item.item_name }} ({{ item.item_option_name }}){% endif %}{% endfor %}{% endfor %}
 {% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
 View more details at the following URL:
 {{ protocol }}://{{ site.domain }}{{ url }}

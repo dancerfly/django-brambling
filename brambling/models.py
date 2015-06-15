@@ -833,7 +833,11 @@ class Order(AbstractDwollaModel):
             )).distinct()
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount,
-                                   bought_item=bought_item)
+                                   bought_item=bought_item,
+                                   name=discount.name,
+                                   code=discount.code,
+                                   discount_type=discount.discount_type,
+                                   amount=discount.amount)
                 for bought_item in bought_items
             ])
         return created
@@ -844,7 +848,11 @@ class Order(AbstractDwollaModel):
         bought_item = BoughtItem.objects.create(
             item_option=item_option,
             order=self,
-            status=BoughtItem.RESERVED
+            status=BoughtItem.RESERVED,
+            item_name=item_option.item.name,
+            item_description=item_option.item.description,
+            item_option_name=item_option.name,
+            price=item_option.price,
         )
         discounts = self.discounts.filter(
             discount__item_options=item_option
@@ -852,7 +860,11 @@ class Order(AbstractDwollaModel):
         if discounts:
             BoughtItemDiscount.objects.bulk_create([
                 BoughtItemDiscount(discount=discount.discount,
-                                   bought_item=bought_item)
+                                   bought_item=bought_item,
+                                   name=discount.discount.name,
+                                   code=discount.discount.code,
+                                   discount_type=discount.discount.discount_type,
+                                   amount=discount.discount.amount)
                 for discount in discounts
             ])
         if self.cart_start_time is None:
@@ -900,7 +912,7 @@ class Order(AbstractDwollaModel):
     def get_groupable_cart(self):
         return self.bought_items.filter(
             status=BoughtItem.RESERVED
-        ).order_by('item_option__item', 'item_option__order', '-added')
+        ).order_by('item_name', 'item_option_name', '-added')
 
     def get_summary_data(self):
         if self.cart_is_expired():
@@ -908,8 +920,7 @@ class Order(AbstractDwollaModel):
 
         # First fetch BoughtItems and group by transaction.
         bought_items_qs = self.bought_items.select_related(
-            'item_option__item',
-            'discounts__discount'
+            'discounts'
         ).prefetch_related('transactions').order_by('-added')
 
         transactions = SortedDict()
@@ -924,7 +935,7 @@ class Order(AbstractDwollaModel):
             })
             txn_dict['items'].append(item)
             multiplier = -1 if txn and txn.transaction_type == Transaction.REFUND else 1
-            txn_dict['gross_cost'] += multiplier * item.item_option.price
+            txn_dict['gross_cost'] += multiplier * item.price
             for discount in item.discounts.all():
                 txn_dict['discounts'].append(discount)
                 txn_dict["total_savings"] -= multiplier * discount.savings()
@@ -1202,12 +1213,20 @@ class BoughtItem(models.Model):
         (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
     )
-    item_option = models.ForeignKey(ItemOption)
+    item_option = models.ForeignKey(ItemOption, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order, related_name='bought_items')
     added = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=8,
                               choices=STATUS_CHOICES,
                               default=UNPAID)
+
+    # Values cached at creation time, in case the values change / the
+    # referenced items are deleted.
+    item_name = models.CharField(max_length=30)
+    item_description = models.TextField(blank=True)
+    item_option_name = models.CharField(max_length=30)
+    price = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
+
     # BoughtItem has a single attendee, but attendee can have
     # more than one BoughtItem. Basic example: Attendee can
     # have more than one class. Or, hypothetically, merch bought
@@ -1216,7 +1235,7 @@ class BoughtItem(models.Model):
                                  related_name='bought_items', on_delete=models.SET_NULL)
 
     def __unicode__(self):
-        return u"{} – {} ({})".format(self.item_option.name,
+        return u"{} – {} ({})".format(self.item_option_name,
                                       self.order.code,
                                       self.pk)
 
@@ -1233,20 +1252,35 @@ class OrderDiscount(models.Model):
 
 class BoughtItemDiscount(models.Model):
     """"Tracks whether an item has had a discount applied to it."""
-    discount = models.ForeignKey(Discount)
+    PERCENT = 'percent'
+    FLAT = 'flat'
+
+    TYPE_CHOICES = (
+        (FLAT, _('Flat')),
+        (PERCENT, _('Percent')),
+    )
+    discount = models.ForeignKey(Discount, blank=True, null=True, on_delete=models.SET_NULL)
     bought_item = models.ForeignKey(BoughtItem, related_name='discounts')
     timestamp = models.DateTimeField(default=timezone.now)
 
+    # Values cached at creation time, in case the values change / the
+    # referenced items are deleted.
+    name = models.CharField(max_length=40)
+    code = models.CharField(max_length=20)
+    discount_type = models.CharField(max_length=7,
+                                     choices=TYPE_CHOICES,
+                                     default=FLAT)
+    amount = models.DecimalField(max_digits=5, decimal_places=2,
+                                 validators=[MinValueValidator(0)])
+
     class Meta:
-        unique_together = ('bought_item', 'discount')
+        unique_together = ('bought_item', 'code')
 
     def savings(self):
-        discount = self.discount
-        item_option = self.bought_item.item_option
-        return min(discount.amount
-                   if discount.discount_type == Discount.FLAT
-                   else discount.amount / 100 * item_option.price,
-                   item_option.price)
+        return min(self.amount
+                   if self.discount_type == BoughtItemDiscount.FLAT
+                   else self.amount / 100 * self.bought_item.price,
+                   self.bought_item.price)
 
 
 class HousingRequestNight(models.Model):
@@ -1340,7 +1374,7 @@ class Attendee(AbstractNamedModel):
         return self.get_full_name()
 
     def get_groupable_items(self):
-        return self.bought_items.order_by('item_option__item', 'item_option__order', '-added')
+        return self.bought_items.order_by('item_name', 'item_option_name', '-added')
 
 
 class Home(models.Model):
