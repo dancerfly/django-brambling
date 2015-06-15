@@ -203,13 +203,14 @@ class EventCreateView(CreateView):
 
     def get_initial(self):
         "Instantiate form with owner as current user."
-        initial = dict((
-            (k, getattr(self.organization, 'default_event_' + k))
-            for k in ('city', 'state_or_province', 'country',
-                      'timezone', 'currency')
-        ))
-        initial['dance_styles'] = self.organization.default_event_dance_styles.all()
-        return initial
+        return {
+            'city': self.organization.default_event_city,
+            'state_or_province': self.organization.default_event_state_or_province,
+            'country': self.organization.default_event_country,
+            'timezone': self.organization.default_event_timezone,
+            'currency': self.organization.default_event_currency,
+            'dance_styles': self.organization.default_event_dance_styles.all(),
+        }
 
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class)

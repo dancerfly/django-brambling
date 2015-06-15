@@ -65,7 +65,7 @@
 				<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}' class='btn btn-success btn-block'>Publish Event</a>
 			</div>
 		{% else %}
-			<div class='tipped form-group' data-placement="right" data-container="body" title="This event needs to have at least one class or pass before you can publish it. Go to the items section to set that up!">
+			<div class='tipped form-group' data-placement="right" data-container="body" title="This event needs to have at least one item before you can publish it. Go to the items section to set that up!">
 				<button class='btn btn-success btn-block' disabled>
 					Publish Event
 				</button>

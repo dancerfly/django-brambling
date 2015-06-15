@@ -500,6 +500,20 @@ class Event(models.Model):
             for n in xrange((self.end_date - self.start_date).days + 2)
         ]
 
+    def create_order(self, user):
+        """
+        Creates an order for this person and event. Be sure to check
+        for an existing order *first*, as this method doesn't.
+        """
+        person = user if user and user.is_authenticated() else None
+        while True:
+            code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
+
+            if not Order.objects.filter(event=self, code=code).exists():
+                break
+
+        return Order.objects.create(event=self, code=code, person=person)
+
 
 class Item(models.Model):
     name = models.CharField(max_length=30, help_text="Full pass, dance-only pass, T-shirt, socks, etc.")
@@ -752,6 +766,8 @@ class Order(AbstractDwollaModel):
         (DANCER, 'Other dancer'),
         (OTHER, 'Other'),
     )
+
+    CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
