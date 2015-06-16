@@ -100,6 +100,8 @@ var Shop = Ractive.extend({
             success: function (data) {
                 thisObj.storeObject(data);
                 thisObj.push('order.bought_items', data)
+                thisObj.loadItems();
+                thisObj.loadOrder();
             }
         })
     },
@@ -123,6 +125,8 @@ var Shop = Ractive.extend({
                 if (index !== null) {
                     thisObj.splice('order.bought_items', index, 1, []);
                 }
+                thisObj.loadItems();
+                thisObj.loadOrder();
             }
         });
     },
