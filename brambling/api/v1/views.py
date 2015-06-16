@@ -282,6 +282,13 @@ class BoughtItemViewSet(viewsets.ModelViewSet):
         session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
         return qs.filter(order__code__in=session_orders.values())
 
+    def perform_destroy(self, instance):
+        order = instance.order
+        instance.delete()
+        if not order.has_cart():
+            order.cart_start_time = None
+            order.save()
+
 
 class OrderDiscountViewSet(viewsets.ModelViewSet):
     queryset = OrderDiscount.objects.all()
