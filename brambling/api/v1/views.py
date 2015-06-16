@@ -188,11 +188,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         if order is None:
             # Okay, then create for this user.
             created = True
-            event.create_order(request.user)
+            order = event.create_order(request.user)
 
             if not request.user.is_authenticated():
                 session_orders = request.session.get(ORDER_CODE_SESSION_KEY, {})
-                session_orders[str(event.pk)] = code
+                session_orders[str(event.pk)] = order.code
                 request.session[ORDER_CODE_SESSION_KEY] = session_orders
 
         serializer = self.get_serializer(order)
