@@ -26,6 +26,13 @@ var Shop = Ractive.extend({
             return suffix;
         },
         format_money: function(amount, currency) {
+            var symbol_map = {
+                USD: '$',
+                GBP: '£'
+            };
+            if (symbol_map[currency]) {
+                return symbol_map[currency] + amount;
+            }
             return '' + amount + ' ' + currency;
         },
         fetchObject: function(link) {
