@@ -195,6 +195,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                 session_orders[str(event.pk)] = order.code
                 request.session[ORDER_CODE_SESSION_KEY] = session_orders
 
+        if order.cart_is_expired():
+            order.delete_cart()
+
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 

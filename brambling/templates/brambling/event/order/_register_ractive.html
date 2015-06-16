@@ -122,9 +122,33 @@
     <div class="col-md-5 col-md-push-7">
 
       {{#if has_cart(order) }}
-        <div class="margin-trailer">
-          {{!% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time }}
-        </div>
+        {{#if countdown}}
+          <div class="margin-trailer" intro-outro="slide">
+            <div class='alert margin-trailer-md-0
+              {{#if countdown.days == 0 && countdown.hours == 0}}
+                {{#if countdown.minutes < 1}}
+                  alert-danger
+                {{elseif countdown.minutes < 3}}
+                  alert-warning
+                {{else}}
+                  alert-info
+                {{/if}}
+              {{else}}
+                alert-info
+              {{/if}}'>
+              <p>
+                You have
+                <strong>
+                  {{#if countdown.days }}{{ countdown.days }} day{{ pluralize(countdown.days) }}{{/if}}
+                  {{#if countdown.hours }}{{ countdown.hours }}:{{/if}}{{#if countdown.minutes < 10 && countdown.hours }}0{{/if}}{{ countdown.minutes }}:{{#if countdown.seconds < 10 }}0{{/if}}{{ countdown.seconds }}
+                  {{#if !countdown.hours }}min{{/if}}
+                </strong>
+                to finish checkout.
+              </p>
+            </div>
+            {{!% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time }}
+          </div>
+        {{/if}}
         <div class='panel panel-default' intro-outro="slide">
           <header class='panel-heading'>
             <div class='panel-title'>
@@ -249,6 +273,22 @@
         </div>
       {{/each}}
     </div>
+  </div>
+
+  <div class="modal fade" id="countdownExpiredModal" data-keyboard="false" data-show="true" data-backdrop='static' role="dialog" aria-labelledby="timeUpModal" aria-hidden="true" on-click="set('countdownExpired', false)" intro-outro="fade">
+      <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h4 class="modal-title">Time&#8217;s up!</h4>
+              </div>
+              <div class="modal-body">
+                  <p><strong>Sorry!</strong> Your cart ran out of time. Please return to the event&#8217;s main page and start again.</p>
+              </div>
+              <div class="modal-footer">
+                  <a href="javascript://" class="btn btn-primary">Return to <strong>{{ event.name }}</strong></a>
+              </div>
+          </div>
+      </div>
   </div>
 {{elseif items !== undefined}}
   <div class="row">

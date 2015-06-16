@@ -4,7 +4,7 @@ var Shop = Ractive.extend({
     data: {
         has_cart: function(order) {
             var has_cart = false;
-            if (order) {
+            if (order && order.bought_items) {
                 $.each(order.bought_items, function(idx, item) {
                     if (item.status == 'reserved') {
                         has_cart = true;
@@ -135,8 +135,42 @@ var Shop = Ractive.extend({
                         thisObj.set('order.' + key, value);
                     }
                 });
+                thisObj.countdown();
             }
         });
+    },
+    countdown: function() {
+        var thisObj = this,
+            startStr = thisObj.get('order.cart_start_time'),
+            cartTimeout = thisObj.get('event.cart_timeout');
+        if (!startStr || !cartTimeout) {
+            thisObj.set('countdown', undefined);
+            return;
+        }
+        var startDate = new Date(startStr),
+            now = new Date(),
+            elapsed = now - startDate,
+            remaining = cartTimeout * 60 * 1000 - elapsed;
+
+        if (remaining < 0) {
+            // cart has expired. show modal / clear cart.
+            thisObj.set('countdownExpired', true);
+            thisObj.loadOrder();
+            return;
+        }
+
+        var seconds_left = Math.floor(remaining / 1000),
+            countdown = {
+                seconds: seconds_left % 60,
+                minutes: Math.floor(seconds_left/60) % 60,
+                hours: Math.floor(seconds_left/3600) % 24,
+                days: Math.floor(seconds_left/86400)
+            };
+        thisObj.set('countdown', countdown);
+
+        setTimeout(function() {
+            thisObj.countdown();
+        }, 1000);
     },
 
     addToCart: function(item_option) {
@@ -209,6 +243,15 @@ var Shop = Ractive.extend({
             }
         });
 
+        this.observe("countdownExpired", function(newValue, oldValue) {
+            var $ele = $('#countdownExpiredModal');
+            if (newValue) {
+                $ele.modal('show');
+            } else {
+                $ele.modal('hide');
+            }
+        });
+
         this.loadEvent();
         this.loadOrder();
         this.loadItems();
@@ -274,3 +317,7 @@ for(k in c)if(q.call(c,k)){if(!h(c[k])){if(c[k]!==e[k])return!1}else if(!D(c[k],
 // Ractive slide transition
 
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):t.Ractive.transitions.slide=e()}(this,function(){"use strict";function t(t,e){var d;e=t.processParams(e,o),t.isIntro?(d=t.getStyle(i),t.setStyle(n)):(t.setStyle(t.getStyle(i)),d=n),t.setStyle("overflowY","hidden"),t.animateStyle(d,e).then(t.complete)}var e=t,o={duration:300,easing:"easeInOut"},i=["height","borderTopWidth","borderBottomWidth","paddingTop","paddingBottom","marginTop","marginBottom"],n={height:0,borderTopWidth:0,borderBottomWidth:0,paddingTop:0,paddingBottom:0,marginTop:0,marginBottom:0};return e});
+
+// Ractive fade transition
+
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):e.Ractive.transitions.fade=t()}(this,function(){"use strict";function e(e,t){var i;t=e.processParams(t,n),e.isIntro?(i=e.getStyle("opacity"),e.setStyle("opacity",0)):i=0,e.animateStyle("opacity",i,t).then(e.complete)}var t=e,n={delay:0,duration:300,easing:"linear"};return t});

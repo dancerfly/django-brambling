@@ -67,7 +67,7 @@ class EventSerializer(serializers.HyperlinkedModelSerializer):
             'country', 'start_date', 'end_date', 'start_time', 'end_time',
             'dance_styles', 'has_dances', 'has_classes', 'liability_waiver',
             'organization', 'collect_housing_data', 'collect_survey_data',
-            'timezone', 'currency',
+            'timezone', 'currency', 'cart_timeout'
         )
 
 
