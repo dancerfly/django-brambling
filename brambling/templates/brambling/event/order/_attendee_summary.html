@@ -24,8 +24,8 @@
 				</h4>
 				<p>
 					{% for item in attendee.bought_items.all %}
-						{{ item.item_option.name }}
-						({{ item.item_option.item.name }}){% if not forloop.last %},{% endif %}
+						{{ item.item_option_name }}
+						({{ item.item_name }}){% if not forloop.last %},{% endif %}
 					{% endfor %}
 				</p>
 			</li>

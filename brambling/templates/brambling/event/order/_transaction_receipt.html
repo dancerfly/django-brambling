@@ -17,9 +17,9 @@
 	<ul class='list-group'>
 		{% for item in txn_dict.items %}
 			<li class='list-group-item'>
-				{{ item.item_option.name }} ({{ item.item_option.item.name }})
+				{{ item.item_option_name }} ({{ item.item_name }})
 				<span class='pull-right'>
-					{% with amount=item.item_option.price|format_money:event.currency %}
+					{% with amount=item.price|format_money:event.currency %}
 					{% if txn and txn.transaction_type == txn.REFUND %}
 						({{ amount }})
 					{% else %}
@@ -31,9 +31,9 @@
 		{% endfor %}
 		{% for discount in txn_dict.discounts %}
 			<li class='list-group-item'>
-				{{ discount.discount.name }}
+				{{ discount.name }}
 				<span class='text-muted'>
-					{{ discount.discount.code }}
+					{{ discount.code }}
 				</span>
 				<span class='pull-right'>
 					({{ discount.savings|absolute_value|format_money:event.currency }})
@@ -41,8 +41,8 @@
 				<br />
 				<small class='text-muted'>
 					Discount for
-					{{ discount.bought_item.item_option.name }}
-					({{ discount.bought_item.item_option.item.name }})
+					{{ discount.bought_item.item_option_name }}
+					({{ discount.bought_item.item_name }})
 				</small>
 			</li>
 		{% endfor %}

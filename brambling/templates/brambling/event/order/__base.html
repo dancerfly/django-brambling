@@ -47,7 +47,7 @@
 									</a>
 
 									{# TODO: this modal needs to be way more attractive. Also it'd be nice if it were a popover instead of a modal on desktop. #}
-									{% regroup order.get_groupable_cart by item_option.item as cart_list %}
+									{% regroup order.get_groupable_cart by item_name as cart_list %}
 									<div class="modal fade" id="cartModal" tabindex="-1" role="dialog" aria-labelledby="cartTitle" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
@@ -59,8 +59,8 @@
 													{% for options in cart_list %}
 														{% for personitem in options.list %}
 															<tr>
-																<td>{{ personitem.item_option.item.name }} ({{ personitem.item_option.name }})</td>
-																<td>{{ personitem.item_option.price|format_money:event.currency }}</td>
+																<td>{{ personitem.item_name }} ({{ personitem.item_option_name }})</td>
+																<td>{{ personitem.price|format_money:event.currency }}</td>
 															</tr>
 														{% endfor %}
 													{% endfor %}

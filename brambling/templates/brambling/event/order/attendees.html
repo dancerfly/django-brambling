@@ -61,7 +61,7 @@
 									{% if items %}
 										<ul class='list-group'>
 											{% for item in items %}
-												<li class='list-group-item'>{{ item.item_option.item.name }} ({{ item.item_option.name }})</li>
+												<li class='list-group-item'>{{ item.item_option_name }} ({{ item.item_name }})</li>
 											{% endfor %}
 										</ul>
 									{% endif %}
@@ -83,11 +83,11 @@
 			<div class='col-md-4'>
 				<div class='panel panel-default'>
 					<ul class='list-group'>
-						{% regroup unassigned_items by item_option.item as item_list %}
+						{% regroup unassigned_items by item_name as item_list %}
 						{% for item in item_list %}
 							<li class='list-group-item'><strong>{{ item.grouper }}</strong></li>
 							{% for bought_item in item.list %}
-								<li class='list-group-item'>{{ bought_item.item_option.name }}</li>
+								<li class='list-group-item'>{{ bought_item.item_option_name }}</li>
 							{% endfor %}
 						{% endfor %}
 					</ul>
