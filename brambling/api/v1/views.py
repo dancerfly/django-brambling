@@ -24,7 +24,6 @@ from brambling.api.v1.serializers import (
     AttendeeSerializer,
     EventHousingSerializer,
     OrderSerializer,
-    BoughtItemCreateSerializer,
     BoughtItemSerializer,
     ItemSerializer,
     ItemImageSerializer,
@@ -258,11 +257,6 @@ class BoughtItemViewSet(viewsets.ModelViewSet):
     queryset = BoughtItem.objects.all()
     serializer_class = BoughtItemSerializer
     permission_classes = [BoughtItemPermission]
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return BoughtItemCreateSerializer
-        return self.serializer_class
 
     def get_queryset(self):
         qs = self.queryset.all()

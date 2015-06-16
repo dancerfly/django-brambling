@@ -127,19 +127,20 @@ class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class BoughtItemCreateSerializer(serializers.HyperlinkedModelSerializer):
+class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
     status = serializers.ChoiceField(choices=(BoughtItem.STATUS_CHOICES[:2]), default=BoughtItem.RESERVED)
     order = serializers.HyperlinkedRelatedField(view_name='order-detail', queryset=Order.objects.all())
     link = serializers.HyperlinkedIdentityField(view_name='boughtitem-detail')
 
-    class Meta:
-        model = BoughtItem
-        fields = (
-            'id', 'link', 'item_option', 'order', 'added', 'status', 'attendee'
-        )
+    def __init__(self, *args, **kwargs):
+        super(BoughtItemSerializer, self).__init__(*args, **kwargs)
+        # If this is not a creation, set status and order to read-only
+        if self.instance is not None:
+            self.fields['status'].read_only = True
+            self.fields['order'].read_only = True
 
     def create(self, validated_data):
-        instance = super(BoughtItemCreateSerializer, self).create(validated_data)
+        instance = super(BoughtItemSerializer, self).create(validated_data)
 
         discounts = OrderDiscount.objects.filter(
             order=validated_data['order'],
@@ -152,12 +153,6 @@ class BoughtItemCreateSerializer(serializers.HyperlinkedModelSerializer):
                 for discount in discounts
             ])
         return instance
-
-
-class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
-    status = serializers.ReadOnlyField()
-    order = serializers.HyperlinkedRelatedField(view_name='order-detail', read_only=True)
-    link = serializers.HyperlinkedIdentityField(view_name='boughtitem-detail')
 
     class Meta:
         model = BoughtItem
