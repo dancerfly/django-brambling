@@ -125,7 +125,7 @@
         <div class="margin-trailer">
           {{!% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time }}
         </div>
-        <div class='panel panel-default'>
+        <div class='panel panel-default' intro-outro="slide">
           <header class='panel-heading'>
             <div class='panel-title'>
               <i class="fa fa-fw fa-shopping-cart"></i> Cart
@@ -134,7 +134,7 @@
           <ul class='list-group'>
             {{#each order.bought_items}}
               {{#if status == 'reserved'}}
-                <li class='list-group-item'>
+                <li class='list-group-item' intro-outro="slide">
                   {{ item_name }}
                   ({{ item_option_name }})
                   <a on-click='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>

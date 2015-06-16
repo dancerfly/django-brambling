@@ -82,7 +82,59 @@ var Shop = Ractive.extend({
                 event: thisObj.eventId
             },
             success: function(data) {
-                thisObj.set('order', data);
+                $.each(data, function(key, value) {
+                    if (key === 'bought_items') {
+                        if (typeof thisObj.get('order.bought_items') === 'undefined') {
+                            thisObj.set('order.bought_items', []);
+                        }
+                        var ii = 0, jj = 0;
+                        while (true) {
+                            oldValue = thisObj.get('order.bought_items.' + ii);
+                            newValue = value[jj];
+
+                            // If neither value is set, we're done.
+                            if (!newValue && !oldValue) {
+                                break;
+                            }
+
+                            // If we've reached the end of the new list,
+                            // just remove items. We don't need to increment
+                            // because it'll reference the next one.
+                            if (!newValue) {
+                                thisObj.splice('order.bought_items', ii, 1);
+                                continue;
+                            }
+
+                            // If we've reached the end of the current list,
+                            // just append. Increment both to keep appending.
+                            if (!oldValue) {
+                                thisObj.push('order.bought_items', newValue);
+                                ii++;
+                                jj++;
+                                continue;
+                            }
+
+                            // If we're in the middle - skip identical items.
+                            if (oldValue.id == newValue.id) {
+                                ii++;
+                                jj++;
+                                continue;
+                            }
+
+                            // If the new one was added *after* the old one,
+                            // remove the old one.
+                            if (newValue.added >= oldValue.added) {
+                                thisObj.splice('order.bought_items', ii, 1);
+                            } else {
+                                // Otherwise insert the new one. This will get caught as
+                                // identical items on the next round.
+                                thisObj.splice('order.bought_items', ii, 1, newValue)
+                            }
+                        }
+                    } else {
+                        thisObj.set('order.' + key, value);
+                    }
+                });
             }
         });
     },
@@ -123,7 +175,7 @@ var Shop = Ractive.extend({
                     }
                 });
                 if (index !== null) {
-                    thisObj.splice('order.bought_items', index, 1, []);
+                    thisObj.splice('order.bought_items', index, 1);
                 }
                 thisObj.loadItems();
                 thisObj.loadOrder();
@@ -219,3 +271,6 @@ a=(new d(a)).normalize();c=b._parts;e=a._parts;g=b.path();h=a.path();if("/"!==g.
 a=d.commonPath(b.path(),a.path());if(!a)return b.build();e=e.path.substring(a.length).replace(/[^\/]*$/,"").replace(/.*?\//g,"../");c.path=e+c.path.substring(a.length);return b.build()};e.equals=function(a){var b=this.clone();a=new d(a);var c={},e={},g={},k;b.normalize();a.normalize();if(b.toString()===a.toString())return!0;c=b.query();e=a.query();b.query("");a.query("");if(b.toString()!==a.toString()||c.length!==e.length)return!1;c=d.parseQuery(c,this._parts.escapeQuerySpace);e=d.parseQuery(e,this._parts.escapeQuerySpace);
 for(k in c)if(q.call(c,k)){if(!h(c[k])){if(c[k]!==e[k])return!1}else if(!D(c[k],e[k]))return!1;g[k]=!0}for(k in e)if(q.call(e,k)&&!g[k])return!1;return!0};e.duplicateQueryParameters=function(a){this._parts.duplicateQueryParameters=!!a;return this};e.escapeQuerySpace=function(a){this._parts.escapeQuerySpace=!!a;return this};return d});
 
+// Ractive slide transition
+
+!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):t.Ractive.transitions.slide=e()}(this,function(){"use strict";function t(t,e){var d;e=t.processParams(e,o),t.isIntro?(d=t.getStyle(i),t.setStyle(n)):(t.setStyle(t.getStyle(i)),d=n),t.setStyle("overflowY","hidden"),t.animateStyle(d,e).then(t.complete)}var e=t,o={duration:300,easing:"easeInOut"},i=["height","borderTopWidth","borderBottomWidth","paddingTop","paddingBottom","marginTop","marginBottom"],n={height:0,borderTopWidth:0,borderBottomWidth:0,paddingTop:0,paddingBottom:0,marginTop:0,marginBottom:0};return e});
