@@ -21,34 +21,39 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	<script type="text/javascript">
-		var dancerfly = dancerfly || {};
-		dancerfly.apiEndpoints = {
-			"root": "{% url 'api-root' %}",
-		    "housingcategory": "{% url 'housingcategory-list' %}",
-		    "environmentalfactor": "{% url 'environmentalfactor-list' %}",
-		    "dancestyle": "{% url 'dancestyle-list' %}",
-		    "organization": "{% url 'organization-list' %}",
-		    "event": "{% url 'event-list' %}",
-		    "attendee": "{% url 'attendee-list' %}",
-		    "eventhousing": "{% url 'eventhousing-list' %}",
-		    "order": "{% url 'order-list' %}",
-		    "boughtitem": "{% url 'boughtitem-list' %}",
-		    "item": "{% url 'item-list' %}",
-		    "itemimage": "{% url 'itemimage-list' %}",
-		    "itemoption": "{% url 'itemoption-list' %}",
-		    "orderdiscount": "{% url 'orderdiscount-list' %}"
-		};
-		dancerfly.currentEventId = "{{ event.pk }}";
-		dancerfly.editable_by_user = {% if editable_by_user %}true{% else %}false{% endif %};
-	</script>
-
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ractive/0.7.3/ractive.js"></script>
 
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
 
 	<script type="text/javascript" src="{% static "brambling/register.ractive.js" %}"></script>
+
+	<script type="text/javascript">
+		var shop = new Shop({
+			el: '#ractiveContainer',
+			template: '#ractiveTemplate',
+			apiEndpoints: {
+				"root": "{% url 'api-root' %}",
+				"housingcategory": "{% url 'housingcategory-list' %}",
+				"environmentalfactor": "{% url 'environmentalfactor-list' %}",
+				"dancestyle": "{% url 'dancestyle-list' %}",
+				"organization": "{% url 'organization-list' %}",
+				"event": "{% url 'event-list' %}",
+				"attendee": "{% url 'attendee-list' %}",
+				"eventhousing": "{% url 'eventhousing-list' %}",
+				"order": "{% url 'order-list' %}",
+				"boughtitem": "{% url 'boughtitem-list' %}",
+				"item": "{% url 'item-list' %}",
+				"itemimage": "{% url 'itemimage-list' %}",
+				"itemoption": "{% url 'itemoption-list' %}",
+				"orderdiscount": "{% url 'orderdiscount-list' %}"
+			},
+			eventId: "{{ event.pk }}",
+			data: {
+				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %}
+			}
+		});
+	</script>
 {% endblock %}
 
 {% block main %}

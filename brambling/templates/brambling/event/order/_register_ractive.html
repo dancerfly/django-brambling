@@ -7,11 +7,11 @@
     <div class="relative">
       <div id="mastheadDetails" class="relative-bottom relative-left relative-right">
         {{#if event.description }}
-          <h1 class="text-accent masthead-h1-alone{{#if editable_by_user }} masthead-h1-admin{{/if}}">
+          <h1 class="text-accent masthead-h1-alone{{#if editableByUser }} masthead-h1-admin{{/if}}">
             <a class="a-uncolored" href="">{{ event.name }}</a>
           </h1>
         {{else}}
-          <h1 class="text-accent{{#if editable_by_user }} masthead-h1-admin{{/if}}">
+          <h1 class="text-accent{{#if editableByUser }} masthead-h1-admin{{/if}}">
             <a class="a-uncolored" href="">{{ event.name }}</a>
           </h1>
           <p class="text-large margin-trailer-0">
@@ -23,7 +23,7 @@
         {{/if}}
       </div>{{!-- /.relative-bottom.relative-left.relative-right --}}
 
-      {{#if editable_by_user }}
+      {{#if editableByUser }}
         <a href="summary" class="btn btn-primary-light relative-top relative-right">
           <i class="fa fa-cog"></i> Manage Event
         </a>

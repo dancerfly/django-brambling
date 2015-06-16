@@ -1,8 +1,7 @@
-var ractive = new Ractive({
-    el: '#ractiveContainer',
-    template: '#ractiveTemplate',
+var Shop = Ractive.extend({
+    apiEndpoints: null,
+    eventId: null,
     data: {
-        editable_by_user: dancerfly.editable_by_user,
         has_cart: function(order) {
             var has_cart = false;
             if (order) {
@@ -30,45 +29,8 @@ var ractive = new Ractive({
             return '' + amount + ' ' + currency;
         },
         fetchObject: function(link) {
-            return ractive.fetchObject(link);
+            return this.fetchObject(link);
         }
-    },
-    addToCart: function(item_option) {
-        var order = ractive.get('order');
-        $.ajax({
-            url: dancerfly.apiEndpoints['boughtitem'],
-            method: 'post',
-            data: {
-                item_option: item_option.link,
-                order: order.link
-            },
-            success: function (data) {
-                ractive.storeObject(data);
-                ractive.push('order.bought_items', data)
-            }
-        })
-    },
-    removeFromCart: function(bought_item) {
-        $.ajax({
-            url: bought_item.link,
-            method: 'delete',
-            data: {},
-            success: function(data) {
-                ractive.removeObject(bought_item);
-                var bought_items = ractive.get('order.bought_items'),
-                    index = null;
-
-                $.each(bought_items, function(idx, item) {
-                    if (item.link === bought_item.link) {
-                        index = idx;
-                        return false;
-                    }
-                });
-                if (index !== null) {
-                    ractive.splice('order.bought_items', index, 1, []);
-                }
-            }
-        });
     },
     linkToKeypath: function (link) {
         var parsed = URI(link);
@@ -85,63 +47,115 @@ var ractive = new Ractive({
     fetchObject: function(link) {
         var keypath = this.linkToKeypath(link);
         return this.get('store.' + keypath);
-    }
-});
-
-$.getJSON(dancerfly.apiEndpoints['event'] + dancerfly.currentEventId + '/', function(data) {
-    ractive.storeObject(data);
-    ractive.set('event', data);
-});
-
-$.getJSON(dancerfly.apiEndpoints['item'], {
-    event: dancerfly.currentEventId
-}, function (data) {
-    ractive.set('items', data);
-    $.each(data, function(idx, item) {
-        ractive.storeObject(item);
-        $.each(item.images, function(idx, image) {
-            ractive.storeObject(image);
-        });
-        $.each(item.options, function(idx, option) {
-            ractive.storeObject(option);
-        });
-    });
-});
-
-
-$.ajax({
-    url: dancerfly.apiEndpoints['order'],
-    method: 'post',
-    data: {
-        event: dancerfly.currentEventId
     },
-    success: function(data) {
-        ractive.set('order', data);
-    }
-});
 
-ractive.observe("discountCode", function (newValue, oldValue) {
-    ractive.set('discountError', '');
-    if (newValue) {
+    loadEvent: function() {
+        var thisObj = this;
+        $.getJSON(thisObj.apiEndpoints['event'] + thisObj.eventId + '/', function(data) {
+            thisObj.storeObject(data);
+            thisObj.set('event', data);
+        });
+    },
+    loadItems: function() {
+        var thisObj = this;
+        $.getJSON(thisObj.apiEndpoints['item'], {
+            event: thisObj.eventId
+        }, function (data) {
+            thisObj.set('items', data);
+            $.each(data, function(idx, item) {
+                thisObj.storeObject(item);
+                $.each(item.images, function(idx, image) {
+                    thisObj.storeObject(image);
+                });
+                $.each(item.options, function(idx, option) {
+                    thisObj.storeObject(option);
+                });
+            });
+        });
+    },
+    loadOrder: function() {
+        var thisObj = this;
         $.ajax({
-            url: dancerfly.apiEndpoints['orderdiscount'],
+            url: thisObj.apiEndpoints['order'],
             method: 'post',
             data: {
-                discount_code: newValue,
-                order: ractive.get('order').link
+                event: thisObj.eventId
+            },
+            success: function(data) {
+                thisObj.set('order', data);
+            }
+        });
+    },
+
+    addToCart: function(item_option) {
+        var thisObj = this,
+            order = thisObj.get('order');
+        $.ajax({
+            url: thisObj.apiEndpoints['boughtitem'],
+            method: 'post',
+            data: {
+                item_option: item_option.link,
+                order: order.link
             },
             success: function (data) {
-                ractive.storeObject(data);
-                ractive.push('order.discounts', data)
-                ractive.set('discountCode', '');
-                // TODO: At some point we may also want to display
-                // or at least have accessible the changes to BoughtItemDiscounts.
-            },
-            error: function (data) {
-                var data = data.responseJSON;
-                ractive.set('discountError', data.non_field_errors[0])
+                thisObj.storeObject(data);
+                thisObj.push('order.bought_items', data)
             }
         })
+    },
+    removeFromCart: function(bought_item) {
+        var thisObj = this;
+        $.ajax({
+            url: bought_item.link,
+            method: 'delete',
+            data: {},
+            success: function(data) {
+                thisObj.removeObject(bought_item);
+                var bought_items = thisObj.get('order.bought_items'),
+                    index = null;
+
+                $.each(bought_items, function(idx, item) {
+                    if (item.link === bought_item.link) {
+                        index = idx;
+                        return false;
+                    }
+                });
+                if (index !== null) {
+                    thisObj.splice('order.bought_items', index, 1, []);
+                }
+            }
+        });
+    },
+    oninit: function (options) {
+        var thisObj = this;
+        thisObj.observe("discountCode", function (newValue, oldValue) {
+            thisObj.set('discountError', '');
+            if (newValue) {
+                $.ajax({
+                    url: thisObj.apiEndpoints['orderdiscount'],
+                    method: 'post',
+                    data: {
+                        discount_code: newValue,
+                        order: thisObj.get('order').link
+                    },
+                    success: function (data) {
+                        thisObj.storeObject(data);
+                        thisObj.push('order.discounts', data)
+                        thisObj.set('discountCode', '');
+                        // TODO: At some point we may also want to display
+                        // or at least have accessible the changes to BoughtItemDiscounts.
+                    },
+                    error: function (data) {
+                        var data = data.responseJSON;
+                        thisObj.set('discountError', data.non_field_errors[0])
+                    }
+                })
+            }
+        });
+
+        this.loadEvent();
+        this.loadOrder();
+        this.loadItems();
     }
 });
 
