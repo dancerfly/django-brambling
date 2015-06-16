@@ -161,7 +161,7 @@
                 <li class='list-group-item' intro-outro="slide">
                   {{ item_name }}
                   ({{ item_option_name }})
-                  <a on-click='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+                  <a on-tap='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
                 </li>
               {{/if}}
             {{/each}}
@@ -245,7 +245,7 @@
           </header>
           <div class='list-group relative'>
             {{#options}}
-              <a on-click='addToCart(this)' href='javascript://' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
+              <a on-tap='addToCart(this)' href='javascript://' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
                 <div class='row'>
                   <div class='col-xs-12 col-sm-6'>
                     {{ name }}
@@ -275,7 +275,7 @@
     </div>
   </div>
 
-  <div class="modal fade" id="countdownExpiredModal" data-keyboard="false" data-show="true" data-backdrop='static' role="dialog" aria-labelledby="timeUpModal" aria-hidden="true" on-click="set('countdownExpired', false)" intro-outro="fade">
+  <div class="modal fade" id="countdownExpiredModal" data-keyboard="false" data-show="true" data-backdrop='static' role="dialog" aria-labelledby="timeUpModal" aria-hidden="true" on-tap="set('countdownExpired', false)" intro-outro="fade">
       <div class="modal-dialog modal-sm">
           <div class="modal-content">
               <div class="modal-header">
