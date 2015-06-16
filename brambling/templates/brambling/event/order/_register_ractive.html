@@ -135,11 +135,9 @@
             {{#each order.bought_items}}
               {{#if status == 'reserved'}}
                 <li class='list-group-item'>
-                  {{#with fetchObject(item_option)}}
-                    {{ fetchObject(item).name }}
-                    ({{ name }})
-                  {{/with}}
-                    <a on-click='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+                  {{ item_name }}
+                  ({{ item_option_name }})
+                  <a on-click='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
                 </li>
               {{/if}}
             {{/each}}
