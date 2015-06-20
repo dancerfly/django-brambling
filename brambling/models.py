@@ -36,6 +36,7 @@ from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
 DEFAULT_DANCE_STYLES = (
     "Alt Blues",
     "Trad Blues",
+    "Blues",
     "Fusion",
     "Swing",
     "Balboa",
