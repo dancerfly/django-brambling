@@ -264,7 +264,7 @@
                       &nbsp;
                     {{/if}}
                   </div>
-                  <div class='col-xs-4 col-sm-2 text-right'>{{ format_money(price, fetchObject(event).currency) }}</div>
+                  <div class='col-xs-4 col-sm-2 text-right'>{{ format_money(price, ~/event.currency) }}</div>
                   <div class='col-sm-1 text-right hidden-xs'>{{#if !total_number || taken < total_number }}<span class='fa fa-plus'></span>{{/if}}</div>
                 </div>
               </a>

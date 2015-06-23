@@ -35,31 +35,15 @@ var Shop = Ractive.extend({
             }
             return '' + amount + ' ' + currency;
         },
-        fetchObject: function(link) {
-            return this.fetchObject(link);
-        }
     },
     linkToKeypath: function (link) {
         var parsed = URI(link);
         return parsed.path().substr(1);
     },
-    removeObject: function(obj) {
-        var keypath = this.linkToKeypath(obj.link);
-        this.set('store.' + keypath, undefined);
-    },
-    storeObject: function(obj) {
-        var keypath = this.linkToKeypath(obj.link);
-        this.set('store.' + keypath, obj);
-    },
-    fetchObject: function(link) {
-        var keypath = this.linkToKeypath(link);
-        return this.get('store.' + keypath);
-    },
 
     loadEvent: function() {
         var thisObj = this;
         $.getJSON(thisObj.apiEndpoints['event'] + thisObj.eventId + '/', function(data) {
-            thisObj.storeObject(data);
             thisObj.set('event', data);
         });
     },
@@ -192,7 +176,6 @@ var Shop = Ractive.extend({
                 order: order.link
             },
             success: function (data) {
-                thisObj.storeObject(data);
                 thisObj.push('order.bought_items', data)
                 thisObj.loadItems();
                 thisObj.loadOrder();
@@ -206,7 +189,6 @@ var Shop = Ractive.extend({
             method: 'delete',
             data: {},
             success: function(data) {
-                thisObj.removeObject(bought_item);
                 var bought_items = thisObj.get('order.bought_items'),
                     index = null;
 
@@ -237,7 +219,6 @@ var Shop = Ractive.extend({
                         order: thisObj.get('order').link
                     },
                     success: function (data) {
-                        thisObj.storeObject(data);
                         thisObj.push('order.discounts', data)
                         thisObj.set('discountCode', '');
                         // TODO: At some point we may also want to display
