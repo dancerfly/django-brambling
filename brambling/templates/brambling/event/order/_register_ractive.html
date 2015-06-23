@@ -193,8 +193,8 @@
       {{#each items }}
         <div class='panel panel-default'>
           <header class='panel-heading clearfix'>
-            {{#if images }}
-              <img src="{{ images.0.image }}" class="img-responsive pull-right item-img" data-toggle="modal" data-target="#imageModal{{ @index }}">
+            {{#if images && images.0.preview }}
+              <img src="{{ images.0.preview.url }}" class="img-responsive pull-right item-img" data-toggle="modal" data-target="#imageModal{{ @index }}" width='{{ images.0.preview.width }}' height='{{ images.0.preview.height }}'>
             {{/if}}
             <div class='panel-title'>{{ name }}</div>
             {{#if description }}
@@ -224,7 +224,7 @@
                     <div class="carousel-inner text-center">
                       {{#images}}
                         <div class="item{{#if @index === 0 }} active{{/if}}">
-                          <img src="{{ image }}">
+                          <img src="{{ closeup.url }}" width='{{ closeup.width }}' height='{{ closeup.height }}'>
                         </div>
                       {{/images}}
                     </div>

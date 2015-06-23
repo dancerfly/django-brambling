@@ -69,13 +69,14 @@ var Shop = Ractive.extend({
             event: thisObj.eventId
         }, function (data) {
             thisObj.set('items', data);
-            $.each(data, function(idx, item) {
-                thisObj.storeObject(item);
-                $.each(item.images, function(idx, image) {
-                    thisObj.storeObject(image);
-                });
-                $.each(item.options, function(idx, option) {
-                    thisObj.storeObject(option);
+            $.each(data, function(itemIdx, item) {
+                $.each(item.images, function(imageIdx, image) {
+                    $.getJSON(image.resize_endpoint, {r: "fit|100|100"}, function(data) {
+                        thisObj.set('items.' + itemIdx + '.images.' + imageIdx + '.preview', data);
+                    });
+                    $.getJSON(image.resize_endpoint, {r: "fit|598|598"}, function(data) {
+                        thisObj.set('items.' + itemIdx + '.images.' + imageIdx + '.closeup', data);
+                    });
                 });
             });
         });

@@ -1,3 +1,4 @@
+from django.core.urlresolvers import reverse
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -278,10 +279,24 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
 
 class ItemImageSerializer(serializers.HyperlinkedModelSerializer):
     link = serializers.HyperlinkedIdentityField(view_name='itemimage-detail')
+    resize_endpoint = serializers.SerializerMethodField()
 
     class Meta:
         model = ItemImage
-        fields = ('id', 'link', 'item', 'order', 'image')
+        fields = ('id', 'link', 'item', 'order', 'image', 'resize_endpoint')
+
+    def get_resize_endpoint(self, obj):
+        request = self.context.get('request', None)
+
+        assert request is not None, (
+            "`%s` requires the request in the serializer"
+            " context. Add `context={'request': request}` when instantiating "
+            "the serializer." % self.__class__.__name__
+        )
+
+        url = reverse('daguerre_ajax_adjustment_info', kwargs={'storage_path': obj.image.name})
+
+        return request.build_absolute_uri(url)
 
 
 class ItemOptionSerializer(serializers.HyperlinkedModelSerializer):
