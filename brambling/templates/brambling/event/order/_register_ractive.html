@@ -114,6 +114,28 @@
 {{/if}}
 
 
+{{#if steps }}
+  <div class="stepbar stepbar-{{ steps.length }}-up">
+    {{#steps}}
+      {{#if slug == 'shop'}}
+        <div class='step current'>{{ name }}</div>
+      {{elseif is_completed}}
+        <a href='{{ url }}' class='step complete'>
+          <i class='fa fa-check fa-fw'>
+          {{ name }}
+        </a>
+      {{elseif is_accessible}}
+        <a href="{{ url }}" class="step">
+          {{ name }}
+        </a>
+      {{else}}
+        <div class='step'>{{ name }}</div>
+      {{/if}}
+    {{/steps}}
+  </div>
+{{/if}}
+
+
 {{#if items }}
 
   <h1 class="margin-leader-dbl">Register for {{ event.name }}</h1>

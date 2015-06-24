@@ -54,6 +54,21 @@
 				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %}
 			}
 		});
+		shop.set('steps', [
+			{% for step in workflow.active_steps %}
+				{
+					slug: "{{ step.slug }}",
+					name: "{{ step.name }}",
+					{% if code_in_url %}
+					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug code=order.code as step_url %}",
+					{% else %}
+					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug as step_url %}",
+					{% endif %}
+					is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
+					is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %}
+				}{% if not forloop.last %},{% endif %}
+			{% endfor %}
+		]);
 	</script>
 {% endblock %}
 

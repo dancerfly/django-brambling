@@ -30,6 +30,7 @@ ORDER_CODE_SESSION_KEY = '_brambling_order_code'
 
 
 class RactiveShopView(TemplateView):
+    current_step_slug = 'shop'
     template_name = 'brambling/event/order/register.html'
 
     def get_context_data(self, **kwargs):
@@ -44,8 +45,22 @@ class RactiveShopView(TemplateView):
             raise Http404
 
         clear_expired_carts(event)
+        try:
+            order = Order.objects.get(event=event, person=self.request.user)
+        except:
+            order = None
+
+        # TODO: This will never allow anonymous users to get past the
+        # shopping page, because their orders are stored in the session.
+        # Probably we need to refactor OrderViewSet.create() to make an
+        # Order.objects.from_request() method that gets used across the board.
+        # And/or find a better way to store workflow information.
+
         context['event'] = event
         context['editable_by_user'] = editable_by_user
+        context['workflow'] = RegistrationWorkflow(event=event, order=order)
+        context['code_in_url'] = (True if self.kwargs.get('code') and
+                                  not self.request.user.is_authenticated() else False)
         return context
 
 
