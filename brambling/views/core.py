@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.generic import TemplateView, View
 
 from brambling.models import (Event, BoughtItem, Invite, Order, Person,
-                              Organization)
+                              Organization, Transaction)
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
@@ -87,19 +87,19 @@ class InviteAcceptView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         try:
-            invite = Invite.objects.get(code=kwargs['code'])
+            self.invite = Invite.objects.get(code=kwargs['code'])
         except Invite.DoesNotExist:
-            invite = None
+            self.invite = None
+            self.content = None
         else:
-            if request.user.is_authenticated() and request.user.email == invite.email:
+            self.content = self.invite.get_content()
+            if request.user.is_authenticated() and request.user.email == self.invite.email:
                 if request.user.confirmed_email != request.user.email:
                     request.user.confirmed_email = request.user.email
                     request.user.save()
-                self.content = invite.get_content()
                 self.handle_invite()
-                invite.delete()
+                self.invite.delete()
                 return HttpResponseRedirect(self.get_success_url())
-        self.invite = invite
         return super(InviteAcceptView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -108,9 +108,15 @@ class InviteAcceptView(TemplateView):
             invited_person_exists = Person.objects.filter(email=self.invite.email).exists()
         else:
             invited_person_exists = False
+        if self.invite.user:
+            sender_display = self.invite.user.get_full_name()
+        elif self.invite.kind == Invite.TRANSFER:
+            sender_display = self.content.order.email
         context.update({
             'invite': self.invite,
+            'content': self.content,
             'invited_person_exists': invited_person_exists,
+            'sender_display': sender_display,
             'signup_form': SignUpForm(self.request),
             'login_form': FloppyAuthenticationForm(),
         })
@@ -127,8 +133,52 @@ class InviteAcceptView(TemplateView):
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
             content.editors.add(self.request.user)
         elif invite.kind == Invite.TRANSFER:
+            if content.status != BoughtItem.BOUGHT:
+                invite.delete()
+                messages.error(self.request, "Item can no longer be transferred, sorry.")
+                self.order = content
+                return
+
             # Complete the transfer!
-            pass
+            # Step one: get or create an order for the current user.
+            self.order = order = Order.objects.for_request(
+                request=self.request,
+                event=content.order.event,
+                create=True
+            )[1]
+
+            # Step two: Clone the BoughtItem!
+            new_item = BoughtItem.objects.create(
+                order=order,
+                status=BoughtItem.BOUGHT,
+                price=content.price,
+                item_option=content.item_option,
+                item_name=content.item_name,
+                item_description=content.item_description,
+                item_option_name=content.item_option_name,
+            )
+
+            # Step three: Create a transaction!
+            txn = Transaction.objects.create(
+                transaction_type=Transaction.TRANSFER,
+                amount=content.price,
+                method=Transaction.FAKE,
+                application_fee=0,
+                processing_fee=0,
+                is_confirmed=True,
+                api_type=order.event.api_type,
+                order=order,
+                event=order.event
+            )
+
+            # Step four: Add the BoughtItem to the txn!
+            txn.bought_items.add(new_item)
+
+            # Step five: Mark the old version transferred!
+            content.status = BoughtItem.TRANSFERRED
+            content.save()
+        else:
+            raise Http404("Unhandled transaction type.")
 
     def get_success_url(self):
         invite = self.invite
@@ -174,13 +224,13 @@ class InviteManageView(View):
                 return False
             if content.owner_id != self.request.user.pk:
                 return False
-        elif invite.kind == Invite.ORGANIZATION_EDITOR:
+        elif invite.kind == Invite.TRANSFER:
             try:
                 order = Order.objects.for_request(
                     request=self.request,
                     event=content.order.event,
                     create=False,
-                )
+                )[1]
             except (SuspiciousOperation, Order.DoesNotExist):
                 return False
 
