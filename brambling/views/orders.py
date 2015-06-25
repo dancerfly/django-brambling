@@ -1,12 +1,12 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView
@@ -17,16 +17,12 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
                                     SurveyDataForm, CheckPaymentForm)
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
-from brambling.models import (Item, BoughtItem, ItemOption,
-                              BoughtItemDiscount, Discount, Order,
+from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction)
 from brambling.utils.payment import dwolla_customer_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
                                    WorkflowMixin)
-
-
-ORDER_CODE_SESSION_KEY = '_brambling_order_code'
 
 
 class OrderStep(Step):
@@ -225,74 +221,19 @@ class OrderMixin(object):
             self.order.delete_cart()
         return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
-    def get_order(self):
+    def get_order(self, create=False):
         order_kwargs = {
             'event': self.event,
-            'person': self.request.user if self.request.user.is_authenticated() else None,
+            'request': self.request,
+            'code': self.kwargs.get('code'),
+            'create': create,
         }
-        code_in_url = False
-        order = None
-        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-
-        if self.kwargs.get('code'):
-            if str(self.event.pk) in session_orders:
-                del session_orders[str(self.event.pk)]
-            order_kwargs['code'] = self.kwargs['code']
-            code_in_url = True
-        elif str(self.event.pk) in session_orders:
-            order_kwargs['code'] = session_orders[str(self.event.pk)]
         try:
-            if order_kwargs['person'] or order_kwargs.get('code'):
-                order = Order.objects.get(**order_kwargs)
+            return Order.objects.for_request(**order_kwargs)[1]
+        except SuspiciousOperation:
+            raise Http404("Order does not belong to current user.")
         except Order.DoesNotExist:
-            # If it was in the URL, re-raise the error.
-            if code_in_url:
-                raise
-
-            # Also be sure to remove the code from the session,
-            # if that's what they were using.
-            if order_kwargs.get('code'):
-                del session_orders[str(self.event.pk)]
-
-                # If the user is authenticated, try to get the order
-                # they have for this event. Maybe the code snuck in there
-                # somehow?
-                if self.request.user.is_authenticated():
-                    try:
-                        order = Order.objects.get(
-                            event=self.event,
-                            person=self.request.user
-                        )
-                    except Order.DoesNotExist:
-                        # See if the order exists and belongs to an
-                        # unauthenticated user. If so, and if that user hasn't
-                        # checked out yet, assume that the user created an
-                        # account mid-order and re-assign it.
-                        try:
-                            order = Order.objects.filter(
-                                bought_items__status__in=[
-                                    BoughtItem.RESERVED,
-                                    BoughtItem.UNPAID,
-                                ],
-                                event=self.event,
-                                person__isnull=True,
-                                code=order_kwargs['code']
-                            ).distinct().get()
-                        except Order.DoesNotExist:
-                            pass
-                        else:
-                            order.person = self.request.user
-                            order.save()
-        return order
-
-    def create_order(self):
-        order = self.event.create_order(self.request.user)
-
-        if not self.request.user.is_authenticated():
-            session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-            session_orders[str(self.event.pk)] = order.code
-            self.request.session[ORDER_CODE_SESSION_KEY] = session_orders
-        return order
+            return None
 
     def get_context_data(self, **kwargs):
         context = super(OrderMixin, self).get_context_data(**kwargs)
@@ -346,12 +287,8 @@ class AddToOrderView(OrderMixin, View):
         self.order.add_to_cart(item_option)
         return JsonResponse({'success': True})
 
-    def get_order(self):
-        order = super(AddToOrderView, self).get_order()
-
-        if order is None:
-            order = self.create_order()
-        return order
+    def get_order(self, create=True):
+        return super(AddToOrderView, self).get_order(create)
 
 
 class RemoveFromOrderView(View):
@@ -406,12 +343,8 @@ class ApplyDiscountView(OrderMixin, View):
             'success': True,
         })
 
-    def get_order(self):
-        order = super(ApplyDiscountView, self).get_order()
-
-        if order is None:
-            order = self.create_order()
-        return order
+    def get_order(self, create=True):
+        return super(ApplyDiscountView, self).get_order(create)
 
 
 class ChooseItemsView(OrderMixin, WorkflowMixin, TemplateView):

@@ -9,6 +9,7 @@ from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
@@ -500,20 +501,6 @@ class Event(models.Model):
             for n in xrange((self.end_date - self.start_date).days + 2)
         ]
 
-    def create_order(self, user):
-        """
-        Creates an order for this person and event. Be sure to check
-        for an existing order *first*, as this method doesn't.
-        """
-        person = user if user and user.is_authenticated() else None
-        while True:
-            code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
-
-            if not Order.objects.filter(event=self, code=code).exists():
-                break
-
-        return Order.objects.create(event=self, code=code, person=person)
-
 
 class Item(models.Model):
     name = models.CharField(max_length=30, help_text="Full pass, dance-only pass, T-shirt, socks, etc.")
@@ -739,6 +726,106 @@ class CreditCard(models.Model):
         return self.ICONS.get(self.brand, 'credit-card')
 
 
+class OrderManager(models.Manager):
+    _session_key = '_brambling_order_code'
+
+    def _can_assign(self, order, user):
+        # An order can be auto-assigned if:
+        # 1. It doesn't have a person.
+        # 2. User is authenticated
+        # 3. User doesn't have an order for the event yet.
+        # 4. Order hasn't checked out yet.
+        if order.person_id is not None:
+            return False
+
+        if not user.is_authenticated():
+            return False
+
+        if Order.objects.filter(person=user, event=order.event_id).exists():
+            return False
+
+        if order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED)).exists():
+            return False
+
+        return True
+
+    def for_request(self, event, request, code=None, create=True):
+        order = None
+        created = False
+
+        # First, if there is an explicit code, pull that item.
+        # If it belongs to a user and that user is not logged in,
+        # raise a SuspiciousOperation.
+        if code:
+            # May raise DoesNotExist.
+            order = Order.objects.get(event=event, code=code)
+            if order.person:
+                if order.person != request.user:
+                    raise SuspiciousOperation
+            elif self._can_assign(order, request.user):
+                order.person = request.user
+                order.save()
+            else:
+                # Raise a DoesNotExist because code is explicit.
+                raise Order.DoesNotExist
+
+        # Next, check if the user is authenticated and has an order for this event.
+        if order is None and request.user.is_authenticated():
+            try:
+                order = Order.objects.get(
+                    event=event,
+                    person=request.user,
+                )
+            except Order.DoesNotExist:
+                pass
+
+        # Next, check if there's a session-stored order. Assign it
+        # if the order hasn't checked out yet and the user is authenticated.
+        if order is None:
+            session_orders = request.session.get(self._session_key, {})
+            if str(event.pk) in session_orders:
+                code = session_orders[str(event.pk)]
+                try:
+                    order = Order.objects.get(
+                        event=event,
+                        person__isnull=True,
+                        code=code,
+                    )
+                except Order.DoesNotExist:
+                    pass
+                else:
+                    if self._can_assign(order, request.user):
+                        order.person = request.user
+                        order.save()
+                    elif request.user.is_authenticated():
+                        order = None
+
+        if order is None and create:
+            # Okay, then create for this user.
+            created = True
+            person = request.user if request.user and request.user.is_authenticated() else None
+            while True:
+                code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
+
+                if not Order.objects.filter(event=event, code=code).exists():
+                    break
+
+            order = Order.objects.create(event=event, code=code, person=person)
+
+            if not request.user.is_authenticated():
+                session_orders = request.session.get(self._session_key, {})
+                session_orders[str(event.pk)] = order.code
+                request.session[self._session_key] = session_orders
+
+        if order is None:
+            raise Order.DoesNotExist
+
+        if order.cart_is_expired():
+            order.delete_cart()
+
+        return created, order
+
+
 class Order(AbstractDwollaModel):
     """
     This model represents metadata connecting an event and a person.
@@ -796,6 +883,8 @@ class Order(AbstractDwollaModel):
 
     # Admin-only data
     notes = models.TextField(blank=True)
+
+    objects = OrderManager()
 
     class Meta:
         unique_together = ('event', 'code')
