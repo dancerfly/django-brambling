@@ -824,7 +824,7 @@ class OrderManager(models.Manager):
         if order.cart_is_expired():
             order.delete_cart()
 
-        return created, order
+        return order, created
 
 
 class Order(AbstractDwollaModel):

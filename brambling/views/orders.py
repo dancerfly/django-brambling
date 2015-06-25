@@ -230,7 +230,7 @@ class OrderMixin(object):
             'create': create,
         }
         try:
-            return Order.objects.for_request(**order_kwargs)[1]
+            return Order.objects.for_request(**order_kwargs)[0]
         except SuspiciousOperation:
             raise Http404("Order does not belong to current user.")
         except Order.DoesNotExist:

@@ -145,7 +145,7 @@ class InviteAcceptView(TemplateView):
                 request=self.request,
                 event=content.order.event,
                 create=True
-            )[1]
+            )[0]
 
             # Step two: Clone the BoughtItem!
             new_item = BoughtItem.objects.create(
@@ -230,7 +230,7 @@ class InviteManageView(View):
                     request=self.request,
                     event=content.order.event,
                     create=False,
-                )[1]
+                )[0]
             except (SuspiciousOperation, Order.DoesNotExist):
                 return False
 
