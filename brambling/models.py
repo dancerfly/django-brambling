@@ -407,6 +407,7 @@ class Event(models.Model):
                                                   "document. I am aware that it is legally binding and I accept it out "
                                                   "of my own free will."), help_text=_("'{event}' and '{organization}' will be automatically replaced with your event and organization names respectively when users are presented with the waiver."))
 
+    transfers_allowed = models.BooleanField(default=True, help_text="Whether user-to-user transfers are permitted.")
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC, help_text="Who can view this event once it's published.")
     is_published = models.BooleanField(default=False)
@@ -1104,10 +1105,12 @@ class Transaction(models.Model):
 
     PURCHASE = 'purchase'
     REFUND = 'refund'
+    TRANSFER = 'transfer'
     OTHER = 'other'
     TRANSACTION_TYPE_CHOICES = (
         (PURCHASE, _('Purchase')),
         (REFUND, _('Refunded purchase')),
+        (TRANSFER, _('Transfer')),
         (OTHER, _('Other')),
     )
 
@@ -1296,11 +1299,13 @@ class BoughtItem(models.Model):
     UNPAID = 'unpaid'
     BOUGHT = 'bought'
     REFUNDED = 'refunded'
+    TRANSFERRED = 'transferred'
     STATUS_CHOICES = (
         (RESERVED, _('Reserved')),
         (UNPAID, _('Unpaid')),
         (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
+        (TRANSFERRED, _('Transferred')),
     )
     item_option = models.ForeignKey(ItemOption, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order, related_name='bought_items')
@@ -1593,9 +1598,11 @@ class InviteManager(models.Manager):
 class Invite(models.Model):
     EVENT_EDITOR = 'editor'
     ORGANIZATION_EDITOR = 'org_editor'
+    TRANSFER = 'transfer'
     KIND_CHOICES = (
         (EVENT_EDITOR, _("Event Editor")),
         (ORGANIZATION_EDITOR, _("Organization Editor")),
+        (TRANSFER, _("Transfer")),
     )
 
     objects = InviteManager()
