@@ -407,7 +407,7 @@ class Event(models.Model):
                                                   "document. I am aware that it is legally binding and I accept it out "
                                                   "of my own free will."), help_text=_("'{event}' and '{organization}' will be automatically replaced with your event and organization names respectively when users are presented with the waiver."))
 
-    transfers_allowed = models.BooleanField(default=True, help_text="Whether user-to-user transfers are permitted.")
+    transfers_allowed = models.BooleanField(default=True, help_text="Whether users can transfer items directly to other users.")
     privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
                                default=PUBLIC, help_text="Who can view this event once it's published.")
     is_published = models.BooleanField(default=False)
