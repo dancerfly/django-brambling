@@ -1,0 +1,25 @@
+{% extends 'brambling/event/order/__base.html' %}
+
+{% load floppyforms %}
+
+{% block title %}Transfer item – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{% with next_step=1 %}
+		{{ block.super }}
+	{% endwith %}
+
+	<form method='post' action=''>
+		{% csrf_token %}
+		<div class='row'>
+			<div class='col-xs-6 col-xs-offset-3'>
+				{% form form using %}
+					{% formrow form.bought_item with label="Item to transfer" %}
+					{% formrow form.email with label="Send item to..." help_text="Email address" %}
+				{% endform %}
+
+				<button type='submit' class='btn btn-success'>Transfer it!</button>
+			</div>
+		</div>
+	</form>
+{% endblock %}

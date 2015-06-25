@@ -25,6 +25,7 @@ from brambling.views.orders import (
     HostingView,
     OrderEmailView,
     SummaryView,
+    TransferView,
 )
 from brambling.views.core import (
     ExceptionView,
@@ -127,6 +128,9 @@ order_urlpatterns = patterns('',
     url(r'^dwolla_connect/$',
         OrderDwollaConnectView.as_view(),
         name="brambling_order_dwolla_connect"),
+    url(r'^transfer/$',
+        TransferView.as_view(),
+        name="brambling_event_order_transfer"),
 )
 
 

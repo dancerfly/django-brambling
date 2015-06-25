@@ -9,16 +9,17 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.generic import TemplateView, View, UpdateView
+from django.views.generic import TemplateView, View, UpdateView, FormView
 import floppyforms.__future__ as forms
 
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
                                     AttendeeHousingDataForm, DwollaPaymentForm,
-                                    SurveyDataForm, CheckPaymentForm)
+                                    SurveyDataForm, CheckPaymentForm, TransferForm)
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
-                              Attendee, EventHousing, Event, Transaction)
+                              Attendee, EventHousing, Event, Transaction,
+                              Invite)
 from brambling.utils.payment import dwolla_customer_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
@@ -736,3 +737,37 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             })
         context.update(self.summary_data)
         return context
+
+
+class TransferView(OrderMixin, WorkflowMixin, FormView):
+    form_class = TransferForm
+    template_name = 'brambling/event/order/transfer.html'
+    workflow_class = RegistrationWorkflow
+
+    def get_initial(self):
+        return self.request.GET
+
+    def get_form_kwargs(self):
+        kwargs = super(TransferView, self).get_form_kwargs()
+        kwargs.update({
+            'order': self.order,
+        })
+        return kwargs
+
+    def form_valid(self, form):
+        invite, created = Invite.objects.get_or_create_invite(
+            email=form.cleaned_data['email'],
+            user=self.request.user if self.request.user.is_authenticated() else None,
+            kind=Invite.TRANSFER,
+            content_id=form.cleaned_data['bought_item'].pk,
+        )
+        if created:
+            invite.send(
+                content=form.cleaned_data['bought_item'],
+                secure=self.request.is_secure(),
+                site=get_current_site(self.request)
+            )
+        return super(TransferView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('brambling_event_order_summary', kwargs=self.kwargs)
