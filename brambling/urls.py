@@ -330,6 +330,7 @@ urlpatterns = patterns('',
     url(r'^mail/order_alert/$', OrderAlertPreviewView.as_view()),
     url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind=Invite.EVENT_EDITOR)),
     url(r'^mail/invite_org/$', InvitePreviewView.as_view(kind=Invite.ORGANIZATION_EDITOR)),
+    url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind=Invite.TRANSFER)),
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 

@@ -1635,6 +1635,8 @@ class Invite(models.Model):
             model = Event
         elif self.kind == Invite.ORGANIZATION_EDITOR:
             model = Organization
+        elif self.kind == Invite.TRANSFER:
+            model = BoughtItem
         else:
             raise ValueError('Unknown kind.')
         return model.objects.get(pk=self.content_id)
