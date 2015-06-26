@@ -769,12 +769,15 @@ class OrderManager(models.Manager):
             if order.person:
                 if order.person != request.user:
                     raise SuspiciousOperation
-            elif self._can_assign(order, request.user):
-                order.person = request.user
-                order.save()
-            else:
-                # Raise a DoesNotExist because code is explicit.
-                raise Order.DoesNotExist
+            elif request.user.is_authenticated():
+                # If the order is unclaimed and the current user
+                # is authenticated, either assign it or object.
+                if self._can_assign(order, request.user):
+                    order.person = request.user
+                    order.save()
+                else:
+                    # Raise a DoesNotExist because code is explicit.
+                    raise Order.DoesNotExist
 
         # Next, check if the user is authenticated and has an order for this event.
         if order is None and request.user.is_authenticated():

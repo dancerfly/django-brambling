@@ -234,6 +234,8 @@ class OrderMixin(object):
         except SuspiciousOperation:
             raise Http404("Order does not belong to current user.")
         except Order.DoesNotExist:
+            if self.kwargs.get('code'):
+                raise Http404("Order doesn't exist or belongs to an anonymous user and can't be reassigned.")
             return None
 
     def get_context_data(self, **kwargs):
