@@ -730,6 +730,12 @@ class CreditCard(models.Model):
 class OrderManager(models.Manager):
     _session_key = '_brambling_order_code'
 
+    def _clear_session(self, event, request):
+        session_orders = request.session.get(self._session_key, {})
+        if str(event.pk) in session_orders:
+            del session_orders[str(event.pk)]
+            request.session[self._session_key] = session_orders
+
     def _can_assign(self, order, user):
         # An order can be auto-assigned if:
         # 1. It doesn't have a person.
