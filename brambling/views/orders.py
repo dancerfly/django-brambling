@@ -60,7 +60,7 @@ class AttendeeStep(OrderStep):
     def _is_completed(self):
         if not self.workflow.order:
             return False
-        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exclude(status=BoughtItem.REFUNDED).exists()
+        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists()
 
     def get_errors(self):
         errors = []
@@ -82,7 +82,7 @@ class AttendeeStep(OrderStep):
             errors.append(error)
 
         # All items must be assigned to an attendee.
-        if order.bought_items.filter(attendee__isnull=True).exclude(status=BoughtItem.REFUNDED).exists():
+        if order.bought_items.filter(attendee__isnull=True).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
             errors.append('All items in order must be assigned to an attendee.')
         return errors
 
@@ -408,7 +408,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
             'unassigned_items': self.order.bought_items.filter(
                 attendee__isnull=True
             ).exclude(
-                status=BoughtItem.REFUNDED
+                status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
             ).order_by('item_name', 'item_option_name'),
         })
         return context

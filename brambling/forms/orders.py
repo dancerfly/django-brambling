@@ -62,14 +62,15 @@ class AttendeeBasicDataForm(CustomDataForm):
         self.fields['liability_waiver'].required = True
         items = self.order.bought_items.filter(
             Q(attendee__isnull=True) | Q(attendee=self.instance)
-        ).exclude(status=BoughtItem.REFUNDED)
+        ).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED))
         self.has_items = bool(items)
         if self.has_items:
             self.fields['items'].queryset = items
             if self.instance.pk:
-                self.fields['items'].initial = self.order.bought_items.filter(
-                    attendee=self.instance
-                ).exclude(status=BoughtItem.REFUNDED)
+                self.fields['items'].initial = [
+                    item for item in items
+                    if item.attendee_id == self.instance.pk
+                ]
             else:
                 self.fields['items'].initial = items
         else:

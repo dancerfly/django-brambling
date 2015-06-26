@@ -68,7 +68,7 @@ class DashboardView(TemplateView):
             # So you've paid for something, even if it was later refunded.
             past_events = Event.objects.filter(
                 order__person=user,
-                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
+                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
             ).filter(start_date__lt=today).order_by('-start_date').distinct()
             context.update({
                 'upcoming_events_interest': upcoming_events_interest,

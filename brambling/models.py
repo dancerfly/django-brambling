@@ -550,7 +550,7 @@ class ItemOption(models.Model):
     @property
     def remaining(self):
         if not hasattr(self, 'taken'):
-            self.taken = self.boughtitem_set.exclude(status=BoughtItem.REFUNDED).count()
+            self.taken = self.boughtitem_set.exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).count()
         return self.total_number - self.taken
 
 
@@ -745,7 +745,7 @@ class OrderManager(models.Manager):
         if Order.objects.filter(person=user, event=order.event_id).exists():
             return False
 
-        if order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED)).exists():
+        if order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
             return False
 
         return True
