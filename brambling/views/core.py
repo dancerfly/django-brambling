@@ -196,6 +196,13 @@ class InviteAcceptView(TemplateView):
 
             # Step five: Add the BoughtItem to the txn!
             to_txn.bought_items.add(new_item)
+
+            # Step six: Check if the attendee should be deleted!
+            # I.e. if they don't have any items assigned to them
+            # which haven't been refunded or transferred.
+            if content.attendee:
+                if not content.attendee.bought_items.exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
+                    content.attendee.delete()
         else:
             raise Http404("Unhandled transaction type.")
 
