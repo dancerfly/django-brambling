@@ -24,8 +24,22 @@
 				</h4>
 				<p>
 					{% for item in attendee.bought_items.all %}
-						{{ item.item_option_name }}
-						({{ item.item_name }}){% if not forloop.last %},{% endif %}
+						{% if item.status == item.RESERVED or item.status == item.UNPAID or item.status == item.BOUGHT %}
+							{{ item.item_option_name }}
+							({{ item.item_name }})
+							{% if event.transfers_allowed %}
+								{% if code_in_url %}
+									{% url "brambling_event_order_transfer" event_slug=event.slug organization_slug=event.organization.slug code=order.code as transfer_url %}
+								{% else %}
+									{% url "brambling_event_order_transfer" event_slug=event.slug organization_slug=event.organization.slug as transfer_url %}
+								{% endif %}
+								<a href='{{ transfer_url }}?bought_item={{ item.pk }}' class='pull-right'>
+									<i class='fa fa-exchange'></i>
+									Transfer
+								</a>
+							{% endif %}
+							<br />
+						{% endif %}
 					{% endfor %}
 				</p>
 			</li>

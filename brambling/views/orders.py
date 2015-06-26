@@ -742,6 +742,7 @@ class TransferView(OrderMixin, WorkflowMixin, FormView):
     form_class = TransferForm
     template_name = 'brambling/event/order/transfer.html'
     workflow_class = RegistrationWorkflow
+    current_step_slug = 'payment'
 
     def get_initial(self):
         return self.request.GET
