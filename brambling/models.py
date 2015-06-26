@@ -1087,13 +1087,15 @@ class Transaction(models.Model):
     CASH = 'cash'
     CHECK = 'check'
     FAKE = 'fake'
+    NONE = 'none'
 
     METHOD_CHOICES = (
         (STRIPE, 'Stripe'),
         (DWOLLA, 'Dwolla'),
         (CASH, 'Cash'),
         (CHECK, 'Check'),
-        (FAKE, 'Fake')
+        (FAKE, 'Fake'),
+        (NONE, 'No balance change'),
     )
 
     LIVE = 'live'

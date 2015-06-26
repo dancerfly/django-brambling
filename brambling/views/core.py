@@ -140,14 +140,36 @@ class InviteAcceptView(TemplateView):
                 return
 
             # Complete the transfer!
-            # Step one: get or create an order for the current user.
+            # Step one: Create a transaction for the transfer on the
+            # initiator's side.
+            from_txn = Transaction.objects.create(
+                transaction_type=Transaction.TRANSFER,
+                amount=0,
+                method=Transaction.NONE,
+                application_fee=0,
+                processing_fee=0,
+                is_confirmed=True,
+                api_type=content.order.event.api_type,
+                order=content.order,
+                event=content.order.event,
+                related_transaction=content.transactions.get(transaction_type=Transaction.PURCHASE),
+            )
+
+            # Add the item being transferred to the txn.
+            from_txn.bought_items.add(content)
+
+            # Mark the item as transferred.
+            content.status = BoughtItem.TRANSFERRED
+            content.save()
+
+            # Step two: get or create an order for the current user.
             self.order = order = Order.objects.for_request(
                 request=self.request,
                 event=content.order.event,
                 create=True
             )[0]
 
-            # Step two: Clone the BoughtItem!
+            # Step three: Clone the BoughtItem!
             new_item = BoughtItem.objects.create(
                 order=order,
                 status=BoughtItem.BOUGHT,
@@ -158,25 +180,22 @@ class InviteAcceptView(TemplateView):
                 item_option_name=content.item_option_name,
             )
 
-            # Step three: Create a transaction!
-            txn = Transaction.objects.create(
+            # Step four: Create a transaction on the recipient's side!
+            to_txn = Transaction.objects.create(
                 transaction_type=Transaction.TRANSFER,
-                amount=content.price,
-                method=Transaction.FAKE,
+                amount=0,
+                method=Transaction.NONE,
                 application_fee=0,
                 processing_fee=0,
                 is_confirmed=True,
                 api_type=order.event.api_type,
                 order=order,
-                event=order.event
+                event=order.event,
+                related_transaction=from_txn,
             )
 
-            # Step four: Add the BoughtItem to the txn!
-            txn.bought_items.add(new_item)
-
-            # Step five: Mark the old version transferred!
-            content.status = BoughtItem.TRANSFERRED
-            content.save()
+            # Step five: Add the BoughtItem to the txn!
+            to_txn.bought_items.add(new_item)
         else:
             raise Http404("Unhandled transaction type.")
 
