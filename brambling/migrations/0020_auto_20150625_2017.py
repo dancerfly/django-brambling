@@ -14,6 +14,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='event',
             name='transfers_allowed',
+            field=models.BooleanField(default=False, help_text='Whether users can transfer items directly to other users.'),
+            preserve_default=True,
+        ),
+        migrations.AlterField(
+            model_name='event',
+            name='transfers_allowed',
             field=models.BooleanField(default=True, help_text='Whether users can transfer items directly to other users.'),
             preserve_default=True,
         ),
