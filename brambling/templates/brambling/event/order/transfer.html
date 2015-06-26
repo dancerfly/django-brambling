@@ -9,10 +9,17 @@
 		{{ block.super }}
 	{% endwith %}
 
-	<form method='post' action=''>
-		{% csrf_token %}
-		<div class='row'>
-			<div class='col-xs-6 col-xs-offset-3'>
+	<div class='row'>
+		<div class='col-xs-6 col-xs-offset-3'>
+			<p>
+				Clicking the "Transfer it!" button will send a confirmation link to the specified email address. Once the recipient accepts the transfer, it cannot be undone.
+			</p>
+			<p>
+				If transferring an item leaves an attendee with no items, that attendee will be removed from your order.
+			</p>
+
+			<form method='post' action=''>
+				{% csrf_token %}
 				{% form form using %}
 					{% formrow form.bought_item with label="Item to transfer" %}
 					{% formrow form.email with label="Send item to..." help_text="Email address" %}
@@ -29,7 +36,7 @@
 				<a href='{{ cancel_url }}' class='btn btn-link'>
 					Wait, never mind
 				</a>
-			</div>
+			</form>
 		</div>
-	</form>
+	</div>
 {% endblock %}
