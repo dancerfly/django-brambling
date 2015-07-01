@@ -138,7 +138,7 @@ class OrganizationAdmin(admin.ModelAdmin):
             'published_events': """
             SELECT COUNT(*) FROM brambling_event WHERE
             brambling_event.organization_id = brambling_organization.id AND
-            brambling_event.is_published = 1
+            brambling_event.is_published = '1'
             """
         })
 
