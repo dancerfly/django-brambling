@@ -1,0 +1,323 @@
+{# This whole template is verbatim - use ractive, not Django. #}
+{% verbatim %}
+
+{{#if event}}
+<div class="masthead clearfix masthead-light">
+  <div class="masthead-cover-image"{{#if event.banner_image }} style="background-image: url({{ event.banner_image }})"{{/if}}>
+    <div class="relative">
+      <div id="mastheadDetails" class="relative-bottom relative-left relative-right">
+        {{#if event.description }}
+          <h1 class="text-accent masthead-h1-alone{{#if editableByUser }} masthead-h1-admin{{/if}}">
+            <a class="a-uncolored" href="">{{ event.name }}</a>
+          </h1>
+        {{else}}
+          <h1 class="text-accent{{#if editableByUser }} masthead-h1-admin{{/if}}">
+            <a class="a-uncolored" href="">{{ event.name }}</a>
+          </h1>
+          <p class="text-large margin-trailer-0">
+            <i class="fa fa-clock-o fa-fw"></i>
+            {{ event.start_date }} at {{ event.start_time }}
+            <i class="fa fa-map-marker fa-fw"></i>
+            {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}
+          </p>
+        {{/if}}
+      </div>{{!-- /.relative-bottom.relative-left.relative-right --}}
+
+      {{#if editableByUser }}
+        <a href="summary" class="btn btn-primary-light relative-top relative-right">
+          <i class="fa fa-cog"></i> Manage Event
+        </a>
+      {{/if}}
+    </div>{{!-- /.relative --}}
+  </div>{{!-- /.masthead-cover-image --}}
+</div>{{!-- /.masthead --}}
+
+{{/if}}
+
+{{#if event.description || event.website_url || event.facebook_url || event.dance_styles }}
+  <div class="hug panel panel-dark">
+    <div class="panel-body">
+      {{#if event.description }}
+        <div class="row">
+          <div class="col-md-4">
+            <div class="media text-large">
+              <div class="media-left">
+                <i class="fa fa-clock-o fa-fw"></i>
+              </div>
+              <div class="media-body">
+                {{ event.start_date }}
+                {{#if event.start_date != event.end_date}}
+                  &#8211; {{ event.end_date }}
+                {{elseif event.start_time}}
+                   at {{ event.start_time }}
+                {{/if}}
+              </div>
+            </div>
+            <div class="media text-large">
+              <div class="media-left">
+                <i class="fa fa-map-marker fa-fw"></i>
+              </div>
+              <div class="media-body">
+                {{ event.city }}, {{ event.state_or_province }}, {{ event.country }}
+              </div>
+            </div>
+            {{#if event.dance_styles }}
+              <div class="media text-large">
+                <div class="media-left">
+                  <i class="fa fa-fw"></i>
+                </div>
+                <div class="media-body">
+                  {{#each event.dance_styles}}
+                    <h4 class="text-muted">{{ . }}</h4>
+                  {{/each}}
+                </div>
+              </div>
+            {{/if}}
+          </div>
+          <div class="col-md-8">
+            <div>
+              {{ linebreaks(event.description) }}
+            </div>
+            {{#if event.website_url }}
+              <a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+                <i class="fa fa-fw fa-globe"></i>
+                Website
+              </a>
+            {{/if}}
+            {{#if event.facebook_url }}
+              <a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+                <i class="fa fa-fw fa-facebook"></i>
+                Facebook
+              </a>
+            {{/if}}
+          </div>
+        </div>
+      {{else}}
+        {{#if event.website_url }}
+          <a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">
+            <i class="fa fa-fw fa-globe"></i>
+            Website
+          </a>
+        {{/if}}
+        {{#if event.facebook_url }}
+          <a target="_blank" href="{{ event.facebook_url }}" class="btn btn-primary">
+            <i class="fa fa-fw fa-facebook"></i>
+            Facebook
+          </a>
+        {{/if}}
+        {{#if event.dance_styles }}
+          <h4 class="text-muted event-tags">Featuring {{#each event.dance_styles }}<span class="list-comma text-lowercase">{{ . }}</span>{{/each}}.</h4>
+        {{/if}}
+      {{/if}}
+    </div>
+  </div>
+{{/if}}
+
+
+{{#if steps }}
+  <div class="stepbar stepbar-{{ steps.length }}-up">
+    {{#steps}}
+      {{#if slug == 'shop'}}
+        <div class='step current'>{{ name }}</div>
+      {{elseif is_completed}}
+        <a href='{{ url }}' class='step complete'>
+          <i class='fa fa-check fa-fw'>
+          {{ name }}
+        </a>
+      {{elseif is_accessible}}
+        <a href="{{ url }}" class="step">
+          {{ name }}
+        </a>
+      {{else}}
+        <div class='step'>{{ name }}</div>
+      {{/if}}
+    {{/steps}}
+  </div>
+{{/if}}
+
+
+{{#if items }}
+
+  <h1 class="margin-leader-dbl">Register for {{ event.name }}</h1>
+
+  <div class="row" id="items-list">
+    <div class="col-md-5 col-md-push-7">
+
+      {{#if has_cart(order) }}
+        {{#if countdown}}
+          <div class="margin-trailer" intro-outro="slide">
+            <div class='alert margin-trailer-md-0
+              {{#if countdown.days == 0 && countdown.hours == 0}}
+                {{#if countdown.minutes < 1}}
+                  alert-danger
+                {{elseif countdown.minutes < 3}}
+                  alert-warning
+                {{else}}
+                  alert-info
+                {{/if}}
+              {{else}}
+                alert-info
+              {{/if}}'>
+              <p>
+                You have
+                <strong>
+                  {{#if countdown.days }}{{ countdown.days }} day{{ pluralize(countdown.days) }}{{/if}}
+                  {{#if countdown.hours }}{{ countdown.hours }}:{{/if}}{{#if countdown.minutes < 10 && countdown.hours }}0{{/if}}{{ countdown.minutes }}:{{#if countdown.seconds < 10 }}0{{/if}}{{ countdown.seconds }}
+                  {{#if !countdown.hours }}min{{/if}}
+                </strong>
+                to finish checkout.
+              </p>
+            </div>
+            {{!% include "brambling/event/order/_expiry_countdown.html" with expiry_time=order.cart_expire_time }}
+          </div>
+        {{/if}}
+        <div class='panel panel-default' intro-outro="slide">
+          <header class='panel-heading'>
+            <div class='panel-title'>
+              <i class="fa fa-fw fa-shopping-cart"></i> Cart
+            </div>
+          </header>
+          <ul class='list-group'>
+            {{#each order.bought_items}}
+              {{#if status == 'reserved'}}
+                <li class='list-group-item' intro-outro="slide">
+                  {{ item_name }}
+                  ({{ item_option_name }})
+                  <a on-tap='removeFromCart(this)' href='javascript://' class='text-danger pull-right'><span class='fa fa-times'></span></a>
+                </li>
+              {{/if}}
+            {{/each}}
+          </ul>
+        </div>
+      {{/if}}
+      <div class='panel panel-default' id='discounts'>
+        <header class='panel-heading'>
+          <div class='panel-title'>
+            <i class="fa fa-fw fa-gift"></i> Discounts
+          </div>
+        </header>
+        <div class='list-group relative'>
+          {{#each order.discounts}}
+            <div class='list-group-item'>
+              {{ discount_name }} <em class='text-muted'>{{ discount_code }}</em>
+            </div>
+          {{/each}}
+          <div class='list-group-item'>
+            <div class='form-group{{#if discountError}} has-error{{/if}}'>
+              <input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off' value="{{ discountCode }}" lazy="500">
+              {{#if discountError}}<div class='help-block'>{{ discountError }}</div>{{/if}}
+            </div>
+          </div>
+        </div>{{! /.list-group }}
+      </div>
+    </div>
+    <div class="col-md-7 col-md-pull-5 margin-leader margin-leader-md-0">
+      {{#each items }}
+        <div class='panel panel-default'>
+          <header class='panel-heading clearfix'>
+            {{#if images && images.0.preview }}
+              <img src="{{ images.0.preview.url }}" class="img-responsive pull-right item-img" data-toggle="modal" data-target="#imageModal{{ @index }}" width='{{ images.0.preview.width }}' height='{{ images.0.preview.height }}'>
+            {{/if}}
+            <div class='panel-title'>{{ name }}</div>
+            {{#if description }}
+              <div class="shortened" data-lines="2">
+                {{ linebreaks(description) }}
+              </div>
+            {{/if}}
+            {{#if images }}
+              {{#if images.length > 1 }}<a href="" data-toggle="modal" data-target="#imageModal{{ @index }}">{{ images.length }} photo{{ pluralize(images.length) }}</a>{{/if}}
+              <div class="modal fade" id="imageModal{{ @index }}" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                      <h4 id="myLargeModalLabel">{{ name }}</h4>
+                    </div>
+                    <div id="item-carousel{{ @index }}" class="carousel slide" data-ride="carousel" data-interval="false">
+                    {{#if images.length > 1 }}
+                      <!-- Indicators -->
+                      <ol class="carousel-indicators">
+                        {{#images}}
+                          <li data-target="#item-carousel{{ @index }}" data-slide-to="{{ @index - 1 }}"{{#if @index === 0 }} class="active"{{/if}}></li>
+                        {{/images}}
+                      </ol>
+                    {{/if}}
+                    <!-- Wrapper for slides -->
+                    <div class="carousel-inner text-center">
+                      {{#images}}
+                        <div class="item{{#if @index === 0 }} active{{/if}}">
+                          <img src="{{ closeup.url }}" width='{{ closeup.width }}' height='{{ closeup.height }}'>
+                        </div>
+                      {{/images}}
+                    </div>
+                    {{#if images.length > 1 }}
+                      <!-- Controls -->
+                      <a class="left carousel-control" href="#item-carousel{{ @index }}" role="button" data-slide="prev">
+                        <i class="fa fa-2x fa-chevron-left"></i>
+                      </a>
+                      <a class="right carousel-control" href="#item-carousel{{ @index }}" role="button" data-slide="next">
+                        <i class="fa fa-2x fa-chevron-right"></i>
+                      </a>
+                    {{/if}}
+                  </div>
+                  </div>
+                </div>
+              </div>
+            {{/if}}
+          </header>
+          <div class='list-group relative'>
+            {{#options}}
+              <a on-tap='addToCart(this)' href='javascript://' class="list-group-item {{#if total_number && taken >= total_number }} disabled{{/if}}">
+                <div class='row'>
+                  <div class='col-xs-12 col-sm-6'>
+                    {{ name }}
+                    <span class='fa fa-plus pull-right visible-xs'></span>
+                  </div>
+                  <div class='col-xs-8 col-sm-3 text-left text-right-sm'>
+                    {{#if total_number && remaining_display != 'hidden' }}
+                      {{#if remaining_display == 'both' }}
+                        {{ total_number - taken }} / {{ total_number }} left
+                      {{elseif remaining_display == 'total' }}
+                        {{ total_number }} total
+                      {{else}}
+                        {{ total_number - taken }} left
+                      {{/if}}
+                    {{else}}
+                      &nbsp;
+                    {{/if}}
+                  </div>
+                  <div class='col-xs-4 col-sm-2 text-right'>{{ format_money(price, ~/event.currency) }}</div>
+                  <div class='col-sm-1 text-right hidden-xs'>{{#if !total_number || taken < total_number }}<span class='fa fa-plus'></span>{{/if}}</div>
+                </div>
+              </a>
+            {{/options}}
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="modal fade" id="countdownExpiredModal" data-keyboard="false" data-show="true" data-backdrop='static' role="dialog" aria-labelledby="timeUpModal" aria-hidden="true" on-tap="set('countdownExpired', false)" intro-outro="fade">
+      <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h4 class="modal-title">Time&#8217;s up!</h4>
+              </div>
+              <div class="modal-body">
+                  <p><strong>Sorry!</strong> Your cart ran out of time. Please return to the event&#8217;s main page and start again.</p>
+              </div>
+              <div class="modal-footer">
+                  <a href="javascript://" class="btn btn-primary">Return to <strong>{{ event.name }}</strong></a>
+              </div>
+          </div>
+      </div>
+  </div>
+{{elseif items !== undefined}}
+  <div class="row">
+    <div class="col-sm-8">
+      <h4>{{ event.name }} doesn't have any passes or merchandise available right now. Check back later or contact an event organizer.</h4>
+    </div>
+  </div>
+{{/if}}
+
+{% endverbatim %}

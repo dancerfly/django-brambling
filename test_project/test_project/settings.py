@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'django_filters',
     'daguerre',
     'compressor',
+    'rest_framework',
 )
 
 MIDDLEWARE_CLASSES = (
