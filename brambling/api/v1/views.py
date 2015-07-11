@@ -35,7 +35,6 @@ from brambling.models import (Order, EventHousing, BoughtItem,
                               ItemOption, Item, ItemImage, Attendee, Event,
                               Organization, DanceStyle, OrderDiscount,
                               Discount, Event)
-from brambling.views.orders import ORDER_CODE_SESSION_KEY
 
 
 class HousingCategoryViewSet(viewsets.ModelViewSet):
@@ -132,7 +131,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         # Otherwise, you can view orders in your session.
-        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        session_orders = Order.objects._get_session(self.request)
         return qs.filter(code__in=session_orders.values())
 
     def create(self, request, *args, **kwargs):
@@ -150,53 +149,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if len(request.data) > 1:
             raise serializers.ValidationError('Endpoint only accepts event id.')
 
-        order = None
-        created = False
-
-        # First, check if the user is authenticated and has an order for this event.
-        if request.user.is_authenticated():
-            try:
-                order = Order.objects.get(
-                    event=event,
-                    person=request.user,
-                )
-            except Order.DoesNotExist:
-                pass
-
-        # Next, check if there's a session-stored order. Transfer it
-        # if the order hasn't checked out yet and the user is authenticated.
-        if order is None:
-            session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
-            if str(event.pk) in session_orders:
-                code = session_orders[str(event.pk)]
-                try:
-                    order = Order.objects.get(
-                        event=event,
-                        person__isnull=True,
-                        code=code,
-                    )
-                except Order.DoesNotExist:
-                    pass
-                else:
-                    if request.user.is_authenticated():
-                        if not order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED)).exists():
-                            order.person = request.user
-                            order.save()
-                        else:
-                            order = None
-
-        if order is None:
-            # Okay, then create for this user.
-            created = True
-            order = event.create_order(request.user)
-
-            if not request.user.is_authenticated():
-                session_orders = request.session.get(ORDER_CODE_SESSION_KEY, {})
-                session_orders[str(event.pk)] = order.code
-                request.session[ORDER_CODE_SESSION_KEY] = session_orders
-
-        if order.cart_is_expired():
-            order.delete_cart()
+        order, created = Order.objects.for_request(event, request)
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
@@ -225,7 +178,7 @@ class AttendeeViewSet(viewsets.ModelViewSet):
             )
 
         # Otherwise, you can view for orders in your session.
-        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        session_orders = Order.objects._get_session(self.request)
         return qs.filter(order__code__in=session_orders.values())
 
 
@@ -252,7 +205,7 @@ class EventHousingViewSet(viewsets.ModelViewSet):
             )
 
         # Otherwise, you can view for orders in your session.
-        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        session_orders = Order.objects._get_session(self.request)
         return qs.filter(order__code__in=session_orders.values())
 
 
@@ -279,7 +232,7 @@ class BoughtItemViewSet(viewsets.ModelViewSet):
             )
 
         # Otherwise, you can view for orders in your session.
-        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        session_orders = Order.objects._get_session(self.request)
         return qs.filter(order__code__in=session_orders.values())
 
     def perform_destroy(self, instance):
@@ -313,5 +266,5 @@ class OrderDiscountViewSet(viewsets.ModelViewSet):
             )
 
         # Otherwise, you can view for orders in your session.
-        session_orders = self.request.session.get(ORDER_CODE_SESSION_KEY, {})
+        session_orders = Order.objects._get_session(self.request)
         return qs.filter(order__code__in=session_orders.values())

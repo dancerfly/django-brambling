@@ -730,8 +730,22 @@ class CreditCard(models.Model):
 class OrderManager(models.Manager):
     _session_key = '_brambling_order_code'
 
-    def _clear_session(self, event, request):
-        session_orders = request.session.get(self._session_key, {})
+    def _get_session(self, request):
+        return request.session.get(self._session_key, {})
+
+    def _set_session_code(self, request, event, code):
+        session_orders = self._get_session(request)
+        session_orders[str(event.pk)] = code
+        request.session[self._session_key] = session_orders
+
+    def _get_session_code(self, request, event):
+        session_orders = self._get_session(request)
+        if str(event.pk) in session_orders:
+            return session_orders[str(event.pk)]
+        return None
+
+    def _delete_session_code(self, request, event):
+        session_orders = self._get_session(request)
         if str(event.pk) in session_orders:
             del session_orders[str(event.pk)]
             request.session[self._session_key] = session_orders
@@ -792,9 +806,8 @@ class OrderManager(models.Manager):
         # Next, check if there's a session-stored order. Assign it
         # if the order hasn't checked out yet and the user is authenticated.
         if order is None:
-            session_orders = request.session.get(self._session_key, {})
-            if str(event.pk) in session_orders:
-                code = session_orders[str(event.pk)]
+            code = self._get_session_code(self.request, event)
+            if code:
                 try:
                     order = Order.objects.get(
                         event=event,
@@ -823,9 +836,7 @@ class OrderManager(models.Manager):
             order = Order.objects.create(event=event, code=code, person=person)
 
             if not request.user.is_authenticated():
-                session_orders = request.session.get(self._session_key, {})
-                session_orders[str(event.pk)] = order.code
-                request.session[self._session_key] = session_orders
+                self._set_session_code(request, event, order.code)
 
         if order is None:
             raise Order.DoesNotExist

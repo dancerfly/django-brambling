@@ -687,7 +687,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 OrderReceiptMailer(**email_kwargs).send()
                 OrderAlertMailer(**email_kwargs).send()
 
-                Order.objects._clear_session(self.event, self.request)
+                Order.objects._delete_session_code(self.request, self.event)
             elif form:
                 for error in form.non_field_errors():
                     messages.error(request, error)
