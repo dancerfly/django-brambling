@@ -1339,6 +1339,9 @@ class BoughtItem(models.Model):
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
 
+    class Meta:
+        ordering = ('added',)
+
     def __unicode__(self):
         return u"{} – {} ({})".format(self.item_option_name,
                                       self.order.code,

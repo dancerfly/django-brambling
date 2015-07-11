@@ -26,6 +26,7 @@ from brambling.views.orders import (
     OrderEmailView,
     SummaryView,
     TransferView,
+    RactiveShopView,
 )
 from brambling.views.core import (
     ExceptionView,
@@ -87,6 +88,7 @@ from brambling.views.user import (
 
 
 order_urlpatterns = patterns('',
+    url(r'^ractive-shop/$', RactiveShopView.as_view()),
     url(r'^shop/$',
         ChooseItemsView.as_view(),
         name="brambling_event_shop"),
@@ -334,6 +336,8 @@ urlpatterns = patterns('',
     url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind=Invite.TRANSFER)),
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
+
+    url(r'^api/', include('brambling.api.urls')),
 
     url(r'^(?P<organization_slug>[\w-]+)/', include(organization_urlpatterns)),
 )
