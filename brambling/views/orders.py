@@ -29,6 +29,41 @@ from brambling.views.utils import (get_event_admin_nav, ajax_required,
 ORDER_CODE_SESSION_KEY = '_brambling_order_code'
 
 
+class RactiveShopView(TemplateView):
+    current_step_slug = 'shop'
+    template_name = 'brambling/event/order/register.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(RactiveShopView, self).get_context_data(**kwargs)
+        event = get_object_or_404(Event.objects.select_related('organization'),
+                                  slug=kwargs['event_slug'],
+                                  organization__slug=kwargs['organization_slug'])
+
+        editable_by_user = event.editable_by(self.request.user)
+
+        if not event.is_published and not editable_by_user:
+            raise Http404
+
+        clear_expired_carts(event)
+        try:
+            order = Order.objects.get(event=event, person=self.request.user)
+        except:
+            order = None
+
+        # TODO: This will never allow anonymous users to get past the
+        # shopping page, because their orders are stored in the session.
+        # Probably we need to refactor OrderViewSet.create() to make an
+        # Order.objects.from_request() method that gets used across the board.
+        # And/or find a better way to store workflow information.
+
+        context['event'] = event
+        context['editable_by_user'] = editable_by_user
+        context['workflow'] = RegistrationWorkflow(event=event, order=order)
+        context['code_in_url'] = (True if self.kwargs.get('code') and
+                                  not self.request.user.is_authenticated() else False)
+        return context
+
+
 class OrderStep(Step):
     view_name = None
 
@@ -269,7 +304,7 @@ class OrderMixin(object):
                         # checked out yet, assume that the user created an
                         # account mid-order and re-assign it.
                         try:
-                            order = Order.objects.get(
+                            order = Order.objects.filter(
                                 bought_items__status__in=[
                                     BoughtItem.RESERVED,
                                     BoughtItem.UNPAID,
@@ -277,7 +312,7 @@ class OrderMixin(object):
                                 event=self.event,
                                 person__isnull=True,
                                 code=order_kwargs['code']
-                            )
+                            ).distinct().get()
                         except Order.DoesNotExist:
                             pass
                         else:
@@ -484,7 +519,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
                 attendee__isnull=True
             ).exclude(
                 status=BoughtItem.REFUNDED
-            ).order_by('item_option__item', 'item_option'),
+            ).order_by('item_name', 'item_option_name'),
         })
         return context
 
