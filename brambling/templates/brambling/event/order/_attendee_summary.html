@@ -33,10 +33,12 @@
 								{% else %}
 									{% url "brambling_event_order_transfer" event_slug=event.slug organization_slug=event.organization.slug as transfer_url %}
 								{% endif %}
-								<a href='{{ transfer_url }}?bought_item={{ item.pk }}' class='pull-right'>
-									<i class='fa fa-exchange'></i>
-									Transfer
-								</a>
+								{% if item.status == item.BOUGHT %}
+									<a href='{{ transfer_url }}?bought_item={{ item.pk }}' class='pull-right'>
+										<i class='fa fa-exchange'></i>
+										Transfer
+									</a>
+								{% endif %}
 							{% endif %}
 							<br />
 						{% endif %}
