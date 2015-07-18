@@ -49,25 +49,32 @@
 						Sales Summary
 					</h4>
 				</div>
-				<div class='list-group'>
-					{% for itemoption in itemoptions %}
-						<a class='list-group-item' href='{{ attendees_url }}?bought_items__item_option={{ itemoption.pk }}'>
-							{{ itemoption.item.name }} ({{ itemoption.name }})
-							<strong class='pull-right'>{{ itemoption.boughtitem__count }}</strong>
-						</a>
-					{% empty %}
-						<div class='list-group-item text-muted'>
-							<ul class='list-inline'>
-								<li>This event has no items for purchase.</li>
+{% regroup itemoptions by item as item_list %}
+<div class='list-group'>
+	{% for item in item_list %}
+		<span class='list-group-item'>
+			<strong>{{ item.grouper.name }}</strong>
+			<strong class='pull-right'>{{ item.grouper.boughtitem__count }}</strong>
+		</span>
+		{% for option in item.list %}
+			<a class='list-group-item' href='{{ attendees_url }}?bought_items__item_option={{ option.pk }}'>
+				&nbsp; {{ option.name }} &nbsp; <em>{{ option.price|format_money:event.currency }}</em>
+				<span class='pull-right'>{{ option.boughtitem__count }}</span>
+			</a>
+		{% endfor %}
+	{% empty %}
+		<div class='list-group-item text-muted'>
+			<ul class='list-inline'>
+				<li>This event has no items for purchase.</li>
 
-								<li><a class='btn btn-primary' href='{% url "brambling_item_create" event_slug=event.slug organization_slug=event.organization.slug %}'>
-									Create item
-									<span class='fa fa-plus'></span>
-								</a></li>
-							</ul>
-						</div>
-					{% endfor %}
-				</div>
+				<li><a class='btn btn-primary' href='{% url "brambling_item_create" event_slug=event.slug organization_slug=event.organization.slug %}'>
+					Create item
+					<span class='fa fa-plus'></span>
+				</a></li>
+			</ul>
+		</div>
+	{% endfor %}
+</div>
 			</div>
 		</div>
 		<div class='col-md-6'>
