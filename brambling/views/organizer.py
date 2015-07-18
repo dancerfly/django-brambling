@@ -258,7 +258,7 @@ class EventSummaryView(TemplateView):
 
         itemoptions = ItemOption.objects.filter(
             item__event=self.event
-        ).select_related('item')
+        ).select_related('item').order_by('item')
 
         gross_sales = 0
         itemoption_map = {}
