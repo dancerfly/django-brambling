@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0014_remove_attendee_person_confirmed'),
+        ('brambling', '0019_auto_20150528_1850'),
     ]
 
     operations = [
