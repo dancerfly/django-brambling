@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, url, include
+from django.http import HttpResponse
 from django.templatetags.static import static
 from django.views.generic.base import TemplateView, RedirectView
 
@@ -323,6 +324,7 @@ urlpatterns = patterns('',
     url(r'^418/$', TemplateView.as_view(template_name='418.html')),
     url(r'^500/$', 'django.views.defaults.server_error'),
     url(r'^500/raise/$', ExceptionView.as_view()),
+    url(r'^ping/$', lambda r: HttpResponse('A-Okay!')),
     url(r'^mail/confirmation/$', ConfirmationPreviewView.as_view()),
     url(r'^mail/order_receipt/$', OrderReceiptPreviewView.as_view()),
     url(r'^mail/order_alert/$', OrderAlertPreviewView.as_view()),
