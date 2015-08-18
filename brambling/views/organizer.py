@@ -37,7 +37,7 @@ from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
-                                   ajax_required)
+                                   ajax_required, FinanceTable)
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.utils.payment import (dwolla_organization_oauth_url,
                                      stripe_organization_oauth_url,
@@ -1011,3 +1011,23 @@ class FinancesView(ListView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
         })
         return context
+
+    def render_to_response(self, context, *args, **kwargs):
+        "Return a response in the requested format."
+
+        format_ = self.request.GET.get('format', default='html')
+
+        if format_ == 'csv':
+            context = super(FinancesView, self).get_context_data(**kwargs)
+            table = FinanceTable(self.event, context['transactions'])
+
+            pseudo_buffer = Echo()
+            writer = csv.writer(pseudo_buffer)
+            response = StreamingHttpResponse((writer.writerow([unicode(cell) for cell in row])
+                                              for row in table.all_rows()),
+                                             content_type="text/csv")
+            response['Content-Disposition'] = 'attachment; filename="finances.csv"'
+            return response
+
+        # Default to the template.
+        return super(ListView, self).render_to_response(context, *args, **kwargs)

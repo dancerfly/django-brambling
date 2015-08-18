@@ -8,6 +8,12 @@
     {{ block.super }}
     {% include "brambling/event/_empty_shop_alert.html" %}
 
+    <form>
+      <button type="submit" class="btn btn-sm btn-default tipped" name="format" value="csv" title="Download CSV" data-container="body">
+        <i class="fa fa-download"></i>
+        <span class='hidden-sm hidden-md'>Download CSV</span>
+      </button>
+    </form>
 
     <div class="scroll-x">
         <table class="table table-striped">
