@@ -1,13 +1,15 @@
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import timedelta, datetime
 from functools import wraps
 from itertools import ifilter
 
+import pytz
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Min
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from zenaida.templatetags.zenaida import format_money
 
 from brambling.models import Event, BoughtItem
 
@@ -225,3 +227,61 @@ class WorkflowMixin(object):
             'next_step': self.current_step.next_step if self.current_step else None,
         })
         return context
+
+
+class FinanceTable(object):
+
+    def __init__(self, event, transactions):
+        self.event = event
+        self.transactions = transactions
+
+    def headers(self):
+        return [
+            'Timestamp (%s)' % self.event.timezone,
+            'Created By',
+            'Method',
+            'Type',
+            'Order',
+            'Amount',
+            'Dancerfly Fee',
+            'Payment Fee',
+        ]
+
+    def header_row(self):
+        return [self.headers()]
+
+    def all_rows(self):
+        yield self.headers()
+        for transaction in self.transactions:
+            yield self.format_transaction(transaction)
+
+    def format_transaction(self, transaction):
+        return [
+            self.format_timestamp(transaction),
+            self.created_by_name(transaction),
+            transaction.get_method_display(),
+            transaction.get_transaction_type_display(),
+            self.order_code(transaction),
+            format_money(transaction.amount, self.event.currency),
+            format_money(transaction.application_fee, self.event.currency),
+            format_money(transaction.processing_fee, self.event.currency),
+        ]
+
+    def format_timestamp(self, transaction):
+        tz = pytz.timezone(self.event.timezone)
+        localtime = timezone.localtime(transaction.timestamp, timezone=tz)
+        return localtime.strftime("%B %d, %Y %H:%M:%S")
+
+    @classmethod
+    def order_code(cls, transaction):
+        if transaction.order:
+            return transaction.order.code
+        else:
+            return ''
+
+    @classmethod
+    def created_by_name(cls, transaction):
+        if transaction.created_by:
+            return transaction.created_by.get_full_name
+        else:
+            return ''
