@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from datetime import timedelta, datetime
 from functools import wraps
-from itertools import ifilter
+from itertools import ifilter, islice
 
 import pytz
 from django.core.urlresolvers import reverse
@@ -12,6 +12,7 @@ from django.utils import timezone
 from zenaida.templatetags.zenaida import format_money
 
 from brambling.models import Event, BoughtItem
+from brambling.utils.model_tables import Cell
 
 
 def get_event_or_404(slug):
@@ -250,21 +251,37 @@ class FinanceTable(object):
     def header_row(self):
         return [self.headers()]
 
-    def all_rows(self):
+    def plaintext_rows(self):
         yield self.headers()
+        for transaction in self.transactions:
+            yield [c.value for c in self.format_transaction(transaction)]
+
+    def cell_rows(self):
         for transaction in self.transactions:
             yield self.format_transaction(transaction)
 
+    def transaction_rows(self):
+        return islice(self.all_rows(), 1, None)
+
+    def transaction_as_cell_row(self, transaction):
+        return self.format_transaction(transaction)
+
+    def money(self, amount):
+        return format_money(amount, self.event.currency)
+
     def format_transaction(self, transaction):
         return [
-            self.format_timestamp(transaction),
-            self.created_by_name(transaction),
-            transaction.get_method_display(),
-            transaction.get_transaction_type_display(),
-            self.order_code(transaction),
-            format_money(transaction.amount, self.event.currency),
-            format_money(transaction.application_fee, self.event.currency),
-            format_money(transaction.processing_fee, self.event.currency),
+            Cell(field='timestamp', value=self.format_timestamp(transaction)),
+            Cell(field='created_by', value=self.created_by_name(transaction)),
+            Cell(field='method', value=transaction.get_method_display()),
+            Cell(field='type',
+                 value=transaction.get_transaction_type_display()),
+            Cell(field='order', value=self.order_code(transaction)),
+            Cell(field='amount', value=self.money(transaction.amount)),
+            Cell(field='application_fee',
+                 value=self.money(transaction.application_fee)),
+            Cell(field='processing_fee',
+                 value=self.money(transaction.processing_fee)),
         ]
 
     def format_timestamp(self, transaction):
@@ -282,6 +299,6 @@ class FinanceTable(object):
     @classmethod
     def created_by_name(cls, transaction):
         if transaction.created_by:
-            return transaction.created_by.get_full_name
+            return transaction.created_by.get_full_name()
         else:
             return ''

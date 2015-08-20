@@ -18,30 +18,26 @@
     <div class="scroll-x">
         <table class="table table-striped">
             <thead>
-                <tr>
-                    <th>Timestamp <span class='text-muted'>{{ event.timezone }}</span></th>
-                    <th>Created by</th>
-                    <th>Method</th>
-                    <th>Type</th>
-                    <th>Order</th>
-                    <th>Amount</th>
-                    <th>Dancerfly Fee</th>
-                    <th>Payment Fee</th>
-                    <th></th>
-                </tr>
+              <tr>
+                {% for header in table.headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+                <th></th>
+              </tr>
             </thead>
             <tbody>
                 {% timezone event.timezone %}
-                {% for transaction in transactions %}
-                    <tr>
-                        <td>{{ transaction.timestamp|date:"F jS, Y H:i:s" }}</td>
-                        <td>{% if transaction.created_by %}{{ transaction.created_by.get_full_name }}{% endif %}</td>
-                        <td>{{ transaction.get_method_display }}</td>
-                        <td>{{ transaction.get_transaction_type_display }}</td>
-                        <td>{% if transaction.order %}<a href="{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=transaction.order.code %}">{{ transaction.order.code }}</a>{% endif %}</td>
-                        <td>{{ transaction.amount|format_money:event.currency }}</td>
-                        <td>{{ transaction.application_fee|format_money:event.currency }}</td>
-                        <td>{{ transaction.processing_fee|format_money:event.currency }}</td>
+                {% for row in table.cell_rows %}
+                <tr>
+                  {% for cell in row %}
+                  <td>
+                    {% if cell.field == 'Order' and cell.value != '' %}
+                    <a href="{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=cell %}">{{ cell }}</a>
+                    {% else %}
+                    {{cell.value}}
+                    {% endif %}
+                  </td>
+                  {% endfor %}
                         <td>
                             {% if transaction.get_remote_url %}
                                 <a class='btn btn-default' href="{{ transaction.get_remote_url }}" target='_blank'>

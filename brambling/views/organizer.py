@@ -1009,6 +1009,7 @@ class FinancesView(ListView):
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'table': FinanceTable(self.event, context['transactions']),
         })
         return context
 
@@ -1024,7 +1025,7 @@ class FinancesView(ListView):
             pseudo_buffer = Echo()
             writer = csv.writer(pseudo_buffer)
             response = StreamingHttpResponse((writer.writerow([unicode(cell) for cell in row])
-                                              for row in table.all_rows()),
+                                              for row in table.plaintext_rows()),
                                              content_type="text/csv")
             response['Content-Disposition'] = 'attachment; filename="finances.csv"'
             return response
