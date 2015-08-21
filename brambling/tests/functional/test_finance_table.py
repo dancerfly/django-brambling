@@ -1,9 +1,8 @@
 from django.test import TestCase
 
-from brambling.utils.model_tables import Cell
 from brambling.views.utils import FinanceTable
-from brambling.tests.factories import TransactionFactory, EventFactory, \
-    PersonFactory, OrderFactory
+from brambling.tests.factories import (TransactionFactory, EventFactory,
+                                       PersonFactory, OrderFactory)
 
 
 class FinanceTableTestCase(TestCase):
