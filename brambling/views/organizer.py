@@ -1024,8 +1024,8 @@ class FinancesView(ListView):
 
             pseudo_buffer = Echo()
             writer = csv.writer(pseudo_buffer)
-            response = StreamingHttpResponse((writer.writerow([unicode(cell) for cell in row])
-                                              for row in table.plaintext_rows()),
+            response = StreamingHttpResponse((writer.writerow([unicode(cell.value) for cell in row])
+                                              for row in table.get_rows(include_headers=True)),
                                              content_type="text/csv")
             response['Content-Disposition'] = 'attachment; filename="finances.csv"'
             return response

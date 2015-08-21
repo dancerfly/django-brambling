@@ -27,7 +27,7 @@
             </thead>
             <tbody>
                 {% timezone event.timezone %}
-                {% for row in table.cell_rows %}
+                {% for row in table.get_rows %}
                 <tr>
                   {% for cell in row %}
                   <td>

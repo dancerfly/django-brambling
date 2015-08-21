@@ -248,23 +248,14 @@ class FinanceTable(object):
             'Payment Fee',
         ]
 
-    def header_row(self):
-        return [self.headers()]
+    def header_cells(self):
+        return [Cell(field='header', value=col) for col in self.headers()]
 
-    def plaintext_rows(self):
-        yield self.headers()
-        for transaction in self.transactions:
-            yield [c.value for c in self.format_transaction(transaction)]
-
-    def cell_rows(self):
+    def get_rows(self, include_headers=False):
+        if include_headers:
+            yield self.header_cells()
         for transaction in self.transactions:
             yield self.format_transaction(transaction)
-
-    def transaction_rows(self):
-        return islice(self.all_rows(), 1, None)
-
-    def transaction_as_cell_row(self, transaction):
-        return self.format_transaction(transaction)
 
     def money(self, amount):
         return format_money(amount, self.event.currency)
@@ -289,15 +280,13 @@ class FinanceTable(object):
         localtime = timezone.localtime(transaction.timestamp, timezone=tz)
         return localtime.strftime("%B %d, %Y %H:%M:%S")
 
-    @classmethod
-    def order_code(cls, transaction):
+    def order_code(self, transaction):
         if transaction.order:
             return transaction.order.code
         else:
             return ''
 
-    @classmethod
-    def created_by_name(cls, transaction):
+    def created_by_name(self, transaction):
         if transaction.created_by:
             return transaction.created_by.get_full_name()
         else:
