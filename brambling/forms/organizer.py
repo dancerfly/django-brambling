@@ -180,7 +180,7 @@ class EventForm(forms.ModelForm):
                   'has_dances', 'has_classes', 'liability_waiver', 'privacy',
                   'collect_housing_data', 'collect_survey_data',
                   'cart_timeout', 'start_date', 'end_date',
-                  'check_postmark_cutoff')
+                  'check_postmark_cutoff', 'facebook_url')
         widgets = {
             'country': forms.Select,
         }
