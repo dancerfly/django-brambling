@@ -469,8 +469,11 @@ class Event(models.Model):
         if not self.is_published:
             return False
 
-        if self.privacy == self.INVITED and not Order.objects.filter(user=user, event=event).exists():
-            return False
+        if self.privacy == self.INVITED:
+            if not user.is_authenticated():
+                return False
+            if not Order.objects.filter(person=user, event=self).exists():
+                return False
 
         return True
 
