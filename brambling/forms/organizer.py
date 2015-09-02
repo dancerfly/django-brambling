@@ -171,6 +171,9 @@ class EventForm(forms.ModelForm):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
                               required=False)
+    invite_attendees = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to the event.',
+                                       widget=forms.Textarea,
+                                       required=False)
 
     class Meta:
         model = Event
@@ -224,6 +227,18 @@ class EventForm(forms.ModelForm):
             validator(editor)
         return editors
 
+    def clean_invite_attendees(self):
+        invite_attendees = self.cleaned_data['invite_attendees']
+        if not invite_attendees:
+            return []
+
+        validator = EmailValidator()
+        # Split email list by commas and trim whitespace:
+        invite_attendees = [x.strip() for x in invite_attendees.split(',')]
+        for editor in invite_attendees:
+            validator(editor)
+        return invite_attendees
+
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
         if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
@@ -244,6 +259,21 @@ class EventForm(forms.ModelForm):
                     email=editor,
                     user=self.request.user,
                     kind=Invite.EVENT_EDITOR,
+                    content_id=instance.pk
+                )
+                if created:
+                    invite.send(
+                        content=instance,
+                        secure=self.request.is_secure(),
+                        site=get_current_site(self.request),
+                    )
+
+        if self.cleaned_data['invite_attendees']:
+            for invite_attendee in self.cleaned_data['invite_attendees']:
+                invite, created = Invite.objects.get_or_create_invite(
+                    email=invite_attendee,
+                    user=self.request.user,
+                    kind=Invite.EVENT,
                     content_id=instance.pk
                 )
                 if created:

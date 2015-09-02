@@ -77,7 +77,45 @@
 		<h4 class="panel-title">Registration</h4>
 	</header>
 	<div class="panel-body">
-		{% formrow form.privacy %}
+		{% if form.instance.is_published %}
+			{% formrow form.privacy %}
+		{% else %}
+			{% formrow form.privacy with help_text="This setting only has an effect once the event is published. For now, the event is only visible to admins." %}
+		{% endif %}
+		<div id="invite-info">
+			{% if not event.is_published %}
+				<p class='help-block'>You can send out invitations after publishing the event.</p>
+			{% else %}
+				<p>The following invitations to attend this event are outstanding.</p>
+				<div class="table-responsive">
+					<table class='table table-striped'>
+						<tbody>
+							{% for invite in event.get_invites %}
+								<tr>
+									<th>{{ invite.email }}</th>
+									<td>
+										{% if invite.is_sent %}
+											<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+										{% else %}
+											<i class='fa fa-fw fa-envelope'></i> Not sent
+										{% endif %}
+									</td>
+									<td>
+										<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+										<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+									</td>
+								</tr>
+							{% empty %}
+								<tr>
+									<td><em>There are no outstanding invitations. Either you haven't sent any or they've all been accepted!</em></td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% formrow form.invite_attendees %}
+			{% endif %}
+		</div>
 		{% formrow form.cart_timeout %}
 		<div class='form-group'>
 			{% with field=form.collect_housing_data %}
@@ -166,7 +204,7 @@
 							</tr>
 						{% endfor %}
 					{% endif %}
-					{% for invite in event.get_invites %}
+					{% for invite in event.get_editor_invites %}
 						<tr>
 							<th>{{ invite.email }}</th>
 							<td>{{ invite.email }}</td>

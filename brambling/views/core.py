@@ -20,7 +20,7 @@ class DashboardView(TemplateView):
         today = timezone.now().date()
 
         upcoming_events = Event.objects.filter(
-            privacy=Event.PUBLIC,
+            privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
             is_published=True,
         ).filter(start_date__gte=today).order_by('start_date').distinct()
 
@@ -30,7 +30,7 @@ class DashboardView(TemplateView):
 
         if user.is_authenticated():
             upcoming_events_interest = Event.objects.filter(
-                privacy=Event.PUBLIC,
+                privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
                 dance_styles__person=user,
                 is_published=True,
             ).filter(start_date__gte=today).order_by('start_date').distinct()
@@ -94,7 +94,10 @@ class InviteAcceptView(TemplateView):
                     request.user.confirmed_email = request.user.email
                     request.user.save()
                 content = invite.get_content()
-                if invite.kind == Invite.EVENT_EDITOR:
+                if invite.kind == Invite.EVENT:
+                    content.create_order(request.user)
+                    url = reverse('brambling_event_shop', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
+                elif invite.kind == Invite.EVENT_EDITOR:
                     content.additional_editors.add(request.user)
                     url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
                 elif invite.kind == Invite.ORGANIZATION_EDITOR:
@@ -129,7 +132,11 @@ class InviteSendView(View):
             raise Http404
         invite = Invite.objects.get(code=kwargs['code'])
         content = invite.get_content()
-        if invite.kind == Invite.EVENT_EDITOR:
+        if invite.kind == Invite.EVENT:
+            if not content.organization.editable_by(self.request.user):
+                raise Http404
+            url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
+        elif invite.kind == Invite.EVENT_EDITOR:
             if not content.organization.editable_by(self.request.user):
                 raise Http404
             url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
@@ -154,7 +161,11 @@ class InviteDeleteView(View):
             raise Http404
         invite = Invite.objects.get(code=kwargs['code'])
         content = invite.get_content()
-        if invite.kind == Invite.EVENT_EDITOR:
+        if invite.kind == Invite.EVENT:
+            if not content.organization.editable_by(self.request.user):
+                raise Http404
+            url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
+        elif invite.kind == Invite.EVENT_EDITOR:
             if not content.organization.editable_by(self.request.user):
                 raise Http404
             url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})

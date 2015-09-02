@@ -1,0 +1,90 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+	{% url "brambling_invite_accept" code=invite.code as url %}
+	<table class='container'>
+		<tr>
+			<td>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p class='lede'>
+											You've been invited to attend {{ content.name }}!
+										</p>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+							<table class='six columns'>
+								<tr>
+									<td>
+										<table class='button success radius'>
+											<tr>
+												<td>
+													<a href="{{ protocol }}://{{ site.domain }}{{ url }}">
+														Accept your invitation
+													</a>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p>If the button's not working for you, you can also accept your invitation
+											by copy-pasting the following link into your browser's URL bar:</p>
+										<p>{{ protocol }}://{{ site.domain }}{{ url }}</p>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p>Happy dancing!</p>
+
+										<p class='lede'>The Dancerfly Team</p>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+			</td>
+		</tr>
+	</table>
+{% endblock %}

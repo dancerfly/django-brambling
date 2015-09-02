@@ -10,5 +10,19 @@
 				});
 			}
 		});
+
+		var toggleInviteInfo = function($ele) {
+			if ($ele.val() === 'half-public' || $ele.val() === 'invited') {
+				$('#invite-info').slideDown();
+			} else {
+				$('#invite-info').slideUp();
+			}
+		};
+
+		$('#id_privacy').on('change', function() {
+			toggleInviteInfo($(this));
+		});
+
+		toggleInviteInfo($('#id_privacy'));
     });
 </script>
