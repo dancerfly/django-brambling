@@ -22,7 +22,7 @@ class DashboardView(TemplateView):
         today = timezone.now().date()
 
         upcoming_events = Event.objects.filter(
-            privacy=Event.PUBLIC,
+            privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
             is_published=True,
         ).filter(start_date__gte=today).order_by('start_date').distinct()
 
@@ -32,7 +32,7 @@ class DashboardView(TemplateView):
 
         if user.is_authenticated():
             upcoming_events_interest = Event.objects.filter(
-                privacy=Event.PUBLIC,
+                privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
                 dance_styles__person=user,
                 is_published=True,
             ).filter(start_date__gte=today).order_by('start_date').distinct()
@@ -128,7 +128,9 @@ class InviteAcceptView(TemplateView):
     def handle_invite(self):
         invite = self.invite
         content = self.content
-        if invite.kind == Invite.EVENT_EDITOR:
+        if invite.kind == Invite.EVENT:
+            content.create_order(self.request.user)
+        elif invite.kind == Invite.EVENT_EDITOR:
             content.additional_editors.add(self.request.user)
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
             content.editors.add(self.request.user)
@@ -209,7 +211,12 @@ class InviteAcceptView(TemplateView):
     def get_success_url(self):
         invite = self.invite
         content = self.content
-        if invite.kind == Invite.EVENT_EDITOR:
+        if invite.kind == Invite.EVENT:
+            return reverse('brambling_event_shop', kwargs={
+                'event_slug': content.slug,
+                'organization_slug': content.organization.slug
+            })
+        elif invite.kind == Invite.EVENT_EDITOR:
             return reverse('brambling_event_update', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
@@ -240,7 +247,10 @@ class InviteManageView(View):
     def has_permission(self):
         invite = self.invite
         content = self.content
-        if invite.kind == Invite.EVENT_EDITOR:
+        if invite.kind == Invite.EVENT:
+            if not content.organization.editable_by(self.request.user):
+                return False
+        elif invite.kind == Invite.EVENT_EDITOR:
             if not self.request.user.is_authenticated():
                 return False
             if not content.organization.editable_by(self.request.user):
@@ -267,7 +277,12 @@ class InviteManageView(View):
     def get_success_url(self):
         invite = self.invite
         content = self.content
-        if invite.kind == Invite.EVENT_EDITOR:
+        if invite.kind == Invite.EVENT:
+            return reverse('brambling_event_update', kwargs={
+                'event_slug': content.slug,
+                'organization_slug': content.organization.slug
+            })
+        elif invite.kind == Invite.EVENT_EDITOR:
             return reverse('brambling_event_update', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug

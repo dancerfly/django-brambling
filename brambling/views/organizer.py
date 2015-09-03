@@ -37,7 +37,7 @@ from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
-                                   ajax_required)
+                                   ajax_required, FinanceTable)
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.utils.payment import (dwolla_organization_oauth_url,
                                      stripe_organization_oauth_url,
@@ -143,7 +143,7 @@ class OrganizationDetailView(DetailView):
         today = timezone.now().date()
         upcoming_events = Event.objects.filter(
             organization=self.object,
-            privacy=Event.PUBLIC,
+            privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
             is_published=True,
         ).filter(start_date__gte=today).order_by('start_date').distinct()
 
@@ -258,7 +258,7 @@ class EventSummaryView(TemplateView):
 
         itemoptions = ItemOption.objects.filter(
             item__event=self.event
-        ).select_related('item')
+        ).select_related('item').order_by('item')
 
         gross_sales = 0
         itemoption_map = {}
@@ -1009,5 +1009,26 @@ class FinancesView(ListView):
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'table': FinanceTable(self.event, context['transactions']),
         })
         return context
+
+    def render_to_response(self, context, *args, **kwargs):
+        "Return a response in the requested format."
+
+        format_ = self.request.GET.get('format', default='html')
+
+        if format_ == 'csv':
+            context = super(FinancesView, self).get_context_data(**kwargs)
+            table = FinanceTable(self.event, context['transactions'])
+
+            pseudo_buffer = Echo()
+            writer = csv.writer(pseudo_buffer)
+            response = StreamingHttpResponse((writer.writerow([unicode(cell.value) for cell in row])
+                                              for row in table.get_rows(include_headers=True)),
+                                             content_type="text/csv")
+            response['Content-Disposition'] = 'attachment; filename="finances.csv"'
+            return response
+
+        # Default to the template.
+        return super(ListView, self).render_to_response(context, *args, **kwargs)

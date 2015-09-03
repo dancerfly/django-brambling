@@ -364,10 +364,14 @@ class Organization(AbstractDwollaModel):
 class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
+    HALF_PUBLIC = 'half-public'
+    INVITED = 'invited'
 
     PRIVACY_CHOICES = (
-        (PUBLIC, _("List publicly")),
-        (LINK, _("Visible to anyone with the link")),
+        (PUBLIC, _("Anyone can find and view the event")),
+        (LINK, _("Anyone with a direct link can view the event")),
+        (HALF_PUBLIC, _("Anyone can find and view the event, but only people who are invited can register")),
+        (INVITED, _("Only people invited to the event can see the event and register")),
     )
 
     LIVE = 'live'
@@ -408,8 +412,8 @@ class Event(models.Model):
                                                   "of my own free will."), help_text=_("'{event}' and '{organization}' will be automatically replaced with your event and organization names respectively when users are presented with the waiver."))
 
     transfers_allowed = models.BooleanField(default=True, help_text="Whether users can transfer items directly to other users.")
-    privacy = models.CharField(max_length=7, choices=PRIVACY_CHOICES,
-                               default=PUBLIC, help_text="Who can view this event once it's published.")
+    privacy = models.CharField(max_length=11, choices=PRIVACY_CHOICES,
+                               default=PUBLIC)
     is_published = models.BooleanField(default=False)
     # If an event is "frozen", it can no longer be edited or unpublished.
     is_frozen = models.BooleanField(default=False)
@@ -461,8 +465,17 @@ class Event(models.Model):
         )
 
     def viewable_by(self, user):
-        if not self.is_published and not self.editable_by(user):
+        if self.editable_by(user):
+            return True
+
+        if not self.is_published:
             return False
+
+        if self.privacy == self.INVITED:
+            if not user.is_authenticated():
+                return False
+            if not Order.objects.filter(person=user, event=self).exists():
+                return False
 
         return True
 
@@ -470,6 +483,10 @@ class Event(models.Model):
         return ItemOption.objects.filter(item__event=self).exists()
 
     def get_invites(self):
+        return Invite.objects.filter(kind=Invite.EVENT,
+                                     content_id=self.pk)
+
+    def get_editor_invites(self):
         return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
                                      content_id=self.pk)
 
@@ -1611,7 +1628,7 @@ class InviteManager(models.Manager):
                 allowed_chars='abcdefghijkmnpqrstuvwxyz'
                               'ABCDEFGHJKLMNPQRSTUVWXYZ23456789-~'
             )
-            if not Invite.objects.filter(code=code):
+            if not Invite.objects.filter(code=code).exists():
                 break
         defaults = {
             'user': user,
@@ -1621,10 +1638,12 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
+    EVENT = 'event'
     EVENT_EDITOR = 'editor'
     ORGANIZATION_EDITOR = 'org_editor'
     TRANSFER = 'transfer'
     KIND_CHOICES = (
+        (EVENT, _('Event')),
         (EVENT_EDITOR, _("Event Editor")),
         (ORGANIZATION_EDITOR, _("Organization Editor")),
         (TRANSFER, _("Transfer")),
@@ -1656,7 +1675,9 @@ class Invite(models.Model):
         self.save()
 
     def get_content(self):
-        if self.kind == Invite.EVENT_EDITOR:
+        if self.kind == Invite.EVENT:
+            model = Event
+        elif self.kind == Invite.EVENT_EDITOR:
             model = Event
         elif self.kind == Invite.ORGANIZATION_EDITOR:
             model = Organization

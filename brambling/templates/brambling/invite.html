@@ -9,7 +9,9 @@
 	{% endcomment %}
 	{% if invite %}
 		<h2>
-			{% if invite.kind == invite.EVENT_EDITOR %}
+			{% if invite.kind == invite.EVENT %}
+				You've been invited to an event!
+			{% elif invite.kind == invite.EVENT_EDITOR %}
 				You've been invited to edit an event!
 			{% elif invite.kind == invite.ORGANIZATION_EDITOR %}
 				You've been invited to edit an organization!

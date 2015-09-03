@@ -1,4 +1,4 @@
-Django==1.7.7
+Django==1.7.9
 pytz==2015.2
 sqlparse==0.1.14
 unicode-slugify==0.1.3

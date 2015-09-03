@@ -258,6 +258,10 @@ class OrderMixin(object):
         return super(OrderMixin, self).dispatch(request, *args, **kwargs)
 
     def get_order(self, create=False):
+        # Never create for invite-only events.
+        if self.event.privacy in (Event.HALF_PUBLIC, Event.INVITED):
+            return False
+
         order_kwargs = {
             'event': self.event,
             'request': self.request,
@@ -312,6 +316,9 @@ class AddToOrderView(OrderMixin, View):
     def post(self, request, *args, **kwargs):
         clear_expired_carts(self.event)
 
+        if self.order is None:
+            return JsonResponse({'success': False, 'error': "Registration for this event is restricted."})
+
         try:
             item_option = ItemOption.objects.get(item__event=self.event,
                                                  pk=kwargs['pk'])
@@ -349,6 +356,9 @@ class RemoveFromOrderView(View):
 class ApplyDiscountView(OrderMixin, View):
     @method_decorator(ajax_required)
     def post(self, request, *args, **kwargs):
+        if self.order is None:
+            return JsonResponse({'success': False, 'error': "Registration for this event is restricted."})
+
         discounts = Discount.objects.filter(
             code=kwargs['discount'],
             event=self.event

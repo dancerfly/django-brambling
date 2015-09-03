@@ -55,3 +55,8 @@ Get it running
     python manage.py runserver # Run the server!
 
 Then, navigate to ``http://127.0.0.1:8000/`` in your favorite web browser!
+
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/littleweaver/django-brambling
+   :target: https://gitter.im/littleweaver/django-brambling?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge

@@ -87,6 +87,18 @@ DATABASES = {
     }
 }
 
+# Uncomment to disable migrations temporarily, i.e. for tests
+# Source: https://gist.github.com/NotSqrt/5f3c76cd15e40ef62d09
+#class DisableMigrations(object):
+#
+#    def __contains__(self, item):
+#        return True
+#
+#    def __getitem__(self, item):
+#        return "notmigrations"
+#
+#MIGRATION_MODULES = DisableMigrations()
+
 # Internationalization
 # https://docs.djangoproject.com/en/dev/topics/i18n/
 
