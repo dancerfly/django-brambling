@@ -1,7 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from brambling.models import Order, BoughtItem
-from brambling.views.orders import ORDER_CODE_SESSION_KEY
 
 
 class IsAdminUserOrReadOnly(BasePermission):
@@ -102,8 +101,8 @@ class OrderPermission(BasePermission):
                 return True
         else:
             # Allow if this order is in their session for this event.
-            session_orders = request.session.get(ORDER_CODE_SESSION_KEY, {})
-            if session_orders.get(str(order.event.pk), None) == order.code:
+            code = Order.objects._get_session_code(request, order.event)
+            if code == order.code:
                 return True
 
         return False

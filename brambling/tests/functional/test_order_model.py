@@ -1,7 +1,17 @@
-from django.test import TestCase
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.core.exceptions import SuspiciousOperation
+from django.test import TestCase, RequestFactory
 
 from brambling.models import Order
-from brambling.tests.factories import (EventFactory, OrderFactory, DiscountFactory, ItemFactory, ItemOptionFactory)
+from brambling.tests.factories import (
+    EventFactory,
+    OrderFactory,
+    DiscountFactory,
+    ItemFactory,
+    ItemOptionFactory,
+    PersonFactory,
+)
 
 
 class OrderModelTestCase(TestCase):
@@ -226,3 +236,169 @@ class OrderModelTestCase(TestCase):
         self.assertEqual(boughtitemdiscount.amount, discount.amount)
 
         self.assertEqual(boughtitemdiscount.savings(), 20)
+
+
+class OrderManagerTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.session_middleware = SessionMiddleware()
+
+    def _add_session(self, request):
+        self.session_middleware.process_request(request)
+
+    def test_for_request__code__anon_anon(self):
+        """An anonymous user can access (by code) an order created by an anonymous user."""
+        event = EventFactory()
+        order = OrderFactory(event=event, person=None)
+        request = self.factory.get('/')
+        request.user = AnonymousUser()
+        fetched, created = Order.objects.for_request(event, request, code=order.code, create=False)
+        self.assertFalse(created)
+        self.assertEqual(fetched, order)
+
+    def test_for_request__code__authed_anon(self):
+        """
+        An authenticated user can access (by code) an order created by an anonymous user.
+        It will be assigned to them.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        order = OrderFactory(event=event, person=None)
+        request = self.factory.get('/')
+        request.user = person
+        fetched, created = Order.objects.for_request(event, request, code=order.code, create=False)
+        self.assertFalse(created)
+        self.assertEqual(fetched, order)
+        self.assertEqual(fetched.person_id, person.id)
+
+    def test_for_request__code__authed_anon__with_order(self):
+        """
+        An authenticated user can access (by code) an order created by an anonymous user.
+        It will be not assigned to them if they have an order already.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        order = OrderFactory(event=event, person=None)
+        OrderFactory(event=event, person=person)
+        request = self.factory.get('/')
+        request.user = person
+        with self.assertRaises(Order.DoesNotExist):
+            Order.objects.for_request(event, request, code=order.code, create=False)
+
+    def test_for_request__code__anon_authed(self):
+        """
+        An anonymous user can't access an order created by an authenticated user.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        order = OrderFactory(event=event, person=person)
+        request = self.factory.get('/')
+        request.user = AnonymousUser()
+        with self.assertRaises(SuspiciousOperation):
+            Order.objects.for_request(event, request, code=order.code, create=False)
+
+    def test_for_request__code__authed_other_authed(self):
+        """
+        An authenticated user can't access an order created by another authenticated user.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        person2 = PersonFactory()
+        order = OrderFactory(event=event, person=person2)
+        request = self.factory.get('/')
+        request.user = person
+        with self.assertRaises(SuspiciousOperation):
+            Order.objects.for_request(event, request, code=order.code, create=False)
+
+    def test_for_request__authed(self):
+        """
+        An authenticated user will automatically get their own order
+        if no code is provided.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        order = OrderFactory(event=event, person=person)
+        request = self.factory.get('/')
+        request.user = person
+        fetched, created = Order.objects.for_request(event, request, code=None, create=False)
+        self.assertFalse(created)
+        self.assertEqual(fetched, order)
+
+    def test_for_request__session__anon_anon(self):
+        """
+        An anonymous user can have their order stored in the session.
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event, person=None)
+        request = self.factory.get('/')
+        self._add_session(request)
+        Order.objects._set_session_code(request, event, order.code)
+        request.user = AnonymousUser()
+
+        fetched, created = Order.objects.for_request(event, request, code=None, create=False)
+        self.assertFalse(created)
+        self.assertEqual(fetched, order)
+
+    def test_for_request__session__authed_anon(self):
+        """
+        An authenticated user can claim a session-stored order.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        order = OrderFactory(event=event, person=None)
+        request = self.factory.get('/')
+        self._add_session(request)
+        Order.objects._set_session_code(request, event, order.code)
+        request.user = person
+
+        fetched, created = Order.objects.for_request(event, request, code=None, create=False)
+        self.assertFalse(created)
+        self.assertEqual(fetched, order)
+        self.assertEqual(fetched.person_id, person.id)
+
+    def test_for_request__session__authed_anon__with_order(self):
+        """
+        An authenticated user's own order will take precedence over
+        a session order.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        order = OrderFactory(event=event, person=None)
+        order2 = OrderFactory(event=event, person=person)
+        request = self.factory.get('/')
+        self._add_session(request)
+        Order.objects._set_session_code(request, event, order.code)
+        request.user = person
+
+        fetched, created = Order.objects.for_request(event, request, code=None, create=False)
+        self.assertFalse(created)
+        self.assertEqual(fetched, order2)
+
+    def test_for_request__create__anon(self):
+        """
+        An anonymous user will get a new order back if no code is provided
+        and no session code is available, but create is True.
+        """
+        event = EventFactory()
+        request = self.factory.get('/')
+        request.user = AnonymousUser()
+        self._add_session(request)
+        fetched, created = Order.objects.for_request(event, request, code=None, create=True)
+        self.assertTrue(created)
+        self.assertEqual(fetched.code, Order.objects._get_session_code(request, event))
+        self.assertIsNone(fetched.person)
+
+    def test_for_request__create__authed(self):
+        """
+        An authenticated user will get a new order back if no code is provided
+        and no session code is available, but create is True.
+        """
+        event = EventFactory()
+        person = PersonFactory()
+        request = self.factory.get('/')
+        request.user = person
+        self._add_session(request)
+        fetched, created = Order.objects.for_request(event, request, code=None, create=True)
+        self.assertTrue(created)
+        self.assertIsNone(Order.objects._get_session_code(request, event))
+        self.assertEqual(fetched.person_id, person.id)

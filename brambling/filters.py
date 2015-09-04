@@ -75,9 +75,6 @@ class AttendeeFilterSet(django_filters.FilterSet):
     FilterSet for attendees of an event. Requires the event as its first argument.
 
     """
-    has_cart_items = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID])
-    has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT)
-    has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED)
 
     def __init__(self, event, *args, **kwargs):
         "Limit the Item Option list to items belonging to this event."

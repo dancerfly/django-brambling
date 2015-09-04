@@ -1,0 +1,80 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+	{% url "brambling_invite_accept" code=invite.code as url %}
+	<table class='container'>
+		<tr>
+			<td>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p class='lede'>
+											You've been offered an item transfer!
+										</p>
+
+										<p>{% with event=content.order.event %}
+											{% if invite.user %}{{ invite.user.given_name }}{% else %}{{ content.order.email }}{% endif %}
+											wants to transfer the folowing item to you for <a href="{{ protocol }}://{{ site.domain }}{% url 'brambling_event_root' organization_slug=event.organization.slug event_slug=event.slug %}">{{ event.name }}</a>: <strong>{{ content.item_option_name }} ({{ content.item_name }})</strong>!
+										{% endwith %}</p>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+							<table class='six columns'>
+								<tr>
+									<td>
+										<table class='button success radius'>
+											<tr>
+												<td>
+													<a href="{{ protocol }}://{{ site.domain }}{{ url }}">
+														Accept this transfer
+													</a>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper last'>
+
+							<table class="twelve columns">
+								<tr>
+									<td>
+										<p>Happy dancing!</p>
+
+										<p class='lede'>The Dancerfly Team</p>
+
+										<p>P.S. If the button's not working for you, you can also accept your transfer
+											by copy-pasting the following link into your browser's URL bar:</p>
+										<p>{{ protocol }}://{{ site.domain }}{{ url }}</p>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+			</td>
+		</tr>
+	</table>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'brambling/event/order/__base.html' %}
+
+{% load floppyforms %}
+
+{% block title %}Transfer item – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{% with next_step=1 %}
+		{{ block.super }}
+	{% endwith %}
+
+	<div class='row'>
+		<div class='col-xs-6 col-xs-offset-3'>
+			<p>
+				Clicking the "Transfer it!" button will send a confirmation link to the specified email address. Once the recipient accepts the transfer, it cannot be undone.
+			</p>
+			<p>
+				If transferring an item leaves an attendee with no items, that attendee will be removed from your order.
+			</p>
+
+			<form method='post' action=''>
+				{% csrf_token %}
+				{% form form using %}
+					{% formrow form.bought_item with label="Item to transfer" %}
+					{% formrow form.email with label="Send item to..." help_text="Email address" %}
+				{% endform %}
+
+				<button type='submit' class='btn btn-success'>Transfer it!</button>
+
+				{% if code_in_url %}
+					{% url "brambling_event_order_summary" event_slug=event.slug organization_slug=event.organization.slug code=order.code as cancel_url %}
+				{% else %}
+					{% url "brambling_event_order_summary" event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
+				{% endif %}
+
+				<a href='{{ cancel_url }}' class='btn btn-link'>
+					Wait, never mind
+				</a>
+			</form>
+		</div>
+	</div>
+{% endblock %}

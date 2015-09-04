@@ -61,7 +61,9 @@
 									{% if items %}
 										<ul class='list-group'>
 											{% for item in items %}
-												<li class='list-group-item'>{{ item.item_option_name }} ({{ item.item_name }})</li>
+												{% if item.status == item.RESERVED or item.status == item.UNPAID or item.status == item.BOUGHT %}
+													<li class='list-group-item'>{{ item.item_option_name }} ({{ item.item_name }})</li>
+												{% endif %}
 											{% endfor %}
 										</ul>
 									{% endif %}

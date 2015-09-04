@@ -10,7 +10,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem,
-                              Order, Event, CustomForm)
+                              Order, Event, CustomForm, Invite)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
                                      stripe_prep, stripe_charge)
@@ -62,14 +62,15 @@ class AttendeeBasicDataForm(CustomDataForm):
         self.fields['liability_waiver'].required = True
         items = self.order.bought_items.filter(
             Q(attendee__isnull=True) | Q(attendee=self.instance)
-        ).exclude(status=BoughtItem.REFUNDED)
+        ).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED))
         self.has_items = bool(items)
         if self.has_items:
             self.fields['items'].queryset = items
             if self.instance.pk:
-                self.fields['items'].initial = self.order.bought_items.filter(
-                    attendee=self.instance
-                ).exclude(status=BoughtItem.REFUNDED)
+                self.fields['items'].initial = [
+                    item for item in items
+                    if item.attendee_id == self.instance.pk
+                ]
             else:
                 self.fields['items'].initial = items
         else:
@@ -587,3 +588,28 @@ class CheckPaymentForm(BasePaymentForm):
             api_type=self.api_type,
             event=self.order.event
         )
+
+
+class TransferForm(forms.Form):
+    email = forms.EmailField()
+    bought_item = forms.ModelChoiceField(BoughtItem)
+
+    def __init__(self, order, *args, **kwargs):
+        super(TransferForm, self).__init__(*args, **kwargs)
+        self.order = order
+        self.fields['bought_item'].queryset = order.bought_items.filter(
+            status=BoughtItem.BOUGHT,
+        )
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        order_email = self.order.person.email if self.order.person else self.order.email
+        if email == order_email:
+            raise ValidationError("You can't transfer an item to yourself!")
+        return email
+
+    def clean_boughtitem(self):
+        bought_item = self.cleaned_data['bought_item']
+        if Invite.objects.filter(kind=Invite.TRANSFER, content_id=bought_item.pk).exists():
+            raise ValidationError("A transfer has already been initiated for this item.")
+        return bought_item

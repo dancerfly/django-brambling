@@ -1,13 +1,15 @@
 from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
 from brambling.models import (Event, BoughtItem, Invite, Order, Person,
-                              Organization)
+                              Organization, Transaction)
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
@@ -66,7 +68,7 @@ class DashboardView(TemplateView):
             # So you've paid for something, even if it was later refunded.
             past_events = Event.objects.filter(
                 order__person=user,
-                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED),
+                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
             ).filter(start_date__lt=today).order_by('-start_date').distinct()
             context.update({
                 'upcoming_events_interest': upcoming_events_interest,
@@ -85,27 +87,19 @@ class InviteAcceptView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         try:
-            invite = Invite.objects.get(code=kwargs['code'])
+            self.invite = Invite.objects.get(code=kwargs['code'])
         except Invite.DoesNotExist:
-            invite = None
+            self.invite = None
+            self.content = None
         else:
-            if request.user.is_authenticated() and request.user.email == invite.email:
+            self.content = self.invite.get_content()
+            if request.user.is_authenticated() and request.user.email == self.invite.email:
                 if request.user.confirmed_email != request.user.email:
                     request.user.confirmed_email = request.user.email
                     request.user.save()
-                content = invite.get_content()
-                if invite.kind == Invite.EVENT:
-                    content.create_order(request.user)
-                    url = reverse('brambling_event_shop', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
-                elif invite.kind == Invite.EVENT_EDITOR:
-                    content.additional_editors.add(request.user)
-                    url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
-                elif invite.kind == Invite.ORGANIZATION_EDITOR:
-                    content.editors.add(request.user)
-                    url = reverse('brambling_organization_update', kwargs={'organization_slug': content.slug})
-                invite.delete()
-                return HttpResponseRedirect(url)
-        self.invite = invite
+                self.handle_invite()
+                self.invite.delete()
+                return HttpResponseRedirect(self.get_success_url())
         return super(InviteAcceptView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -114,9 +108,15 @@ class InviteAcceptView(TemplateView):
             invited_person_exists = Person.objects.filter(email=self.invite.email).exists()
         else:
             invited_person_exists = False
+        if self.invite.user:
+            sender_display = self.invite.user.get_full_name()
+        elif self.invite.kind == Invite.TRANSFER:
+            sender_display = self.content.order.email
         context.update({
             'invite': self.invite,
+            'content': self.content,
             'invited_person_exists': invited_person_exists,
+            'sender_display': sender_display,
             'signup_form': SignUpForm(self.request),
             'login_form': FloppyAuthenticationForm(),
         })
@@ -125,57 +125,199 @@ class InviteAcceptView(TemplateView):
             context['login_form'].initial['username'] = self.invite.email
         return context
 
+    def handle_invite(self):
+        invite = self.invite
+        content = self.content
+        if invite.kind == Invite.EVENT:
+            content.create_order(self.request.user)
+        elif invite.kind == Invite.EVENT_EDITOR:
+            content.additional_editors.add(self.request.user)
+        elif invite.kind == Invite.ORGANIZATION_EDITOR:
+            content.editors.add(self.request.user)
+        elif invite.kind == Invite.TRANSFER:
+            if content.status != BoughtItem.BOUGHT:
+                invite.delete()
+                messages.error(self.request, "Item can no longer be transferred, sorry.")
+                self.order = content
+                return
 
-class InviteSendView(View):
+            # Complete the transfer!
+            # Step one: Create a transaction for the transfer on the
+            # initiator's side.
+            from_txn = Transaction.objects.create(
+                transaction_type=Transaction.TRANSFER,
+                amount=0,
+                method=Transaction.NONE,
+                application_fee=0,
+                processing_fee=0,
+                is_confirmed=True,
+                api_type=content.order.event.api_type,
+                order=content.order,
+                event=content.order.event,
+                related_transaction=content.transactions.get(transaction_type=Transaction.PURCHASE),
+            )
+
+            # Add the item being transferred to the txn.
+            from_txn.bought_items.add(content)
+
+            # Mark the item as transferred.
+            content.status = BoughtItem.TRANSFERRED
+            content.save()
+
+            # Step two: get or create an order for the current user.
+            self.order = order = Order.objects.for_request(
+                request=self.request,
+                event=content.order.event,
+                create=True
+            )[0]
+
+            # Step three: Clone the BoughtItem!
+            new_item = BoughtItem.objects.create(
+                order=order,
+                status=BoughtItem.BOUGHT,
+                price=content.price,
+                item_option=content.item_option,
+                item_name=content.item_name,
+                item_description=content.item_description,
+                item_option_name=content.item_option_name,
+            )
+
+            # Step four: Create a transaction on the recipient's side!
+            to_txn = Transaction.objects.create(
+                transaction_type=Transaction.TRANSFER,
+                amount=0,
+                method=Transaction.NONE,
+                application_fee=0,
+                processing_fee=0,
+                is_confirmed=True,
+                api_type=order.event.api_type,
+                order=order,
+                event=order.event,
+                related_transaction=from_txn,
+            )
+
+            # Step five: Add the BoughtItem to the txn!
+            to_txn.bought_items.add(new_item)
+
+            # Step six: Check if the attendee should be deleted!
+            # I.e. if they don't have any items assigned to them
+            # which haven't been refunded or transferred.
+            if content.attendee:
+                if not content.attendee.bought_items.exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
+                    content.attendee.delete()
+        else:
+            raise Http404("Unhandled transaction type.")
+
+    def get_success_url(self):
+        invite = self.invite
+        content = self.content
+        if invite.kind == Invite.EVENT:
+            return reverse('brambling_event_shop', kwargs={
+                'event_slug': content.slug,
+                'organization_slug': content.organization.slug
+            })
+        elif invite.kind == Invite.EVENT_EDITOR:
+            return reverse('brambling_event_update', kwargs={
+                'event_slug': content.slug,
+                'organization_slug': content.organization.slug
+            })
+        elif invite.kind == Invite.ORGANIZATION_EDITOR:
+            return reverse('brambling_organization_update', kwargs={
+                'organization_slug': content.slug
+            })
+        elif invite.kind == Invite.TRANSFER:
+            event = self.order.event
+            return reverse('brambling_event_order_summary', kwargs={
+                'organization_slug': event.organization.slug,
+                'event_slug': event.slug,
+            })
+
+
+class InviteManageView(View):
     def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        self.invite = get_object_or_404(Invite, code=kwargs['code'])
+        self.content = self.invite.get_content()
+        if not self.has_permission():
             raise Http404
-        invite = Invite.objects.get(code=kwargs['code'])
-        content = invite.get_content()
+
+        self.do_the_thing()
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def has_permission(self):
+        invite = self.invite
+        content = self.content
         if invite.kind == Invite.EVENT:
             if not content.organization.editable_by(self.request.user):
-                raise Http404
-            url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
+                return False
         elif invite.kind == Invite.EVENT_EDITOR:
+            if not self.request.user.is_authenticated():
+                return False
             if not content.organization.editable_by(self.request.user):
-                raise Http404
-            url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
+                return False
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
+            if not self.request.user.is_authenticated():
+                return False
             if content.owner_id != self.request.user.pk:
-                raise Http404
-            url = reverse('brambling_organization_update_permissions', kwargs={'organization_slug': content.slug})
+                return False
+        elif invite.kind == Invite.TRANSFER:
+            try:
+                order = Order.objects.for_request(
+                    request=self.request,
+                    event=content.order.event,
+                    create=False,
+                )[0]
+            except (SuspiciousOperation, Order.DoesNotExist):
+                return False
+
+            if order != content:
+                return False
+        return True
+
+    def get_success_url(self):
+        invite = self.invite
+        content = self.content
+        if invite.kind == Invite.EVENT:
+            return reverse('brambling_event_update', kwargs={
+                'event_slug': content.slug,
+                'organization_slug': content.organization.slug
+            })
+        elif invite.kind == Invite.EVENT_EDITOR:
+            return reverse('brambling_event_update', kwargs={
+                'event_slug': content.slug,
+                'organization_slug': content.organization.slug
+            })
+        elif invite.kind == Invite.ORGANIZATION_EDITOR:
+            return reverse('brambling_organization_update_permissions', kwargs={
+                'organization_slug': content.slug
+            })
+        elif invite.kind == Invite.TRANSFER:
+            event = content.order.event
+            return reverse('brambling_event_order_summary', kwargs={
+                'organization_slug': event.organization.slug,
+                'event_slug': event.slug,
+            })
         else:
             raise Http404
-        invite.send(
-            content=content,
-            secure=request.is_secure(),
-            site=get_current_site(request),
+
+    def do_the_thing(self):
+        raise NotImplementedError("Must be implemented by subclasses")
+
+
+class InviteSendView(InviteManageView):
+    def do_the_thing(self):
+        self.invite.send(
+            content=self.content,
+            secure=self.request.is_secure(),
+            site=get_current_site(self.request),
         )
-        messages.success(request, "Invitation sent to {}.".format(invite.email))
-        return HttpResponseRedirect(url)
+        messages.success(self.request, "Invitation sent to {}.".format(self.invite.email))
 
 
-class InviteDeleteView(View):
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated():
-            raise Http404
-        invite = Invite.objects.get(code=kwargs['code'])
-        content = invite.get_content()
-        if invite.kind == Invite.EVENT:
-            if not content.organization.editable_by(self.request.user):
-                raise Http404
-            url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
-        elif invite.kind == Invite.EVENT_EDITOR:
-            if not content.organization.editable_by(self.request.user):
-                raise Http404
-            url = reverse('brambling_event_update', kwargs={'event_slug': content.slug, 'organization_slug': content.organization.slug})
-        elif invite.kind == Invite.ORGANIZATION_EDITOR:
-            if content.owner_id != self.request.user.pk:
-                raise Http404
-            url = reverse('brambling_organization_update_permissions', kwargs={'organization_slug': content.slug})
-        invite.delete()
-        messages.success(request, "Invitation for {} canceled.".format(invite.email))
-        return HttpResponseRedirect(url)
+class InviteDeleteView(InviteManageView):
+    def do_the_thing(self):
+        self.invite.delete()
+        messages.success(self.request, "Invitation for {} canceled.".format(self.invite.email))
 
 
 class ExceptionView(View):
