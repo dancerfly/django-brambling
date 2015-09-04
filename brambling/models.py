@@ -823,7 +823,7 @@ class OrderManager(models.Manager):
         # Next, check if there's a session-stored order. Assign it
         # if the order hasn't checked out yet and the user is authenticated.
         if order is None:
-            code = self._get_session_code(self.request, event)
+            code = self._get_session_code(request, event)
             if code:
                 try:
                     order = Order.objects.get(
