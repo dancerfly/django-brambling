@@ -15,10 +15,10 @@ from zenaida.templatetags.zenaida import format_money
 import six
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
-from brambling.models import Attendee, Order
+from brambling.models import Attendee, Order, BoughtItem
 
 
-__all__ = ('comma_separated_manager', 'ModelTable',
+__all__ = ('related_objects_list', 'ModelTable',
            'AttendeeTable')
 
 
@@ -38,7 +38,7 @@ class Echo(object):
         return value
 
 
-def comma_separated_manager(attr_name):
+def related_objects_list(attr_name):
     """
     Returns a function which takes a M2M manager on an object and
     returns it as a comma separated string.
@@ -47,7 +47,7 @@ def comma_separated_manager(attr_name):
 
     def inner(self, obj):
         manager = getattr(obj, attr_name)
-        return ", ".join([unicode(x) for x in manager.all()])
+        return manager.all()
     inner.short_description = pretty_name(attr_name)
     return inner
 
@@ -64,8 +64,8 @@ class Cell(object):
 
         """
 
-        if hasattr(self.value, '__iter__'):
-            return  u", ".join([unicode(x) for x in self.value])
+        if self.is_iterable():
+            return u"\n".join([unicode(x) for x in self.value])
         return unicode(self.value)
 
     def __repr__(self):
@@ -73,6 +73,9 @@ class Cell(object):
 
     def is_boolean(self):
         return isinstance(self.value, bool)
+
+    def is_iterable(self):
+        return hasattr(self.value, '__iter__')
 
 
 class Row(object):
@@ -391,7 +394,7 @@ class AttendeeTable(CustomDataTable):
         ('Identification',
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
         ('Status',
-         ('cart_items', 'purchased_items', 'refunded_items')),
+         ('items',)),
         ('Contact',
          ('email', 'phone')),
         ('Housing',
@@ -442,6 +445,7 @@ class AttendeeTable(CustomDataTable):
 
     def _add_data(self, queryset, fields):
         use_distinct = False
+        queryset = queryset.select_related('bought_items')
         for field in fields:
             if field.startswith('custom_'):
                 queryset = queryset.prefetch_related('custom_data')
@@ -461,30 +465,6 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.annotate(
                     order_balance=Sum('order__transactions__amount')
                 )
-            elif field == 'cart_items':
-                queryset = queryset.extra(select={
-                    'cart_items': """
-                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                        brambling_boughtitem.attendee_id = brambling_attendee.id AND
-                        brambling_boughtitem.status IN ('reserved', 'unpaid')
-                    """,
-                })
-            elif field == 'purchased_items':
-                queryset = queryset.extra(select={
-                    'purchased_items': """
-                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                        brambling_boughtitem.attendee_id = brambling_attendee.id AND
-                        brambling_boughtitem.status = 'bought'
-                    """,
-                })
-            elif field == 'refunded_items':
-                queryset = queryset.extra(select={
-                    'refunded_items': """
-                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                        brambling_boughtitem.attendee_id = brambling_attendee.id AND
-                        brambling_boughtitem.status = 'refunded'
-                    """,
-                })
         return queryset, use_distinct
 
     # Methods to be used as fields
@@ -500,10 +480,14 @@ class AttendeeTable(CustomDataTable):
     def order_balance(self, obj):
         return format_money(obj.order_balance or 0, self.event.currency)
 
-    housing_nights = comma_separated_manager("nights")
-    housing_preferences = comma_separated_manager("housing_prefer")
-    environment_avoid = comma_separated_manager("ef_avoid")
-    environment_cause = comma_separated_manager("ef_cause")
+    housing_nights = related_objects_list("nights")
+    housing_preferences = related_objects_list("housing_prefer")
+    environment_avoid = related_objects_list("ef_avoid")
+    environment_cause = related_objects_list("ef_cause")
+
+    def items(self, obj):
+        return ["{} ({})".format(x.item_option_name, x.item_name)
+                for x in obj.bought_items.filter(status=BoughtItem.BOUGHT)]
 
 
 class OrderTable(CustomDataTable):
@@ -712,7 +696,7 @@ class OrderTable(CustomDataTable):
     def get_eventhousing_csm(self, obj, name):
         eventhousing = obj.get_eventhousing()
         if eventhousing:
-            return comma_separated_manager(name)(self, eventhousing)
+            return related_objects_list(name)(self, eventhousing)
         return ''
 
     def ef_present(self, obj):
