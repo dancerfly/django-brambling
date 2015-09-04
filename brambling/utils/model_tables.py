@@ -47,7 +47,7 @@ def related_objects_list(attr_name):
 
     def inner(self, obj):
         manager = getattr(obj, attr_name)
-        return [x for x in manager.all()]
+        return manager.all()
     inner.short_description = pretty_name(attr_name)
     return inner
 
