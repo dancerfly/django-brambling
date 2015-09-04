@@ -26,6 +26,7 @@ from brambling.views.orders import (
     HostingView,
     OrderEmailView,
     SummaryView,
+    TransferView,
     RactiveShopView,
 )
 from brambling.views.core import (
@@ -130,6 +131,9 @@ order_urlpatterns = patterns('',
     url(r'^dwolla_connect/$',
         OrderDwollaConnectView.as_view(),
         name="brambling_order_dwolla_connect"),
+    url(r'^transfer/$',
+        TransferView.as_view(),
+        name="brambling_event_order_transfer"),
 )
 
 
@@ -138,7 +142,8 @@ event_urlpatterns = patterns('',
         RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
         name="brambling_event_root"),
 
-    url(r'^order/(?:(?P<code>[a-zA-Z0-9]{8})/)?', include(order_urlpatterns)),
+    url(r'^order/', include(order_urlpatterns)),
+    url(r'^order/(?P<code>[a-zA-Z0-9]{8})/', include(order_urlpatterns)),
     url(r'^summary/$',
         EventSummaryView.as_view(),
         name="brambling_event_summary"),
@@ -331,6 +336,7 @@ urlpatterns = patterns('',
     url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind=Invite.EVENT)),
     url(r'^mail/invite_event_editor/$', InvitePreviewView.as_view(kind=Invite.EVENT_EDITOR)),
     url(r'^mail/invite_org_editor/$', InvitePreviewView.as_view(kind=Invite.ORGANIZATION_EDITOR)),
+    url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind=Invite.TRANSFER)),
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 

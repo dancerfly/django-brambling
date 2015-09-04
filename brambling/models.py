@@ -9,6 +9,7 @@ from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
@@ -410,6 +411,7 @@ class Event(models.Model):
                                                   "document. I am aware that it is legally binding and I accept it out "
                                                   "of my own free will."), help_text=_("'{event}' and '{organization}' will be automatically replaced with your event and organization names respectively when users are presented with the waiver."))
 
+    transfers_allowed = models.BooleanField(default=True, help_text="Whether users can transfer items directly to other users.")
     privacy = models.CharField(max_length=11, choices=PRIVACY_CHOICES,
                                default=PUBLIC)
     is_published = models.BooleanField(default=False)
@@ -517,20 +519,6 @@ class Event(models.Model):
             for n in xrange((self.end_date - self.start_date).days + 2)
         ]
 
-    def create_order(self, user):
-        """
-        Creates an order for this person and event. Be sure to check
-        for an existing order *first*, as this method doesn't.
-        """
-        person = user if user and user.is_authenticated() else None
-        while True:
-            code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
-
-            if not Order.objects.filter(event=self, code=code).exists():
-                break
-
-        return Order.objects.create(event=self, code=code, person=person)
-
 
 class Item(models.Model):
     name = models.CharField(max_length=30, help_text="Full pass, dance-only pass, T-shirt, socks, etc.")
@@ -579,7 +567,7 @@ class ItemOption(models.Model):
     @property
     def remaining(self):
         if not hasattr(self, 'taken'):
-            self.taken = self.boughtitem_set.exclude(status=BoughtItem.REFUNDED).count()
+            self.taken = self.boughtitem_set.exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).count()
         return self.total_number - self.taken
 
 
@@ -756,6 +744,126 @@ class CreditCard(models.Model):
         return self.ICONS.get(self.brand, 'credit-card')
 
 
+class OrderManager(models.Manager):
+    _session_key = '_brambling_order_code'
+
+    def _get_session(self, request):
+        return request.session.get(self._session_key, {})
+
+    def _set_session_code(self, request, event, code):
+        session_orders = self._get_session(request)
+        session_orders[str(event.pk)] = code
+        request.session[self._session_key] = session_orders
+
+    def _get_session_code(self, request, event):
+        session_orders = self._get_session(request)
+        if str(event.pk) in session_orders:
+            return session_orders[str(event.pk)]
+        return None
+
+    def _delete_session_code(self, request, event):
+        session_orders = self._get_session(request)
+        if str(event.pk) in session_orders:
+            del session_orders[str(event.pk)]
+            request.session[self._session_key] = session_orders
+
+    def _can_assign(self, order, user):
+        # An order can be auto-assigned if:
+        # 1. It doesn't have a person.
+        # 2. User is authenticated
+        # 3. User doesn't have an order for the event yet.
+        # 4. Order hasn't checked out yet.
+        if order.person_id is not None:
+            return False
+
+        if not user.is_authenticated():
+            return False
+
+        if Order.objects.filter(person=user, event=order.event_id).exists():
+            return False
+
+        if order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
+            return False
+
+        return True
+
+    def for_request(self, event, request, code=None, create=True):
+        order = None
+        created = False
+
+        # First, if there is an explicit code, pull that item.
+        # If it belongs to a user and that user is not logged in,
+        # raise a SuspiciousOperation.
+        if code:
+            # May raise DoesNotExist.
+            order = Order.objects.get(event=event, code=code)
+            if order.person:
+                if order.person != request.user:
+                    raise SuspiciousOperation
+            elif request.user.is_authenticated():
+                # If the order is unclaimed and the current user
+                # is authenticated, either assign it or object.
+                if self._can_assign(order, request.user):
+                    order.person = request.user
+                    order.save()
+                else:
+                    # Raise a DoesNotExist because code is explicit.
+                    raise Order.DoesNotExist
+
+        # Next, check if the user is authenticated and has an order for this event.
+        if order is None and request.user.is_authenticated():
+            try:
+                order = Order.objects.get(
+                    event=event,
+                    person=request.user,
+                )
+            except Order.DoesNotExist:
+                pass
+
+        # Next, check if there's a session-stored order. Assign it
+        # if the order hasn't checked out yet and the user is authenticated.
+        if order is None:
+            code = self._get_session_code(request, event)
+            if code:
+                try:
+                    order = Order.objects.get(
+                        event=event,
+                        person__isnull=True,
+                        code=code,
+                    )
+                except Order.DoesNotExist:
+                    pass
+                else:
+                    if self._can_assign(order, request.user):
+                        order.person = request.user
+                        order.save()
+                    elif request.user.is_authenticated():
+                        order = None
+
+        if order is None and create:
+            # Okay, then create for this user.
+            created = True
+            person = request.user if request.user and request.user.is_authenticated() else None
+            while True:
+                code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
+
+                if not Order.objects.filter(event=event, code=code).exists():
+                    break
+
+            order = Order.objects.create(event=event, code=code, person=person)
+
+            if not request.user.is_authenticated():
+                self._set_session_code(request, event, order.code)
+
+        if order is None:
+            raise Order.DoesNotExist
+
+        if order.cart_is_expired():
+            order.delete_cart()
+
+        return order, created
+
+
 class Order(AbstractDwollaModel):
     """
     This model represents metadata connecting an event and a person.
@@ -813,6 +921,8 @@ class Order(AbstractDwollaModel):
 
     # Admin-only data
     notes = models.TextField(blank=True)
+
+    objects = OrderManager()
 
     class Meta:
         unique_together = ('event', 'code')
@@ -1014,13 +1124,15 @@ class Transaction(models.Model):
     CASH = 'cash'
     CHECK = 'check'
     FAKE = 'fake'
+    NONE = 'none'
 
     METHOD_CHOICES = (
         (STRIPE, 'Stripe'),
         (DWOLLA, 'Dwolla'),
         (CASH, 'Cash'),
         (CHECK, 'Check'),
-        (FAKE, 'Fake')
+        (FAKE, 'Fake'),
+        (NONE, 'No balance change'),
     )
 
     LIVE = 'live'
@@ -1032,10 +1144,12 @@ class Transaction(models.Model):
 
     PURCHASE = 'purchase'
     REFUND = 'refund'
+    TRANSFER = 'transfer'
     OTHER = 'other'
     TRANSACTION_TYPE_CHOICES = (
         (PURCHASE, _('Purchase')),
         (REFUND, _('Refunded purchase')),
+        (TRANSFER, _('Transfer')),
         (OTHER, _('Other')),
     )
 
@@ -1224,11 +1338,13 @@ class BoughtItem(models.Model):
     UNPAID = 'unpaid'
     BOUGHT = 'bought'
     REFUNDED = 'refunded'
+    TRANSFERRED = 'transferred'
     STATUS_CHOICES = (
         (RESERVED, _('Reserved')),
         (UNPAID, _('Unpaid')),
         (BOUGHT, _('Bought')),
         (REFUNDED, _('Refunded')),
+        (TRANSFERRED, _('Transferred')),
     )
     item_option = models.ForeignKey(ItemOption, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order, related_name='bought_items')
@@ -1525,17 +1641,19 @@ class Invite(models.Model):
     EVENT = 'event'
     EVENT_EDITOR = 'editor'
     ORGANIZATION_EDITOR = 'org_editor'
+    TRANSFER = 'transfer'
     KIND_CHOICES = (
         (EVENT, _('Event')),
         (EVENT_EDITOR, _("Event Editor")),
         (ORGANIZATION_EDITOR, _("Organization Editor")),
+        (TRANSFER, _("Transfer")),
     )
 
     objects = InviteManager()
     code = models.CharField(max_length=20, unique=True)
     email = models.EmailField()
     #: User who sent the invitation.
-    user = models.ForeignKey(Person)
+    user = models.ForeignKey(Person, blank=True, null=True)
     is_sent = models.BooleanField(default=False)
     kind = models.CharField(max_length=10, choices=KIND_CHOICES)
     content_id = models.IntegerField()
@@ -1563,6 +1681,8 @@ class Invite(models.Model):
             model = Event
         elif self.kind == Invite.ORGANIZATION_EDITOR:
             model = Organization
+        elif self.kind == Invite.TRANSFER:
+            model = BoughtItem
         else:
             raise ValueError('Unknown kind.')
         return model.objects.get(pk=self.content_id)
