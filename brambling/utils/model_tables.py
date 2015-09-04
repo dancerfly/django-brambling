@@ -6,7 +6,7 @@ from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
                                         label_for_field)
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Min
 from django.forms.forms import pretty_name
 from django.utils.datastructures import SortedDict
 from django.utils.text import capfirst
@@ -494,7 +494,7 @@ class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
          ('code', 'person', 'balance', 'cart_items',
-          'purchased_items', 'refunded_items')),
+          'purchased_items', 'refunded_items', 'completed_date')),
     )
     survey_fieldsets = (
         ('Survey',
@@ -636,6 +636,10 @@ class OrderTable(CustomDataTable):
                         brambling_boughtitem.status = 'refunded'
                     """,
                 })
+            elif field == 'completed_date':
+                queryset = queryset.annotate(
+                    completed_date=Min('transactions__timestamp'),
+                )
         return queryset, use_distinct
 
     def send_flyers_full_address(self, obj):
@@ -713,3 +717,9 @@ class OrderTable(CustomDataTable):
 
     def balance(self, obj):
         return format_money(obj.balance or 0, self.event.currency)
+
+    def completed_date(self, obj):
+        if obj.completed_date:
+            return obj.completed_date.strftime("%Y-%m-%d %H:%M")
+        else:
+            return "n/a"
