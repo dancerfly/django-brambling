@@ -482,7 +482,7 @@ def item_form(request, *args, **kwargs):
     if not event.editable_by(request.user):
         raise Http404
     if 'pk' in kwargs:
-        item = get_object_or_404(Item, pk=kwargs['pk'])
+        item = get_object_or_404(Item, pk=kwargs['pk'], event=event)
     else:
         item = Item()
     if request.method == 'POST':
