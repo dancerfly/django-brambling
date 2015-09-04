@@ -394,7 +394,7 @@ class AttendeeTable(CustomDataTable):
         ('Identification',
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
         ('Status',
-         ('items',)),
+         ('items', 'purchase_date')),
         ('Contact',
          ('email', 'phone')),
         ('Housing',
@@ -465,6 +465,10 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.annotate(
                     order_balance=Sum('order__transactions__amount')
                 )
+            elif field == 'purchase_date':
+                queryset = queryset.annotate(
+                    purchase_date=Min('order__transactions__timestamp')
+                )
         return queryset, use_distinct
 
     # Methods to be used as fields
@@ -488,6 +492,12 @@ class AttendeeTable(CustomDataTable):
     def items(self, obj):
         return ["{} ({})".format(x.item_option_name, x.item_name)
                 for x in obj.bought_items.filter(status=BoughtItem.BOUGHT)]
+
+    def purchase_date(self, obj):
+        if obj.purchase_date:
+            return obj.purchase_date.strftime("%Y-%m-%d %H:%M")
+        else:
+            return 'n/a'
 
 
 class OrderTable(CustomDataTable):
