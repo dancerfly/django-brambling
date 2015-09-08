@@ -385,8 +385,7 @@ class Event(models.Model):
     slug = models.SlugField(max_length=50,
                             validators=[RegexValidator("^[a-z0-9-]+$")],
                             help_text="URL-friendly version of the event name."
-                                      " Dashes, 0-9, and lower-case a-z only.",
-                            unique=True)
+                                      " Dashes, 0-9, and lower-case a-z only.")
     description = models.TextField(blank=True)
     website_url = models.URLField(blank=True, verbose_name="website URL")
     facebook_url = models.URLField(blank=True, verbose_name="facebook event URL")
@@ -442,6 +441,9 @@ class Event(models.Model):
     # Internal tracking fields
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('slug', 'organization')
 
     def __unicode__(self):
         return smart_text(self.name)
