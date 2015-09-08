@@ -239,6 +239,14 @@ class EventForm(forms.ModelForm):
             validator(editor)
         return invite_attendees
 
+    def clean_slug(self):
+        slug = self.cleaned_data['slug']
+        if Event.objects.filter(organization=self.organization,
+                                slug=slug).exists():
+            raise ValidationError('Slug already in use by another event, '
+                                  'please choose a different one.')
+        return slug
+
     def clean(self):
         cleaned_data = super(EventForm, self).clean()
         if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
