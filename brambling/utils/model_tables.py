@@ -16,6 +16,7 @@ import six
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
 from brambling.models import Attendee, Order, BoughtItem
+from brambling.utils.timezones import format_as_localtime
 
 
 __all__ = ('related_objects_list', 'ModelTable',
@@ -495,9 +496,10 @@ class AttendeeTable(CustomDataTable):
 
     def purchase_date(self, obj):
         if obj.purchase_date:
-            return obj.purchase_date.strftime("%Y-%m-%d %H:%M")
+            return format_as_localtime(obj.purchase_date, '%Y-%m-%d %H:%M',
+                                       self.event.timezone)
         else:
-            return 'n/a'
+            return 'N/A'
 
 
 class OrderTable(CustomDataTable):
@@ -730,6 +732,7 @@ class OrderTable(CustomDataTable):
 
     def completed_date(self, obj):
         if obj.completed_date:
-            return obj.completed_date.strftime("%Y-%m-%d %H:%M")
+            return format_as_localtime(obj.completed_date, '%Y-%m-%d %H:%M',
+                                       self.event.timezone)
         else:
-            return "n/a"
+            return 'N/A'
