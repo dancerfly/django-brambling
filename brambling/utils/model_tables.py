@@ -6,7 +6,7 @@ from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
                                         label_for_field)
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Min
 from django.forms.forms import pretty_name
 from django.utils.datastructures import SortedDict
 from django.utils.text import capfirst
@@ -16,6 +16,7 @@ import six
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
 from brambling.models import Attendee, Order, BoughtItem
+from brambling.utils.timezones import format_as_localtime
 
 
 __all__ = ('related_objects_list', 'ModelTable',
@@ -394,7 +395,7 @@ class AttendeeTable(CustomDataTable):
         ('Identification',
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
         ('Status',
-         ('items',)),
+         ('items', 'purchase_date')),
         ('Contact',
          ('email', 'phone')),
         ('Housing',
@@ -465,6 +466,10 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.annotate(
                     order_balance=Sum('order__transactions__amount')
                 )
+            elif field == 'purchase_date':
+                queryset = queryset.annotate(
+                    purchase_date=Min('order__transactions__timestamp')
+                )
         return queryset, use_distinct
 
     # Methods to be used as fields
@@ -489,12 +494,19 @@ class AttendeeTable(CustomDataTable):
         return ["{} ({})".format(x.item_option_name, x.item_name)
                 for x in obj.bought_items.filter(status=BoughtItem.BOUGHT)]
 
+    def purchase_date(self, obj):
+        if obj.purchase_date:
+            return format_as_localtime(obj.purchase_date, '%Y-%m-%d %H:%M',
+                                       self.event.timezone)
+        else:
+            return 'N/A'
+
 
 class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
          ('code', 'person', 'balance', 'cart_items',
-          'purchased_items', 'refunded_items')),
+          'purchased_items', 'refunded_items', 'completed_date')),
     )
     survey_fieldsets = (
         ('Survey',
@@ -636,6 +648,10 @@ class OrderTable(CustomDataTable):
                         brambling_boughtitem.status = 'refunded'
                     """,
                 })
+            elif field == 'completed_date':
+                queryset = queryset.annotate(
+                    completed_date=Min('transactions__timestamp'),
+                )
         return queryset, use_distinct
 
     def send_flyers_full_address(self, obj):
@@ -713,3 +729,10 @@ class OrderTable(CustomDataTable):
 
     def balance(self, obj):
         return format_money(obj.balance or 0, self.event.currency)
+
+    def completed_date(self, obj):
+        if obj.completed_date:
+            return format_as_localtime(obj.completed_date, '%Y-%m-%d %H:%M',
+                                       self.event.timezone)
+        else:
+            return 'N/A'

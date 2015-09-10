@@ -2,7 +2,7 @@ import copy
 
 from django.db import models
 from django.utils.datastructures import SortedDict
-from django.utils.text import capfirst
+from django.forms.forms import pretty_name
 from django.utils.translation import ugettext as _
 import django_filters
 import floppyforms.__future__ as forms
@@ -55,7 +55,7 @@ class FloppyFilterSet(django_filters.FilterSet):
                     # e.g. (('field', 'Display name'), ...)
                     choices = [(f[0], f[1]) for f in self._meta.order_by]
                 else:
-                    choices = [(f, _('%s (descending)' % capfirst(f[1:])) if f[0] == '-' else capfirst(f))
+                    choices = [(f, _('%s (descending)' % pretty_name(f[1:])) if f[0] == '-' else pretty_name(f))
                                for f in self._meta.order_by]
             else:
                 # add asc and desc field names
@@ -63,8 +63,8 @@ class FloppyFilterSet(django_filters.FilterSet):
                 choices = []
                 for f, fltr in self.filters.items():
                     choices.extend([
-                        (fltr.name or f, fltr.label or capfirst(f)),
-                        ("-%s" % (fltr.name or f), _('%s (descending)' % (fltr.label or capfirst(f))))
+                        (fltr.name or f, fltr.label or pretty_name(f)),
+                        ("-%s" % (fltr.name or f), _('%s (descending)' % (fltr.label or pretty_name(f))))
                     ])
             return forms.ChoiceField(label="Ordering", required=False,
                                      choices=choices)
@@ -107,7 +107,8 @@ class AttendeeFilterSet(django_filters.FilterSet):
         form = AttendeeFilterSetForm
         fields = ['bought_items__item_option', 'housing_status',
                   'bought_items__discounts__discount']
-        order_by = ['surname', '-surname', 'given_name', '-given_name']
+        order_by = ['surname', '-surname', 'given_name', '-given_name',
+                    '-purchase_date']
 
 
 class OrderFilterSet(FloppyFilterSet):
@@ -119,6 +120,6 @@ class OrderFilterSet(FloppyFilterSet):
         model = Order
         fields = ['providing_housing', 'send_flyers']
         form = forms.Form
-        order_by = ['code', '-code']
+        order_by = ['code', '-code', '-completed_date']
 # Workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145
 forms.MultipleChoiceField.hidden_widget = forms.MultipleHiddenInput

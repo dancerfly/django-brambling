@@ -420,6 +420,7 @@ class AttendeeFilterSetForm(forms.Form):
         ("-surname", "Surname (descending)"),
         ("given_name", "Given Name"),
         ("-given_name", "Given Name (descending)"),
+        ("-purchase_date", "Purchase Date (newest first)"),
     )
     HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES
 
