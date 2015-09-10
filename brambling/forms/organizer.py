@@ -241,8 +241,12 @@ class EventForm(forms.ModelForm):
 
     def clean_slug(self):
         slug = self.cleaned_data['slug']
-        if Event.objects.filter(organization=self.organization,
-                                slug=slug).exists():
+        events = Event.objects.filter(organization=self.organization,
+                                      slug=slug)
+        if self.instance.pk is not None:
+            events = events.exclude(id=self.instance.pk)
+
+        if events.exists():
             raise ValidationError('Slug already in use by another event, '
                                   'please choose a different one.')
         return slug
