@@ -1,10 +1,23 @@
 {% extends 'brambling/layouts/12.html' %}
 
+{% load staticfiles %}
+
 {% block title %}500 Error – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<h1>500 errors is a lot of errors.</h1>
-	<p>Let us know you got here? You can use the feedback tool in the lower right.</p>
-	<p>We look forward to hearing from you. Perferably about things that aren't errors. But, you know, we want to hear about the errors, too.</p>
-{% endblock main %}
+<div class='row'>
+	<div class='col-xs-6 col-xs-offset-3'>
+		<h1>500 Error</h1>
+		<p>Seems like an error has occurred. But don't worry, here's what you can do about it:</p>
+		<ul>
+			<li>Unless you were submitting a form, try reloading the page. Maybe it was a temporary glitch?</li>
+			<li>Let us know how you got here! Help us fix this error by emailing <a href="mailto:support@dancerfly.com">support@dancerfly.com</a> or using the feedback tool in the lower right.</li>
+			<li>If all else fails, try going to the <a href="/">Dancerfly homepage</a> and finding your way from there.</li>
+		</ul>
 
+		<p>We look forward to hearing from you. Preferably about things that aren't errors. But, you know, we want to hear about the errors, too. ;-)</p>
+	</div>
+</div>
+
+<img src='{% static "brambling/images/all-dancers.gif" %}' class='full-width'>
+{% endblock main %}

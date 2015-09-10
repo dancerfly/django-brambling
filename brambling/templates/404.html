@@ -1,9 +1,28 @@
 {% extends 'brambling/layouts/12.html' %}
 
+{% load staticfiles %}
+
 {% block title %}404 Error – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<h1>404 errors, all in a line</h1>
-	<p>All of them good ones, all of them lies.</p>
-{% endblock main %}
+<div class='row'>
+	<div class='col-xs-6 col-xs-offset-3'>
+		<h1>404 Not Found</h1>
+		<p>Uh oh! No page was found at:</p>
+		<pre id="url"></pre>
 
+		<p>But don't panic, try one of these:</p>
+		<ul>
+			<li><a href="/">Visit the Dancerfly homepage</a></li>
+			<li><a href="javascript: history.go(-1)">Go back to the page that sent you here</a></li>
+			<li><a href="mailto:support@dancerfly.com" >Email Dancerfly for help</a> or use the feedback tool in the lower right.</li>
+		</ul>
+	</div>
+</div>
+
+<img src='{% static "brambling/images/all-dancers.gif" %}' class='full-width'>
+
+<script type="text/javascript">
+ document.getElementById("url").innerHTML = window.location.href;
+</script>
+{% endblock main %}
