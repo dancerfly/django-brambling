@@ -13,13 +13,26 @@
 	{{ event.start_date }}
 {% endif %}
 
-{% if event.start_time %}
-	at {{ event.start_time }}
-{% endif %}
+{% if event.start_date == event.end_date %}
+	{% if event.start_time and event.end_time %}
+		<br />{{ event.start_time }} &#8211; {{ event.end_time }}
+	{% elif event.start_time %}
+		at {{ event.start_time }}
+	{% elif event.end_time %}
+		until {{ event.end_time }}
+	{% endif %}
+{% else %}
+	{% if event.start_time %}
+		at {{ event.start_time }}
+	{% endif %}
 
-{# end date #}
-{% if event.start_date != event.end_date %}
-	&#8211; {{ event.end_date }}
+	{# end date #}
+	&#8211;<br />
+	{{ event.end_date }}
+
+	{% if event.end_time %}
+		at {{ event.end_time }}
+	{% endif %}
 {% endif %}
 
 {# days left#}
