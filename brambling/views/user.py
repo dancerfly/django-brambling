@@ -261,6 +261,7 @@ class CreditCardDeleteView(View):
 class HomeView(UpdateView):
     model = Home
     form_class = HomeForm
+    template_name = 'brambling/user/home.html'
 
     def get_object(self):
         if not self.request.user.is_authenticated():
