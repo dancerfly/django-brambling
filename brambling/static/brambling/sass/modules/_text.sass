@@ -35,6 +35,9 @@ h1, .h1
 		content: ", and "
 	&:first-child::before
 		content: ""
+	&:last-child:nth-child(2)::before
+		content: " and "
+
 
 .ul-default
 	padding-left: $line-height-computed/2
