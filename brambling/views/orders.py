@@ -260,7 +260,7 @@ class OrderMixin(object):
     def get_order(self, create=False):
         # Never create for invite-only events.
         if self.event.privacy in (Event.HALF_PUBLIC, Event.INVITED):
-            return False
+            create = False
 
         order_kwargs = {
             'event': self.event,
