@@ -137,20 +137,11 @@ class AccountForm(forms.ModelForm):
         """
         password1 = self.cleaned_data.get('new_password1')
         password2 = self.cleaned_data.get('new_password2')
-        if password1 and password2:
-            if not self.cleaned_data["old_password"]:
-                self.add_error(
-                    'old_password',
-                    ValidationError(
-                        self.error_messages['password_incorrect'],
-                        code='password_incorrect',
-                    )
-                )
-            if password1 != password2:
-                raise ValidationError(
-                    self.error_messages['password_mismatch'],
-                    code='password_mismatch',
-                )
+        if password1 and password2 and password1 != password2:
+            raise ValidationError(
+                self.error_messages['password_mismatch'],
+                code='password_mismatch',
+            )
         return password2
 
     def save(self, commit=True):
