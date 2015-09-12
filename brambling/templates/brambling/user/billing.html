@@ -30,14 +30,12 @@
 
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
-		<div class="panel panel-default">
-			<header class="panel-heading">
-				<h4 class="panel-title">Payment</h4>
-			</header>
-			<div class="panel-body">
-				{% if stripe_live_settings_valid or stripe_test_settings_valid %}
-					<h3>Stripe</h3>
-
+		{% if stripe_live_settings_valid or stripe_test_settings_valid %}
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Stripe</h4>
+				</header>
+				<div class="panel-body">
 					<div role="tabpanel">
 
 						<!-- Nav tabs -->
@@ -117,23 +115,27 @@
 						</div>
 
 					</div>
-				{% endif %}
-
-				{% if form.instance.dwolla_user_id or dwolla_oauth_url %}
-					<h3>Dwolla</h3>
+				</div>
+			</div>
+		{% endif %}
+		{% if form.instance.dwolla_user_id or dwolla_oauth_url %}
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Dwolla</h4>
+				</header>
+				<div class="panel-body">
 					{% if form.instance.dwolla_user_id %}
 						<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
 						{% formrow form.disconnect_dwolla with label="Disconnect" %}
+
+						<button class="btn btn-primary" type="submit">Save changes</button>
+						<a href="" class="btn btn-link">Cancel</a>
 					{% else %}
 						<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
 					{% endif %}
 				{% endif %}
 			</div>
 		</div>
-		{% if form.instance.dwolla_user_id %}
-			<button class="btn btn-primary" type="submit">Save changes</button>
-			<a href="" class="btn btn-link">Cancel</a>
-		{% endif %}
 	</form>
 
 {% endblock %}
