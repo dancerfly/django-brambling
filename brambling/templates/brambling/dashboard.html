@@ -55,40 +55,7 @@
 
 {% block content %}
 	<div class="row">
-		<div class="col-sm-8 col-md-9">
-
-			{% if registered_events %}
-				{% for event in registered_events %}
-					{% cycle 'col1' 'col2' as col silent %}
-					{% if col = 'col1' %}<div class="row">{% endif %}
-					{% include "brambling/_event_list_item.html" with registered="true" %}
-					{% if col = 'col2' or forloop.last %}</div>{% endif %}
-				{% endfor %}
-			{% endif %}
-
-			{% if registered_events %}
-				<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
-			{% endif %}
-
-			{% if upcoming_events_interest %}
-				{% for event in upcoming_events_interest|slice:"5" %}
-					{% cycle 'col1' 'col2' as col silent %}
-					{% if col = 'col1' %}<div class="row">{% endif %}
-					{% include "brambling/_event_list_item.html" %}
-					{% if col = 'col2' or forloop.last %}</div>{% endif %}
-				{% endfor %}
-			{% elif upcoming_events %}
-				{% for event in upcoming_events|slice:"5" %}
-					{% cycle 'col1' 'col2' as col silent %}
-					{% if col = 'col1' %}<div class="row">{% endif %}
-					{% include "brambling/_event_list_item.html" %}
-					{% if col = 'col2' or forloop.last %}</div>{% endif %}
-				{% endfor %}
-			{% else %}
-				<p>No upcoming events</p>
-			{% endif %}
-		</div>
-		<div class="col-sm-4 col-md-3">
+		<div class="col-sm-4 col-sm-push-8 col-md-3 col-md-push-9">
 			{% if not request.user.is_authenticated or not organizations and not admin_events %}
 				{% if not request.COOKIES.hideCall %}
 					<div class='panel panel-default' id='hidePanel'>
@@ -146,6 +113,39 @@
 				</div>
 			{% endif %}
 			<img src="{% static 'brambling/images/watcher-cropped.jpg' %}" width="202" class="img-responsive hidden-xs">
+		</div>
+		<div class="col-sm-8 col-sm-pull-4 col-md-9 col-md-pull-3">
+
+			{% if registered_events %}
+				{% for event in registered_events %}
+					{% cycle 'col1' 'col2' as col silent %}
+					{% if col = 'col1' %}<div class="row">{% endif %}
+					{% include "brambling/_event_list_item.html" with registered="true" %}
+					{% if col = 'col2' or forloop.last %}</div>{% endif %}
+				{% endfor %}
+			{% endif %}
+
+			{% if registered_events %}
+				<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
+			{% endif %}
+
+			{% if upcoming_events_interest %}
+				{% for event in upcoming_events_interest|slice:"5" %}
+					{% cycle 'col1' 'col2' as col silent %}
+					{% if col = 'col1' %}<div class="row">{% endif %}
+					{% include "brambling/_event_list_item.html" %}
+					{% if col = 'col2' or forloop.last %}</div>{% endif %}
+				{% endfor %}
+			{% elif upcoming_events %}
+				{% for event in upcoming_events|slice:"5" %}
+					{% cycle 'col1' 'col2' as col silent %}
+					{% if col = 'col1' %}<div class="row">{% endif %}
+					{% include "brambling/_event_list_item.html" %}
+					{% if col = 'col2' or forloop.last %}</div>{% endif %}
+				{% endfor %}
+			{% else %}
+				<p>No upcoming events</p>
+			{% endif %}
 		</div>
 	</div>
 {% endblock %}
