@@ -1,74 +1,67 @@
 {% load daguerre %}
 
-<div class="media margin-trailer-dbl event-listing">
-	<a href="{{ event.get_absolute_url }}" class=" a-secret a-opacity pull-left">
-		<div class="media-object relative margin-leader-tiny">
-			<div class="{% if event.banner_image %}datecard-inset{% else %}datecard-no-img{% endif %}">
+{% if event.banner_image %}
+	{% adjust event.banner_image 'fill' width=940 height=300 as banner_image %}
+{% endif %}
+
+<div class="margin-trailer-dbl event-listing col-sm-6">
+	<a href="{{ event.get_absolute_url }}" class="a-secret a-opacity">
+		<div class="event-listing-image relative"{% if banner_image %} style="background-image: url({{ banner_image }})"{% endif %}>
+			<div class="datecard">
 				<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
 				<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
 			</div>
-			{% if event.banner_image %}
-				{% adjust event.banner_image 'fill' width=100 height=100 as image %}
-				<img src="{{ image }}" width="{{ image.width }}" height="{{ image.height }}" class="datecard-img">
-			{% endif %}
 		</div>
 	</a>
-	<div class="media-body">
-		<h3><a href="{{ event.get_absolute_url }}" class="a-inherit">{{ event.name }}</a></h3>
-		<p>
-			<span class="visible-inline-block">
-				<i class="fa fa-clock-o fa-fw"></i>
-				{% include "brambling/event/_when.html" %}
-			</span>
-			<span class="visible-inline-block">
-				<i class="fa fa-map-marker fa-fw"></i>
-				{% include "brambling/event/_where.html" %}
-			</span>
-		</p>
-		<p>
-		{% if event.description %}
-			<div class="shortened" data-lines="2">{{ event.description|linebreaks }}</div>
-		{% endif %}
-		<h5 class="text-muted event-tags">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
-		<div class='form-group'>
-				{% if registered %}
-					{% if event.order and event.order.has_cart %}
-						<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Complete your registration now!">
-							<i class="fa fa-exclamation-circle"></i> Almost Registered
-						</a>
-					{% else %}
-						<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-success tipped" title="Modify your registration">
-							<i class="fa fa-check"></i> Registered
-						</a>
-					{% endif %}
+	<h3>{{ event.name }}</h3>
+	<p class="visible-inline-block margin-0">
+		<i class="fa fa-clock-o fa-fw"></i>
+		{% include "brambling/event/_when.html" %}
+	</p>
+	<p class="visible-inline-block margin-leader-0 margin-trailer-half">
+		<i class="fa fa-map-marker fa-fw"></i>
+		{% include "brambling/event/_where.html" %}
+	</p>
+	<h5 class="text-muted event-tags margin-0">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
+
+	<div class='form-group margin-leader-half'>
+			{% if registered %}
+				{% if event.order and event.order.has_cart %}
+					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Complete your registration now!">
+						<i class="fa fa-exclamation-circle"></i> Almost Registered
+					</a>
 				{% else %}
-					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default">
-						<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm">for <strong>{{ event.name }}</strong>!</span>
+					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-success tipped" title="Modify your registration">
+						<i class="fa fa-check"></i> Registered
 					</a>
 				{% endif %}
-			{% if event in admin_events %}
-				<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="margin-trailer-half btn btn-default">
-					<i class="fa fa-cog"></i>
-					Manage Event
+			{% else %}
+				<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default">
+					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm hidden-md">for <strong>{{ event.name }}</strong>!</span>
 				</a>
 			{% endif %}
-			{% if event.website_url %}
-				<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
-					<i class="fa fa-fw fa-globe"></i>
-					Website
-				</a>
-			{% endif %}
-			{% if event.facebook_url %}
-				<a target="_blank" href="{{ event.facebook_url }}" class="margin-trailer-half btn btn-default-dark">
-					<i class="fa fa-fw fa-facebook"></i>
-					Facebook
-				</a>
-			{% endif %}
-
-		</div>
-
-		{% if event.order and event.order.has_cart %}
-			{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=event.order.cart_expire_time %}
+		{% if event in admin_events %}
+			<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="margin-trailer-half btn btn-default">
+				<i class="fa fa-cog"></i>
+				Manage Event
+			</a>
 		{% endif %}
+		{% if event.website_url %}
+			<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
+				<i class="fa fa-fw fa-globe"></i>
+				Website
+			</a>
+		{% endif %}
+		{% if event.facebook_url %}
+			<a target="_blank" href="{{ event.facebook_url }}" class="margin-trailer-half btn btn-default-dark">
+				<i class="fa fa-fw fa-facebook"></i>
+				Facebook
+			</a>
+		{% endif %}
+
 	</div>
+
+	{% if event.order and event.order.has_cart %}
+		{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=event.order.cart_expire_time %}
+	{% endif %}
 </div>
