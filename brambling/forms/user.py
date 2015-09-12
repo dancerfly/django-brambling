@@ -81,7 +81,6 @@ class SignUpForm(forms.ModelForm):
         person = super(SignUpForm, self).save(commit=False)
         person.set_password(self.cleaned_data["password1"])
         person.save()
-        person.dance_styles = DanceStyle.objects.all()
         if 'email' in self.changed_data:
             ConfirmationMailer(
                 person=self.instance,
@@ -162,7 +161,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Person
         fields = ('given_name', 'middle_name', 'surname', 'name_order',
-                  'phone', 'dance_styles', 'dietary_restrictions', 'ef_cause',
+                  'phone', 'dietary_restrictions', 'ef_cause',
                   'ef_avoid', 'person_prefer', 'person_avoid',
                   'housing_prefer', 'other_needs')
 

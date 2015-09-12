@@ -38,7 +38,6 @@ class PersonAdmin(UserAdmin):
             'person_avoid',
             'housing_prefer',
             'other_needs',
-            'dance_styles',
         )}),
         ('Financial Transactions', {'fields': (
             ('stripe_customer_id', 'stripe_test_customer_id'),
