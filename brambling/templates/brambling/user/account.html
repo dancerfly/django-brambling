@@ -38,11 +38,24 @@
 					{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
 						<small><a href="#nameOptions" data-toggle="collapse" class="pull-right more-name-options"><i class="fa fa-plus"></i> More Name Options</a></small>
 					{% endif %}
-					{% if person.email != person.confirmed_email %}
+					{% formrow form.email %}
+					{% if form.initial.email != person.confirmed_email %}
 						{% url "brambling_email_confirm_send" as send_url %}
-						{% formrow form.email with help_text="<a href='"|add:send_url|add:"'>Request a confirmation email</a>"|safe %}
+						<p>
+							{% with unclaimed_orders_count=unclaimed_orders.count %}
+							<a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Sends an email with a confirmation link to your address'><i class='fa fa-paper-plane'></i> Confirm your email address</a>
+							to claim {{ unclaimed_orders_count }} order{{ unclaimed_orders_count|pluralize }} you made anonymously
+							{% endwith %}
+						</p>
 					{% else %}
-						{% formrow form.email %}
+						<p>
+							<span class='text-success'><i class='fa fa-check'></i> <strong>Address confirmed: {{ form.initial.email }}</strong></span>
+						</p>
+						{% if unclaimed_orders %}
+							<p>
+								<a class='btn btn-default' href="javascript:alert('TODO')"><i class='fa fa-ticket'></i> Claim {{ unclaimed_orders|length }} order{{ unclaimed_orders|length|pluralize }}</a> you made anonymously
+							</p>
+						{% endif %}
 					{% endif %}
 				</div>
 			</div>{# /.panel #}

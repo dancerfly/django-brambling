@@ -10,7 +10,7 @@ import stripe
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, ProfileForm, BillingForm, HomeForm, SignUpForm
-from brambling.models import Person, Home, CreditCard
+from brambling.models import Person, Home, CreditCard, Order
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
@@ -99,6 +99,7 @@ class AccountView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(AccountView, self).get_context_data(**kwargs)
         cards_qs = self.request.user.cards.filter(is_saved=True).order_by('-added')
+        unclaimed_orders = Order.objects.filter(person__isnull=True, email=context['form'].initial['email'])
         context.update({
             'cards': {
                 'test': cards_qs.filter(api_type=CreditCard.TEST),
@@ -108,6 +109,7 @@ class AccountView(UpdateView):
             'stripe_test_settings_valid': stripe_test_settings_valid(),
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
+            'unclaimed_orders': unclaimed_orders
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
