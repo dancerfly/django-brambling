@@ -1,0 +1,14 @@
+{% extends 'brambling/layouts/3_9.html' %}
+
+{% block side %}
+	{% url 'brambling_home' as brambling_home_url %}
+	{% url 'brambling_user_account' as brambling_user_account_url %}
+	{% url 'brambling_user_profile' as brambling_user_profile_url %}
+	{% url 'brambling_user_billing' as brambling_user_billing_url %}
+	<nav class="list-group">
+		<a class="list-group-item{% if request.path == brambling_user_account_url %} active{% endif %}" href="{{ brambling_user_account_url }}"><i class="fa fa-user fa-fw"></i> Account Settings</a>
+		<a class="list-group-item{% if request.path == brambling_user_profile_url %} active{% endif %}" href="{{ brambling_user_profile_url }}"><i class="fa fa-cog fa-fw"></i> Profile Settings</a>
+		<a class="list-group-item{% if request.path == brambling_user_billing_url %} active{% endif %}" href="{{ brambling_user_billing_url }}"><i class="fa fa-money fa-fw"></i> Billing Settings</a>
+		<a class="list-group-item{% if request.path == brambling_home_url %} active{% endif %}" href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home Settings</a>
+	</nav>
+{% endblock %}

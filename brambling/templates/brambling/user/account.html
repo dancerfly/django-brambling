@@ -1,4 +1,4 @@
-{% extends 'brambling/layouts/12_sm.html' %}
+{% extends 'brambling/user/__base.html' %}
 
 {% load floppyforms static %}
 {% formconfig row using "floppyforms/rows/bootstrap.html" %}
@@ -7,7 +7,7 @@
 
 
 {% block main %}
-	<h2>Account settings</h2>
+	<h2 class="sr-only">Account settings</h2>
 
 	{% include "brambling/forms/_top_error_list.html" %}
 
