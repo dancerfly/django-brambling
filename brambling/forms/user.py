@@ -29,21 +29,7 @@ class FloppySetPasswordForm(SetPasswordForm):
                                     widget=forms.PasswordInput)
 
 
-class BasePersonForm(forms.ModelForm):
-    def __init__(self, request, *args, **kwargs):
-        self.request = request
-        super(BasePersonForm, self).__init__(*args, **kwargs)
-
-    def email_confirmation(self):
-        if 'email' in self.changed_data:
-            ConfirmationMailer(
-                person=self.instance,
-                site=get_current_site(self.request),
-                secure=self.request.is_secure()
-            ).send([self.instance.email])
-
-
-class SignUpForm(BasePersonForm):
+class SignUpForm(forms.ModelForm):
     error_messages = {
         'duplicate_email': _("A user with that email already exists."),
         'password_mismatch': _("The two password fields didn't match."),
@@ -64,6 +50,10 @@ class SignUpForm(BasePersonForm):
             'surname',
             'name_order'
         )
+
+    def __init__(self, request, *args, **kwargs):
+        self.request = request
+        super(SignUpForm, self).__init__(*args, **kwargs)
 
     def clean_email(self):
         # Since Person.email is unique, this check is redundant,
@@ -92,20 +82,24 @@ class SignUpForm(BasePersonForm):
         person.set_password(self.cleaned_data["password1"])
         person.save()
         person.dance_styles = DanceStyle.objects.all()
-        self.email_confirmation()
+        if 'email' in self.changed_data:
+            ConfirmationMailer(
+                person=self.instance,
+                site=get_current_site(self.request),
+                secure=self.request.is_secure()
+            ).send([self.instance.email])
         user = authenticate(email=self.cleaned_data['email'],
                             password=self.cleaned_data['password1'])
         login(self.request, user)
         return person
 
 
-class PersonForm(BasePersonForm):
+class AccountForm(forms.ModelForm):
     error_messages = {
         'password_incorrect': _("Your old password was entered incorrectly. "
                                 "Please enter it again."),
         'password_mismatch': _("The two password fields didn't match."),
     }
-    disconnect_dwolla = forms.BooleanField(required=False)
     old_password = forms.CharField(label=_("Old password"),
                                    widget=forms.PasswordInput,
                                    required=False)
@@ -118,15 +112,11 @@ class PersonForm(BasePersonForm):
 
     class Meta:
         model = Person
-        fields = ('email', 'given_name', 'middle_name', 'surname', 'name_order',
-                  'phone', 'dance_styles', 'dietary_restrictions', 'ef_cause',
-                  'ef_avoid', 'person_prefer', 'person_avoid',
-                  'housing_prefer', 'other_needs')
+        fields = ('email', 'given_name', 'middle_name', 'surname', 'name_order')
 
-    def __init__(self, *args, **kwargs):
-        super(PersonForm, self).__init__(*args, **kwargs)
-        if not self.instance.dwolla_user_id:
-            del self.fields['disconnect_dwolla']
+    def __init__(self, request, *args, **kwargs):
+        self.request = request
+        super(AccountForm, self).__init__(*args, **kwargs)
 
     def clean_old_password(self):
         """
@@ -165,14 +155,48 @@ class PersonForm(BasePersonForm):
 
     def save(self, commit=True):
         self.instance.modified_directly = True
-        if self.cleaned_data.get('disconnect_dwolla'):
-            self.instance.clear_dwolla_data(LIVE)
         if self.cleaned_data.get('new_password1'):
             self.instance.set_password(self.cleaned_data['new_password1'])
-        person = super(PersonForm, self).save(commit)
-        if commit:
-            self.email_confirmation()
+        person = super(AccountForm, self).save(commit)
+        if commit and 'email' in self.changed_data:
+            ConfirmationMailer(
+                person=self.instance,
+                site=get_current_site(self.request),
+                secure=self.request.is_secure()
+            ).send([self.instance.email])
         return person
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Person
+        fields = ('given_name', 'middle_name', 'surname', 'name_order',
+                  'phone', 'dance_styles', 'dietary_restrictions', 'ef_cause',
+                  'ef_avoid', 'person_prefer', 'person_avoid',
+                  'housing_prefer', 'other_needs')
+
+    def save(self, commit=True):
+        self.instance.modified_directly = True
+        return super(ProfileForm, self).save(commit)
+
+
+class BillingForm(forms.ModelForm):
+    disconnect_dwolla = forms.BooleanField(required=False)
+
+    class Meta:
+        model = Person
+        fields = ()
+
+    def __init__(self, *args, **kwargs):
+        super(BillingForm, self).__init__(*args, **kwargs)
+        if not self.instance.dwolla_user_id:
+            del self.fields['disconnect_dwolla']
+
+    def save(self, commit=True):
+        self.instance.modified_directly = True
+        if self.cleaned_data.get('disconnect_dwolla'):
+            self.instance.clear_dwolla_data(LIVE)
+        return super(BillingForm, self).save(commit)
 
 
 class HomeForm(forms.ModelForm):

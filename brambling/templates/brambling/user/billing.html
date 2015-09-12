@@ -1,8 +1,9 @@
 {% extends 'brambling/layouts/12_sm.html' %}
 
 {% load floppyforms static %}
+{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
-{% block title %}Profile settings – {{ block.super }}{% endblock %}
+{% block title %}Billing settings – {{ block.super }}{% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
@@ -23,13 +24,12 @@
 {% endblock %}
 
 {% block main %}
-	<h2>Edit settings</h2>
+	<h2>Billing settings</h2>
 
 	{% include "brambling/forms/_top_error_list.html" %}
 
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
-		{% form form using "brambling/forms/person.html" %}
 		<div class="panel panel-default">
 			<header class="panel-heading">
 				<h4 class="panel-title">Payment</h4>
@@ -130,18 +130,10 @@
 				{% endif %}
 			</div>
 		</div>
-		<div class='panel panel-default'>
-			<header class="panel-heading">
-				<h4 class="panel-title">Change Password</h4>
-			</header>
-			<div class="panel-body">
-				{% formrow form.old_password %}
-				{% formrow form.new_password1 %}
-				{% formrow form.new_password2 %}
-			</div>
-		</div>
-		<button class="btn btn-primary" type="submit">Save changes</button>
-		<a href="{{ event.get_absolute_url }}" class="btn btn-link">Cancel</a>
+		{% if form.instance.dwolla_user_id %}
+			<button class="btn btn-primary" type="submit">Save changes</button>
+			<a href="" class="btn btn-link">Cancel</a>
+		{% endif %}
 	</form>
 
 {% endblock %}
