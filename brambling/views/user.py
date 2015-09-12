@@ -278,3 +278,21 @@ class HomeView(UpdateView):
 
     def get_success_url(self):
         return reverse('brambling_home')
+
+
+class ClaimOrdersView(TemplateView):
+    template_name = 'brambling/user/claim-orders.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        return super(ClaimOrdersView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ClaimOrdersView, self).get_context_data(**kwargs)
+        unclaimed_orders = Order.objects.filter(person__isnull=True, email=self.request.user.email)
+        context.update({
+            'unclaimed_orders': unclaimed_orders,
+        })
+        return context

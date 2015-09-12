@@ -5,6 +5,7 @@
 	{% url 'brambling_user_account' as brambling_user_account_url %}
 	{% url 'brambling_user_profile' as brambling_user_profile_url %}
 	{% url 'brambling_user_billing' as brambling_user_billing_url %}
+	{% url 'brambling_claim_orders' as brambling_claim_orders_url %}
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="panel-title">Settings</h4>
@@ -14,6 +15,7 @@
 			<a class="list-group-item{% if request.path == brambling_user_profile_url %} active{% endif %}" href="{{ brambling_user_profile_url }}"><i class="fa fa-cog fa-fw"></i> Profile</a>
 			<a class="list-group-item{% if request.path == brambling_user_billing_url %} active{% endif %}" href="{{ brambling_user_billing_url }}"><i class="fa fa-money fa-fw"></i> Billing</a>
 			<a class="list-group-item{% if request.path == brambling_home_url %} active{% endif %}" href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home</a>
+			<a class="list-group-item{% if request.path == brambling_claim_orders_url %} active{% endif %}" href="{{ brambling_claim_orders_url }}"><i class="fa fa-ticket fa-fw"></i> Claim orders {% if unclaimed_orders %}<span class='badge'>{{ unclaimed_orders|length }}</span>{% endif %}</a>
 		</nav>
 	</div>
 {% endblock %}
