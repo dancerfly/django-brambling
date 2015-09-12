@@ -17,14 +17,12 @@
 			<ul class="nav navbar-nav navbar-right">
 				{% if request.user.is_authenticated %}
 					{% url 'brambling_dashboard' as brambling_dashboard_url %}
-					{% url 'brambling_home' as brambling_home_url %}
-					{% url 'brambling_user_profile' as brambling_user_profile_url %}
+					{% url 'brambling_user_account' as brambling_user_account_url %}
 					<li><a href="{{ brambling_dashboard_url }}"><i class="fa fa-calendar fa-fw"></i> Your Events</a></li>
 					<li class="dropdown">
 						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user fa-fw"></i> {{ request.user.get_full_name }} <i class="fa fa-fw fa-caret-down"></i></a>
 						<ul class="dropdown-menu">
-							<li><a href="{{ brambling_user_profile_url }}"><i class="fa fa-cog fa-fw"></i> Profile Settings</a></li>
-							<li><a href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home Settings</a></li>
+							<li><a href="{{ brambling_user_account_url }}"><i class="fa fa-cog fa-fw"></i> Settings</a></li>
 							<li><a href="{% url 'logout' %}"><i class="fa fa-power-off fa-fw"></i> Log out</a></li>
 						</ul>
 					</li>
