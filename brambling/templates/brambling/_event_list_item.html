@@ -37,7 +37,7 @@
 				{% endif %}
 			{% else %}
 				<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default">
-					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm">for <strong>{{ event.name }}</strong>!</span>
+					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm hidden-md">for <strong>{{ event.name }}</strong>!</span>
 				</a>
 			{% endif %}
 		{% if event in admin_events %}
