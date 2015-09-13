@@ -98,22 +98,9 @@ class AccountView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(AccountView, self).get_context_data(**kwargs)
-        cards_qs = self.request.user.cards.filter(is_saved=True).order_by('-added')
-        unclaimed_orders = Order.objects.filter(person__isnull=True, email=context['form'].initial['email'])
         context.update({
-            'cards': {
-                'test': cards_qs.filter(api_type=CreditCard.TEST),
-                'live': cards_qs.filter(api_type=CreditCard.LIVE),
-            },
-            'stripe_live_settings_valid': stripe_live_settings_valid(),
-            'stripe_test_settings_valid': stripe_test_settings_valid(),
-            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
-            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
-            'unclaimed_orders': unclaimed_orders
+            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=context['form'].initial['email']),
         })
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
-                self.request.user, LIVE, self.request)
         return context
 
 
@@ -136,20 +123,9 @@ class ProfileView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProfileView, self).get_context_data(**kwargs)
-        cards_qs = self.request.user.cards.filter(is_saved=True).order_by('-added')
         context.update({
-            'cards': {
-                'test': cards_qs.filter(api_type=CreditCard.TEST),
-                'live': cards_qs.filter(api_type=CreditCard.LIVE),
-            },
-            'stripe_live_settings_valid': stripe_live_settings_valid(),
-            'stripe_test_settings_valid': stripe_test_settings_valid(),
-            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
-            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
+            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
         })
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
-                self.request.user, LIVE, self.request)
         return context
 
 
@@ -182,6 +158,7 @@ class BillingView(UpdateView):
             'stripe_test_settings_valid': stripe_test_settings_valid(),
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
+            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
@@ -220,6 +197,7 @@ class CreditCardAddView(TemplateView):
             'api_type': self.kwargs['api_type'],
             'LIVE': CreditCard.LIVE,
             'TEST': CreditCard.TEST,
+            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
         })
         return context
 
@@ -279,6 +257,13 @@ class HomeView(UpdateView):
     def get_success_url(self):
         return reverse('brambling_home')
 
+    def get_context_data(self, **kwargs):
+        context = super(HomeView, self).get_context_data(**kwargs)
+        context.update({
+            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
+        })
+        return context
+
 
 class ClaimOrdersView(TemplateView):
     template_name = 'brambling/user/claim-orders.html'
@@ -291,8 +276,10 @@ class ClaimOrdersView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ClaimOrdersView, self).get_context_data(**kwargs)
-        unclaimed_orders = Order.objects.filter(person__isnull=True, email=self.request.user.email)
         context.update({
-            'unclaimed_orders': unclaimed_orders,
+            'unclaimed_orders': Order.objects.filter(
+                person__isnull=True,
+                email=self.request.user.email
+            ).select_related('event__organization'),
         })
         return context

@@ -53,7 +53,7 @@
 						</p>
 						{% if unclaimed_orders %}
 							<p>
-								<a class='btn btn-default' href="javascript:alert('TODO')"><i class='fa fa-ticket'></i> Claim {{ unclaimed_orders|length }} order{{ unclaimed_orders|length|pluralize }}</a> you made anonymously
+								<a class='btn btn-default' href="{% url 'brambling_claim_orders' %}"><i class='fa fa-ticket'></i> Claim {{ unclaimed_orders|length }} order{{ unclaimed_orders|length|pluralize }}</a> you made anonymously
 							</p>
 						{% endif %}
 					{% endif %}

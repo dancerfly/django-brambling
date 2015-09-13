@@ -1,0 +1,36 @@
+{% extends 'brambling/user/__base.html' %}
+
+{% load floppyforms %}
+
+{% block title %}Claim orders – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<h2 class="sr-only">Claim orders</h2>
+
+	{% if unclaimed_orders %}
+		<div class='table-responsive'>
+			<table class='table table-striped'>
+				<tbody>
+					{% for order in unclaimed_orders %}
+						<tr>
+							<td>
+								<strong>{{ order.event.name }}</strong><br />
+								{{ order.event.organization.name }}
+							</td>
+							<td>
+								{{ order.event.start_date|date:"F jS, Y" }}
+							</td>
+							<td class='text-right'>
+								<button class='btn btn-default'>Claim it!</button>
+							</td>
+						</tr>
+
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% else %}
+		<p>No unclaimed orders!</p>
+	{% endif %}
+
+{% endblock %}
