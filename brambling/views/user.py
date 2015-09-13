@@ -81,6 +81,8 @@ class AccountView(UpdateView):
 
     def get_object(self):
         if self.request.user.is_authenticated():
+            # Do this here because _post_clean could override user's email address.
+            self.claimable_orders = self.request.user.get_claimable_orders()
             return self.request.user
         raise Http404
 
@@ -99,7 +101,7 @@ class AccountView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(AccountView, self).get_context_data(**kwargs)
         context.update({
-            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=context['form'].initial['email']),
+            'claimable_orders': self.claimable_orders,
         })
         return context
 
@@ -124,7 +126,7 @@ class ProfileView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(ProfileView, self).get_context_data(**kwargs)
         context.update({
-            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         return context
 
@@ -158,7 +160,7 @@ class BillingView(UpdateView):
             'stripe_test_settings_valid': stripe_test_settings_valid(),
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
-            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
@@ -197,7 +199,7 @@ class CreditCardAddView(TemplateView):
             'api_type': self.kwargs['api_type'],
             'LIVE': CreditCard.LIVE,
             'TEST': CreditCard.TEST,
-            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         return context
 
@@ -260,7 +262,7 @@ class HomeView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(HomeView, self).get_context_data(**kwargs)
         context.update({
-            'unclaimed_orders': Order.objects.filter(person__isnull=True, email=self.request.user.email),
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         return context
 
@@ -277,9 +279,7 @@ class ClaimOrdersView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ClaimOrdersView, self).get_context_data(**kwargs)
         context.update({
-            'unclaimed_orders': Order.objects.filter(
-                person__isnull=True,
-                email=self.request.user.email
-            ).select_related('event__organization'),
+            'claimable_orders': self.request.user.get_claimable_orders().select_related('event__organization'),
+            'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
         })
         return context

@@ -15,9 +15,7 @@
 			<a class="list-group-item{% if request.path == brambling_user_profile_url %} active{% endif %}" href="{{ brambling_user_profile_url }}"><i class="fa fa-cog fa-fw"></i> Profile</a>
 			<a class="list-group-item{% if request.path == brambling_user_billing_url %} active{% endif %}" href="{{ brambling_user_billing_url }}"><i class="fa fa-money fa-fw"></i> Billing</a>
 			<a class="list-group-item{% if request.path == brambling_home_url %} active{% endif %}" href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home</a>
-			{% if unclaimed_orders or request.path == brambling_claim_orders_url %}
-				<a class="list-group-item{% if request.path == brambling_claim_orders_url %} active{% endif %}" href="{{ brambling_claim_orders_url }}"><i class="fa fa-ticket fa-fw"></i> Claim orders <span class='badge'>{{ unclaimed_orders|length }}</span></a>
-			{% endif %}
+			<a class="list-group-item{% if request.path == brambling_claim_orders_url %} active{% endif %}" href="{{ brambling_claim_orders_url }}"><i class="fa fa-ticket fa-fw"></i> Claim orders {% if claimable_orders %}<span class='badge'>{{ claimable_orders|length }}</span>{% endif %}</a>
 		</nav>
 	</div>
 {% endblock %}

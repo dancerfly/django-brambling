@@ -703,6 +703,27 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
             models.Q(editors=self)
         ).order_by('name').distinct()
 
+    def get_claimable_orders(self):
+        if self.email != self.confirmed_email:
+            return Order.objects.none()
+        event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
+        return Order.objects.filter(
+            person__isnull=True,
+            email=self.email,
+        ).exclude(
+            event__in=event_pks,
+        )
+
+    def get_unclaimable_orders(self):
+        if self.email != self.confirmed_email:
+            return Order.objects.none()
+        event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
+        return Order.objects.filter(
+            person__isnull=True,
+            email=self.email,
+            event__in=event_pks,
+        )
+
 
 class CreditCard(models.Model):
     BRAND_CHOICES = (

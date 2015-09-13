@@ -42,18 +42,15 @@
 					{% if form.initial.email != person.confirmed_email %}
 						{% url "brambling_email_confirm_send" as send_url %}
 						<p>
-							{% with unclaimed_orders_count=unclaimed_orders.count %}
-							<a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Sends an email with a confirmation link to your address'><i class='fa fa-paper-plane'></i> Confirm your email address</a>
-							to claim {{ unclaimed_orders_count }} order{{ unclaimed_orders_count|pluralize }} you made anonymously
-							{% endwith %}
+							<a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ form.initial.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address</a>
 						</p>
 					{% else %}
 						<p>
 							<span class='text-success'><i class='fa fa-check'></i> <strong>Address confirmed: {{ form.initial.email }}</strong></span>
 						</p>
-						{% if unclaimed_orders %}
+						{% if claimable_orders %}
 							<p>
-								<a class='btn btn-default' href="{% url 'brambling_claim_orders' %}"><i class='fa fa-ticket'></i> Claim {{ unclaimed_orders|length }} order{{ unclaimed_orders|length|pluralize }}</a> you made anonymously
+								<a class='btn btn-default' href="{% url 'brambling_claim_orders' %}"><i class='fa fa-ticket'></i> Claim {{ claimable_orders|length }} order{{ claimable_orders|length|pluralize }}</a> you made anonymously
 							</p>
 						{% endif %}
 					{% endif %}
