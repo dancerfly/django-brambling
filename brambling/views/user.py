@@ -283,3 +283,22 @@ class ClaimOrdersView(TemplateView):
             'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
         })
         return context
+
+
+class ClaimOrderView(View):
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        if request.user.email != request.user.confirmed_email:
+            raise Http404
+
+        try:
+            order = request.user.get_claimable_orders().get(pk=kwargs['pk'])
+        except Order.DoesNotExist:
+            raise Http404
+
+        order.person = request.user
+        order.save()
+        messages.add_message(request, messages.SUCCESS, "Order successfully claimed.")
+        return HttpResponseRedirect(reverse('brambling_claim_orders'))

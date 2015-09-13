@@ -88,6 +88,7 @@ from brambling.views.user import (
     CreditCardAddView,
     CreditCardDeleteView,
     ClaimOrdersView,
+    ClaimOrderView,
 )
 
 
@@ -335,6 +336,9 @@ urlpatterns = patterns('',
     url(r'^claim-orders/$',
         ClaimOrdersView.as_view(),
         name="brambling_claim_orders"),
+    url(r'^claim-orders/(?P<pk>\d+)/$',
+        ClaimOrderView.as_view(),
+        name="brambling_claim_order"),
 
     url(r'^daguerre/', include('daguerre.urls')),
     url(r'^404/$', 'django.views.defaults.page_not_found'),
