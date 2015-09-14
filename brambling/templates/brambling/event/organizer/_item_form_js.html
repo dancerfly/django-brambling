@@ -2,6 +2,11 @@
 <script type="text/javascript">
 	$(function () {
 		"use strict";
+
+		$('#itemSubmitButton').on('click', function (e) {
+			$('#itemForm').submit();
+		});
+
 		var item_images_renumber = function () {
 			$('.item-images-list .item-image:visible').each(function(i){
 				$(this).find('.count').html(i+1);

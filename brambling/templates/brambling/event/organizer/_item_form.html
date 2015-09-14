@@ -78,12 +78,14 @@
 			</div>{# /.list-group-item #}
 		</div>
 	</div>
-
-	<button class='btn btn-primary' type="submit">Save</button>
-	{% if item.pk %}
-		{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
-		{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
-		<a href="{{ delete_url }}" class='btn btn-danger'>Delete</a>
-		<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
-	{% endif %}
 </form>
+<button id='itemSubmitButton' class='btn btn-primary'>Save</button>
+{% if item.pk %}
+	{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
+	{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
+	<form action="{{ delete_url }}" method='post' class='inline-block'>
+		{% csrf_token %}
+		<button class='btn btn-danger' type='submit'>Delete</button>
+	</form>
+	<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
+{% endif %}

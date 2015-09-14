@@ -522,9 +522,6 @@ def item_form(request, *args, **kwargs):
 
 
 class ItemDeleteView(DeleteView):
-    def get(self, *args, **kwargs):
-        return self.delete(*args, **kwargs)
-
     def get_object(self):
         self.event = get_object_or_404(
             Event.objects.select_related('organization'),
