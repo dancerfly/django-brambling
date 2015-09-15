@@ -678,8 +678,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     other_needs = models.TextField(blank=True)
 
-    dance_styles = models.ManyToManyField(DanceStyle, blank=True)
-
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
