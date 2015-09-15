@@ -7,10 +7,20 @@
 {% block main %}
 	<h2 class="sr-only">Link orders</h2>
 
-	{% if request.user.email != request.user.confirmed_email %}
-		<p>There may be linkable orders for your current email address.</p>
+	<p>
+		Here you can find orders that were created using your email address, but not by a logged-in user.
+		Link these orders to your account to easily view and modify them.
+	</p>
 
-		<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address</a> to find out!</p>
+	{% if request.user.email != request.user.confirmed_email %}
+		<div class='well'>
+			<p class='text-danger'><i class='fa fa-ban'></i> Your address ({{ request.user.email }}) isn't confirmed</p>
+			<p>
+				You'll need to confirm your email address before you can see whether you have any linkable orders.
+			</p>
+
+			<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address!</a></p>
+		</div>
 	{% else %}
 		{% if linkable_orders %}
 			<div class='table-responsive'>

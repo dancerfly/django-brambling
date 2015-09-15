@@ -50,7 +50,7 @@
 						</p>
 						{% if linkable_orders %}
 							<p>
-								<a class='btn btn-default' href="{% url 'brambling_link_orders' %}"><i class='fa fa-ticket'></i> Link {{ linkable_orders|length }} order{{ linkable_orders|length|pluralize }}</a> you made anonymously
+								You have <a href="{% url 'brambling_link_orders' %}">{{ linkable_orders|length }} linkable order{{ linkable_orders|length|pluralize }}</a>.
 							</p>
 						{% endif %}
 					{% endif %}
