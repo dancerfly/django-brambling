@@ -48,9 +48,9 @@
 						<p>
 							<span class='text-success'><i class='fa fa-check'></i> <strong>Address confirmed: {{ form.initial.email }}</strong></span>
 						</p>
-						{% if claimable_orders %}
+						{% if linkable_orders %}
 							<p>
-								<a class='btn btn-default' href="{% url 'brambling_claim_orders' %}"><i class='fa fa-ticket'></i> Claim {{ claimable_orders|length }} order{{ claimable_orders|length|pluralize }}</a> you made anonymously
+								<a class='btn btn-default' href="{% url 'brambling_link_orders' %}"><i class='fa fa-ticket'></i> Link {{ linkable_orders|length }} order{{ linkable_orders|length|pluralize }}</a> you made anonymously
 							</p>
 						{% endif %}
 					{% endif %}

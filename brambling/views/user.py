@@ -82,7 +82,7 @@ class AccountView(UpdateView):
     def get_object(self):
         if self.request.user.is_authenticated():
             # Do this here because _post_clean could override user's email address.
-            self.claimable_orders = self.request.user.get_claimable_orders()
+            self.linkable_orders = self.request.user.get_linkable_orders()
             return self.request.user
         raise Http404
 
@@ -101,7 +101,7 @@ class AccountView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(AccountView, self).get_context_data(**kwargs)
         context.update({
-            'claimable_orders': self.claimable_orders,
+            'linkable_orders': self.linkable_orders,
         })
         return context
 
@@ -126,7 +126,7 @@ class ProfileView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(ProfileView, self).get_context_data(**kwargs)
         context.update({
-            'claimable_orders': self.request.user.get_claimable_orders(),
+            'linkable_orders': self.request.user.get_linkable_orders(),
         })
         return context
 
@@ -160,7 +160,7 @@ class BillingView(UpdateView):
             'stripe_test_settings_valid': stripe_test_settings_valid(),
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
-            'claimable_orders': self.request.user.get_claimable_orders(),
+            'linkable_orders': self.request.user.get_linkable_orders(),
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
@@ -199,7 +199,7 @@ class CreditCardAddView(TemplateView):
             'api_type': self.kwargs['api_type'],
             'LIVE': CreditCard.LIVE,
             'TEST': CreditCard.TEST,
-            'claimable_orders': self.request.user.get_claimable_orders(),
+            'linkable_orders': self.request.user.get_linkable_orders(),
         })
         return context
 
@@ -262,30 +262,30 @@ class HomeView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(HomeView, self).get_context_data(**kwargs)
         context.update({
-            'claimable_orders': self.request.user.get_claimable_orders(),
+            'linkable_orders': self.request.user.get_linkable_orders(),
         })
         return context
 
 
-class ClaimOrdersView(TemplateView):
-    template_name = 'brambling/user/claim-orders.html'
+class LinkOrdersView(TemplateView):
+    template_name = 'brambling/user/link-orders.html'
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
 
-        return super(ClaimOrdersView, self).get(request, *args, **kwargs)
+        return super(LinkOrdersView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(ClaimOrdersView, self).get_context_data(**kwargs)
+        context = super(LinkOrdersView, self).get_context_data(**kwargs)
         context.update({
-            'claimable_orders': self.request.user.get_claimable_orders().select_related('event__organization'),
-            'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
+            'linkable_orders': self.request.user.get_linkable_orders().select_related('event__organization'),
+            'unlinkable_orders': self.request.user.get_unlinkable_orders().select_related('event__organization'),
         })
         return context
 
 
-class ClaimOrderView(View):
+class LinkOrderView(View):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
@@ -294,11 +294,11 @@ class ClaimOrderView(View):
             raise Http404
 
         try:
-            order = request.user.get_claimable_orders().get(pk=kwargs['pk'])
+            order = request.user.get_linkable_orders().get(pk=kwargs['pk'])
         except Order.DoesNotExist:
             raise Http404
 
         order.person = request.user
         order.save()
-        messages.add_message(request, messages.SUCCESS, "Order successfully claimed.")
-        return HttpResponseRedirect(reverse('brambling_claim_orders'))
+        messages.add_message(request, messages.SUCCESS, "Order successfully linked.")
+        return HttpResponseRedirect(reverse('brambling_link_orders'))

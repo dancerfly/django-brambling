@@ -341,7 +341,7 @@ class OrderManagerTestCase(TestCase):
 
     def test_for_request__session__authed_anon(self):
         """
-        An authenticated user can claim a session-stored order.
+        An authenticated user can auto-link a session-stored order.
         """
         event = EventFactory()
         person = PersonFactory()

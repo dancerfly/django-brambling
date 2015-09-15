@@ -2,21 +2,21 @@
 
 {% load floppyforms %}
 
-{% block title %}Claim orders – {{ block.super }}{% endblock %}
+{% block title %}Link orders – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<h2 class="sr-only">Claim orders</h2>
+	<h2 class="sr-only">Link orders</h2>
 
 	{% if request.user.email != request.user.confirmed_email %}
-		<p>There may be claimable orders for your current email address.</p>
+		<p>There may be linkable orders for your current email address.</p>
 
 		<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address</a> to find out!</p>
 	{% else %}
-		{% if claimable_orders %}
+		{% if linkable_orders %}
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
-						{% for order in claimable_orders %}
+						{% for order in linkable_orders %}
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
@@ -26,9 +26,9 @@
 									{{ order.event.start_date|date:"F jS, Y" }}
 								</td>
 								<td class='text-right'>
-									<form method='post' action='{% url "brambling_claim_order" pk=order.pk %}'>
+									<form method='post' action='{% url "brambling_link_order" pk=order.pk %}'>
 										{% csrf_token %}
-										<button type='submit' class='btn btn-default'>Claim it!</button>
+										<button type='submit' class='btn btn-default'>Link it!</button>
 									</form>
 								</td>
 							</tr>
@@ -38,16 +38,16 @@
 				</table>
 			</div>
 		{% else %}
-			<p>There are no orders which can be automatically switched over to your account.</p>
+			<p>There are no orders which can be automatically linked to your account.</p>
 		{% endif %}
 
-		{% if unclaimable_orders %}
-			<p>The following orders were created using your email address, but can't be merged automatically because they conflict with orders already attached to this account.</p>
+		{% if unlinkable_orders %}
+			<p>The following orders were created using your email address, but can't be linked automatically because they conflict with orders already linked to this account.</p>
 
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
-						{% for order in unclaimable_orders %}
+						{% for order in unlinkable_orders %}
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
