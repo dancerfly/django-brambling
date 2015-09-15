@@ -658,7 +658,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             valid = True
             payment = Transaction.objects.create(
                 amount=0,
-                method=Transaction.FAKE,
+                method=Transaction.NONE,
                 transaction_type=Transaction.PURCHASE,
                 is_confirmed=True,
                 api_type=self.event.api_type,
