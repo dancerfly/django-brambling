@@ -268,7 +268,7 @@ class HomeView(UpdateView):
 
 
 class LinkOrdersView(TemplateView):
-    template_name = 'brambling/user/link-orders.html'
+    template_name = 'brambling/user/link_orders.html'
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
