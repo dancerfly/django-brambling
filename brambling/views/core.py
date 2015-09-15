@@ -31,12 +31,6 @@ class DashboardView(TemplateView):
         }
 
         if user.is_authenticated():
-            upcoming_events_interest = Event.objects.filter(
-                privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
-                dance_styles__person=user,
-                is_published=True,
-            ).filter(start_date__gte=today).order_by('start_date').distinct()
-
             admin_events = Event.objects.filter(
                 Q(organization__owner=user) |
                 Q(organization__editors=user) |
@@ -61,7 +55,6 @@ class DashboardView(TemplateView):
                 order.event.order = order
 
             # Exclude registered events
-            upcoming_events_interest = upcoming_events_interest.exclude(pk__in=registered_events_qs)
             upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
 
             # Past events is things you at one point paid for.
@@ -71,7 +64,6 @@ class DashboardView(TemplateView):
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
             ).filter(start_date__lt=today).order_by('-start_date').distinct()
             context.update({
-                'upcoming_events_interest': upcoming_events_interest,
                 'upcoming_events': upcoming_events,
                 'admin_events': admin_events,
                 'registered_events': registered_events,

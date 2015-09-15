@@ -50,7 +50,6 @@
 		{% endif %}
 		<div class="margin-trailer"></div>
 	</div>
-
 {% endblock %}
 
 {% block content %}
@@ -129,14 +128,7 @@
 				<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
 			{% endif %}
 
-			{% if upcoming_events_interest %}
-				{% for event in upcoming_events_interest|slice:"5" %}
-					{% cycle 'col1' 'col2' as col silent %}
-					{% if col = 'col1' %}<div class="row">{% endif %}
-					{% include "brambling/_event_list_item.html" %}
-					{% if col = 'col2' or forloop.last %}</div>{% endif %}
-				{% endfor %}
-			{% elif upcoming_events %}
+			{% if upcoming_events %}
 				{% for event in upcoming_events|slice:"5" %}
 					{% cycle 'col1' 'col2' as col silent %}
 					{% if col = 'col1' %}<div class="row">{% endif %}
