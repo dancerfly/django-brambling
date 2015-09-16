@@ -4,7 +4,7 @@ from django.db.models import Count
 from brambling.models import (Person, Event, DanceStyle,
                               EnvironmentalFactor, DietaryRestriction,
                               HousingCategory, CustomForm, CustomFormField,
-                              Organization)
+                              Organization, Order)
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
 
 
@@ -228,3 +228,4 @@ admin.site.register(DanceStyle)
 admin.site.register(EnvironmentalFactor)
 admin.site.register(DietaryRestriction)
 admin.site.register(HousingCategory)
+admin.site.register(Order)

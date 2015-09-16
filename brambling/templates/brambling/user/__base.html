@@ -27,10 +27,10 @@
 		<div class="alert alert-info">
 			<p>We found {{ linkable_orders|length|apnumber }} order{{ linkable_orders|pluralize }} associated with your email address.
 			<p>
-				<a href="{{ brambling_link_orders_url }}" class="btn btn-sm btn-info">Claim Order{{ linkable_orders|pluralize }}</a>
+				<a href="{{ brambling_link_orders_url }}" class="btn btn-sm btn-info">Claim order{{ linkable_orders|pluralize }}</a>
 				<a href="javascript://" class="btn btn-sm btn-default popped text-muted" data-toggle="popover" data-container=".container" data-content="
 					We found some orders that you made while not logged in.
-					Claim orders to make changes or keep {% if linkable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
+					Claim orders to make changes or keep them in your account records.
 				">What&#8217;s this?</a>
 			</p>
 		</div>

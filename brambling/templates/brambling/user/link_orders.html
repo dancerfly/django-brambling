@@ -10,7 +10,7 @@
 
 	<p>
 		{{ linkable_orders|length|apnumber|capfirst }} order{{ linkable_orders|pluralize }} {% if linkable_orders|length == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
-		Claim orders below to make changes or keep {% if linkable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
+		Claim order{{ linkable_orders|pluralize }} below to make changes or keep {% if linkable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
 	</p>
 
 	{% if request.user.email != request.user.confirmed_email %}

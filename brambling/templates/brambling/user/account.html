@@ -49,11 +49,6 @@
 						<p>
 							<span class='text-success'><i class='fa fa-check'></i> <strong>Address confirmed: {{ form.initial.email }}</strong></span>
 						</p>
-						{% if linkable_orders %}
-							<p>
-								You have <a href="{% url 'brambling_link_orders' %}">{{ linkable_orders|length }} linkable order{{ linkable_orders|length|pluralize }}</a>.
-							</p>
-						{% endif %}
 					{% endif %}
 				</div>
 			</div>{# /.panel #}
