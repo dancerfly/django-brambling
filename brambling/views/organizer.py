@@ -799,7 +799,10 @@ class AttendeeFilterView(EventTableView):
 
     def get_queryset(self):
         qs = super(AttendeeFilterView, self).get_queryset()
-        return qs.filter(order__event=self.event).distinct()
+        return qs.filter(
+            order__event=self.event,
+            bought_items__status=BoughtItem.BOUGHT,
+        ).distinct()
 
 
 class OrderFilterView(EventTableView):
@@ -811,7 +814,10 @@ class OrderFilterView(EventTableView):
 
     def get_queryset(self):
         qs = super(OrderFilterView, self).get_queryset()
-        return qs.filter(event=self.event)
+        return qs.annotate(transaction_count=Count('transactions')).filter(
+            event=self.event,
+            transaction_count__gt=0,
+        )
 
 
 class RefundView(View):
