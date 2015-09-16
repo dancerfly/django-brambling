@@ -505,8 +505,8 @@ class AttendeeTable(CustomDataTable):
 class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
-         ('code', 'person', 'balance', 'cart_items',
-          'purchased_items', 'refunded_items', 'completed_date')),
+         ('code', 'person', 'balance', 'purchased_items',
+          'refunded_items', 'completed_date')),
     )
     survey_fieldsets = (
         ('Survey',
@@ -624,14 +624,6 @@ class OrderTable(CustomDataTable):
                 queryset = queryset.annotate(
                     balance=Sum('transactions__amount'),
                 )
-            elif field == 'cart_items':
-                queryset = queryset.extra(select={
-                    'cart_items': """
-                        SELECT COUNT(*) FROM brambling_boughtitem WHERE
-                        brambling_boughtitem.order_id = brambling_order.id AND
-                        brambling_boughtitem.status IN ('reserved', 'unpaid')
-                    """,
-                })
             elif field == 'purchased_items':
                 queryset = queryset.extra(select={
                     'purchased_items': """
