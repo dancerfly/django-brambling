@@ -43,7 +43,7 @@
 					{% if form.initial.email != person.confirmed_email %}
 						{% url "brambling_email_confirm_send" as send_url %}
 						<p>
-							<a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ form.initial.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address</a>
+							<a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}?next_url={{ request.path }}" title='Send an email with a confirmation link to {{ form.initial.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address</a>
 						</p>
 					{% else %}
 						<p>

@@ -46,7 +46,12 @@ def send_confirmation_email_view(request, *args, **kwargs):
         secure=request.is_secure(),
     ).send([request.user.email])
     messages.add_message(request, messages.SUCCESS, "Confirmation email sent.")
-    return HttpResponseRedirect('/')
+    next_url = '/'
+    if ('next_url' in request.GET and
+            is_safe_url(url=request.GET['next_url'],
+                        host=request.get_host())):
+        next_url = request.GET['next_url']
+    return HttpResponseRedirect(next_url)
 
 
 class EmailConfirmView(DetailView):
