@@ -43,7 +43,7 @@
 			<form action="{{ request.path }}" method="post" novalidate>
 				{% csrf_token %}
 				{% form form using %}
-					{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 					<div class="row">
 						<div class="col-md-6">

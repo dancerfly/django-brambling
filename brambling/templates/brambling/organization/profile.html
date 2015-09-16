@@ -12,7 +12,7 @@
 		{% csrf_token %}
 
 		{% form form using %}
-			{% formconfig row using "floppyforms/rows/bootstrap.html" %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 			{% formrow form.name %}
 			{% if form.slug %}

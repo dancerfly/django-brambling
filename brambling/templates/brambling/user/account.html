@@ -1,7 +1,6 @@
 {% extends 'brambling/user/__base.html' %}
 
 {% load floppyforms static %}
-{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 {% block title %}Account settings – {{ block.super }}{% endblock %}
 
@@ -14,6 +13,7 @@
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
 					<h4 class="panel-title">Profile Information</h4>
