@@ -1,0 +1,74 @@
+{% extends 'brambling/user/__base.html' %}
+
+{% load floppyforms humanize %}
+
+{% block title %}Claim orders – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	<h2 class="sr-only">Claim orders</h2>
+
+	{% if request.user.email != request.user.confirmed_email %}
+		<div class='well'>
+			<p class='text-danger'>
+				<i class='fa fa-ban'></i>
+				Your address ({{ request.user.email }}) isn’t confirmed.
+				You must confirm your email address before claiming orders.
+			</p>
+			<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Send confirmation email</a></p>
+		</div>
+	{% else %}
+		{% if claimable_orders %}
+			<p>
+				{% with claimable_count=claimable_orders|length unclaimable_count=unclaimable_orders|length %}
+				{% with order_count=claimable_count|add:unclaimable_count %}
+				{{ order_count|apnumber|capfirst }} order{{ order_count|pluralize }} {% if order_count == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
+				Claim order{{ claimable_orders|pluralize }} below to make changes or keep {% if claimable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
+				{% endwith %}{% endwith %}
+			</p>
+
+			<div class='table-responsive'>
+				<table class='table table-striped'>
+					<tbody>
+						{% for order in claimable_orders %}
+							<tr>
+								<td>
+									<strong>{{ order.event.name }}</strong><br />
+									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
+								</td>
+								<td class='text-right'>
+									<form method='post' action='{% url "brambling_claim_order" pk=order.pk %}'>
+										{% csrf_token %}
+										<button type='submit' class='btn btn-default'>Claim</button>
+									</form>
+								</td>
+							</tr>
+
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% endif %}
+
+		{% if unclaimable_orders %}
+			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders already associated with this account.</p>
+
+			<div class='table-responsive'>
+				<table class='table table-striped'>
+					<tbody>
+						{% for order in unclaimable_orders %}
+							<tr>
+								<td>
+									<strong>{{ order.event.name }}</strong><br />
+									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
+								</td>
+							</tr>
+
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% endif %}
+	{% endif %}
+
+{% endblock %}
