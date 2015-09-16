@@ -78,14 +78,16 @@
 			</div>{# /.list-group-item #}
 		</div>
 	</div>
-</form>
-<button id='itemSubmitButton' class='btn btn-primary'>Save</button>
-{% if item.pk %}
-	{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
-	{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
-	<a href="javascript://" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger">Delete</a>
-	<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
 
+	<button id='itemSubmitButton' class='btn btn-primary'>Save</button>
+	{% if item.pk %}
+		{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
+		{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
+		<a href="javascript://" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger">Delete</a>
+		<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
+	{% endif %}
+</form>
+{% if item.pk %}
 	<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
