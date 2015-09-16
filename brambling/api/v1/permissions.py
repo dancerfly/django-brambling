@@ -94,7 +94,7 @@ class OrderPermission(BasePermission):
                 return False
 
             # If this person doesn't have an order for this event yet,
-            # and this order hasn't been checked out yet, link it to the user!
+            # and this order hasn't been checked out yet, claim it for the user!
             if order.bought_items.filter(status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED)).exists():
                 order.person = request.user
                 order.save()

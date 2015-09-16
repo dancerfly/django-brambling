@@ -701,7 +701,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
             models.Q(editors=self)
         ).order_by('name').distinct()
 
-    def get_linkable_orders(self):
+    def get_claimable_orders(self):
         if self.email != self.confirmed_email:
             return Order.objects.none()
         event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
@@ -712,7 +712,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
             event__in=event_pks,
         )
 
-    def get_unlinkable_orders(self):
+    def get_unclaimable_orders(self):
         if self.email != self.confirmed_email:
             return Order.objects.none()
         event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
@@ -788,8 +788,8 @@ class OrderManager(models.Manager):
             del session_orders[str(event.pk)]
             request.session[self._session_key] = session_orders
 
-    def _can_link(self, order, user):
-        # An order can be auto-linked if:
+    def _can_claim(self, order, user):
+        # An order can be auto-claimed if:
         # 1. It doesn't have a person.
         # 2. User is authenticated
         # 3. User doesn't have an order for the event yet.
@@ -822,9 +822,9 @@ class OrderManager(models.Manager):
                 if order.person != request.user:
                     raise SuspiciousOperation
             elif request.user.is_authenticated():
-                # If the order is unlinked and the current user
-                # is authenticated, either link it or object.
-                if self._can_link(order, request.user):
+                # If the order is unclaimed and the current user
+                # is authenticated, either claim it or object.
+                if self._can_claim(order, request.user):
                     order.person = request.user
                     order.save()
                 else:
@@ -855,7 +855,7 @@ class OrderManager(models.Manager):
                 except Order.DoesNotExist:
                     pass
                 else:
-                    if self._can_link(order, request.user):
+                    if self._can_claim(order, request.user):
                         order.person = request.user
                         order.save()
                     elif request.user.is_authenticated():

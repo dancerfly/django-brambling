@@ -2,15 +2,15 @@
 
 {% load floppyforms humanize %}
 
-{% block title %}Link orders – {{ block.super }}{% endblock %}
+{% block title %}Claim orders – {{ block.super }}{% endblock %}
 
 {% block main %}
 	{{ block.super }}
 	<h2 class="sr-only">Claim orders</h2>
 
 	<p>
-		{{ linkable_orders|length|apnumber|capfirst }} order{{ linkable_orders|pluralize }} {% if linkable_orders|length == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
-		Claim order{{ linkable_orders|pluralize }} below to make changes or keep {% if linkable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
+		{{ claimable_orders|length|apnumber|capfirst }} order{{ claimable_orders|pluralize }} {% if claimable_orders|length == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
+		Claim order{{ claimable_orders|pluralize }} below to make changes or keep {% if claimable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
 	</p>
 
 	{% if request.user.email != request.user.confirmed_email %}
@@ -23,18 +23,18 @@
 			<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Send confirmation email</a></p>
 		</div>
 	{% else %}
-		{% if linkable_orders %}
+		{% if claimable_orders %}
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
-						{% for order in linkable_orders %}
+						{% for order in claimable_orders %}
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
 									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
 								</td>
 								<td class='text-right'>
-									<form method='post' action='{% url "brambling_link_order" pk=order.pk %}'>
+									<form method='post' action='{% url "brambling_claim_order" pk=order.pk %}'>
 										{% csrf_token %}
 										<button type='submit' class='btn btn-default'>Claim</button>
 									</form>
@@ -45,17 +45,15 @@
 					</tbody>
 				</table>
 			</div>
-		{% else %}
-			<p>There are no orders which can be automatically linked to your account.</p>
 		{% endif %}
 
-		{% if unlinkable_orders %}
-			<p>The following orders were created using your email address, but can’t be linked automatically because they conflict with orders already linked to this account.</p>
+		{% if unclaimable_orders %}
+			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders associated with this account.</p>
 
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
-						{% for order in unlinkable_orders %}
+						{% for order in unclaimable_orders %}
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
