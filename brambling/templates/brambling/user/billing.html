@@ -24,6 +24,7 @@
 {% endblock %}
 
 {% block main %}
+	{{ block.super }}
 	<h2 class="sr-only">Billing settings</h2>
 
 	{% include "brambling/forms/_top_error_list.html" %}

@@ -1,25 +1,26 @@
 {% extends 'brambling/user/__base.html' %}
 
-{% load floppyforms %}
+{% load floppyforms humanize %}
 
 {% block title %}Link orders – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<h2 class="sr-only">Link orders</h2>
+	{{ block.super }}
+	<h2 class="sr-only">Claim orders</h2>
 
 	<p>
-		Here you can find orders that were created using your email address, but not by a logged-in user.
-		Link these orders to your account to easily view and modify them.
+		{{ linkable_orders|length|apnumber|capfirst }} order{{ linkable_orders|pluralize }} {% if linkable_orders|length == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
+		Claim orders below to make changes or keep {% if linkable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
 	</p>
 
 	{% if request.user.email != request.user.confirmed_email %}
 		<div class='well'>
-			<p class='text-danger'><i class='fa fa-ban'></i> Your address ({{ request.user.email }}) isn't confirmed</p>
-			<p>
-				You'll need to confirm your email address before you can see whether you have any linkable orders.
+			<p class='text-danger'>
+				<i class='fa fa-ban'></i>
+				Your address ({{ request.user.email }}) isn’t confirmed.
+				You must confirm your email address before claiming orders.
 			</p>
-
-			<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address!</a></p>
+			<p><a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}" title='Send an email with a confirmation link to {{ request.user.email }}'><i class='fa fa-paper-plane'></i> Send confirmation email</a></p>
 		</div>
 	{% else %}
 		{% if linkable_orders %}
@@ -30,15 +31,12 @@
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
-									{{ order.event.organization.name }}
-								</td>
-								<td>
-									{{ order.event.start_date|date:"F jS, Y" }}
+									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
 								</td>
 								<td class='text-right'>
 									<form method='post' action='{% url "brambling_link_order" pk=order.pk %}'>
 										{% csrf_token %}
-										<button type='submit' class='btn btn-default'>Link it!</button>
+										<button type='submit' class='btn btn-default'>Claim</button>
 									</form>
 								</td>
 							</tr>
@@ -52,7 +50,7 @@
 		{% endif %}
 
 		{% if unlinkable_orders %}
-			<p>The following orders were created using your email address, but can't be linked automatically because they conflict with orders already linked to this account.</p>
+			<p>The following orders were created using your email address, but can’t be linked automatically because they conflict with orders already linked to this account.</p>
 
 			<div class='table-responsive'>
 				<table class='table table-striped'>
@@ -61,10 +59,7 @@
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
-									{{ order.event.organization.name }}
-								</td>
-								<td>
-									{{ order.event.start_date|date:"F jS, Y" }}
+									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
 								</td>
 							</tr>
 
