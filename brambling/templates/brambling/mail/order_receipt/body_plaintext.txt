@@ -16,7 +16,7 @@ If you believe this is in error, please contact the event organizer directly.
 {% for txn, txn_dict in transactions.iteritems %}{% for item in txn_dict.items %}{% if item.status == item.BOUGHT %}{{ item.item_name }} ({{ item.item_option_name }})
 {{ item.attendee.get_full_name }}
 {{ item.price|format_money:event.currency }}
-{% for discount in item.discounts.all %}({{ discount.amount|format_money:event.currency }})
+{% for discount in item.discounts.all %}({{ discount.savings|format_money:event.currency }})
 {% endfor %}
 {% endif %}{% endfor %}{% endfor %}----------------------
 
