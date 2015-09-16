@@ -43,14 +43,19 @@
 						<div class='{% if unassigned_items %}col-md-6{% else %}col-md-4{% endif %}'>
 							{% if code_in_url %}
 								{% url "brambling_event_attendee_edit" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
+								{% url "brambling_event_attendee_remove" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_remove_url %}
 							{% else %}
 								{% url "brambling_event_attendee_edit" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
+								{% url "brambling_event_attendee_remove" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_remove_url %}
 							{% endif %}
 							<div class='panel panel-primary'>
 								<div class='panel-heading'>
 									<div class='panel-title'>
 										<a href='{{ attendee_url }}'>
 											{{ attendee.get_full_name }}
+										</a>
+										<a class='remove-link pull-right' href='{{ attendee_remove_url }}' target="{{ attendee_remove_url }}">
+											<i class='fa fa-fw fa-trash'></i>
 										</a>
 										<a href='{{ attendee_url }}' class="pull-right">
 											<i class='fa fa-fw fa-pencil'></i>

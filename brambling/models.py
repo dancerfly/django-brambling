@@ -678,8 +678,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     other_needs = models.TextField(blank=True)
 
-    dance_styles = models.ManyToManyField(DanceStyle, blank=True)
-
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
@@ -702,6 +700,27 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
             models.Q(owner=self) |
             models.Q(editors=self)
         ).order_by('name').distinct()
+
+    def get_claimable_orders(self):
+        if self.email != self.confirmed_email:
+            return Order.objects.none()
+        event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
+        return Order.objects.filter(
+            person__isnull=True,
+            email=self.email,
+        ).exclude(
+            event__in=event_pks,
+        )
+
+    def get_unclaimable_orders(self):
+        if self.email != self.confirmed_email:
+            return Order.objects.none()
+        event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
+        return Order.objects.filter(
+            person__isnull=True,
+            email=self.email,
+            event__in=event_pks,
+        )
 
 
 class CreditCard(models.Model):
@@ -769,8 +788,8 @@ class OrderManager(models.Manager):
             del session_orders[str(event.pk)]
             request.session[self._session_key] = session_orders
 
-    def _can_assign(self, order, user):
-        # An order can be auto-assigned if:
+    def _can_claim(self, order, user):
+        # An order can be auto-claimed if:
         # 1. It doesn't have a person.
         # 2. User is authenticated
         # 3. User doesn't have an order for the event yet.
@@ -804,8 +823,8 @@ class OrderManager(models.Manager):
                     raise SuspiciousOperation
             elif request.user.is_authenticated():
                 # If the order is unclaimed and the current user
-                # is authenticated, either assign it or object.
-                if self._can_assign(order, request.user):
+                # is authenticated, either claim it or object.
+                if self._can_claim(order, request.user):
                     order.person = request.user
                     order.save()
                 else:
@@ -836,7 +855,7 @@ class OrderManager(models.Manager):
                 except Order.DoesNotExist:
                     pass
                 else:
-                    if self._can_assign(order, request.user):
+                    if self._can_claim(order, request.user):
                         order.person = request.user
                         order.save()
                     elif request.user.is_authenticated():

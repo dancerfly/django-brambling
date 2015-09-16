@@ -1,5 +1,7 @@
 {% extends 'brambling/layouts/3_9.html' %}
 
+{% load humanize %}
+
 {% block side %}
 	{% url 'brambling_home' as brambling_home_url %}
 	{% url 'brambling_user_account' as brambling_user_account_url %}
@@ -16,4 +18,21 @@
 			<a class="list-group-item{% if request.path == brambling_home_url %} active{% endif %}" href="{{ brambling_home_url }}"><i class="fa fa-home fa-fw"></i> Home</a>
 		</nav>
 	</div>
+{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	{% url 'brambling_claim_orders' as brambling_claim_orders_url %}
+	{% if claimable_orders and request.path != brambling_claim_orders_url %}
+		<div class="alert alert-info">
+			<p>We found {{ claimable_orders|length|apnumber }} order{{ claimable_orders|pluralize }} associated with your email address.
+			<p>
+				<a href="{{ brambling_claim_orders_url }}" class="btn btn-sm btn-info">Claim order{{ claimable_orders|pluralize }}</a>
+				<a href="javascript://" class="btn btn-sm btn-default popped text-muted" data-toggle="popover" data-container=".container" data-content="
+					We found some orders that you made while not logged in.
+					Claim orders to make changes or keep them in your account records.
+				">What&#8217;s this?</a>
+			</p>
+		</div>
+	{% endif %}
 {% endblock %}
