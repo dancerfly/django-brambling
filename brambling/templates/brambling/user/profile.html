@@ -38,12 +38,6 @@
 					{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
 						<small><a href="#nameOptions" data-toggle="collapse" class="pull-right more-name-options"><i class="fa fa-plus"></i> More Name Options</a></small>
 					{% endif %}
-					{% if person.email != person.confirmed_email %}
-						{% url "brambling_email_confirm_send" as send_url %}
-						{% formrow form.email with help_text="<a href='"|add:send_url|add:"'>Request a confirmation email</a>"|safe %}
-					{% else %}
-						{% formrow form.email %}
-					{% endif %}
 					{% formrow form.phone %}
 				</div>
 			</div>{# /.panel #}
