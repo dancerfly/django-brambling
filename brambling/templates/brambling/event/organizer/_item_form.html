@@ -95,14 +95,13 @@
 				</div>
 				<div class="modal-body">
 					<p>You are about to delete an item.  It will be removed from your store, but all purchase and order records for it will be preserved.</p>
-					<p>This procedure cannot be undone.</p>
-					<p>Do you want to proceed?</p>
+					<p>This procedure cannot be undone. Do you want to proceed?</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-default" data-dismiss="modal">No, I changed my mind</button>
 					<form action="{{ delete_url }}" method='post' class='inline-block'>
 						{% csrf_token %}
-						<button class='btn btn-danger' type='submit'>Delete</button>
+						<button class='btn btn-danger' type='submit'>Yes, delete it</button>
 					</form>
 				</div>
 			</div>
