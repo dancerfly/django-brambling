@@ -8,11 +8,6 @@
 	{{ block.super }}
 	<h2 class="sr-only">Claim orders</h2>
 
-	<p>
-		{{ claimable_orders|length|apnumber|capfirst }} order{{ claimable_orders|pluralize }} {% if claimable_orders|length == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
-		Claim order{{ claimable_orders|pluralize }} below to make changes or keep {% if claimable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
-	</p>
-
 	{% if request.user.email != request.user.confirmed_email %}
 		<div class='well'>
 			<p class='text-danger'>
@@ -24,6 +19,14 @@
 		</div>
 	{% else %}
 		{% if claimable_orders %}
+			<p>
+				{% with claimable_count=claimable_orders|length unclaimable_count=unclaimable_orders|length %}
+				{% with order_count=claimable_count|add:unclaimable_count %}
+				{{ order_count|apnumber|capfirst }} order{{ order_count|pluralize }} {% if order_count == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
+				Claim order{{ claimable_orders|pluralize }} below to make changes or keep {% if claimable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
+				{% endwith %}{% endwith %}
+			</p>
+
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
@@ -48,7 +51,7 @@
 		{% endif %}
 
 		{% if unclaimable_orders %}
-			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders associated with this account.</p>
+			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders already associated with this account.</p>
 
 			<div class='table-responsive'>
 				<table class='table table-striped'>
