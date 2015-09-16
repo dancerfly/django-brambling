@@ -83,29 +83,29 @@
 {% if item.pk %}
 	{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
 	{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
-    <a href="javascript://" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger">Delete</a>
+	<a href="javascript://" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger">Delete</a>
 	<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
 
-    <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title" id="myModalLabel">Confirm Delete: {{ item.name }}</h4>
-                </div>
-                <div class="modal-body">
-                    <p>You are about to delete an item.  It will be removed from your store, but all purchase and order records for it will be preserved.</p>
-                       <p>This procedure cannot be undone.</p>
-                    <p>Do you want to proceed?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <form action="{{ delete_url }}" method='post' class='inline-block'>
-		                {% csrf_token %}
-		                <button class='btn btn-danger' type='submit'>Delete</button>
-	                </form>
-                </div>
-            </div>
-        </div>
-    </div>
+	<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title" id="myModalLabel">Confirm Delete: {{ item.name }}</h4>
+				</div>
+				<div class="modal-body">
+					<p>You are about to delete an item.  It will be removed from your store, but all purchase and order records for it will be preserved.</p>
+					<p>This procedure cannot be undone.</p>
+					<p>Do you want to proceed?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<form action="{{ delete_url }}" method='post' class='inline-block'>
+						{% csrf_token %}
+						<button class='btn btn-danger' type='submit'>Delete</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endif %}
