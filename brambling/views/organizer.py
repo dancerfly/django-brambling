@@ -14,14 +14,12 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.utils.encoding import force_text
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View, DeleteView)
 
 from floppyforms.__future__.models import modelform_factory
 import requests
 
-from brambling.filters import AttendeeFilterSet, OrderFilterSet
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
@@ -302,11 +300,16 @@ class EventSummaryView(TemplateView):
 
         fees = (sums['application_fee'] or 0) + (sums['processing_fee'] or 0)
 
+        attendees = Attendee.objects.filter(
+            order__event=self.event,
+            bought_items__status=BoughtItem.BOUGHT,
+        )
+
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
 
-            'attendee_count': Attendee.objects.filter(order__event=self.event).count(),
+            'attendee_count': attendees.count(),
             'itemoptions': itemoptions,
             'discounts': discounts,
 
@@ -321,9 +324,9 @@ class EventSummaryView(TemplateView):
 
         if self.event.collect_housing_data:
             context.update({
-                'attendee_requesting_count': Attendee.objects.filter(order__event=self.event, housing_status=Attendee.NEED).count(),
-                'attendee_arranged_count': Attendee.objects.filter(order__event=self.event, housing_status=Attendee.HAVE).count(),
-                'attendee_home_count': Attendee.objects.filter(order__event=self.event, housing_status=Attendee.HOME).count(),
+                'attendee_requesting_count': attendees.filter(housing_status=Attendee.NEED).count(),
+                'attendee_arranged_count': attendees.filter(housing_status=Attendee.HAVE).count(),
+                'attendee_home_count': attendees.filter(housing_status=Attendee.HOME).count(),
             })
         return context
 
@@ -815,7 +818,10 @@ class AttendeeFilterView(EventTableView):
 
     def get_queryset(self):
         qs = super(AttendeeFilterView, self).get_queryset()
-        return qs.filter(order__event=self.event).distinct()
+        return qs.filter(
+            order__event=self.event,
+            bought_items__status=BoughtItem.BOUGHT,
+        ).distinct()
 
 
 class OrderFilterView(EventTableView):
@@ -827,7 +833,10 @@ class OrderFilterView(EventTableView):
 
     def get_queryset(self):
         qs = super(OrderFilterView, self).get_queryset()
-        return qs.filter(event=self.event)
+        return qs.annotate(transaction_count=Count('transactions')).filter(
+            event=self.event,
+            transaction_count__gt=0,
+        )
 
 
 class RefundView(View):

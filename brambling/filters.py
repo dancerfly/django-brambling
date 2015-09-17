@@ -112,7 +112,6 @@ class AttendeeFilterSet(django_filters.FilterSet):
 
 
 class OrderFilterSet(FloppyFilterSet):
-    has_cart_items = BoughtItemStatusFilter(status=[BoughtItem.RESERVED, BoughtItem.UNPAID])
     has_purchased_items = BoughtItemStatusFilter(status=BoughtItem.BOUGHT)
     has_refunded_items = BoughtItemStatusFilter(status=BoughtItem.REFUNDED)
 
