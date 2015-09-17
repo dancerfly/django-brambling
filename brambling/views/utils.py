@@ -1,7 +1,7 @@
 from collections import OrderedDict
-from datetime import timedelta, datetime
+from datetime import timedelta
 from functools import wraps
-from itertools import ifilter, islice
+from itertools import ifilter
 
 import pytz
 from django.core.urlresolvers import reverse
@@ -12,7 +12,7 @@ from django.utils import timezone
 from zenaida.templatetags.zenaida import format_money
 
 from brambling.models import Event, BoughtItem
-from brambling.utils.model_tables import Cell
+from brambling.utils.model_tables import Cell, Row
 
 
 def get_event_or_404(slug):
@@ -261,19 +261,16 @@ class FinanceTable(object):
         return format_money(amount, self.event.currency)
 
     def format_transaction(self, transaction):
-        return [
-            Cell(field='timestamp', value=self.format_timestamp(transaction)),
-            Cell(field='created_by', value=self.created_by_name(transaction)),
-            Cell(field='method', value=transaction.get_method_display()),
-            Cell(field='type',
-                 value=transaction.get_transaction_type_display()),
-            Cell(field='order', value=self.order_code(transaction)),
-            Cell(field='amount', value=self.money(transaction.amount)),
-            Cell(field='application_fee',
-                 value=self.money(transaction.application_fee)),
-            Cell(field='processing_fee',
-                 value=self.money(transaction.processing_fee)),
-        ]
+        return Row((
+            ('timestamp', self.format_timestamp(transaction)),
+            ('created_by', self.created_by_name(transaction)),
+            ('method', transaction.get_method_display()),
+            ('type', transaction.get_transaction_type_display()),
+            ('order', self.order_code(transaction)),
+            ('amount', self.money(transaction.amount)),
+            ('application_fee', self.money(transaction.application_fee)),
+            ('processing_fee', self.money(transaction.processing_fee)),
+        ), obj=transaction)
 
     def format_timestamp(self, transaction):
         tz = pytz.timezone(self.event.timezone)
