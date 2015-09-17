@@ -15,7 +15,7 @@ from django.template import RequestContext
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
-                                  TemplateView, DetailView, View)
+                                  TemplateView, DetailView, View, DeleteView)
 
 from floppyforms.__future__.models import modelform_factory
 import requests
@@ -522,6 +522,22 @@ def item_form(request, *args, **kwargs):
     return render_to_response('brambling/event/organizer/item_form.html',
                               context,
                               context_instance=RequestContext(request))
+
+
+class ItemDeleteView(DeleteView):
+    def get_object(self):
+        self.event = get_object_or_404(
+            Event.objects.select_related('organization'),
+            slug=self.kwargs['event_slug'],
+            organization__slug=self.kwargs['organization_slug'],
+        )
+        if not self.event.editable_by(self.request.user):
+            raise Http404
+        return get_object_or_404(Item, pk=self.kwargs['pk'], event=self.event)
+
+    def get_success_url(self):
+        return reverse('brambling_item_list',
+                       kwargs={'event_slug': self.event.slug, 'organization_slug': self.event.organization.slug})
 
 
 class ItemListView(ListView):

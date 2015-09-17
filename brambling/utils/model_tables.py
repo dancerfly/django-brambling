@@ -409,7 +409,7 @@ class AttendeeTable(CustomDataTable):
     )
 
     label_overrides = {
-        'pk': 'ID',
+        'pk': 'Id',
         'get_full_name': 'Name',
         'housing_nights': 'Housing nights',
         'housing_preferences': 'Housing environment preference',

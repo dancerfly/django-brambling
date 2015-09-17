@@ -577,6 +577,16 @@ class AttendeeHousingView(OrderMixin, WorkflowMixin, TemplateView):
         return context
 
 
+class RemoveAttendeeView(OrderMixin, View):
+    @method_decorator(ajax_required)
+    def post(self, request, *args, **kwargs):
+        if self.order is None:
+            raise Http404
+
+        Attendee.objects.filter(order=self.order, pk=kwargs['pk']).delete()
+        return JsonResponse({'success': True})
+
+
 class SurveyDataView(OrderMixin, WorkflowMixin, UpdateView):
     template_name = 'brambling/event/order/survey.html'
     context_object_name = 'order'

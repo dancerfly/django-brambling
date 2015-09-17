@@ -84,7 +84,7 @@ class AttendeeBasicDataForm(CustomDataForm):
                 (Attendee.HOME, 'Staying at own home'),
             )
             self.fields['housing_status'].initial = ''
-            self.fields['phone'].help_text = 'Required if requesting housing'
+            self.fields['phone'].help_text = 'Optional unless requesting housing'
 
     def get_custom_forms(self):
         return self.order.event.forms.filter(form_type=CustomForm.ATTENDEE).prefetch_related('fields')

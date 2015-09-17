@@ -10,7 +10,7 @@ import stripe
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, ProfileForm, BillingForm, HomeForm, SignUpForm
-from brambling.models import Person, Home, CreditCard
+from brambling.models import Person, Home, CreditCard, Order
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
@@ -46,7 +46,12 @@ def send_confirmation_email_view(request, *args, **kwargs):
         secure=request.is_secure(),
     ).send([request.user.email])
     messages.add_message(request, messages.SUCCESS, "Confirmation email sent.")
-    return HttpResponseRedirect('/')
+    next_url = '/'
+    if ('next_url' in request.GET and
+            is_safe_url(url=request.GET['next_url'],
+                        host=request.get_host())):
+        next_url = request.GET['next_url']
+    return HttpResponseRedirect(next_url)
 
 
 class EmailConfirmView(DetailView):
@@ -81,6 +86,8 @@ class AccountView(UpdateView):
 
     def get_object(self):
         if self.request.user.is_authenticated():
+            # Do this here because _post_clean could override user's email address.
+            self.claimable_orders = self.request.user.get_claimable_orders()
             return self.request.user
         raise Http404
 
@@ -98,20 +105,9 @@ class AccountView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(AccountView, self).get_context_data(**kwargs)
-        cards_qs = self.request.user.cards.filter(is_saved=True).order_by('-added')
         context.update({
-            'cards': {
-                'test': cards_qs.filter(api_type=CreditCard.TEST),
-                'live': cards_qs.filter(api_type=CreditCard.LIVE),
-            },
-            'stripe_live_settings_valid': stripe_live_settings_valid(),
-            'stripe_test_settings_valid': stripe_test_settings_valid(),
-            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
-            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
+            'claimable_orders': self.claimable_orders,
         })
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
-                self.request.user, LIVE, self.request)
         return context
 
 
@@ -134,20 +130,9 @@ class ProfileView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProfileView, self).get_context_data(**kwargs)
-        cards_qs = self.request.user.cards.filter(is_saved=True).order_by('-added')
         context.update({
-            'cards': {
-                'test': cards_qs.filter(api_type=CreditCard.TEST),
-                'live': cards_qs.filter(api_type=CreditCard.LIVE),
-            },
-            'stripe_live_settings_valid': stripe_live_settings_valid(),
-            'stripe_test_settings_valid': stripe_test_settings_valid(),
-            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
-            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
-                self.request.user, LIVE, self.request)
         return context
 
 
@@ -180,6 +165,7 @@ class BillingView(UpdateView):
             'stripe_test_settings_valid': stripe_test_settings_valid(),
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         if self.object.dwolla_live_can_connect():
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
@@ -218,6 +204,7 @@ class CreditCardAddView(TemplateView):
             'api_type': self.kwargs['api_type'],
             'LIVE': CreditCard.LIVE,
             'TEST': CreditCard.TEST,
+            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         return context
 
@@ -261,6 +248,7 @@ class CreditCardDeleteView(View):
 class HomeView(UpdateView):
     model = Home
     form_class = HomeForm
+    template_name = 'brambling/user/home.html'
 
     def get_object(self):
         if not self.request.user.is_authenticated():
@@ -275,3 +263,47 @@ class HomeView(UpdateView):
 
     def get_success_url(self):
         return reverse('brambling_home')
+
+    def get_context_data(self, **kwargs):
+        context = super(HomeView, self).get_context_data(**kwargs)
+        context.update({
+            'claimable_orders': self.request.user.get_claimable_orders(),
+        })
+        return context
+
+
+class ClaimOrdersView(TemplateView):
+    template_name = 'brambling/user/claim_orders.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        return super(ClaimOrdersView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ClaimOrdersView, self).get_context_data(**kwargs)
+        context.update({
+            'claimable_orders': self.request.user.get_claimable_orders().select_related('event__organization'),
+            'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
+        })
+        return context
+
+
+class ClaimOrderView(View):
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        if request.user.email != request.user.confirmed_email:
+            raise Http404
+
+        try:
+            order = request.user.get_claimable_orders().get(pk=kwargs['pk'])
+        except Order.DoesNotExist:
+            raise Http404
+
+        order.person = request.user
+        order.save()
+        messages.add_message(request, messages.SUCCESS, "Order successfully claimed.")
+        return HttpResponseRedirect(reverse('brambling_claim_orders'))

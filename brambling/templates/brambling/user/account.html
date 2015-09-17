@@ -1,12 +1,12 @@
 {% extends 'brambling/user/__base.html' %}
 
 {% load floppyforms static %}
-{% formconfig row using "floppyforms/rows/bootstrap.html" %}
 
 {% block title %}Account settings – {{ block.super }}{% endblock %}
 
 
 {% block main %}
+	{{ block.super }}
 	<h2 class="sr-only">Account settings</h2>
 
 	{% include "brambling/forms/_top_error_list.html" %}
@@ -14,6 +14,7 @@
 	<form action="{{ request.path }}" method="post">
 		{% csrf_token %}
 		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
 					<h4 class="panel-title">Profile Information</h4>
@@ -38,11 +39,16 @@
 					{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
 						<small><a href="#nameOptions" data-toggle="collapse" class="pull-right more-name-options"><i class="fa fa-plus"></i> More Name Options</a></small>
 					{% endif %}
-					{% if person.email != person.confirmed_email %}
+					{% formrow form.email %}
+					{% if form.initial.email != person.confirmed_email %}
 						{% url "brambling_email_confirm_send" as send_url %}
-						{% formrow form.email with help_text="<a href='"|add:send_url|add:"'>Request a confirmation email</a>"|safe %}
+						<p>
+							<a class='btn btn-default tipped' data-placement="bottom" href="{{ send_url }}?next_url={{ request.path }}" title='Send an email with a confirmation link to {{ form.initial.email }}'><i class='fa fa-paper-plane'></i> Confirm your email address</a>
+						</p>
 					{% else %}
-						{% formrow form.email %}
+						<p>
+							<span class='text-success'><i class='fa fa-check'></i> <strong>Address confirmed: {{ form.initial.email }}</strong></span>
+						</p>
 					{% endif %}
 				</div>
 			</div>{# /.panel #}

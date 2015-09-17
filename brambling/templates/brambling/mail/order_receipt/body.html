@@ -74,7 +74,7 @@
 													{{ item.price|format_money:event.currency }}
 													{% for discount in item.discounts.all %}
 														<br />
-														({{ discount.amount|format_money:event.currency }})
+														({{ discount.savings|format_money:event.currency }})
 													{% endfor %}
 												</td>
 												<td class='expander'>
