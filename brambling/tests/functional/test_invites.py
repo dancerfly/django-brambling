@@ -8,6 +8,7 @@ from brambling.forms.organizer import EventForm
 from brambling.models import Invite
 from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrganizationFactory, PersonFactory)
+from brambling.views.core import InviteAcceptView
 
 
 class InviteTestCase(TestCase):
@@ -77,3 +78,17 @@ class EventFormTestCase(TestCase):
         form.save()
         self.assertEqual(event.get_invites().count(), 2)
         self.assertEqual(len(mail.outbox), 2)
+
+
+class InviteAcceptViewTestCase(TestCase):
+    def test_context_data__no_invite(self):
+        view = InviteAcceptView()
+        view.invite = None
+        view.content = None
+        view.request = RequestFactory().get('/')
+        context = view.get_context_data()
+        self.assertIsNone(context['invite'])
+        self.assertIsNone(context['content'])
+        self.assertFalse(context['invited_person_exists'])
+        self.assertFalse(context['sender_display'])
+        self.assertFalse(context['invited_person_exists'])
