@@ -6,7 +6,7 @@ from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
                                         label_for_field)
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Q, Sum, Min
+from django.db.models import Q, Sum, Min, Prefetch
 from django.forms.forms import pretty_name
 from django.utils.datastructures import SortedDict
 from django.utils.text import capfirst
@@ -395,7 +395,7 @@ class AttendeeTable(CustomDataTable):
         ('Identification',
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
         ('Status',
-         ('items', 'purchase_date')),
+         ('items', 'purchase_date', 'paid')),
         ('Contact',
          ('email', 'phone')),
         ('Housing',
@@ -403,7 +403,7 @@ class AttendeeTable(CustomDataTable):
           'environment_avoid', 'environment_cause', 'person_prefer',
           'person_avoid', 'other_needs')),
         ('Order',
-         ('order_code', 'order_placed_by', 'order_balance')),
+         ('order_code', 'order_placed_by')),
         ('Miscellaneous',
          ('liability_waiver', 'photo_consent')),
     )
@@ -446,7 +446,14 @@ class AttendeeTable(CustomDataTable):
 
     def _add_data(self, queryset, fields):
         use_distinct = False
-        queryset = queryset.select_related('bought_items')
+        queryset = queryset.prefetch_related(
+            Prefetch(
+                'bought_items',
+                queryset=BoughtItem.objects.filter(status=BoughtItem.BOUGHT),
+                to_attr='items'
+            ),
+            'items__discounts'
+        )
         for field in fields:
             if field.startswith('custom_'):
                 queryset = queryset.prefetch_related('custom_data')
@@ -462,10 +469,6 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.select_related('order')
             elif field == 'order_placed_by':
                 queryset = queryset.select_related('order__person')
-            elif field == 'order_balance':
-                queryset = queryset.annotate(
-                    order_balance=Sum('order__transactions__amount')
-                )
             elif field == 'purchase_date':
                 queryset = queryset.annotate(
                     purchase_date=Min('order__transactions__timestamp')
@@ -482,8 +485,13 @@ class AttendeeTable(CustomDataTable):
             return "{} ({})".format(person.get_full_name(), person.email)
         return obj.order.email
 
-    def order_balance(self, obj):
-        return format_money(obj.order_balance or 0, self.event.currency)
+    def paid(self, obj):
+        paid = 0
+        for item in obj.items:
+            paid += item.price
+            for discount in item.discounts.all():
+                paid -= discount.savings()
+        return format_money(paid, self.event.currency)
 
     housing_nights = related_objects_list("nights")
     housing_preferences = related_objects_list("housing_prefer")
@@ -492,7 +500,7 @@ class AttendeeTable(CustomDataTable):
 
     def items(self, obj):
         return ["{} ({})".format(x.item_option_name, x.item_name)
-                for x in obj.bought_items.filter(status=BoughtItem.BOUGHT)]
+                for x in obj.items]
 
     def purchase_date(self, obj):
         if obj.purchase_date:
