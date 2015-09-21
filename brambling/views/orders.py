@@ -305,12 +305,22 @@ class OrderCodeRedirectView(OrderMixin, View):
             organization__slug=kwargs['organization_slug'])
         if not self.event.viewable_by(request.user):
             raise Http404
-        matching_order = Order.objects.filter(event=self.event,
-                                              person__isnull=True,
-                                              code=kwargs['code']).exists()
-        if (matching_order and not request.user.is_authenticated() and
-            not Order.objects._get_session_code(request, self.event)):
+        try:
+            order = Order.objects.get(event=self.event, code=kwargs['code'])
+        except Order.DoesNotExist:
+            raise Http404
+
+        session_code = Order.objects._get_session_code(request, self.event)
+        order_in_session = kwargs['code'] == session_code
+        if (order and not order.person and not request.user.is_authenticated()
+            and not order_in_session):
+            url = reverse('brambling_signup')
+            messages.add_message(request, messages.ERROR, "Please sign up with an account to view this order.")
+        elif (order and order.person and not request.user.is_authenticated()
+              and not order_in_session):
             url = reverse('login')
+            messages.add_message(request, messages.ERROR,
+                                 "Please log in to view this order.")
         else:
             url = reverse('brambling_event_order_summary', kwargs={
                 'event_slug': self.event.slug,
