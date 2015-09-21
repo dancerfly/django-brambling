@@ -56,8 +56,6 @@ class RactiveShopView(TemplateView):
         context['event'] = event
         context['editable_by_user'] = editable_by_user
         context['workflow'] = RegistrationWorkflow(event=event, order=order)
-        context['code_in_url'] = (True if self.kwargs.get('code') and
-                                  not self.request.user.is_authenticated() else False)
         return context
 
 
@@ -70,8 +68,6 @@ class OrderStep(Step):
             'event_slug': self.workflow.event.slug,
             'organization_slug': self.event.organization.slug,
         }
-        if self.workflow.order.person_id is None:
-            kwargs['code'] = self.workflow.order.code
         return reverse(self.view_name, kwargs=kwargs)
 
 
@@ -276,9 +272,6 @@ class OrderMixin(object):
         context.update({
             'event': self.event,
             'order': self.order,
-            # Use codes if a code was used and there's no authenticated user.
-            'code_in_url': (True if self.kwargs.get('code') and
-                            not self.request.user.is_authenticated() else False),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'site': get_current_site(self.request),
             'workflow': self.workflow,
@@ -456,8 +449,6 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
             'event_slug': self.event.slug,
             'organization_slug': self.event.organization.slug,
         }
-        if self.kwargs.get('code') and not self.request.user.is_authenticated():
-            kwargs['code'] = self.order.code
         return HttpResponseRedirect(reverse('brambling_event_attendee_add',
                                             kwargs=kwargs))
 
@@ -562,8 +553,6 @@ class AttendeeHousingView(OrderMixin, WorkflowMixin, TemplateView):
             'event_slug': self.event.slug,
             'organization_slug': self.event.organization.slug,
         }
-        if self.kwargs.get('code') and not self.request.user.is_authenticated():
-            kwargs['code'] = self.order.code
         return reverse('brambling_event_survey', kwargs=kwargs)
 
     def get_forms(self):
@@ -644,8 +633,6 @@ class HostingView(OrderMixin, WorkflowMixin, UpdateView):
             'event_slug': self.event.slug,
             'organization_slug': self.event.organization.slug,
         }
-        if self.kwargs.get('code') and not self.request.user.is_authenticated():
-            kwargs['code'] = self.order.code
         return reverse('brambling_event_order_summary', kwargs=kwargs)
 
 
@@ -729,8 +716,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             if not self.order.person:
                 url = reverse('brambling_event_order_summary', kwargs={
                     'event_slug': self.event.slug,
-                    'organization_slug': self.event.organization.slug,
-                    'code': self.order.code
+                    'organization_slug': self.event.organization.slug
                 })
                 return HttpResponseRedirect(url)
             return HttpResponseRedirect('')
@@ -792,8 +778,6 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 'event_slug': self.event.slug,
                 'organization_slug': self.event.organization.slug,
             }
-            if self.kwargs.get('code') and not self.request.user.is_authenticated():
-                kwargs['code'] = self.order.code
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
             context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
                 dwolla_obj, self.event.api_type, self.request, next_url)

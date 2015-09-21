@@ -933,8 +933,7 @@ class Order(AbstractDwollaModel):
     def get_dwolla_connect_url(self):
         return reverse('brambling_order_dwolla_connect',
                        kwargs={'event_slug': self.event.slug,
-                               'organization_slug': self.event.organization.slug,
-                               'code': self.code})
+                               'organization_slug': self.event.organization.slug})
 
     def dwolla_connected(self):
         if self.api_type == Event.LIVE:

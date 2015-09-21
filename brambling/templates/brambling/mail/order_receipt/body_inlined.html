@@ -323,7 +323,7 @@ background: #970b0e !important;
 	{% if order.person %}
 		{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug as url %}
 	{% else %}
-		{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
+		{% url 'brambling_event_order_summary' event_slug=event.slug organization_slug=event.organization.slug as url %}
 	{% endif %}
 	<table class="container" style="border-spacing: 0; border-collapse: collapse; vertical-align: top; text-align: inherit; width: 580px; margin: 0 auto; padding: 0;"><tr style="vertical-align: top; text-align: left; padding: 0;" align="left"><td style="word-break: break-word; -webkit-hyphens: auto; -moz-hyphens: auto; hyphens: auto; border-collapse: collapse !important; vertical-align: top; text-align: left; color: #222222; font-family: 'Helvetica', 'Arial', sans-serif; font-weight: normal; line-height: 19px; font-size: 14px; margin: 0; padding: 0;" align="left" valign="top">
 
