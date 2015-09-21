@@ -247,7 +247,6 @@ class OrderMixin(object):
                                        organization__slug=kwargs['organization_slug'])
         if not self.event.viewable_by(request.user):
             raise Http404
-
         try:
             self.order = self.get_order()
         except Order.DoesNotExist:
@@ -265,16 +264,11 @@ class OrderMixin(object):
         order_kwargs = {
             'event': self.event,
             'request': self.request,
-            'code': self.kwargs.get('code'),
             'create': create,
         }
         try:
             return Order.objects.for_request(**order_kwargs)[0]
-        except SuspiciousOperation:
-            raise Http404("Order does not belong to current user.")
         except Order.DoesNotExist:
-            if self.kwargs.get('code'):
-                raise Http404("Order doesn't exist or belongs to an anonymous user and can't be reassigned.")
             return None
 
     def get_context_data(self, **kwargs):
@@ -306,9 +300,30 @@ class OrderMixin(object):
             'event_slug': self.event.slug,
             'organization_slug': self.event.organization.slug,
         }
-        if self.kwargs.get('code'):
-            kwargs['code'] = self.order.code
         return kwargs
+
+
+class OrderCodeRedirectView(OrderMixin, View):
+
+    def dispatch(self, request, *args, **kwargs):
+        self.event = get_object_or_404(
+            Event.objects.select_related('organization'),
+            slug=kwargs['event_slug'],
+            organization__slug=kwargs['organization_slug'])
+        if not self.event.viewable_by(request.user):
+            raise Http404
+        matching_order = Order.objects.filter(event=self.event,
+                                              person__isnull=True,
+                                              code=kwargs['code']).exists()
+        if (matching_order and not request.user.is_authenticated() and
+            not Order.objects._get_session_code(request, self.event)):
+            url = reverse('login')
+        else:
+            url = reverse('brambling_event_order_summary', kwargs={
+                'event_slug': self.event.slug,
+                'organization_slug': self.event.organization.slug,
+            })
+        return HttpResponseRedirect(url)
 
 
 class AddToOrderView(OrderMixin, View):
@@ -706,8 +721,6 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 }
                 OrderReceiptMailer(**email_kwargs).send()
                 OrderAlertMailer(**email_kwargs).send()
-
-                Order.objects._delete_session_code(self.request, self.event)
             elif form:
                 for error in form.non_field_errors():
                     messages.error(request, error)

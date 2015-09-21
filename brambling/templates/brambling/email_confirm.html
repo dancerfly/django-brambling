@@ -19,7 +19,7 @@
 	    </div>
 	{% elif valid_token and claimable_orders %}
 		<div class="alert alert-success">
-	        Your email address has been confirmed! To use your account,<a href="{% url 'brambling_dashboard' %}">continue to your dashboard</a>.
+	        Your email address has been confirmed! To use your account, <a href="{% url 'brambling_dashboard' %}">continue to your dashboard</a>.
 	    </div>
 		<div class="alert alert-info">
 			<p>We found {{ claimable_orders|length|apnumber }} order{{ claimable_orders|pluralize }} associated with your email address.

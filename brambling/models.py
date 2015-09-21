@@ -808,31 +808,13 @@ class OrderManager(models.Manager):
 
         return True
 
-    def for_request(self, event, request, code=None, create=True):
+    def for_request(self, event, request, create=True):
         order = None
         created = False
 
-        # First, if there is an explicit code, pull that item.
-        # If it belongs to a user and that user is not logged in,
-        # raise a SuspiciousOperation.
-        if code:
-            # May raise DoesNotExist.
-            order = Order.objects.get(event=event, code=code)
-            if order.person:
-                if order.person != request.user:
-                    raise SuspiciousOperation
-            elif request.user.is_authenticated():
-                # If the order is unclaimed and the current user
-                # is authenticated, either claim it or object.
-                if self._can_claim(order, request.user):
-                    order.person = request.user
-                    order.save()
-                else:
-                    # Raise a DoesNotExist because code is explicit.
-                    raise Order.DoesNotExist
-
-        # Next, check if the user is authenticated and has an order for this event.
-        if order is None and request.user.is_authenticated():
+        # Check if the user is authenticated and has an order for this
+        # event.
+        if request.user.is_authenticated():
             try:
                 order = Order.objects.get(
                     event=event,
