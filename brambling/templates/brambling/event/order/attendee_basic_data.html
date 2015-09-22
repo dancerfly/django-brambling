@@ -17,11 +17,7 @@
 			<ul class='list-group'>
 				{# these are BoughtItems #}
 				{% for att in attendees %}
-					{% if code_in_url %}
-						{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug code=order.code as attendee_url %}
-					{% else %}
-						{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
-					{% endif %}
+					{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
 					<a href="{{ attendee_url }}"class='list-group-item{% if att == attendee %} active{% elif att.attendee_id %} disabled{% endif %}'>
 						<strong>{{ att.get_full_name }}</strong>
 					</a>

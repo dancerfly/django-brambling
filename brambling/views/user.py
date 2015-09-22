@@ -76,6 +76,8 @@ class EmailConfirmView(DetailView):
             self.object.save()
         context = self.get_context_data(object=self.object)
         context['valid_token'] = valid_token
+        if valid_token:
+            context['claimable_orders'] = self.object.get_claimable_orders()
         return self.render_to_response(context)
 
 

@@ -29,6 +29,7 @@ from brambling.views.orders import (
     SummaryView,
     TransferView,
     RactiveShopView,
+    OrderCodeRedirectView,
 )
 from brambling.views.core import (
     ExceptionView,
@@ -152,7 +153,9 @@ event_urlpatterns = patterns('',
         name="brambling_event_root"),
 
     url(r'^order/', include(order_urlpatterns)),
-    url(r'^order/(?P<code>[a-zA-Z0-9]{8})/', include(order_urlpatterns)),
+    url(r'^order/(?P<code>[a-zA-Z0-9]{8})/',
+        OrderCodeRedirectView.as_view(),
+        name='brambling_order_code_redirect'),
     url(r'^summary/$',
         EventSummaryView.as_view(),
         name="brambling_event_summary"),
