@@ -18,7 +18,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
-                              Invite)
+                              Invite, Person)
 from brambling.utils.payment import dwolla_customer_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
