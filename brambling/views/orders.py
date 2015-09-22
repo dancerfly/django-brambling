@@ -310,7 +310,7 @@ class OrderCodeRedirectView(OrderMixin, View):
             raise Http404
 
         session_code = Order.objects._get_session_code(request, self.event)
-        if ((order.code == session_code and not request.user.is_authenticated() or
+        if ((order.code == session_code and not request.user.is_authenticated()) or
                 (request.user.is_authenticated() and request.user.id == order.person_id)):
             # If the user is authenticated and this is their order (or if they're not
             # authenticated but it's in their session) redirect to the order summary.
