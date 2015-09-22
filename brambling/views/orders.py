@@ -310,21 +310,31 @@ class OrderCodeRedirectView(OrderMixin, View):
             raise Http404
 
         session_code = Order.objects._get_session_code(request, self.event)
-        order_in_session = kwargs['code'] == session_code
-        if (order and not order.person and not request.user.is_authenticated()
-            and not order_in_session):
-            url = reverse('brambling_signup')
-            messages.add_message(request, messages.ERROR, "Please sign up with an account to view this order.")
-        elif (order and order.person and not request.user.is_authenticated()
-              and not order_in_session):
-            url = reverse('login')
-            messages.add_message(request, messages.ERROR,
-                                 "Please log in to view this order.")
-        else:
+        if ((order.code == session_code and not request.user.is_authenticated() or
+                (request.user.is_authenticated() and request.user.id == order.person_id)):
+            # If the user is authenticated and this is their order (or if they're not
+            # authenticated but it's in their session) redirect to the order summary.
             url = reverse('brambling_event_order_summary', kwargs={
                 'event_slug': self.event.slug,
                 'organization_slug': self.event.organization.slug,
             })
+        elif order.person_id is not None:
+            # It's got an account attached, but this person isn't logged in
+            # under that account.
+            url = "{}?next={}".format(reverse('login'), request.path)
+            messages.error(request, "Log in to view order {} if you are its owner.".format(order.code))
+        elif request.user.is_authenticated() and request.user.email == order.email:
+            # The current user is logged in and *is* the owner. Send them to claim it.
+            url = reverse('brambling_claim_orders')
+            messages.error(request, "Claim order {} to view it.".format(order.code))
+        elif Person.objects.filter(email=order.email).exists():
+            # An account exists with the same email as this order. Send them to login.
+            url = "{}?next={}".format(reverse('login'), reverse('brambling_claim_orders'))
+            messages.error(request, "Log in to claim order {} and view it".format(order.code))
+        else:
+            # Otherwise, send them to sign up.
+            url = "{}?next={}".format(reverse('login'), reverse('brambling_claim_orders'))
+            messages.error(request, "Create an account to claim order {} and view it".format(order.code))
         return HttpResponseRedirect(url)
 
 
