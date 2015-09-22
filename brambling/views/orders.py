@@ -333,7 +333,7 @@ class OrderCodeRedirectView(OrderMixin, View):
             messages.error(request, "Log in to claim order {} and view it".format(order.code))
         else:
             # Otherwise, send them to sign up.
-            url = "{}?next={}".format(reverse('login'), reverse('brambling_claim_orders'))
+            url = "{}?next={}".format(reverse('brambling_signup'), reverse('brambling_claim_orders'))
             messages.error(request, "Create an account to claim order {} and view it".format(order.code))
         return HttpResponseRedirect(url)
 
