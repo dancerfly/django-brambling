@@ -10,6 +10,9 @@
 	{% include 'brambling/event/order/_use_discount_js.html' %}
 {% endblock %}
 
+{# Don't display a next step button. The form's own button will suffice. #}
+{% block after %}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 
