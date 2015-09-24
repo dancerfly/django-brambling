@@ -1598,6 +1598,8 @@ class EventHousing(models.Model):
                                                 null=True,
                                                 verbose_name="Our home is (a/an)")
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
 
 class HousingSlot(models.Model):
     eventhousing = models.ForeignKey(EventHousing)
