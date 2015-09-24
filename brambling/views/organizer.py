@@ -18,6 +18,8 @@ from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View, DeleteView)
 
 from floppyforms.__future__.models import modelform_factory
+from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 import requests
 
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
@@ -733,6 +735,21 @@ class ModelTableView(ListView):
                                              content_type="text/csv")
             response['Content-Disposition'] = 'attachment; filename="export.csv"'
             return response
+        elif format_ == 'xlsx':
+            table = context['table']
+            all_rows = itertools.chain((table.header_row(),), table)
+            wb = Workbook(encoding='utf-8')
+            ws = wb.active
+            ws.title = 'Data'
+            for i, row in enumerate(all_rows):
+                for j, cell in enumerate(row):
+                    ws.cell(row=i+1, column=j+1, value=unicode(cell))
+            response = StreamingHttpResponse(
+                save_virtual_workbook(wb),
+                content_type='application/vnd.ms-excel')
+            response['Content-Disposition'] = ('attachment; '
+                                               'filename="export.xlsx"')
+            return response
 
         # Default to the template.
         return super(ModelTableView, self).render_to_response(context, *args, **kwargs)
@@ -1053,6 +1070,21 @@ class FinancesView(ListView):
                                               for row in table.get_rows(include_headers=True)),
                                              content_type="text/csv")
             response['Content-Disposition'] = 'attachment; filename="finances.csv"'
+            return response
+        elif format_ == 'xlsx':
+            context = super(FinancesView, self).get_context_data(**kwargs)
+            table = FinanceTable(self.event, context['transactions'])
+            wb = Workbook(encoding='utf-8')
+            ws = wb.active
+            ws.title = 'Finances'
+            for i, row in enumerate(table.get_rows(include_headers=True)):
+                for j, cell in enumerate(row):
+                    ws.cell(row=i+1, column=j+1, value=unicode(cell.value))
+            response = StreamingHttpResponse(
+                save_virtual_workbook(wb),
+                content_type='application/vnd.ms-excel')
+            response['Content-Disposition'] = ('attachment; '
+                                               'filename="finances.xlsx"')
             return response
 
         # Default to the template.

@@ -1,2 +1,20 @@
 .dropdown-menu > li > a
 	padding: 3px #{$line-height-computed/2}
+
+
+//https://github.com/twbs/bootstrap-sass/blob/master/assets/stylesheets/bootstrap/_dropdowns.scss#L65
+.dropdown-menu > li > .btn-link
+	display: block
+	padding: 3px 20px
+	clear: both
+	font-weight: normal
+	line-height: $line-height-base
+	color: $dropdown-link-color
+	white-space: nowrap
+	width: 100%
+	text-align: left
+
+	&:hover, &:focus
+		text-decoration: none
+		color: $dropdown-link-hover-color
+		background-color: $dropdown-link-hover-bg
