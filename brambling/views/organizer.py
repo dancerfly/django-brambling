@@ -648,8 +648,11 @@ def custom_form_form(request, *args, **kwargs):
         custom_form = get_object_or_404(CustomForm, pk=kwargs['pk'])
     else:
         custom_form = CustomForm()
+
+    initial = {'form_type': request.GET.get('form_type', 'attendee')}
+
     if request.method == 'POST':
-        form = CustomFormForm(event, request.POST, instance=custom_form)
+        form = CustomFormForm(event, request.POST, instance=custom_form, initial=initial)
         formset = CustomFormFieldFormSet(data=request.POST, files=request.FILES, instance=custom_form, prefix='fields')
         form.is_valid()
         formset.is_valid()
@@ -661,7 +664,7 @@ def custom_form_form(request, *args, **kwargs):
                                   'organization_slug': event.organization.slug})
             return HttpResponseRedirect(url)
     else:
-        form = CustomFormForm(event, instance=custom_form)
+        form = CustomFormForm(event, instance=custom_form, initial=initial)
         formset = CustomFormFieldFormSet(instance=custom_form, prefix='fields')
     context = {
         'event': event,
