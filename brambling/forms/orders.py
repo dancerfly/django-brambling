@@ -107,7 +107,7 @@ class AttendeeBasicDataForm(CustomDataForm):
         return instance
 
 
-class AttendeeHousingDataForm(MemoModelForm):
+class AttendeeHousingDataForm(MemoModelForm, CustomDataForm):
     class Meta:
         model = Attendee
         fields = ('nights', 'ef_cause', 'ef_avoid', 'person_prefer',
@@ -155,6 +155,9 @@ class AttendeeHousingDataForm(MemoModelForm):
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('housing_prefer',
                          HousingCategory.objects.only('id', 'name'))
+
+    def get_custom_forms(self):
+        return self.instance.order.event.forms.filter(form_type=CustomForm.HOUSING).prefetch_related('fields')
 
     def save(self):
         self.instance.housing_completed = True

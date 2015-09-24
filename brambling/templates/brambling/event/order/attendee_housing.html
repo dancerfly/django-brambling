@@ -54,6 +54,10 @@
 
 						{% formrow form.other_needs %}
 
+						{% for field in form.custom_fields %}
+							{% formrow field %}
+						{% endfor %}
+
 						{% formrow form.save_as_defaults %}
 
 					{% endform %}
