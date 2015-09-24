@@ -649,7 +649,9 @@ def custom_form_form(request, *args, **kwargs):
     else:
         custom_form = CustomForm()
 
-    initial = {'form_type': request.GET.get('form_type', 'attendee')}
+    initial = {}
+    if request.GET.get('form_type'):
+        initial['form_type'] = request.GET.get('form_type', None)
 
     if request.method == 'POST':
         form = CustomFormForm(event, request.POST, instance=custom_form, initial=initial)

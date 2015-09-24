@@ -1693,11 +1693,14 @@ class Invite(models.Model):
 class CustomForm(models.Model):
     ATTENDEE = 'attendee'
     ORDER = 'order'
+    HOUSING = 'housing'
+    HOSTING = 'hosting'
 
     FORM_TYPE_CHOICES = (
         (ATTENDEE, _('Attendee')),
         (ORDER, _('Order')),
-
+        (HOUSING, _('Housing')),
+        (HOSTING, _('Hosting')),
     )
     form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES,
                                  help_text='Order forms will only display if "collect survey data" is checked in your event settings')
