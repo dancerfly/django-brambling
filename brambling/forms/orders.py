@@ -230,7 +230,7 @@ class HousingSlotForm(forms.ModelForm):
         fields = ('spaces', 'spaces_max')
 
 
-class HostingForm(MemoModelForm):
+class HostingForm(MemoModelForm, CustomDataForm):
     providing_housing = forms.BooleanField(initial=False, required=False)
     save_as_defaults = forms.BooleanField(initial=True, required=False,
             label="Remember this information for future events.",
@@ -320,6 +320,9 @@ class HostingForm(MemoModelForm):
             self.slot_forms.append(HousingSlotForm(instance=instance,
                                                    data=data,
                                                    prefix='{}-{}'.format(self.prefix, night.pk)))
+
+    def get_custom_forms(self):
+        return self.instance.event.forms.filter(form_type=CustomForm.HOSTING).prefetch_related('fields')
 
     def clean(self):
         cleaned_data = super(HostingForm, self).clean()
