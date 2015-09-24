@@ -737,7 +737,7 @@ class ModelTableView(ListView):
             return response
         elif format_ == 'xlsx':
             table = context['table']
-            all_rows = itertoos.chain((table.header_row(),),table)
+            all_rows = itertools.chain((table.header_row(),), table)
             wb = Workbook(encoding='utf-8')
             ws = wb.active
             ws.title = 'Data'
