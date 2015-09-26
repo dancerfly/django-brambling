@@ -1,6 +1,7 @@
 {% extends 'brambling/event/order/__base.html' %}
 
 {% load floppyforms %}
+{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 {% block title %}Provide housing data for attendees – {{ block.super }}{% endblock %}
 
@@ -28,7 +29,41 @@
 					</div>
 				</header>
 				<div class='panel-body'>
-					{% form form using "brambling/forms/attendee_housing.html" %}
+					{% form form using %}
+						<div class='row'>
+							<div class='col-md-6'>
+								{% formrow form.nights %}
+							</div>
+							<div class='col-md-6'>
+								{% formrow form.housing_prefer %}
+							</div>
+						</div>
+
+						<div class='row'>
+							<div class='col-md-6'>
+								{% formrow form.ef_cause %}
+								{% if form.ef_cause_confirm %}{% formrow form.ef_cause_confirm %}{% endif %}
+							</div>
+							<div class='col-md-6'>
+								{% formrow form.ef_avoid %}
+								{% if form.ef_avoid_confirm %}{% formrow form.ef_avoid_confirm %}{% endif %}
+							</div>
+						</div>
+
+						<div class='row'>
+							<div class='col-md-6'>{% formrow form.person_prefer %}</div>
+							<div class='col-md-6'>{% formrow form.person_avoid %}</div>
+						</div>
+
+						{% formrow form.other_needs %}
+
+						{% for field in form.custom_fields %}
+							{% formrow field %}
+						{% endfor %}
+
+						{% formrow form.save_as_defaults %}
+
+					{% endform %}
 				</div>
 			</div>
 		{% endfor %}

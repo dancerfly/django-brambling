@@ -1598,6 +1598,8 @@ class EventHousing(models.Model):
                                                 null=True,
                                                 verbose_name="Our home is (a/an)")
 
+    custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
 
 class HousingSlot(models.Model):
     eventhousing = models.ForeignKey(EventHousing)
@@ -1693,11 +1695,14 @@ class Invite(models.Model):
 class CustomForm(models.Model):
     ATTENDEE = 'attendee'
     ORDER = 'order'
+    HOUSING = 'housing'
+    HOSTING = 'hosting'
 
     FORM_TYPE_CHOICES = (
         (ATTENDEE, _('Attendee')),
         (ORDER, _('Order')),
-
+        (HOUSING, _('Housing')),
+        (HOSTING, _('Hosting')),
     )
     form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES,
                                  help_text='Order forms will only display if "collect survey data" is checked in your event settings')

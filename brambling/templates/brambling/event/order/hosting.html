@@ -97,6 +97,19 @@
 						</table>
 					</div>
 				</div>
+
+				<div class="panel panel-default margin-leader-dbl">
+					<header class="panel-heading">
+						<h4 class="panel-title">Other</h4>
+					</header>
+					<div class="panel-body">
+						{% form form using %}
+							{% for field in form.custom_fields %}
+								{% formrow field %}
+							{% endfor %}
+						{% endform %}
+					</div>
+				</div>
 			</div>
 		</div>{# /.max-width-sm #}
 		<button type="submit" class="btn btn-success btn-lg col-md-5">Next step <span class='fa fa-chevron-right'></span></button>

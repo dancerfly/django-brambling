@@ -439,10 +439,13 @@ class AttendeeTable(CustomDataTable):
 
     def _get_custom_fields(self):
         from brambling.models import CustomForm, CustomFormField
-        return CustomFormField.objects.filter(
+        qs = CustomFormField.objects.filter(
             form__event=self.event,
-            form__form_type=CustomForm.ATTENDEE
         ).order_by('index')
+        if self.event.collect_housing_data:
+            return qs.filter(form__form_type__in=(CustomForm.ATTENDEE, CustomForm.HOUSING))
+        else:
+            return qs.filter(form__form_type=CustomForm.ATTENDEE)
 
     def _add_data(self, queryset, fields):
         use_distinct = False
@@ -562,10 +565,13 @@ class OrderTable(CustomDataTable):
 
     def _get_custom_fields(self):
         from brambling.models import CustomForm, CustomFormField
-        return CustomFormField.objects.filter(
+        qs = CustomFormField.objects.filter(
             form__event=self.event,
-            form__form_type=CustomForm.ORDER
         ).order_by('index')
+        if self.event.collect_housing_data:
+            return qs.filter(form__form_type__in=(CustomForm.ORDER, CustomForm.HOSTING))
+        else:
+            return qs.filter(form__form_type=CustomForm.ORDER)
 
     def _label(self, field):
         date_str = None
@@ -605,6 +611,22 @@ class OrderTable(CustomDataTable):
                 else:
                     return getattr(slot, field, '')
             return ''
+
+        if key.startswith('custom_') and self.event.collect_housing_data:
+            if not hasattr(obj, '_custom_data'):
+                super(OrderTable, self).get_field_val(obj, key)
+                # Also include event_housing data.
+                eventhousing = obj.get_eventhousing()
+                raw_data = {
+                    entry.form_field_id: entry.get_value()
+                    for entry in eventhousing.custom_data.all()
+                }
+                obj._custom_data.update({
+                    field.key: raw_data[field.pk]
+                    for field in self.custom_fields
+                    if field.pk in raw_data
+                })
+            return obj._custom_data.get(key, '')
         return super(OrderTable, self).get_field_val(obj, key)
 
     def _add_data(self, queryset, fields):

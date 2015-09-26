@@ -402,6 +402,13 @@ class CustomFormForm(forms.ModelForm):
     def __init__(self, event, *args, **kwargs):
         self.event = event
         super(CustomFormForm, self).__init__(*args, **kwargs)
+        if not event.collect_housing_data:
+            choices = CustomForm.FORM_TYPE_CHOICES[:2]
+            if self.instance.form_type == CustomForm.HOUSING:
+                choices += CustomForm.FORM_TYPE_CHOICES[2:3]
+            else:
+                choices += CustomForm.FORM_TYPE_CHOICES[3:4]
+            self.fields['form_type'].choices = choices
 
     def _post_clean(self):
         super(CustomFormForm, self)._post_clean()

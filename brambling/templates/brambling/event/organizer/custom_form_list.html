@@ -9,35 +9,98 @@
 
 	{% include "brambling/event/_empty_shop_alert.html" %}
 
-	<p><a class="btn btn-primary" href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}">Create form</a></p>
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">Attendee Forms</h4>
+				<small>
+					These forms will appear once for each attendee, even within a single order.
+				</small>
+			</div>
+			<div class="list-group">
+				{% for custom_form in custom_forms %}
+					{% if custom_form.form_type == custom_form.ATTENDEE %}
+						<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug organization_slug=event.organization.slug pk=custom_form.pk %}">
+							{{ custom_form.name }}
+						</a>
+					{% endif %}
+				{% endfor %}
+				<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=attendee">
+					<i class='fa fa-fw fa-plus'></i> Add attendee form
+				</a>
+			</div>
+		</div>{# /.panel #}
+	</div>{# /.col-md-6 #}
 
-	{% if custom_forms %}
-		{% regroup custom_forms by get_form_type_display as form_types %}
-		<div class="row">
-			{% for form_type_group in form_types %}
-				<div class="col-md-6">
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							<h4 class="panel-title">{{ form_type_group.grouper }} Forms</h4>
-							<small>
-								{% if form_type_group.grouper == "Attendee" %}
-									These forms will appear once for each attendee, even within a single order.
-								{% elif form_type_group.grouper == "Order" %}
-									These forms will only appear once per order, even if the order is for multiple attendees.
-								{% endif %}
-							</small>
-						</div>
-						<div class="list-group">
-							{% for custom_form in form_type_group.list %}
-								<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug organization_slug=event.organization.slug pk=custom_form.pk %}">
-									{{ custom_form.name }}
-								</a>
-							{% endfor %}
-						</div>
-					</div>{# /.panel #}
-				</div>{# /.col-md-6 #}
-			{% endfor %}
-		</div>
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title">Order Forms</h4>
+				<small>
+					These forms will only appear once per order, even if the order is for multiple attendees.
+				</small>
+			</div>
+			<div class="list-group">
+				{% for custom_form in custom_forms %}
+					{% if custom_form.form_type == custom_form.ORDER %}
+						<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug organization_slug=event.organization.slug pk=custom_form.pk %}">
+							{{ custom_form.name }}
+						</a>
+					{% endif %}
+				{% endfor %}
+				<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=order">
+					<i class='fa fa-fw fa-plus'></i> Add order form
+				</a>
+			</div>
+		</div>{# /.panel #}
+	</div>{# /.col-md-6 #}
+
+	{% if event.collect_housing_data %}
+		<div class="col-md-6">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">Housing Forms</h4>
+					<small>
+						These forms will appear once for each attendee, as part of the housing request process.
+					</small>
+				</div>
+				<div class="list-group">
+					{% for custom_form in custom_forms %}
+						{% if custom_form.form_type == custom_form.HOUSING %}
+							<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug organization_slug=event.organization.slug pk=custom_form.pk %}">
+								{{ custom_form.name }}
+							</a>
+						{% endif %}
+					{% endfor %}
+					<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=housing">
+						<i class='fa fa-fw fa-plus'></i> Add housing form
+					</a>
+				</div>
+			</div>{# /.panel #}
+		</div>{# /.col-md-6 #}
+
+		<div class="col-md-6">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">Hosting Forms</h4>
+					<small>
+						These forms will appear as part of the hosting form.
+					</small>
+				</div>
+				<div class="list-group">
+					{% for custom_form in custom_forms %}
+						{% if custom_form.form_type == custom_form.HOSTING %}
+							<a class="list-group-item" href="{% url 'brambling_form_update' event_slug=event.slug organization_slug=event.organization.slug pk=custom_form.pk %}">
+								{{ custom_form.name }}
+							</a>
+						{% endif %}
+					{% endfor %}
+					<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=hosting">
+						<i class='fa fa-fw fa-plus'></i> Add order form
+					</a>
+				</div>
+			</div>{# /.panel #}
+		</div>{# /.col-md-6 #}
 	{% endif %}
 
 {% endblock %}
