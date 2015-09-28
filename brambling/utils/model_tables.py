@@ -617,15 +617,16 @@ class OrderTable(CustomDataTable):
                 super(OrderTable, self).get_field_val(obj, key)
                 # Also include event_housing data.
                 eventhousing = obj.get_eventhousing()
-                raw_data = {
-                    entry.form_field_id: entry.get_value()
-                    for entry in eventhousing.custom_data.all()
-                }
-                obj._custom_data.update({
-                    field.key: raw_data[field.pk]
-                    for field in self.custom_fields
-                    if field.pk in raw_data
-                })
+                if eventhousing:
+                    raw_data = {
+                        entry.form_field_id: entry.get_value()
+                        for entry in eventhousing.custom_data.all()
+                    }
+                    obj._custom_data.update({
+                        field.key: raw_data[field.pk]
+                        for field in self.custom_fields
+                        if field.pk in raw_data
+                    })
             return obj._custom_data.get(key, '')
         return super(OrderTable, self).get_field_val(obj, key)
 
