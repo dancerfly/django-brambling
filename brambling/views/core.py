@@ -98,12 +98,13 @@ class InviteAcceptView(TemplateView):
         context = super(InviteAcceptView, self).get_context_data(**kwargs)
         if self.invite:
             invited_person_exists = Person.objects.filter(email=self.invite.email).exists()
+            if self.invite.user:
+                sender_display = self.invite.user.get_full_name()
+            elif self.invite.kind == Invite.TRANSFER:
+                sender_display = self.content.order.email
         else:
             invited_person_exists = False
-        if self.invite.user:
-            sender_display = self.invite.user.get_full_name()
-        elif self.invite.kind == Invite.TRANSFER:
-            sender_display = self.content.order.email
+            sender_display = ''
         context.update({
             'invite': self.invite,
             'content': self.content,
