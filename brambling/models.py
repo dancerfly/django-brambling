@@ -1351,7 +1351,7 @@ class BoughtItem(models.Model):
     item_option = models.ForeignKey(ItemOption, blank=True, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order, related_name='bought_items')
     added = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=8,
+    status = models.CharField(max_length=11,
                               choices=STATUS_CHOICES,
                               default=UNPAID)
 
