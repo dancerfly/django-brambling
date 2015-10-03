@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django.db import models, migrations
 
 
@@ -19,6 +20,7 @@ class Migration(migrations.Migration):
                 ('middle_name', models.CharField(max_length=50, blank=True)),
                 ('surname', models.CharField(max_length=50)),
                 ('name_order', models.CharField(default='GMS', max_length=3, choices=[('GMS', 'Given Middle Surname'), ('SGM', 'Surname Given Middle'), ('GS', 'Given Surname'), ('SG', 'Surname Given')])),
+                ('person', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
                 ('person_prefer', models.TextField(help_text='Provide a list of names, separated by line breaks.', verbose_name='I need to be placed with these people', blank=True)),
                 ('person_avoid', models.TextField(help_text='Provide a list of names, separated by line breaks.', verbose_name='I do not want to be around these people', blank=True)),
                 ('other_needs', models.TextField(blank=True)),

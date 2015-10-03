@@ -1515,6 +1515,7 @@ class Attendee(AbstractNamedModel):
 
 
 class SavedAttendee(AbstractNamedModel):
+    person = models.ForeignKey(Person)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='saved_attendee_cause',
                                       blank=True,

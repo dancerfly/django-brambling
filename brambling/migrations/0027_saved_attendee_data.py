@@ -6,6 +6,7 @@ from django.db import models, migrations
 
 def create(person, SavedAttendee):
     saved = SavedAttendee.objects.create(
+        person=person,
         given_name=person.given_name,
         middle_name=person.middle_name,
         surname=person.surname,
