@@ -131,7 +131,7 @@ class InviteAcceptView(TemplateView):
             if content.status != BoughtItem.BOUGHT:
                 invite.delete()
                 messages.error(self.request, "Item can no longer be transferred, sorry.")
-                self.order = content
+                self.order = content.order
                 return
 
             # Complete the transfer!
