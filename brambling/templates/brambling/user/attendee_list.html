@@ -4,19 +4,55 @@
 
 {% block title %}Saved Attendees – {{ block.super }}{% endblock %}
 
+{% block javascripts %}
+	{{ block.super }}
+
+	<script>
+		$(function(){
+			$('a[target]').on('click', function(e){
+				e.preventDefault();
+				$.post($(this).attr('target'), function(){
+					// For now, just reload the page.
+					location.reload();
+				});
+			})
+		});
+	</script>
+{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 	<h2 class="sr-only">Saved Attendees</h2>
 
-	{% if attendees %}
-		<ul>
-			{% for attendee in attendees %}
-			<li><a href='{% url "brambling_user_attendee_manage" pk=attendee.pk %}'>{{ attendee.get_full_name }}</a></li>
-			{% endfor %}
-		</ul>
-	{% else %}
-		<p><em>You don't currently have any saved attendees.</em></p>
-	{% endif %}
-
-	<a href='{% url "brambling_user_attendee_add" %}'>Create an attendee</a>
+	<div class="row">
+		{% for attendee in attendees %}
+			<div class='col-md-4'>
+				{% url "brambling_user_attendee_edit" pk=attendee.pk as attendee_url %}
+				{% url "brambling_user_attendee_remove" pk=attendee.pk as attendee_remove_url %}
+				<div class='panel panel-primary'>
+					<div class='panel-heading'>
+						<div class='panel-title'>
+							<a href='{{ attendee_url }}'>
+								{{ attendee.get_full_name }}
+							</a>
+							<a class='remove-link pull-right' href='{{ attendee_remove_url }}' target="{{ attendee_remove_url }}">
+								<i class='fa fa-fw fa-trash'></i>
+							</a>
+							<a href='{{ attendee_url }}' class="pull-right">
+								<i class='fa fa-fw fa-pencil'></i>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			{% cycle "" "" '<div class="clearfix visible-md-block visible-lg-block"></div>' %}
+		{% empty %}
+			<div class='col-md-4'>
+				<p><em>You don't currently have any saved attendees.</em></p>
+			</div>
+		{% endfor %}
+		<div class='col-md-4'><a class='btn btn-primary' href='{% url "brambling_user_attendee_add" %}'>
+			<i class='fa fa-fw fa-plus'></i> Add attendee
+		</a></div>
+	</div>
 {% endblock %}

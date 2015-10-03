@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
-                                  TemplateView, View, ListView)
+                                  TemplateView, View, ListView, DeleteView)
 import floppyforms.__future__ as forms
 import stripe
 
@@ -288,7 +288,7 @@ class SavedAttendeeManageView(UpdateView):
         return super(SavedAttendeeManageView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('brambling_user_attendee_manage', kwargs={'pk': self.object.pk})
+        return reverse('brambling_user_attendee_edit', kwargs={'pk': self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super(SavedAttendeeManageView, self).get_context_data(**kwargs)
@@ -296,6 +296,17 @@ class SavedAttendeeManageView(UpdateView):
             'claimable_orders': self.request.user.get_claimable_orders(),
         })
         return context
+
+
+class SavedAttendeeDeleteView(DeleteView):
+    def get_queryset(self):
+        if not self.request.user.is_authenticated():
+            raise Http404
+        return SavedAttendee.objects.filter(person=self.request.user)
+
+    def get_success_url(self):
+        messages.success(self.request, 'Deleted attendee: {}'.format(self.object.get_full_name()))
+        return reverse('brambling_user_attendees')
 
 
 class HomeView(UpdateView):

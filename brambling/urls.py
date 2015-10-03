@@ -94,6 +94,7 @@ from brambling.views.user import (
     ClaimOrderView,
     SavedAttendeesView,
     SavedAttendeeManageView,
+    SavedAttendeeDeleteView,
 )
 
 
@@ -351,7 +352,10 @@ urlpatterns = patterns('',
         name="brambling_user_attendee_add"),
     url(r'^attendees/(?P<pk>\d+)/$',
         SavedAttendeeManageView.as_view(),
-        name="brambling_user_attendee_manage"),
+        name="brambling_user_attendee_edit"),
+    url(r'^attendees/(?P<pk>\d+)/delete/$',
+        SavedAttendeeDeleteView.as_view(),
+        name="brambling_user_attendee_remove"),
     url(r'^home/$',
         HomeView.as_view(),
         name="brambling_home"),
