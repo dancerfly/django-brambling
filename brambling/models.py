@@ -1545,6 +1545,10 @@ class SavedAttendee(AbstractNamedModel):
 
     other_needs = models.TextField(blank=True)
 
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
     def __unicode__(self):
         return self.get_full_name()
 
