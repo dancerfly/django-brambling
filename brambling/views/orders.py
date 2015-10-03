@@ -87,33 +87,41 @@ class AttendeeStep(OrderStep):
     slug = 'attendees'
     view_name = 'brambling_event_attendee_list'
 
+    def __init__(self, *args, **kwargs):
+        super(AttendeeStep, self).__init__(*args, **kwargs)
+        order = self.workflow.order
+        valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
+        self.bought_items = order.bought_items.filter(status__in=valid_statuses).order_by('item_name', 'item_option_name')
+        self.attendees = order.attendees.order_by('pk')
+
     def _is_completed(self):
         if not self.workflow.order:
             return False
         return not self.workflow.order.bought_items.filter(attendee__isnull=True).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists()
 
     def get_errors(self):
-        errors = []
-        order = self.workflow.order
-        # All attendees must have at least one non-refunded item
-        total_count = order.attendees.count()
-        valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
-        with_count = order.attendees.filter(bought_items__status__in=valid_statuses).distinct().count()
-        if with_count != total_count:
-            errors.append('All attendees must have at least one item')
+        errors = {}
 
-        # All attendees must have basic data filled out.
-        missing_data = order.attendees.filter(basic_completed=False)
-        if len(missing_data) > 0:
-            if len(missing_data) == 1:
-                error = '{} is missing basic data'.format(missing_data[0])
+        attendee_map = {}
+        for attendee in self.attendees:
+            attendee.items = []
+            attendee_map[attendee.pk] = attendee
+        for item in self.bought_items:
+            if item.attendee_id in attendee_map:
+                item.attendee = attendee_map[item.attendee_id]
+                item.attendee.items.append(item)
             else:
-                error = 'The following attendees are missing basic data: ' + ", ".join(missing_data)
-            errors.append(error)
+                errors['bought_items'] = ['All items in order must be assigned to an attendee.']
 
-        # All items must be assigned to an attendee.
-        if order.bought_items.filter(attendee__isnull=True).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
-            errors.append('All items in order must be assigned to an attendee.')
+        for attendee in self.attendees:
+            attendee.errors = []
+            if len(attendee.items) == 0:
+                attendee.errors.append('Must have at least one item.')
+            if not attendee.basic_completed:
+                attendee.errors.append('Missing basic data.')
+            if attendee.errors:
+                errors.setdefault('attendees', {})[attendee.pk] = attendee.errors
+
         return errors
 
 
@@ -460,8 +468,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
     workflow_class = RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
-        self.attendees = self.order.attendees.all()
-        if self.attendees:
+        if self.current_step.attendees:
             return self.render_to_response(self.get_context_data())
 
         kwargs = {
@@ -476,12 +483,9 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
 
         context.update({
             'errors': self.current_step.errors,
-            'attendees': self.attendees,
-            'unassigned_items': self.order.bought_items.filter(
-                attendee__isnull=True
-            ).exclude(
-                status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
-            ).order_by('item_name', 'item_option_name'),
+            'attendees': self.current_step.attendees,
+            'unassigned_items': [item for item in self.current_step.bought_items
+                                 if item.attendee_id is None],
         })
         return context
 
@@ -496,7 +500,11 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
     def get_object(self):
         if 'pk' not in self.kwargs:
             return None
-        return super(AttendeeBasicDataView, self).get_object()
+        # Saves a query and preserves any error information
+        for attendee in self.current_step.attendees:
+            if attendee.pk == int(self.kwargs['pk']):
+                return attendee
+        raise Attendee.DoesNotExist
 
     def get_form_class(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
@@ -507,7 +515,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
 
     def get_initial(self):
         initial = super(AttendeeBasicDataView, self).get_initial()
-        if self.order.attendees.count() == 0 and self.request.user.is_authenticated():
+        if len(self.current_step.attendees) == 0 and self.request.user.is_authenticated():
             person = self.request.user
             initial.update({
                 'given_name': person.given_name,
@@ -533,7 +541,8 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context.update({
-            'attendees': Attendee.objects.filter(order=self.order).order_by('pk')
+            'attendees': self.current_step.attendees,
+            'bought_items': self.current_step.bought_items,
         })
         return context
 
