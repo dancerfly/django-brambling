@@ -1,0 +1,22 @@
+{% extends 'brambling/user/__base.html' %}
+
+{% load floppyforms %}
+
+{% block title %}Saved Attendees – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	<h2 class="sr-only">Saved Attendees</h2>
+
+	{% if attendees %}
+		<ul>
+			{% for attendee in attendees %}
+			<li><a href='{% url "brambling_user_attendee_manage" pk=attendee.pk %}'>{{ attendee.get_full_name }}</a></li>
+			{% endfor %}
+		</ul>
+	{% else %}
+		<p><em>You don't currently have any saved attendees.</em></p>
+	{% endif %}
+
+	<a href='{% url "brambling_user_attendee_add" %}'>Create an attendee</a>
+{% endblock %}
