@@ -7,6 +7,8 @@ from django.db import models, migrations
 def create(person, SavedAttendee):
     saved = SavedAttendee.objects.create(
         person=person,
+        email=person.email,
+        phone=person.phone,
         given_name=person.given_name,
         middle_name=person.middle_name,
         surname=person.surname,
@@ -21,7 +23,7 @@ def create(person, SavedAttendee):
 
 
 def should_create_for(person):
-    if person.other_needs or person.person_prefer or person.person_avoid:
+    if person.phone or person.other_needs or person.person_prefer or person.person_avoid:
         return True
     if person.ef_cause.all() or person.ef_avoid.all() or person.housing_prefer.all():
         return True

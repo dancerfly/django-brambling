@@ -1516,6 +1516,8 @@ class Attendee(AbstractNamedModel):
 
 class SavedAttendee(AbstractNamedModel):
     person = models.ForeignKey(Person)
+    email = models.EmailField(max_length=254)
+    phone = models.CharField(max_length=50, blank=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='saved_attendee_cause',
                                       blank=True,
