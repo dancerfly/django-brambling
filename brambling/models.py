@@ -9,7 +9,6 @@ from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
@@ -1513,6 +1512,38 @@ class Attendee(AbstractNamedModel):
 
     def get_groupable_items(self):
         return self.bought_items.order_by('item_name', 'item_option_name', '-added')
+
+
+class SavedAttendee(AbstractNamedModel):
+    ef_cause = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='saved_attendee_cause',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="People around me may be exposed to")
+
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='saved_attendee_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I can't/don't want to be around")
+
+    person_prefer = models.TextField(blank=True,
+                                     verbose_name="I need to be placed with these people",
+                                     help_text="Provide a list of names, separated by line breaks.")
+
+    person_avoid = models.TextField(blank=True,
+                                    verbose_name="I do not want to be around these people",
+                                    help_text="Provide a list of names, separated by line breaks.")
+
+    housing_prefer = models.ManyToManyField(HousingCategory,
+                                            blank=True,
+                                            null=True,
+                                            verbose_name="I prefer to stay somewhere that is (a/an)")
+
+    other_needs = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.get_full_name()
 
 
 class Home(models.Model):
