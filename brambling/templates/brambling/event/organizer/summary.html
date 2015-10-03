@@ -1,8 +1,31 @@
 {% extends 'brambling/event/organizer/__base.html' %}
 
-{% load zenaida %}
+{% load zenaida static %}
 
 {% block title %}Event Summary – {{ block.super }}{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ractive/0.7.3/ractive.js"></script>
+	<script type="text/javascript" src="{% static "brambling/quickfind.ractive.js" %}"></script>
+
+	<script type="text/javascript">
+		var quickfind = new QuickFind({
+			el: '#QuickFindContainer',
+			template: '#QuickFind',
+			apiEndpoints: {
+				"root": "{% url 'api-root' %}",
+				"ordersearch": "{% url 'ordersearch-list' %}"
+			},
+			eventId: "{{ event.pk }}",
+			data: {
+				eventSlug: '{{ event.slug }}',
+				organizationSlug: '{{ event.organization.slug }}'
+			}
+		});
+	</script>
+{% endblock %}
 
 {% block main %}
 	{{ block.super }}
@@ -14,6 +37,11 @@
 	<h2>Event Summary</h2>
 	<div class='row'>
 		<div class='col-md-6'>
+			<script type="text/ractive" id="QuickFind">
+				{% include "brambling/event/organizer/_quickfind_ractive.html" %}
+			</script>
+			<div id="QuickFindContainer">
+			</div>
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
 					<h4 class='panel-title'>

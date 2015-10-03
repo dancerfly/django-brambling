@@ -1,5 +1,5 @@
 from django.db.models import Q
-from rest_framework import viewsets, serializers, status
+from rest_framework import viewsets, serializers, status, filters
 from rest_framework.response import Response
 
 from brambling.api.v1.permissions import (
@@ -153,6 +153,15 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class OrderSearchViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("code", "person__given_name", "person__middle_name",
+        "person__surname", "attendees__given_name",
+        "attendees__middle_name", "attendees__surname")
 
 
 class AttendeeViewSet(viewsets.ModelViewSet):
