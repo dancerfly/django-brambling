@@ -78,24 +78,26 @@
 				}
 
 				// Up:
-				if (e.which === 38 && currentIdx > 0) {
-					nextIdx = currentIdx - 1;
+				if (e.which === 38) {
+					nextIdx = Math.max(currentIdx - 1, 0);
 				}
 
 				// Down:
-				if (e.which == 40 && currentIdx < results.length) {
-					nextIdx = currentIdx + 1;
+				if (e.which == 40) {
+					nextIdx = Math.min(currentIdx + 1, results.length - 1);
 				}
 
 				ractive.set('results.' + currentIdx + '.selected', false);
 				ractive.set('results.' + nextIdx + '.selected', true);
 				ractive.currentSelectedIdx = nextIdx;
-				return;
+
+				e.preventDefault();
 			});
 		},
 
 		deactivateKeyboardEvents: function () {
 			// Deactivate keyboard behavior for selecting an order:
+			$(window).off('keyup.quickfind');
 		}
 
 	});

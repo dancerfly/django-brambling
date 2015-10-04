@@ -15,7 +15,7 @@
 			{{#if query}}
 				{{#results}}
 					{{!TODO: Make this URL use Django's URL reversing somehow.}}
-					<a class="list-group-item {{#if selected}}active{{/if}}" href="{{ getUrlForResult(url) }}">
+					<a class="list-group-item {{#if selected}}active{{/if}}" href="{{ getUrlForResult(this) }}">
 						<div class="list-group-heading">Order <strong>{{ code }}</strong></div>
 						<div class="text-muted">
 							{{#if person}}
