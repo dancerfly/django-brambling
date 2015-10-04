@@ -516,7 +516,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
 
     def get_object(self):
         if 'pk' not in self.kwargs:
-            return None
+            return Attendee(order=self.order)
         # Saves a query and preserves any error information
         for attendee in self.current_step.attendees:
             if attendee.pk == int(self.kwargs['pk']):
