@@ -11,6 +11,7 @@ from brambling.api.v1.permissions import (
     ItemImagePermission,
     ItemOptionPermission,
     OrderPermission,
+    OrderSearchPermission,
     AttendeePermission,
     EventHousingPermission,
     BoughtItemPermission,
@@ -161,10 +162,14 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     filter_backends = (filters.SearchFilter,)
-    permission_classes = [OrderPermission]
+    permission_classes = [OrderSearchPermission]
     search_fields = ("code", "person__given_name", "person__middle_name",
         "person__surname", "attendees__given_name",
         "attendees__middle_name", "attendees__surname")
+
+    def get_event(self):
+        event_id = self.request.query_params.get('event', None)
+        return Event.objects.get(pk=event_id)
 
     def get_queryset(self):
         "Filter orders down to those which are for the specific event provided."
@@ -175,12 +180,11 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
             'event', 'person', 'eventhousing',
         )
 
-        event_id = self.request.query_params.get('event', None)
-
-        if event_id is None:
+        event = self.get_event()
+        if not event:
             raise Http404('No event id specified.')
 
-        return qs.filter(event=event_id)
+        return qs.filter(event=event)
 
 
 

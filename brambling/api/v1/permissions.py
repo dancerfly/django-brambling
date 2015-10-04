@@ -115,6 +115,14 @@ class OrderPermission(BasePermission):
         return self._has_order_permission(request, obj)
 
 
+class OrderSearchPermission(BasePermission):
+
+    def has_permission(self, request, view):
+        "Make sure the event is editable by the user trying to view orders."
+        event = view.get_event()
+        return event.editable_by(request.user)
+
+
 class AttendeePermission(OrderPermission):
     def has_permission(self, request, view):
         # For now, disallow creation via the API.
