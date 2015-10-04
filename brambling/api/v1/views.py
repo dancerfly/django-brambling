@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.http import Http404
 from rest_framework import viewsets, serializers, status, filters
 from rest_framework.response import Response
 
@@ -159,9 +160,18 @@ class OrderSearchViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     filter_backends = (filters.SearchFilter,)
+    permission_classes = [OrderPermission]
     search_fields = ("code", "person__given_name", "person__middle_name",
         "person__surname", "attendees__given_name",
         "attendees__middle_name", "attendees__surname")
+
+    def get_queryset(self):
+        qs = super(OrderSearchViewSet, self).get_queryset()
+        event_id = self.request.query_params.get('event', None)
+        if event_id is None:
+            raise Http404('No event id specified.')
+        return qs.filter(event=event_id)
+
 
 
 class AttendeeViewSet(viewsets.ModelViewSet):

@@ -14,7 +14,7 @@
 			var ractive = this;
 			ractive.observe('query', ractive.receiveQuery);
 		},
-		
+
 		receiveQuery: function (newValue, oldValue, keyPath) {
 			var ractive = this;
 			// Value gets set when ractive first runs, but we shouldn't fire this function:
@@ -28,7 +28,8 @@
 			var ractive = this;
 			// Fire GET request for list of orders:
 			$.get(this.apiEndpoints['ordersearch'], {
-				search: query
+				search: query,
+				event: ractive.eventId
 			}, this.setResults.bind(ractive));
 		}, 500, {leading: false}),
 
