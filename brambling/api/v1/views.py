@@ -156,7 +156,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
-class OrderSearchViewSet(viewsets.ModelViewSet):
+class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
+    "A ViewSet that filters orders based on a single search term."
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     filter_backends = (filters.SearchFilter,)
@@ -166,10 +167,19 @@ class OrderSearchViewSet(viewsets.ModelViewSet):
         "attendees__middle_name", "attendees__surname")
 
     def get_queryset(self):
-        qs = super(OrderSearchViewSet, self).get_queryset()
+        "Filter orders down to those which are for the specific event provided."
+
+        qs = super(OrderSearchViewSet, self).get_queryset().prefetch_related(
+            'bought_items', 'discounts',
+        ).select_related(
+            'event', 'person', 'eventhousing',
+        )
+
         event_id = self.request.query_params.get('event', None)
+
         if event_id is None:
             raise Http404('No event id specified.')
+
         return qs.filter(event=event_id)
 
 
