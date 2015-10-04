@@ -59,7 +59,8 @@
 		activateKeyboardEvents: function () {
 			var ractive = this;
 			// Activate the up and down and enter key behavior for selecting an order:
-			$(window).on('keyup.quickfind', function (e) {
+			// Extra `off` statement ensures this is only ever bound once. 
+			$(window).off('keyup.quickfind').on('keyup.quickfind', function (e) {
 				var result,
 					results = ractive.get('results'),
 					currentIdx = ractive.currentSelectedIdx,
