@@ -9,7 +9,8 @@
 			search: null,
 			loaded: null,
 			currentSelectedIdx: 0,
-			getUrlForResult: function () {}
+			getUrlForResult: function () {},
+			filters: brambling.filters
 		},
 
 		oninit: function () {
@@ -59,7 +60,7 @@
 		activateKeyboardEvents: function () {
 			var ractive = this;
 			// Activate the up and down and enter key behavior for selecting an order:
-			// Extra `off` statement ensures this is only ever bound once. 
+			// Extra `off` statement ensures this is only ever bound once.
 			$(window).off('keyup.quickfind').on('keyup.quickfind', function (e) {
 				var result,
 					results = ractive.get('results'),

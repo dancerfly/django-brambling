@@ -3,7 +3,7 @@
 {% verbatim %}
 	<div class="panel panel-default">
 		<header class="panel-heading">
-			<h4 class="panel-title">Find Orders and Attendees</h4>
+			<h4 class="panel-title">Find Order</h4>
 		</header>
 		<div class="list-group">
 			<div class="list-group-item">
@@ -16,10 +16,10 @@
 				{{#results}}
 					{{!TODO: Make this URL use Django's URL reversing somehow.}}
 					<a class="list-group-item {{#if selected}}active{{/if}}" href="{{ getUrlForResult(this) }}">
-						<div class="list-group-heading">Order <strong>{{ code }}</strong></div>
+						<div class="list-group-heading">Order <strong>{{{ filters.highlight(query, code) }}}</strong></div>
 						<div class="text-muted">
 							{{#if person}}
-								Purchaser: {{ person }}
+								Purchaser: {{{ filters.highlight(query, person) }}}
 							{{/if}}
 							{{!TODO: Render attendees here too.}}
 						</div>
