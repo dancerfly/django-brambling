@@ -91,8 +91,12 @@ class AttendeeStep(OrderStep):
         super(AttendeeStep, self).__init__(*args, **kwargs)
         order = self.workflow.order
         valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
-        self.bought_items = order.bought_items.filter(status__in=valid_statuses).order_by('item_name', 'item_option_name')
-        self.attendees = order.attendees.order_by('pk')
+        if order:
+            self.bought_items = order.bought_items.filter(status__in=valid_statuses).order_by('item_name', 'item_option_name')
+            self.attendees = order.attendees.order_by('pk')
+        else:
+            self.bought_items = []
+            self.attendees = []
 
     def _is_completed(self):
         if not self.workflow.order:
