@@ -10,20 +10,19 @@
 				<input class="form-control" placeholder="Order number, purchaser name, or attendee name&hellip;" value="{{ query }}" />
 			</div>
 			{{#if query}}
-				{{#if loaded}}
-					{{#results}}
-						{{!TODO: Make this URL use Django's URL reversing somehow.}}
-						<a class="list-group-item" href="/{{ organizationSlug }}/{{ eventSlug }}/orders/{{ code }}">
-							<div class="list-group-heading">Order <strong>{{ code }}</strong></div>
-							<div class="text-muted">
-								{{#if person}}
-									Purchaser: {{ person }}
-								{{/if}}
-								{{!TODO: Render attendees here too.}}
-							</div>
-						</a>
-					{{/results}}
-				{{else}}
+				{{#results}}
+					{{!TODO: Make this URL use Django's URL reversing somehow.}}
+					<a class="list-group-item" href="/{{ organizationSlug }}/{{ eventSlug }}/orders/{{ code }}">
+						<div class="list-group-heading">Order <strong>{{ code }}</strong></div>
+						<div class="text-muted">
+							{{#if person}}
+								Purchaser: {{ person }}
+							{{/if}}
+							{{!TODO: Render attendees here too.}}
+						</div>
+					</a>
+				{{/results}}
+				{{#if !loaded}}
 					<div class="list-group-item text-center">
 						<i class="fa fa-spin fa-circle-o-notch"></i>
 					</div>
