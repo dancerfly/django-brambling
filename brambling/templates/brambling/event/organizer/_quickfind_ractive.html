@@ -7,7 +7,10 @@
 		</header>
 		<div class="list-group">
 			<div class="list-group-item">
-				<input class="form-control" placeholder="Order number, purchaser name, or attendee name&hellip;" value="{{ query }}" />
+				<div class="input-group">
+  					<span class="input-group-addon"><i class="fa fa-search"></i></span>
+  					<input class="form-control" placeholder="Order number, purchaser name, or attendee name&hellip;" value="{{ query }}" />
+				</div>
 			</div>
 			{{#if query}}
 				{{#results}}
