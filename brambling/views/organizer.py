@@ -305,7 +305,7 @@ class EventSummaryView(TemplateView):
         attendees = Attendee.objects.filter(
             order__event=self.event,
             bought_items__status=BoughtItem.BOUGHT,
-        )
+        ).distinct()
 
         context.update({
             'event': self.event,
