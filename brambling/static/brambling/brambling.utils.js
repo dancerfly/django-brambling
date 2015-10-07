@@ -13,7 +13,8 @@
 				returnVal = haystack,
 				needle = needle.toLowerCase();
 
-			if (!needle) return;
+			if (!haystack) return;
+			if (!needle) return returnVal;
 
 			// Find all occurrences:
 			while (pos !== -1) {
