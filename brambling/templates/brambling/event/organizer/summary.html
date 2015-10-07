@@ -8,9 +8,9 @@
 	{{ block.super }}
 
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ractive/0.7.3/ractive.js"></script>
+	<script src='{% static "brambling/lib/ractive-transitions-slide.js" %}'></script>
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 	<script type="text/javascript" src="{% static "brambling/quickfind.ractive.js" %}"></script>
-
 	<script type="text/javascript">
 		var quickfind = new QuickFind({
 			el: '#QuickFindContainer',

@@ -8,14 +8,19 @@
 		<div class="list-group">
 			<div class="list-group-item">
 				<div class="input-group">
-  					<span class="input-group-addon"><i class="fa fa-search"></i></span>
-  					<input class="form-control" on-focus="activateKeyboardEvents()" on-blur="deactivateKeyboardEvents()" placeholder="Order number, purchaser name, or attendee name&hellip;" value="{{ query }}" />
+					<span class="input-group-addon"><i class="fa fa-search"></i></span>
+					{{#if query && !loaded}}
+						<div class="input-group-addon-overlay-right">
+							<i class="fa fa-pulse fa-spinner"></i>
+						</div>
+					{{/if}}
+					<input class="form-control" on-focus="activateKeyboardEvents()" on-blur="deactivateKeyboardEvents()" placeholder="Order number, purchaser name, or attendee name&hellip;" value="{{ query }}" />
 				</div>
 			</div>
 			{{#if query}}
 				{{#results}}
 					{{!TODO: Make this URL use Django's URL reversing somehow.}}
-					<a class="list-group-item {{#if selected}}active{{/if}}" href="{{ getUrlForResult(this) }}">
+					<a class="list-group-item {{#if selected}}active{{/if}}" href="{{ getUrlForResult(this) }}" intro="slide:{duration:150}">
 						<div class="list-group-heading">Order <strong>{{{ filters.highlight(query, code) }}}</strong></div>
 						<div class="text-muted">
 							{{#if person}}
@@ -25,17 +30,12 @@
 						</div>
 					</a>
 				{{elseif loaded}}
-					<div class="list-group-item">
+					<div class="list-group-item" intro="slide:{duration:150}">
 						<div class="text-center text-muted">
 							No results for <strong>“{{ query }}”</strong>.
 						</div>
 					</div>
 				{{/results}}
-				{{#if !loaded}}
-					<div class="list-group-item text-center">
-						<i class="fa fa-spin fa-circle-o-notch"></i>
-					</div>
-				{{/if}}
 			{{/if}}
 		</div>
 	</div>
