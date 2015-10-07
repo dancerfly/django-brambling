@@ -26,11 +26,9 @@
 	{{ block.super }}
 
 	{% if errors %}
-		<ul class='text-danger'>
-			{% for error in errors %}
-				<li>{{ error }}</li>
-			{% endfor %}
-		</ul>
+		<div class='alert alert-danger'>
+			Please correct the errors below.
+		</div>
 	{% endif %}
 
 
@@ -57,17 +55,18 @@
 										</a>
 									</div>
 								</div>
-								{% with items=attendee.bought_items.all %}
-									{% if items %}
-										<ul class='list-group'>
-											{% for item in items %}
-												{% if item.status == item.RESERVED or item.status == item.UNPAID or item.status == item.BOUGHT %}
-													<li class='list-group-item'>{{ item.item_option_name }} ({{ item.item_name }})</li>
-												{% endif %}
-											{% endfor %}
-										</ul>
-									{% endif %}
-								{% endwith %}
+								{% if attendee.items or attendee.errors %}
+									<ul class='list-group'>
+										{% for item in attendee.items %}
+											<li class='list-group-item'>{{ item.item_option_name }} ({{ item.item_name }})</li>
+										{% endfor %}
+										{% for error in attendee.errors %}
+											<li class='list-group-item list-group-item-danger'>
+												{{ error }}
+											</li>
+										{% endfor %}
+									</ul>
+								{% endif %}
 							</div>
 						</div>
 						{% if unassigned_items %}
@@ -92,6 +91,13 @@
 								<li class='list-group-item'>{{ bought_item.item_option_name }}</li>
 							{% endfor %}
 						{% endfor %}
+						{% if errors.bought_items %}
+							{% for error in errors.bought_items %}
+								<li class='list-group-item list-group-item-danger'>
+									{{ error }}
+								</li>
+							{% endfor %}
+						{% endif %}
 					</ul>
 				</div>
 			</div>

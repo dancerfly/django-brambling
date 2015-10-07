@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from datetime import timedelta
 from decimal import Decimal
+import itertools
 import json
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
@@ -1046,21 +1047,28 @@ class Order(AbstractDwollaModel):
         if self.cart_is_expired():
             self.delete_cart()
 
+        # First, fetch all transactions
+        transactions_qs = self.transactions.order_by('-timestamp')
         # First fetch BoughtItems and group by transaction.
-        bought_items_qs = self.bought_items.select_related(
-            'discounts'
-        ).prefetch_related('transactions').order_by('-added')
+        bought_items_qs = self.bought_items.prefetch_related(
+            'discounts',
+            'transactions',
+        ).order_by('-added')
 
         transactions = SortedDict()
 
-        def add_item(txn, item):
-            txn_dict = transactions.setdefault(txn, {
+        # Prepopulate transactions dictionary.
+        for txn in itertools.chain([None], transactions_qs):
+            transactions[txn] = {
                 'items': [],
                 'discounts': [],
                 'gross_cost': 0,
                 'total_savings': 0,
                 'net_cost': 0,
-            })
+            }
+
+        def add_item(txn, item):
+            txn_dict = transactions[txn]
             txn_dict['items'].append(item)
             multiplier = -1 if txn and txn.transaction_type == Transaction.REFUND else 1
             txn_dict['gross_cost'] += multiplier * item.price
@@ -1075,6 +1083,9 @@ class Order(AbstractDwollaModel):
             else:
                 for txn in item.transactions.all():
                     add_item(txn, item)
+
+        if not transactions[None]['items']:
+            del transactions[None]
 
         gross_cost = 0
         total_savings = 0

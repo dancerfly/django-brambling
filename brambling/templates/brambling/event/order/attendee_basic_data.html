@@ -33,57 +33,123 @@
 					New Attendee
 				{% endif %}
 			</h3>
-			
-			{% include "brambling/forms/_top_error_list.html" %}
+
+			{% if basic_data_form.errors %}
+				{% include "brambling/forms/_top_error_list.html" with form=basic_data_form %}
+			{% elif housing_form.errors %}
+				{% include "brambling/forms/_top_error_list.html" with form=housing_form %}
+			{% endif %}
 
 			<form action="{{ request.path }}" method="post" novalidate>
 				{% csrf_token %}
-				{% form form using %}
+				{% form basic_data_form using %}
 					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 					<div class="row">
 						<div class="col-md-6">
-							{% formrow form.given_name %}
+							{% formrow basic_data_form.given_name %}
 						</div>
 						<div class="col-md-6">
-							{% formrow form.surname %}
+							{% formrow basic_data_form.surname %}
 						</div>
 					</div>
 
 					<div class="row collapse" id="extraName">
 						<div class="col-sm-6">
-							{% formrow form.middle_name %}
+							{% formrow basic_data_form.middle_name %}
 						</div>
 						<div class="col-sm-6">
-							{% formrow form.name_order %}
+							{% formrow basic_data_form.name_order %}
 						</div>
 					</div>
 
 					<a href="#extraName" data-toggle="collapse" class="{% if masthead %}masthead-link {% endif %}pull-right more-name-options"><small><i class="fa fa-plus"></i> More Name Options</small></a>
-					{% formrow form.email %}
-					{% formrow form.phone %}
+					{% formrow basic_data_form.email %}
+					{% formrow basic_data_form.phone %}
 
-					{% formrow form.items %}
+					{% formrow basic_data_form.items %}
 
-					{% if form.housing_status %}
-						{% formrow form.housing_status %}
+					{% if basic_data_form.housing_status %}
+						{% formrow basic_data_form.housing_status %}
 					{% endif %}
 
-					{% for field in form.custom_fields %}
+					{% for field in basic_data_form.custom_fields %}
 						{% formrow field %}
 					{% endfor %}
 
-					{% formrow form.photo_consent %}
+					{% formrow basic_data_form.photo_consent %}
 
 					<div class="well">
 						{{ event.get_liability_waiver }}
-						{% formrow form.liability_waiver with label="I have read and agree to the waiver above." %}
+						{% formrow basic_data_form.liability_waiver with label="I have read and agree to the waiver above." %}
 					</div>
 
 				{% endform %}
+
+				{% if event.collect_housing_data %}
+					<div id='housing_form' class='panel panel-default'>
+						<header class='panel-heading'>
+							<div class='panel-title'>
+								Housing
+							</div>
+						</header>
+						<div class='panel-body'>
+							{% form housing_form using %}
+								<div class='row'>
+									<div class='col-md-6'>
+										{% formrow housing_form.nights %}
+									</div>
+									<div class='col-md-6'>
+										{% formrow housing_form.housing_prefer %}
+									</div>
+								</div>
+
+								<div class='row'>
+									<div class='col-md-6'>
+										{% formrow housing_form.ef_cause %}
+										{% if housing_form.ef_cause_confirm %}{% formrow housing_form.ef_cause_confirm %}{% endif %}
+									</div>
+									<div class='col-md-6'>
+										{% formrow housing_form.ef_avoid %}
+										{% if housing_form.ef_avoid_confirm %}{% formrow housing_form.ef_avoid_confirm %}{% endif %}
+									</div>
+								</div>
+
+								<div class='row'>
+									<div class='col-md-6'>{% formrow housing_form.person_prefer %}</div>
+									<div class='col-md-6'>{% formrow housing_form.person_avoid %}</div>
+								</div>
+
+								{% formrow housing_form.other_needs %}
+
+								{% for field in housing_form.custom_fields %}
+									{% formrow field %}
+								{% endfor %}
+
+								{% formrow housing_form.save_as_defaults %}
+
+							{% endform %}
+						</div>
+					</div>
+				{% endif %}
 				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Save and continue{% endif %}</button>
 				{% if attendee.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
 			</form>
 		</div>
 	</div>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script>
+		var toggleHousingForm = function() {
+			if ($('input[name=basic-housing_status]:checked').val() == 'need') {
+				$('#housing_form').slideDown();
+			} else {
+				$('#housing_form').slideUp();
+			}
+		};
+		$('input[name=basic-housing_status]').on('click', toggleHousingForm);
+		toggleHousingForm();
+	</script>
 {% endblock %}

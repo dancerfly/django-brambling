@@ -10,6 +10,7 @@ from brambling.api.v1.views import (
     AttendeeViewSet,
     EventHousingViewSet,
     OrderViewSet,
+    OrderSearchViewSet,
     BoughtItemViewSet,
     ItemViewSet,
     ItemImageViewSet,
@@ -30,6 +31,7 @@ router.register('item', ItemViewSet)
 router.register('itemimage', ItemImageViewSet)
 router.register('itemoption', ItemOptionViewSet)
 router.register('order', OrderViewSet)
+router.register('ordersearch', OrderSearchViewSet, base_name='ordersearch')
 router.register('orderdiscount', OrderDiscountViewSet)
 router.register('organization', OrganizationViewSet)
 

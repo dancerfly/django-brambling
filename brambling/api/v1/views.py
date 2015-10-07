@@ -1,5 +1,6 @@
 from django.db.models import Q
-from rest_framework import viewsets, serializers, status
+from django.http import Http404
+from rest_framework import viewsets, serializers, status, filters
 from rest_framework.response import Response
 
 from brambling.api.v1.permissions import (
@@ -10,6 +11,7 @@ from brambling.api.v1.permissions import (
     ItemImagePermission,
     ItemOptionPermission,
     OrderPermission,
+    OrderSearchPermission,
     AttendeePermission,
     EventHousingPermission,
     BoughtItemPermission,
@@ -153,6 +155,37 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
+    "A ViewSet that filters orders based on a single search term."
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    filter_backends = (filters.SearchFilter,)
+    permission_classes = [OrderSearchPermission]
+    search_fields = ("code", "person__given_name", "person__middle_name",
+        "person__surname", "attendees__given_name",
+        "attendees__middle_name", "attendees__surname")
+
+    def get_event(self):
+        event_id = self.request.query_params.get('event', None)
+        return Event.objects.get(pk=event_id)
+
+    def get_queryset(self):
+        "Filter orders down to those which are for the specific event provided."
+
+        qs = super(OrderSearchViewSet, self).get_queryset().prefetch_related(
+            'bought_items', 'discounts',
+        ).select_related(
+            'event', 'person', 'eventhousing',
+        )
+
+        event = self.get_event()
+        if not event:
+            raise Http404('No event id specified.')
+
+        return qs.filter(event=event)
+
 
 
 class AttendeeViewSet(viewsets.ModelViewSet):

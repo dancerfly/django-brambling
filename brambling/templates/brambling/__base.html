@@ -7,7 +7,7 @@
 {% block body-classes %}dancerfly brambling {{ block.super }}{% endblock %}
 
 {% block stylesheets %}
-	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 	{% compress css %}
 		<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
 		<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
@@ -76,6 +76,7 @@
 		<script type="text/javascript" src="{% static "brambling/lib/bootstrap-datepicker/bootstrap-datepicker.js" %}"></script>
 		<script type="text/javascript" src="{% static "hints/hints.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
+		<script type="text/javascript" src="{% static "brambling/brambling.utils.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
 		<script type="text/javascript" src="{% static "brambling/jquery.formset.js" %}"></script>
 		{% if GOOGLE_ANALYTICS_UA and GOOGLE_ANALYTICS_DOMAIN %}

@@ -1,0 +1,42 @@
+{# This whole template is verbatim - use ractive, not Django. #}
+
+{% verbatim %}
+	<div class="panel panel-default">
+		<header class="panel-heading">
+			<h4 class="panel-title">Find Order</h4>
+		</header>
+		<div class="list-group">
+			<div class="list-group-item">
+				<div class="input-group">
+					<span class="input-group-addon"><i class="fa fa-search"></i></span>
+					{{#if query && !loaded}}
+						<div class="input-group-addon-overlay-right">
+							<i class="fa fa-pulse fa-spinner"></i>
+						</div>
+					{{/if}}
+					<input class="form-control" on-focus="activateKeyboardEvents()" on-blur="deactivateKeyboardEvents()" placeholder="Order number, purchaser name, or attendee name&hellip;" value="{{ query }}" />
+				</div>
+			</div>
+			{{#if query}}
+				{{#results}}
+					{{!TODO: Make this URL use Django's URL reversing somehow.}}
+					<a class="list-group-item {{#if selected}}active{{/if}}" href="{{ getUrlForResult(this) }}" intro="slide:{duration:150}">
+						<div class="list-group-heading">Order <strong>{{{ filters.highlight(query, code) }}}</strong></div>
+						<div class="text-muted">
+							{{#if person}}
+								Purchaser: {{{ filters.highlight(query, person) }}}
+							{{/if}}
+							{{!TODO: Render attendees here too.}}
+						</div>
+					</a>
+				{{elseif loaded}}
+					<div class="list-group-item" intro="slide:{duration:150}">
+						<div class="text-center text-muted">
+							No results for <strong>“{{ query }}”</strong>.
+						</div>
+					</div>
+				{{/results}}
+			{{/if}}
+		</div>
+	</div>
+{% endverbatim %}
