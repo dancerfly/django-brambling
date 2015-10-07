@@ -107,7 +107,7 @@ class AttendeeBasicDataForm(CustomDataForm):
         return instance
 
 
-class AttendeeHousingDataForm(MemoModelForm, CustomDataForm):
+class AttendeeHousingDataForm(CustomDataForm):
     class Meta:
         model = Attendee
         fields = ('nights', 'ef_cause', 'ef_avoid', 'person_prefer',
@@ -134,27 +134,19 @@ class AttendeeHousingDataForm(MemoModelForm, CustomDataForm):
 
                 owner = self.instance.person
                 self.initial.update({
-                    'ef_cause': self.filter(EnvironmentalFactor.objects.only('id'),
-                                            person_cause=owner),
-                    'ef_avoid': self.filter(EnvironmentalFactor.objects.only('id'),
-                                            person_avoid=owner),
+                    'ef_cause': owner.ef_cause.all(),
+                    'ef_avoid': owner.ef_avoid.all(),
                     'person_prefer': owner.person_prefer,
                     'person_avoid': owner.person_prefer,
-                    'housing_prefer': self.filter(HousingCategory.objects.only('id'),
-                                                  preferred_by=owner),
+                    'housing_prefer': owner.housing_prefer.all(),
                     'other_needs': owner.other_needs,
                 })
 
         self.fields['nights'].required = True
         event = self.instance.order.event
-        self.set_choices('nights', HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
-        self.initial['nights'] = self.fields['nights'].queryset
-        self.set_choices('ef_cause',
-                         EnvironmentalFactor.objects.only('id', 'name'))
-        self.set_choices('ef_avoid',
-                         EnvironmentalFactor.objects.only('id', 'name'))
-        self.set_choices('housing_prefer',
-                         HousingCategory.objects.only('id', 'name'))
+        nights = HousingRequestNight.objects.filter(date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
+        self.fields['nights'].queryset = nights
+        self.initial['nights'] = nights
 
     def get_custom_forms(self):
         return self.instance.order.event.forms.filter(form_type=CustomForm.HOUSING).prefetch_related('fields')
