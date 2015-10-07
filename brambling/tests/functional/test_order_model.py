@@ -1,9 +1,8 @@
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.core.exceptions import SuspiciousOperation
 from django.test import TestCase, RequestFactory
 
-from brambling.models import Order
+from brambling.models import Order, Transaction
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
@@ -11,6 +10,7 @@ from brambling.tests.factories import (
     ItemFactory,
     ItemOptionFactory,
     PersonFactory,
+    TransactionFactory,
 )
 
 
@@ -23,18 +23,43 @@ class OrderModelTestCase(TestCase):
         """
         event = EventFactory()
         order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
         item = ItemFactory(event=event)
         item_option = ItemOptionFactory(price=100, item=item)
         discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
 
         order.add_to_cart(item_option)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
         self.assertEqual(summary_data['total_savings'], 0)
         self.assertEqual(summary_data['net_cost'], 100)
 
+        # Discounts don't get added to BOUGHT items.
         order.add_discount(discount)
+
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['gross_cost'], 100)
+        self.assertEqual(summary_data['total_savings'], 0)
+        self.assertEqual(summary_data['net_cost'], 100)
+
+    def test_summary_data__discount(self):
+        """
+        Test that get_summary_data returns correct values for savings and
+        total cost.
+
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
+
+        order.add_to_cart(item_option)
+        order.add_discount(discount)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
@@ -49,18 +74,45 @@ class OrderModelTestCase(TestCase):
         """
         event = EventFactory()
         order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
         item = ItemFactory(event=event)
         item_option = ItemOptionFactory(price=100, item=item)
-        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
 
         order.add_to_cart(item_option)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
         self.assertEqual(summary_data['total_savings'], 0)
         self.assertEqual(summary_data['net_cost'], 100)
 
+        item_option.price = 200
+        item_option.save()
+
+        # Make sure that the value isn't cached.
+        order = Order.objects.get(pk=order.pk)
+
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['gross_cost'], 100)
+        self.assertEqual(summary_data['total_savings'], 0)
+        self.assertEqual(summary_data['net_cost'], 100)
+
+    def test_summary_data__itemoption_changed__discount(self):
+        """
+        Test that get_summary_data returns correct values for savings and
+        total cost even if an itemoption was changed.
+
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
+
+        order.add_to_cart(item_option)
         order.add_discount(discount)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
@@ -86,18 +138,44 @@ class OrderModelTestCase(TestCase):
         """
         event = EventFactory()
         order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
         item = ItemFactory(event=event)
         item_option = ItemOptionFactory(price=100, item=item)
-        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
 
         order.add_to_cart(item_option)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
         self.assertEqual(summary_data['total_savings'], 0)
         self.assertEqual(summary_data['net_cost'], 100)
 
+        item_option.delete()
+
+        # Make sure that the value isn't cached.
+        order = Order.objects.get(pk=order.pk)
+
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['gross_cost'], 100)
+        self.assertEqual(summary_data['total_savings'], 0)
+        self.assertEqual(summary_data['net_cost'], 100)
+
+    def test_summary_data__itemoption_deleted__discount(self):
+        """
+        Test that get_summary_data returns correct values for savings and
+        total cost even if an itemoption was deleted.
+
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
+
+        order.add_to_cart(item_option)
         order.add_discount(discount)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
@@ -122,18 +200,14 @@ class OrderModelTestCase(TestCase):
         """
         event = EventFactory()
         order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
         item = ItemFactory(event=event)
         item_option = ItemOptionFactory(price=100, item=item)
         discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
 
         order.add_to_cart(item_option)
-
-        summary_data = order.get_summary_data()
-        self.assertEqual(summary_data['gross_cost'], 100)
-        self.assertEqual(summary_data['total_savings'], 0)
-        self.assertEqual(summary_data['net_cost'], 100)
-
         order.add_discount(discount)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
@@ -159,18 +233,14 @@ class OrderModelTestCase(TestCase):
         """
         event = EventFactory()
         order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
         item = ItemFactory(event=event)
         item_option = ItemOptionFactory(price=100, item=item)
         discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
 
         order.add_to_cart(item_option)
-
-        summary_data = order.get_summary_data()
-        self.assertEqual(summary_data['gross_cost'], 100)
-        self.assertEqual(summary_data['total_savings'], 0)
-        self.assertEqual(summary_data['net_cost'], 100)
-
         order.add_discount(discount)
+        order.mark_cart_paid(transaction)
 
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
@@ -182,6 +252,65 @@ class OrderModelTestCase(TestCase):
         # Make sure that the value isn't cached.
         order = Order.objects.get(pk=order.pk)
 
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['gross_cost'], 100)
+        self.assertEqual(summary_data['total_savings'], -20)
+        self.assertEqual(summary_data['net_cost'], 80)
+
+    def test_summary_data__transaction_no_items(self):
+        """
+        Transactions without items are included in summary data.
+
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event)
+        TransactionFactory(event=event, order=order, amount=100)
+
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['total_payments'], 100)
+        self.assertEqual(summary_data['total_refunds'], 0)
+        self.assertEqual(summary_data['net_balance'], -100)
+
+        TransactionFactory(
+            event=event,
+            order=order,
+            amount=-100,
+            transaction_type=Transaction.REFUND
+        )
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['total_payments'], 100)
+        self.assertEqual(summary_data['total_refunds'], -100)
+        self.assertEqual(summary_data['net_balance'], 0)
+
+    def test_summary_data__items_no_transaction(self):
+        """
+        Items without transactions are included in summary data.
+
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event)
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        order.add_to_cart(item_option)
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['gross_cost'], 100)
+        self.assertEqual(summary_data['total_savings'], 0)
+        self.assertEqual(summary_data['net_cost'], 100)
+
+    def test_summary_data__items_no_transaction__discount(self):
+        """
+        Items without transactions are included in summary data.
+
+        """
+        event = EventFactory()
+        order = OrderFactory(event=event)
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
+
+        order.add_to_cart(item_option)
+        order.add_discount(discount)
         summary_data = order.get_summary_data()
         self.assertEqual(summary_data['gross_cost'], 100)
         self.assertEqual(summary_data['total_savings'], -20)

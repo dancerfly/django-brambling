@@ -6,7 +6,7 @@ import pytz
 
 from brambling.models import (Event, Person, Order, CreditCard, Invite,
                               Organization, Transaction, Item, ItemOption,
-                              Discount)
+                              Discount, Attendee)
 
 
 def lazy_setting(setting):
@@ -88,6 +88,25 @@ class OrderFactory(factory.DjangoModelFactory):
     event = factory.SubFactory(EventFactory)
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
+
+
+class AttendeeFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Attendee
+
+    given_name = factory.Sequence(lambda n: "Attendee{}".format(n))
+    surname = "Test"
+
+    email = factory.Sequence(lambda n: "test{}@test.com".format(n))
+    order = factory.SubFactory(OrderFactory)
+
+    @factory.post_generation
+    def bought_items(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        for bought_item in extracted:
+            self.bought_items.add(bought_item)
 
 
 class InviteFactory(factory.DjangoModelFactory):

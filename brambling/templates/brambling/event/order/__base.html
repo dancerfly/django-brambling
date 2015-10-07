@@ -12,7 +12,7 @@
 	<meta property="og:description" content="{{ event.description }}" />
 	<meta property="og:url" content="https://{{ site.domain }}{% url 'brambling_event_shop' event_slug=event.slug organization_slug=event.organization.slug %}" />
 	{% if event.banner_image %}
-		<meta property="og:image" content="{% if MEDIA_URL|slice:':7' != 'http://' and MEDIA_URL|slice:':8' != 'https://' %}https://{{ site.domain }}{% endif %}{{ MEDIA_URL }}{{ event.banner_image }}" />
+		<meta property="og:image" content="{% if MEDIA_URL|slice:':7' != 'http://' and MEDIA_URL|slice:':8' != 'https://' %}https://{{ site.domain }}{% endif %}{{ event.banner_image.url }}" />
 		<meta property="og:image:width" content="{{ event.banner_image.width }}" />
 		<meta property="og:image:height" content="{{ event.banner_image.height }}" />
 	{% endif %}

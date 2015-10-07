@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView, FormView
-import floppyforms.__future__ as forms
+import floppyforms.__future__ as floppyforms
 
 from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
                                     HostingForm, AttendeeBasicDataForm,
@@ -87,68 +87,58 @@ class AttendeeStep(OrderStep):
     slug = 'attendees'
     view_name = 'brambling_event_attendee_list'
 
-    def _is_completed(self):
-        if not self.workflow.order:
-            return False
-        return not self.workflow.order.bought_items.filter(attendee__isnull=True).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists()
-
-    def get_errors(self):
-        errors = []
+    def __init__(self, *args, **kwargs):
+        super(AttendeeStep, self).__init__(*args, **kwargs)
         order = self.workflow.order
-        # All attendees must have at least one non-refunded item
-        total_count = order.attendees.count()
         valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
-        with_count = order.attendees.filter(bought_items__status__in=valid_statuses).distinct().count()
-        if with_count != total_count:
-            errors.append('All attendees must have at least one item')
-
-        # All attendees must have basic data filled out.
-        missing_data = order.attendees.filter(basic_completed=False)
-        if len(missing_data) > 0:
-            if len(missing_data) == 1:
-                error = '{} is missing basic data'.format(missing_data[0])
-            else:
-                error = 'The following attendees are missing basic data: ' + ", ".join(missing_data)
-            errors.append(error)
-
-        # All items must be assigned to an attendee.
-        if order.bought_items.filter(attendee__isnull=True).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED)).exists():
-            errors.append('All items in order must be assigned to an attendee.')
-        return errors
-
-
-class HousingStep(OrderStep):
-    name = 'Housing'
-    slug = 'housing'
-    view_name = 'brambling_event_attendee_housing'
-
-    @classmethod
-    def include_in(cls, workflow):
-        return workflow.event.collect_housing_data
-
-    def is_active(self):
-        if not self.workflow.order:
-            return False
-        if not hasattr(self, '_active'):
-            self._active = self.workflow.order.attendees.filter(housing_status=Attendee.NEED).exists()
-        return self._active
+        if order:
+            self.bought_items = order.bought_items.filter(status__in=valid_statuses).order_by('item_name', 'item_option_name')
+            self.attendees = order.attendees.order_by('pk')
+        else:
+            self.bought_items = []
+            self.attendees = []
 
     def _is_completed(self):
         if not self.workflow.order:
             return False
-        return not self.workflow.order.attendees.filter(
-            housing_status=Attendee.NEED,
-            housing_completed=False
-        ).exists()
+
+        for item in self.bought_items:
+            if item.attendee_id is None:
+                return False
+
+        if self.workflow.event.collect_housing_data:
+            for attendee in self.attendees:
+                if attendee.housing_status == Attendee.NEED and not attendee.housing_completed:
+                    return False
+
+        return True
 
     def get_errors(self):
-        errors = []
-        order = self.workflow.order
+        errors = {}
 
-        missing_housing = order.attendees.filter(housing_status=Attendee.NEED,
-                                                 housing_completed=False).exists()
-        if missing_housing:
-            errors.append("Some attendees are missing housing data.")
+        attendee_map = {}
+        for attendee in self.attendees:
+            attendee.items = []
+            attendee_map[attendee.pk] = attendee
+        for item in self.bought_items:
+            if item.attendee_id in attendee_map:
+                item.attendee = attendee_map[item.attendee_id]
+                item.attendee.items.append(item)
+            else:
+                errors['bought_items'] = ['All items in order must be assigned to an attendee.']
+
+        for attendee in self.attendees:
+            attendee.errors = []
+            if len(attendee.items) == 0:
+                attendee.errors.append('Must have at least one item.')
+            if not attendee.basic_completed:
+                attendee.errors.append('Missing basic data.')
+            if self.workflow.event.collect_housing_data:
+                if attendee.housing_status == Attendee.NEED and not attendee.housing_completed:
+                    attendee.errors.append('Missing housing data.')
+            if attendee.errors:
+                errors.setdefault('attendees', {})[attendee.pk] = attendee.errors
+
         return errors
 
 
@@ -217,12 +207,12 @@ class PaymentStep(OrderStep):
 
 
 class RegistrationWorkflow(Workflow):
-    step_classes = [ShopStep, AttendeeStep, HousingStep, SurveyStep,
+    step_classes = [ShopStep, AttendeeStep, SurveyStep,
                     HostingStep, OrderEmailStep, PaymentStep]
 
 
 class ShopWorkflow(Workflow):
-    step_classes = [ShopStep, AttendeeStep, HousingStep, HostingStep, PaymentStep]
+    step_classes = [ShopStep, AttendeeStep, HostingStep, PaymentStep]
 
 
 class SurveyWorkflow(Workflow):
@@ -460,8 +450,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
     workflow_class = RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
-        self.attendees = self.order.attendees.all()
-        if self.attendees:
+        if self.current_step.attendees:
             return self.render_to_response(self.get_context_data())
 
         kwargs = {
@@ -476,38 +465,73 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
 
         context.update({
             'errors': self.current_step.errors,
-            'attendees': self.attendees,
-            'unassigned_items': self.order.bought_items.filter(
-                attendee__isnull=True
-            ).exclude(
-                status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
-            ).order_by('item_name', 'item_option_name'),
+            'attendees': self.current_step.attendees,
+            'unassigned_items': [item for item in self.current_step.bought_items
+                                 if item.attendee_id is None],
         })
         return context
 
 
-class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
+class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
     template_name = 'brambling/event/order/attendee_basic_data.html'
     form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
     workflow_class = RegistrationWorkflow
     model = Attendee
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.basic_data_form = self.get_basic_data_form()
+        self.housing_form = None
+        if self.event.collect_housing_data:
+            self.housing_form = self.get_housing_form()
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        all_valid = True
+        self.basic_data_form = self.get_basic_data_form()
+
+        if not self.basic_data_form.is_valid():
+            all_valid = False
+
+        self.housing_form = None
+        if self.event.collect_housing_data and self.basic_data_form.cleaned_data.get('housing_status') == Attendee.NEED:
+            self.housing_form = self.get_housing_form()
+            if not self.housing_form.is_valid():
+                all_valid = False
+
+        if all_valid:
+            if (self.request.user.is_authenticated() and
+                    self.object.email == self.request.user.email):
+                self.object.person = self.request.user
+
+            self.basic_data_form.save()
+            if self.housing_form:
+                self.housing_form.save()
+            return HttpResponseRedirect(self.get_success_url())
+        context = self.get_context_data(**kwargs)
+        return self.render_to_response(context)
+
     def get_object(self):
         if 'pk' not in self.kwargs:
-            return None
-        return super(AttendeeBasicDataView, self).get_object()
+            return Attendee(order=self.order)
+        # Saves a query and preserves any error information
+        for attendee in self.current_step.attendees:
+            if attendee.pk == int(self.kwargs['pk']):
+                return attendee
+        raise Http404
 
-    def get_form_class(self):
+    def get_basic_data_form(self):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
                   'phone', 'liability_waiver', 'photo_consent')
         if self.event.collect_housing_data:
             fields += ('housing_status',)
-        return forms.models.modelform_factory(Attendee, self.form_class, fields=fields)
+        cls = floppyforms.models.modelform_factory(Attendee, self.form_class, fields=fields)
 
-    def get_initial(self):
-        initial = super(AttendeeBasicDataView, self).get_initial()
-        if self.order.attendees.count() == 0 and self.request.user.is_authenticated():
+        initial = {}
+        if len(self.current_step.attendees) == 0 and self.request.user.is_authenticated():
             person = self.request.user
             initial.update({
                 'given_name': person.given_name,
@@ -517,85 +541,35 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, UpdateView):
                 'email': person.email,
                 'phone': person.phone
             })
-        return initial
 
-    def get_form_kwargs(self):
-        kwargs = super(AttendeeBasicDataView, self).get_form_kwargs()
-        kwargs['order'] = self.order
-        return kwargs
+        kwargs = {
+            'prefix': "basic",
+            'order': self.order,
+            'instance': self.object,
+            'initial': initial,
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return cls(**kwargs)
 
-    def form_valid(self, form):
-        if (self.request.user.is_authenticated() and
-                form.instance.email == self.request.user.email):
-            form.instance.person = self.request.user
-        return super(AttendeeBasicDataView, self).form_valid(form)
+    def get_housing_form(self):
+        kwargs = {
+            'prefix': "housing",
+            'instance': self.object,
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return AttendeeHousingDataForm(**kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context.update({
-            'attendees': Attendee.objects.filter(order=self.order).order_by('pk')
-        })
-        return context
-
-
-class AttendeeHousingView(OrderMixin, WorkflowMixin, TemplateView):
-    template_name = 'brambling/event/order/attendee_housing.html'
-    current_step_slug = 'housing'
-    workflow_class = RegistrationWorkflow
-
-    def get(self, request, *args, **kwargs):
-        if not self.event.collect_housing_data:
-            raise Http404
-        self.forms = self.get_forms()
-        if not self.forms:
-            return HttpResponseRedirect(self.get_success_url())
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
-
-    def post(self, request, *args, **kwargs):
-        if not self.event.collect_housing_data:
-            raise Http404
-        self.forms = self.get_forms()
-        all_valid = True
-        for form in self.forms:
-            if not form.is_valid():
-                all_valid = False
-        if all_valid:
-            for form in self.forms:
-                form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        context = self.get_context_data(**kwargs)
-        return self.render_to_response(context)
-
-    def get_success_url(self):
-        kwargs = {
-            'event_slug': self.event.slug,
-            'organization_slug': self.event.organization.slug,
-        }
-        return reverse('brambling_event_survey', kwargs=kwargs)
-
-    def get_forms(self):
-        memo_dict = {}
-        kwargs = {
-            'memo_dict': memo_dict,
-        }
-        if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-
-        attendees = self.order.attendees.filter(housing_status=Attendee.NEED)
-        if not attendees:
-            raise Http404
-        return [AttendeeHousingDataForm(prefix='form-{}-'.format(attendee.pk),
-                                        instance=attendee,
-                                        **kwargs)
-                for attendee in attendees]
-
-    def get_context_data(self, **kwargs):
-        context = super(AttendeeHousingView, self).get_context_data(**kwargs)
-
-        context.update({
-            'event': self.event,
-            'forms': self.forms,
+            'object': self.object,
+            'attendee': self.object,
+            'attendees': self.current_step.attendees,
+            'bought_items': self.current_step.bought_items,
+            'basic_data_form': self.basic_data_form,
+            'housing_form': self.housing_form,
         })
         return context
 
@@ -661,7 +635,7 @@ class OrderEmailView(OrderMixin, WorkflowMixin, UpdateView):
     workflow_class = RegistrationWorkflow
 
     def get_form_class(self):
-        cls = forms.models.modelform_factory(Order, forms.ModelForm, fields=('email',))
+        cls = floppyforms.models.modelform_factory(Order, floppyforms.ModelForm, fields=('email',))
         cls.base_fields['email'].required = True
         return cls
 
