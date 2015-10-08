@@ -2,6 +2,7 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 from dwolla.exceptions import DwollaAPIException
 import floppyforms.__future__ as forms
 import stripe
@@ -17,9 +18,9 @@ from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
-STRIPE_API_ERROR = ("We're having trouble connecting to the payment "
-                    "processor. Sorry for the inconvenience! "
-                    "<a href='https://status.stripe.com/'>Check their system status</a> and try again later.")
+STRIPE_API_ERROR = mark_safe("We're having trouble connecting to the payment "
+                             "processor. Sorry for the inconvenience! "
+                             "<a class='alert-link' href='https://status.stripe.com/'>Check their system status</a> and try again later.")
 
 
 class CustomDataForm(forms.ModelForm):
