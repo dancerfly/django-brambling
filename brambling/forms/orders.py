@@ -2,6 +2,7 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 from dwolla.exceptions import DwollaAPIException
 import floppyforms.__future__ as forms
 import stripe
@@ -14,6 +15,11 @@ from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFa
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
                                      stripe_prep, stripe_charge)
+
+
+STRIPE_API_ERROR = mark_safe("We're having trouble connecting to the payment "
+                             "processor. Sorry for the inconvenience! "
+                             "<a class='alert-link' href='https://status.stripe.com/'>Check their system status</a> and try again later.")
 
 
 class CustomDataForm(forms.ModelForm):
@@ -459,6 +465,8 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
                 self.card = self._charge.card
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
+        except stripe.error.APIError, e:
+            self.add_error(None, STRIPE_API_ERROR)
 
     def save(self):
         if self.cleaned_data.get('save_card'):
@@ -497,6 +505,8 @@ class SavedCardPaymentForm(BasePaymentForm):
             )
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
+        except stripe.error.APIError, e:
+            self.add_error(None, STRIPE_API_ERROR)
 
     def save(self):
         return self.save_payment(self._charge, self.card)
