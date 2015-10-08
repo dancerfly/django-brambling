@@ -17,6 +17,9 @@ from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
 
 
 CONFIRM_ERROR = "Please check this box to confirm the value is correct"
+STRIPE_API_ERROR = ("We're having trouble connecting to the payment "
+                    "processor. Sorry for the inconvenience! "
+                    "<a href='https://status.stripe.com/'>Check their system status</a> and try again later.")
 
 
 class CustomDataForm(forms.ModelForm):
@@ -490,6 +493,8 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
                 self.card = self._charge.card
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
+        except stripe.error.APIError, e:
+            self.add_error(None, STRIPE_API_ERROR)
 
     def save(self):
         if self.cleaned_data.get('save_card'):
@@ -528,10 +533,8 @@ class SavedCardPaymentForm(BasePaymentForm):
             )
         except stripe.error.CardError, e:
             self.add_error(None, e.message)
-        except stripe.error.ApiError, e:
-            self.add_error(None, "We're having trouble connecting to the payment "
-                                 "processor. Sorry for the inconvenience! "
-                                 "<a href='https://status.stripe.com/'>Check their system status</a> and try again later.")
+        except stripe.error.APIError, e:
+            self.add_error(None, STRIPE_API_ERROR)
 
     def save(self):
         return self.save_payment(self._charge, self.card)
