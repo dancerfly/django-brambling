@@ -682,9 +682,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
 
-    # Internal tracking
-    modified_directly = models.BooleanField(default=False)
-
     class Meta:
         verbose_name = _('person')
         verbose_name_plural = _('people')

@@ -16,9 +16,6 @@ from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
                                      stripe_prep, stripe_charge)
 
 
-CONFIRM_ERROR = "Please check this box to confirm the value is correct"
-
-
 class CustomDataForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CustomDataForm, self).__init__(*args, **kwargs)
@@ -120,18 +117,6 @@ class AttendeeHousingDataForm(CustomDataForm):
             self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
 
             if self.instance.person and not self.instance.housing_completed:
-                if self.instance.person.modified_directly:
-                    self.fields['ef_cause_confirm'] = forms.BooleanField(
-                        required=True,
-                        error_messages={'required': CONFIRM_ERROR},
-                        label="Is this still correct?",
-                    )
-                    self.fields['ef_avoid_confirm'] = forms.BooleanField(
-                        required=True,
-                        error_messages={'required': CONFIRM_ERROR},
-                        label="Is this still correct?",
-                    )
-
                 owner = self.instance.person
                 self.initial.update({
                     'ef_cause': owner.ef_cause.all(),
@@ -164,7 +149,6 @@ class AttendeeHousingDataForm(CustomDataForm):
             person.person_avoid = instance.person_avoid
             person.housing_prefer = instance.housing_prefer.all()
             person.other_needs = instance.other_needs
-            person.modified_directly = True
             person.save()
         return instance
 
@@ -254,21 +238,6 @@ class HostingForm(MemoModelForm, CustomDataForm):
                 })
             home = self.instance.home
             if home is not None:
-                self.fields['ef_present_confirm'] = forms.BooleanField(
-                    required=True,
-                    error_messages={'required': CONFIRM_ERROR},
-                    label="Is this still correct?",
-                )
-                self.fields['ef_avoid_confirm'] = forms.BooleanField(
-                    required=True,
-                    error_messages={'required': CONFIRM_ERROR},
-                    label="Is this still correct?",
-                )
-                self.fields['housing_categories_confirm'] = forms.BooleanField(
-                    required=True,
-                    error_messages={'required': CONFIRM_ERROR},
-                    label="Is this still correct?",
-                )
                 self.initial.update({
                     'address': home.address,
                     'address_2': home.address_2,

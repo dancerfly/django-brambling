@@ -144,7 +144,6 @@ class AccountForm(forms.ModelForm):
         return password2
 
     def save(self, commit=True):
-        self.instance.modified_directly = True
         if self.cleaned_data.get('new_password1'):
             self.instance.set_password(self.cleaned_data['new_password1'])
         person = super(AccountForm, self).save(commit)
@@ -165,10 +164,6 @@ class ProfileForm(forms.ModelForm):
                   'ef_avoid', 'person_prefer', 'person_avoid',
                   'housing_prefer', 'other_needs')
 
-    def save(self, commit=True):
-        self.instance.modified_directly = True
-        return super(ProfileForm, self).save(commit)
-
 
 class BillingForm(forms.ModelForm):
     disconnect_dwolla = forms.BooleanField(required=False)
@@ -183,7 +178,6 @@ class BillingForm(forms.ModelForm):
             del self.fields['disconnect_dwolla']
 
     def save(self, commit=True):
-        self.instance.modified_directly = True
         if self.cleaned_data.get('disconnect_dwolla'):
             self.instance.clear_dwolla_data(LIVE)
         return super(BillingForm, self).save(commit)
