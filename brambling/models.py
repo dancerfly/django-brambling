@@ -1247,11 +1247,12 @@ class Transaction(models.Model):
     def from_dwolla_charge(cls, charge, **kwargs):
         application_fee = 0
         processing_fee = 0
-        for fee in charge['Fees']:
-            if fee['Type'] == 'Facilitator Fee':
-                application_fee = Decimal(str(fee['Amount']))
-            elif fee['Type'] == 'Dwolla Fee':
-                processing_fee = Decimal(str(fee['Amount']))
+        if charge['Fees']:
+            for fee in charge['Fees']:
+                if fee['Type'] == 'Facilitator Fee':
+                    application_fee = Decimal(str(fee['Amount']))
+                elif fee['Type'] == 'Dwolla Fee':
+                    processing_fee = Decimal(str(fee['Amount']))
         return Transaction.objects.create(
             transaction_type=Transaction.PURCHASE,
             amount=charge['Amount'],
