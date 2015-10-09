@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 
-from brambling.models import Organization, Order, Transaction
+from brambling.models import Organization, Order, Transaction, Event
 from brambling.utils.payment import dwolla_prep, LIVE, dwolla_set_tokens
 
 
@@ -91,13 +91,14 @@ class UserDwollaConnectView(DwollaConnectView):
 
 class OrderDwollaConnectView(DwollaConnectView):
     def get_object(self):
+        event = get_object_or_404(
+            Event,
+            slug=self.kwargs['event_slug'],
+            organization__slug=self.kwargs['organization_slug']
+        )
+
         try:
-            return Order.objects.select_related(
-                'event__organization',
-            ).get(
-                code=self.kwargs['code'],
-                event__slug=self.kwargs['event_slug']
-            )
+            return Order.objects.for_request(event, self.request, create=False)
         except Order.DoesNotExist:
             raise Http404
 
