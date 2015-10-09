@@ -98,7 +98,7 @@ class OrderDwollaConnectView(DwollaConnectView):
         )
 
         try:
-            return Order.objects.for_request(event, self.request, create=False)
+            return Order.objects.for_request(event, self.request, create=False)[0]
         except Order.DoesNotExist:
             raise Http404
 
