@@ -105,8 +105,7 @@ class OrderDwollaConnectView(DwollaConnectView):
     def get_success_url(self):
         return reverse('brambling_event_order_summary',
                        kwargs={'event_slug': self.object.event.slug,
-                               'organization_slug': self.object.event.organization.slug,
-                               'code': self.object.code})
+                               'organization_slug': self.object.event.organization.slug})
 
 
 class DwollaWebhookView(View):
