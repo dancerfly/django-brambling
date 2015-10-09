@@ -1472,7 +1472,7 @@ class Attendee(AbstractNamedModel):
     )
     # Internal tracking data
     order = models.ForeignKey(Order, related_name='attendees')
-    person = models.ForeignKey(Person, blank=True, null=True)
+    saved_attendee = models.ForeignKey('SavedAttendee', blank=True, null=True, on_delete=models.SET_NULL)
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)

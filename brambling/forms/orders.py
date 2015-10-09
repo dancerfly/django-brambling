@@ -119,19 +119,8 @@ class AttendeeHousingDataForm(CustomDataForm):
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
 
-        if self.instance.person and self.instance.person == self.instance.order.person:
-            self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
-
-            if self.instance.person and not self.instance.housing_completed:
-                owner = self.instance.person
-                self.initial.update({
-                    'ef_cause': owner.ef_cause.all(),
-                    'ef_avoid': owner.ef_avoid.all(),
-                    'person_prefer': owner.person_prefer,
-                    'person_avoid': owner.person_prefer,
-                    'housing_prefer': owner.housing_prefer.all(),
-                    'other_needs': owner.other_needs,
-                })
+        if self.instance.saved_attendee:
+            self.fields['save_attendee'] = forms.BooleanField(initial=True, required=False)
 
         self.fields['nights'].required = True
         event = self.instance.order.event

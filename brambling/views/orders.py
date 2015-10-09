@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -93,7 +94,7 @@ class AttendeeStep(OrderStep):
         valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
         if order:
             self.bought_items = order.bought_items.filter(status__in=valid_statuses).order_by('item_name', 'item_option_name')
-            self.attendees = order.attendees.order_by('pk')
+            self.attendees = order.attendees.order_by('pk').select_related('saved_attendee')
         else:
             self.bought_items = []
             self.attendees = []
@@ -474,10 +475,8 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
 
 class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
     template_name = 'brambling/event/order/attendee_basic_data.html'
-    form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
     workflow_class = RegistrationWorkflow
-    model = Attendee
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -523,24 +522,16 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
                 return attendee
         raise Http404
 
-    def get_basic_data_form(self):
+    def get_basic_data_form(self, initial=None):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
                   'phone', 'liability_waiver', 'photo_consent')
         if self.event.collect_housing_data:
             fields += ('housing_status',)
-        cls = floppyforms.models.modelform_factory(Attendee, self.form_class, fields=fields)
-
-        initial = {}
-        if len(self.current_step.attendees) == 0 and self.request.user.is_authenticated():
-            person = self.request.user
-            initial.update({
-                'given_name': person.given_name,
-                'middle_name': person.middle_name,
-                'surname': person.surname,
-                'name_order': person.name_order,
-                'email': person.email,
-                'phone': person.phone
-            })
+        cls = floppyforms.models.modelform_factory(
+            Attendee,
+            AttendeeBasicDataForm,
+            fields=fields
+        )
 
         kwargs = {
             'prefix': "basic",
@@ -552,14 +543,30 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             kwargs['data'] = self.request.POST
         return cls(**kwargs)
 
-    def get_housing_form(self):
+    def get_housing_form(self, initial=None):
         kwargs = {
             'prefix': "housing",
             'instance': self.object,
+            'initial': initial,
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
         return AttendeeHousingDataForm(**kwargs)
+
+    def get_saved_attendee_forms(self):
+        """Returns a list of (instance, basic_data, housing) tuples with initial data filled in."""
+        if not self.order.person:
+            raise StopIteration
+        saved_attendees = self.order.person.savedattendee_set.prefetch_related(
+            'ef_cause',
+            'ef_avoid',
+            'housing_prefer',
+        ).order_by('-last_modified').exclude(attendee__order=self.order)
+        for saved_attendee in saved_attendees:
+            initial = model_to_dict(saved_attendee)
+            yield (saved_attendee,
+                   self.get_basic_data_form(initial),
+                   self.get_housing_form(initial))
 
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
@@ -571,6 +578,8 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             'basic_data_form': self.basic_data_form,
             'housing_form': self.housing_form,
         })
+        if self.object.pk is None and self.request.method == 'GET':
+            context['saved_attendee_forms'] = list(self.get_saved_attendee_forms())
         return context
 
 

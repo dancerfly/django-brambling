@@ -15,7 +15,6 @@
 	<div class="row">
 		<div class='col-md-4'>
 			<ul class='list-group'>
-				{# these are BoughtItems #}
 				{% for att in attendees %}
 					{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
 					<a href="{{ attendee_url }}"class='list-group-item{% if att == attendee %} active{% elif att.attendee_id %} disabled{% endif %}'>
@@ -34,13 +33,49 @@
 				{% endif %}
 			</h3>
 
+			{% if saved_attendee_forms %}
+				<div class='row'>
+					{% for saved_attendee, bdf, hf in saved_attendee_forms %}
+						<div class='col-md-4'>
+							<div class='panel panel-default'>
+								<div class='panel-body'>
+									<h4>{{ saved_attendee.get_full_name }}</h4>
+									<form action="{{ request.path }}" method='post' novalidate>
+										{% csrf_token %}
+										{% for field in bdf %}
+											{% if field.name not in bdf.custom_form_fields %}
+												{{ field.as_hidden }}
+											{% endif %}
+										{% endfor %}
+										{% for field in hf %}
+											{% if field.name not in hf.custom_form_fields %}
+												{{ field.as_hidden }}
+											{% endif %}
+										{% endfor %}
+										<button type='submit' class='btn btn-primary js-hide-form'>Use saved attendee</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					{% endfor %}
+					<div class='col-md-4'>
+						<div class='panel panel-default'>
+							<div class='panel-body'>
+								<h4>New attendee</h4>
+								<button type='submit' class='btn btn-primary js-show-form'>Create new attendee</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			{% endif %}
+
 			{% if basic_data_form.errors %}
 				{% include "brambling/forms/_top_error_list.html" with form=basic_data_form %}
 			{% elif housing_form.errors %}
 				{% include "brambling/forms/_top_error_list.html" with form=housing_form %}
 			{% endif %}
 
-			<form action="{{ request.path }}" method="post" novalidate>
+			<form id='attendee_form' action="{{ request.path }}" method="post" novalidate {% if saved_attendee_forms %} style='display:none;'{% endif %}>
 				{% csrf_token %}
 				{% form basic_data_form using %}
 					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
@@ -149,5 +184,8 @@
 		};
 		$('input[name=basic-housing_status]').on('click', toggleHousingForm);
 		toggleHousingForm();
+
+		$('body').on('click', '.js-hide-form', function () {$('#attendee_form').slideUp();});
+		$('body').on('click', '.js-show-form', function () {$('#attendee_form').slideDown();});
 	</script>
 {% endblock %}
