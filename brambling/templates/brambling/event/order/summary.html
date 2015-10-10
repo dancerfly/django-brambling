@@ -25,6 +25,10 @@
 				set_stripe_key();
 			});
 			$(set_stripe_key);
+
+			$('form').on('submit', function () {
+				$(this).find('button').prop('disabled', true);
+			});
 		</script>
 	{% endif %}
 	<script>
