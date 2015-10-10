@@ -62,15 +62,6 @@ DEFAULT_ENVIRONMENTAL_FACTORS = (
 )
 
 
-DEFAULT_DIETARY_RESTRICTIONS = (
-    "Gluten free",
-    "Vegetarian",
-    "Vegan",
-    "Kosher",
-    "Halal",
-)
-
-
 DEFAULT_HOUSING_CATEGORIES = (
     "Quiet",
     "Noisy",
@@ -210,16 +201,6 @@ class EnvironmentalFactor(models.Model):
         return smart_text(self.name)
 
 
-class DietaryRestriction(models.Model):
-    name = models.CharField(max_length=20, unique=True)
-
-    class Meta:
-        ordering = ('name',)
-
-    def __unicode__(self):
-        return smart_text(self.name)
-
-
 class HousingCategory(models.Model):
     name = models.CharField(max_length=20, unique=True)
 
@@ -240,13 +221,6 @@ def create_defaults(app_config, **kwargs):
             DanceStyle.objects.bulk_create([
                 DanceStyle(name=name)
                 for name in DEFAULT_DANCE_STYLES
-            ])
-        if not DietaryRestriction.objects.exists():
-            if kwargs.get('verbosity') >= 2:
-                print("Creating default dietary restrictions")
-            DietaryRestriction.objects.bulk_create([
-                DietaryRestriction(name=name)
-                for name in DEFAULT_DIETARY_RESTRICTIONS
             ])
         if not EnvironmentalFactor.objects.exists():
             if kwargs.get('verbosity') >= 2:
@@ -646,10 +620,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     objects = PersonManager()
     ### End custom user requirements
-
-    dietary_restrictions = models.ManyToManyField(DietaryRestriction,
-                                                  blank=True,
-                                                  null=True)
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
