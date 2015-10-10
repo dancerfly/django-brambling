@@ -628,7 +628,6 @@ class PersonManager(BaseUserManager):
 class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
-    phone = models.CharField(max_length=50, blank=True)
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
 
@@ -651,32 +650,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     dietary_restrictions = models.ManyToManyField(DietaryRestriction,
                                                   blank=True,
                                                   null=True)
-
-    ef_cause = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='person_cause',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="People around me may be exposed to")
-
-    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='person_avoid',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="I can't/don't want to be around")
-
-    person_prefer = models.TextField(blank=True,
-                                     verbose_name="I need to be placed with")
-
-    person_avoid = models.TextField(blank=True,
-                                    verbose_name="I do not want to be around")
-
-    housing_prefer = models.ManyToManyField(HousingCategory,
-                                            related_name='preferred_by',
-                                            blank=True,
-                                            null=True,
-                                            verbose_name="I prefer to stay somewhere that is (a/an)")
-
-    other_needs = models.TextField(blank=True)
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)

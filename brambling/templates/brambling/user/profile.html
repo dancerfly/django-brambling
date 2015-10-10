@@ -38,7 +38,6 @@
 					{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
 						<small><a href="#nameOptions" data-toggle="collapse" class="pull-right more-name-options"><i class="fa fa-plus"></i> More Name Options</a></small>
 					{% endif %}
-					{% formrow form.phone %}
 				</div>
 			</div>{# /.panel #}
 			<div class="panel panel-default">
@@ -47,19 +46,6 @@
 				</header>
 				<div class="panel-body">
 					{% formrow form.dietary_restrictions %}
-					{% formrow form.housing_prefer %}
-					{% formrow form.ef_cause %}
-					{% formrow form.ef_avoid %}
-				</div>
-			</div>
-			<div class="panel panel-default">
-				<header class="panel-heading">
-					<h4 class="panel-title">People and Other Needs</h4>
-				</header>
-				<div class="panel-body">
-					{% formrow form.person_prefer %}
-					{% formrow form.person_avoid %}
-					{% formrow form.other_needs %}
 				</div>
 			</div>
 		{% endform %}

@@ -159,10 +159,7 @@ class AccountForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Person
-        fields = ('given_name', 'middle_name', 'surname', 'name_order',
-                  'phone', 'dietary_restrictions', 'ef_cause',
-                  'ef_avoid', 'person_prefer', 'person_avoid',
-                  'housing_prefer', 'other_needs')
+        fields = ('given_name', 'middle_name', 'surname', 'name_order')
 
 
 class BillingForm(forms.ModelForm):
