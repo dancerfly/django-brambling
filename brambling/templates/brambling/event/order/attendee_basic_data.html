@@ -40,7 +40,9 @@
 							<div class='panel panel-default'>
 								<div class='panel-body'>
 									<h4>{{ saved_attendee.get_full_name }}</h4>
-									<a href="{{ request.path }}?saved_attendee={{ saved_attendee.pk }}" class='btn btn-primary js-hide-form'>Use saved attendee</a>
+									<h5>{{ saved_attendee.email }}</h5>
+									<a href="{% url 'brambling_user_attendee_edit' pk=saved_attendee.pk %}" class='btn btn-primary' target='_blank'><i class='fa fa-pencil'></i> Edit</a>
+									<a href="{{ request.path }}?saved_attendee={{ saved_attendee.pk }}" class='btn btn-primary js-hide-form'><i class='fa fa-check'></i> Use</a>
 								</div>
 							</div>
 						</div>
