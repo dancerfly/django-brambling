@@ -480,18 +480,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-
-        initial = {}
-        self.saved_attendee = None
-        if request.user.is_authenticated() and 'saved_attendee' in request.GET:
-            try:
-                self.saved_attendee = SavedAttendee.objects.get(
-                    person=request.user,
-                    pk=request.GET['saved_attendee'],
-                )
-                initial = model_to_dict(self.saved_attendee)
-            except SavedAttendee.DoesNotExist:
-                pass
+        initial = model_to_dict(self.object.saved_attendee) if self.object.saved_attendee else {}
 
         self.basic_data_form = self.get_basic_data_form(initial=initial)
         self.housing_form = None
@@ -502,15 +491,17 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        initial = model_to_dict(self.object.saved_attendee) if self.object.saved_attendee else {}
+
         all_valid = True
-        self.basic_data_form = self.get_basic_data_form()
+        self.basic_data_form = self.get_basic_data_form(initial=initial)
 
         if not self.basic_data_form.is_valid():
             all_valid = False
 
         self.housing_form = None
         if self.event.collect_housing_data and self.basic_data_form.cleaned_data.get('housing_status') == Attendee.NEED:
-            self.housing_form = self.get_housing_form()
+            self.housing_form = self.get_housing_form(initial=initial)
             if not self.housing_form.is_valid():
                 all_valid = False
 
@@ -528,7 +519,16 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
 
     def get_object(self):
         if 'pk' not in self.kwargs:
-            return Attendee(order=self.order)
+            saved_attendee = None
+            if self.request.user.is_authenticated() and 'saved_attendee' in self.request.GET:
+                try:
+                    saved_attendee = SavedAttendee.objects.get(
+                        person=self.request.user,
+                        pk=self.request.GET['saved_attendee'],
+                    )
+                except SavedAttendee.DoesNotExist:
+                    pass
+            return Attendee(order=self.order, saved_attendee=saved_attendee)
         # Saves a query and preserves any error information
         for attendee in self.current_step.attendees:
             if attendee.pk == int(self.kwargs['pk']):
@@ -575,7 +575,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             'bought_items': self.current_step.bought_items,
             'basic_data_form': self.basic_data_form,
             'housing_form': self.housing_form,
-            'saved_attendee': self.saved_attendee,
+            'saved_attendee': self.object.saved_attendee,
         })
         if self.object.pk is None and self.order.person:
             context['saved_attendees'] = self.order.person.savedattendee_set.order_by(

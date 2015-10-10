@@ -119,9 +119,6 @@ class AttendeeHousingDataForm(CustomDataForm):
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
 
-        if self.instance.saved_attendee:
-            self.fields['save_attendee'] = forms.BooleanField(initial=True, required=False)
-
         self.fields['nights'].required = True
         event = self.instance.order.event
         nights = HousingRequestNight.objects.filter(date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
@@ -133,19 +130,7 @@ class AttendeeHousingDataForm(CustomDataForm):
 
     def save(self):
         self.instance.housing_completed = True
-        instance = super(AttendeeHousingDataForm, self).save()
-        if (self.instance.person and
-                self.instance.person == self.instance.order.person and
-                self.cleaned_data['save_as_defaults']):
-            person = self.instance.person
-            person.ef_cause = instance.ef_cause.all()
-            person.ef_avoid = instance.ef_avoid.all()
-            person.person_prefer = instance.person_prefer
-            person.person_avoid = instance.person_avoid
-            person.housing_prefer = instance.housing_prefer.all()
-            person.other_needs = instance.other_needs
-            person.save()
-        return instance
+        return super(AttendeeHousingDataForm, self).save()
 
 
 class SurveyDataForm(CustomDataForm):

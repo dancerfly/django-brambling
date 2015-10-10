@@ -33,7 +33,7 @@
 				{% endif %}
 			</h3>
 
-			{% if not saved_attendee and saved_attendees %}
+			{% if not saved_attendee and not basic_data_form.data and saved_attendees %}
 				<div class='row'>
 					{% for saved_attendee in saved_attendees %}
 						<div class='col-md-4'>
@@ -62,7 +62,7 @@
 				{% include "brambling/forms/_top_error_list.html" with form=housing_form %}
 			{% endif %}
 
-			<form id='attendee_form' action="{{ request.path }}" method="post" novalidate {% if saved_attendees and not saved_attendee %} style='display:none;'{% endif %}>
+			<form id='attendee_form' action="{{ request.path }}" method="post" novalidate {% if not saved_attendee and not basic_data_form.data and saved_attendees %} style='display:none;'{% endif %}>
 				{% csrf_token %}
 				{% form basic_data_form using %}
 					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
@@ -145,9 +145,6 @@
 								{% for field in housing_form.custom_fields %}
 									{% formrow field %}
 								{% endfor %}
-
-								{% formrow housing_form.save_as_defaults %}
-
 							{% endform %}
 						</div>
 					</div>
