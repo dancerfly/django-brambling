@@ -19,7 +19,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
-                              Invite, Person)
+                              Invite, Person, SavedAttendee)
 from brambling.utils.payment import dwolla_customer_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
@@ -480,10 +480,23 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        self.basic_data_form = self.get_basic_data_form()
+
+        initial = {}
+        self.saved_attendee = None
+        if request.user.is_authenticated() and 'saved_attendee' in request.GET:
+            try:
+                self.saved_attendee = SavedAttendee.objects.get(
+                    person=request.user,
+                    pk=request.GET['saved_attendee'],
+                )
+                initial = model_to_dict(self.saved_attendee)
+            except SavedAttendee.DoesNotExist:
+                pass
+
+        self.basic_data_form = self.get_basic_data_form(initial=initial)
         self.housing_form = None
         if self.event.collect_housing_data:
-            self.housing_form = self.get_housing_form()
+            self.housing_form = self.get_housing_form(initial=initial)
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
@@ -553,21 +566,6 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             kwargs['data'] = self.request.POST
         return AttendeeHousingDataForm(**kwargs)
 
-    def get_saved_attendee_forms(self):
-        """Returns a list of (instance, basic_data, housing) tuples with initial data filled in."""
-        if not self.order.person:
-            raise StopIteration
-        saved_attendees = self.order.person.savedattendee_set.prefetch_related(
-            'ef_cause',
-            'ef_avoid',
-            'housing_prefer',
-        ).order_by('-last_modified').exclude(attendee__order=self.order)
-        for saved_attendee in saved_attendees:
-            initial = model_to_dict(saved_attendee)
-            yield (saved_attendee,
-                   self.get_basic_data_form(initial),
-                   self.get_housing_form(initial))
-
     def get_context_data(self, **kwargs):
         context = super(AttendeeBasicDataView, self).get_context_data(**kwargs)
         context.update({
@@ -577,9 +575,14 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             'bought_items': self.current_step.bought_items,
             'basic_data_form': self.basic_data_form,
             'housing_form': self.housing_form,
+            'saved_attendee': self.saved_attendee,
         })
-        if self.object.pk is None and self.request.method == 'GET':
-            context['saved_attendee_forms'] = list(self.get_saved_attendee_forms())
+        if self.object.pk is None and self.order.person:
+            context['saved_attendees'] = self.order.person.savedattendee_set.order_by(
+                '-last_modified',
+            ).exclude(
+                attendee__order=self.order,
+            )
         return context
 
 

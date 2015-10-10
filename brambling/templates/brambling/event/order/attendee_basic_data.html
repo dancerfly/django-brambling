@@ -33,27 +33,14 @@
 				{% endif %}
 			</h3>
 
-			{% if saved_attendee_forms %}
+			{% if not saved_attendee and saved_attendees %}
 				<div class='row'>
-					{% for saved_attendee, bdf, hf in saved_attendee_forms %}
+					{% for saved_attendee in saved_attendees %}
 						<div class='col-md-4'>
 							<div class='panel panel-default'>
 								<div class='panel-body'>
 									<h4>{{ saved_attendee.get_full_name }}</h4>
-									<form action="{{ request.path }}" method='post' novalidate>
-										{% csrf_token %}
-										{% for field in bdf %}
-											{% if field.name not in bdf.custom_form_fields %}
-												{{ field.as_hidden }}
-											{% endif %}
-										{% endfor %}
-										{% for field in hf %}
-											{% if field.name not in hf.custom_form_fields %}
-												{{ field.as_hidden }}
-											{% endif %}
-										{% endfor %}
-										<button type='submit' class='btn btn-primary js-hide-form'>Use saved attendee</button>
-									</form>
+									<a href="{{ request.path }}?saved_attendee={{ saved_attendee.pk }}" class='btn btn-primary js-hide-form'>Use saved attendee</a>
 								</div>
 							</div>
 						</div>
@@ -75,7 +62,7 @@
 				{% include "brambling/forms/_top_error_list.html" with form=housing_form %}
 			{% endif %}
 
-			<form id='attendee_form' action="{{ request.path }}" method="post" novalidate {% if saved_attendee_forms %} style='display:none;'{% endif %}>
+			<form id='attendee_form' action="{{ request.path }}" method="post" novalidate {% if saved_attendees and not saved_attendee %} style='display:none;'{% endif %}>
 				{% csrf_token %}
 				{% form basic_data_form using %}
 					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
