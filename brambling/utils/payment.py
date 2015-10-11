@@ -201,18 +201,27 @@ def dwolla_live_settings_valid():
 def dwolla_customer_oauth_url(user_or_order, api_type, request, next_url=""):
     dwolla_prep(api_type)
     scope = "Send|AccountInfoFull|Funding"
-    redirect_url = user_or_order.get_dwolla_connect_url() + "?api=" + api_type
+    redirect_url = "{}?api={}&type={}&id={}".format(
+        reverse('brambling_dwolla_connect'),
+        api_type,
+        user_or_order._meta.model_name,
+        user_or_order.pk,
+    )
     if next_url:
         redirect_url += "&next_url=" + next_url
-    redirect_url = request.build_absolute_uri(redirect_url)
-    return oauth.genauthurl(redirect_url, scope=scope)
+    return oauth.genauthurl(request.build_absolute_uri(redirect_url), scope=scope)
 
 
 def dwolla_organization_oauth_url(organization, request, api_type):
     dwolla_prep(api_type)
     scope = "Send|AccountInfoFull|Transactions"
-    redirect_url = request.build_absolute_uri(organization.get_dwolla_connect_url() + "?api=" + api_type)
-    return oauth.genauthurl(redirect_url, scope=scope)
+    redirect_url = "{}?api={}&type={}&id={}".format(
+        reverse('brambling_dwolla_connect'),
+        api_type,
+        organization._meta.model_name,
+        organization.pk,
+    )
+    return oauth.genauthurl(request.build_absolute_uri(redirect_url), scope=scope)
 
 
 def stripe_prep(api_type):
