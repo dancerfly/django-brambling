@@ -80,6 +80,7 @@ class OrganizationUpdateView(UpdateView):
 class OrganizationPaymentView(OrganizationUpdateView):
     form_class = OrganizationPaymentForm
     template_name = 'brambling/organization/payment.html'
+    success_view_name = 'brambling_organization_update_payment'
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
