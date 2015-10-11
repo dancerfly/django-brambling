@@ -11,13 +11,19 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 
-from brambling.models import Organization, Order, Transaction, Event, Person
-from brambling.utils.payment import dwolla_prep, LIVE, dwolla_set_tokens
+from brambling.models import Organization, Order, Transaction, Person
+from brambling.utils.payment import (
+    dwolla_prep,
+    LIVE,
+    dwolla_set_tokens,
+    dwolla_customer_redirect_url,
+    dwolla_organization_redirect_url,
+)
 
 
 class DwollaConnectView(View):
     def get_object(self):
-        if self.request.GET.get('type') == 'user':
+        if self.request.GET.get('type') == 'person':
             model = Person
         elif self.request.GET.get('type') == 'order':
             model = Order
@@ -54,11 +60,10 @@ class DwollaConnectView(View):
             redirect_url = request.build_absolute_uri(reverse('brambling_dwolla_connect'))
             api_type = request.GET['api']
             dwolla_prep(api_type)
-            qs = request.GET.copy()
-            del qs['code']
-            if qs:
-                redirect_url += "?" + "&".join([k + "=" + v
-                                                for k, v in qs.iteritems()])
+            if isinstance(self.object, Organization):
+                redirect_url = dwolla_organization_redirect_url(self.object, request, api_type)
+            else:
+                redirect_url = dwolla_customer_redirect_url(self.object, api_type, request, next_url=request.GET.get('next_url'))
             oauth_tokens = oauth.get(request.GET['code'],
                                      redirect=redirect_url)
             if 'access_token' in oauth_tokens:
