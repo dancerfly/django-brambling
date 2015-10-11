@@ -57,14 +57,14 @@ class DwollaChargeTestCase(TestCase):
 
         self.assertIsInstance(charge, dict)
         self.assertEqual(charge["Type"], "money_received")
-        self.assertEqual(len(charge['Fees']), 2)
+        self.assertEqual(len(charge['Fees']), 1)
         self.assertEqual(charge["Notes"], "Order {} for {}".format(order.code, event.name))
 
         txn = Transaction.from_dwolla_charge(charge, event=event)
         # 42.15 * 0.025 = 1.05
         self.assertEqual(Decimal(txn.application_fee), Decimal('1.05'))
         # 0.25
-        self.assertEqual(Decimal(txn.processing_fee), Decimal('0.25'))
+        self.assertEqual(Decimal(txn.processing_fee), Decimal('0'))
 
         refund = dwolla_refund(
             order=order,
