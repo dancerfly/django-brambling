@@ -25,10 +25,6 @@
 				set_stripe_key();
 			});
 			$(set_stripe_key);
-
-			$('form').on('submit', function () {
-				$(this).find('button').prop('disabled', true);
-			});
 		</script>
 	{% endif %}
 	<script>
@@ -36,6 +32,9 @@
 			if (!$('#accordion .in').length) {
 				$('#accordion .panel-collapse').eq(0).addClass('in');
 			}
+		});
+		$('form').on('submit', function () {
+			$(this).find('button').prop('disabled', true);
 		});
 	</script>
 {% endblock %}
