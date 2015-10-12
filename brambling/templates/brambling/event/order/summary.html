@@ -33,6 +33,9 @@
 				$('#accordion .panel-collapse').eq(0).addClass('in');
 			}
 		});
+		$('form').on('submit', function () {
+			$(this).find('button').prop('disabled', true);
+		});
 	</script>
 {% endblock %}
 
