@@ -87,37 +87,43 @@ def dwolla_get_token(dwolla_obj, api_type):
 
 def dwolla_update_tokens(days):
     """
-    Refreshes all tokens expiring within the next <days> days.
+    Refreshes or clears all tokens that will not be refreshable within the next <days> days.
     """
-    start = timezone.now()
-    end = start + datetime.timedelta(days=days)
+    end = timezone.now() + datetime.timedelta(days=days)
     count = 0
+    cleared_count = 0
     test_count = 0
+    cleared_test_count = 0
     from brambling.models import Organization, Person, Order
     for api_type in (LIVE, TEST):
         dwolla_prep(api_type)
         if api_type == LIVE:
             field = 'dwolla_refresh_token'
-            access_expires = 'dwolla_access_token_expires'
         else:
             field = 'dwolla_test_refresh_token'
-            access_expires = 'dwolla_test_access_token_expires'
         kwargs = {
-            field + '_expires__range': (start, end),
-            access_expires + '__lt': start,
+            field + '_expires__lt': end,
         }
         for model in (Organization, Person, Order):
             qs = model.objects.filter(**kwargs)
             for item in qs:
                 refresh_token = getattr(item, field)
                 oauth_data = oauth.refresh(refresh_token)
-                dwolla_set_tokens(item, api_type, oauth_data)
-                item.save()
-                if api_type == LIVE:
-                    count += 1
+                try:
+                    dwolla_set_tokens(item, api_type, oauth_data)
+                except ValueError:
+                    item.clear_dwolla_data(api_type)
+                    if api_type == LIVE:
+                        cleared_count += 1
+                    else:
+                        cleared_test_count += 1
                 else:
-                    test_count += 1
-    return count, test_count
+                    if api_type == LIVE:
+                        count += 1
+                    else:
+                        test_count += 1
+                item.save()
+    return count, cleared_count, test_count, cleared_test_count
 
 
 def dwolla_get_sources(user_or_order, event):
