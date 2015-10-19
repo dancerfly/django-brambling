@@ -62,7 +62,7 @@ class OrganizationFactory(factory.DjangoModelFactory):
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN'))
     dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN'))
-    dwolla_test_access_token_expires = now() + timedelta(days=2)
+    dwolla_test_access_token_expires = now() - timedelta(days=1)
     dwolla_test_refresh_token_expires = now() + timedelta(days=2)
 
 
