@@ -32,6 +32,11 @@ def dwolla_prep(api_type):
 
 
 def dwolla_set_tokens(dwolla_obj, api_type, data):
+    if 'access_token' not in data:
+        if 'error_description' in data:
+            raise ValueError(data['error_description'])
+        else:
+            raise ValueError('Unknown error during token setting.')
     expires = timezone.now() + datetime.timedelta(seconds=data['expires_in'])
     refresh_expires = timezone.now() + datetime.timedelta(seconds=data['refresh_expires_in'])
 
