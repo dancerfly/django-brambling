@@ -1,0 +1,126 @@
+interactions:
+- request:
+    body: '{"fundsSource": "Balance", "pin": "1234", "notes": "Order 000001 for Test
+      event", "amount": 42.15, "destinationId": "812-158-1368", "oauth_token": "4geTFJCB60Hh2Ge3ca1FYQ5AINaqDhI09xvYlcZT2RriXVze4C",
+      "facilitatorAmount": 1.05}'
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['227']
+      Content-Type: [application/json]
+      User-Agent: [dwolla-python/2.x]
+    method: POST
+    uri: https://uat.dwolla.com/oauth/rest/transactions/send
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA6pWCi5NTk4tLlayKikqTdVR8k0tLk5MT1WygkvoKAWlFhfk5xWnKllZmpoamRrp
+        KMXnZOZlFytZ5ZXm5NQCAAAA//8DAF7h5NZEAAAA
+    headers:
+      cache-control: [private]
+      cf-ray: [239161067d6e1e8f-SJC]
+      connection: [keep-alive]
+      content-encoding: [gzip]
+      content-type: [application/json; charset=utf-8]
+      date: ['Thu, 22 Oct 2015 01:20:19 GMT']
+      server: [cloudflare-nginx]
+      set-cookie: ['__cfduid=d2385aed0ebb7fdac69d92d1821aa9c621445476818; expires=Fri,
+          21-Oct-16 01:20:18 GMT; path=/; domain=.dwolla.com; HttpOnly']
+      strict-transport-security: [max-age=31536000]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [dwolla-python/2.x]
+    method: GET
+    uri: https://uat.dwolla.com/oauth/rest/transactions/955252?client_secret=HdzUEIHaDD4zd1auCsb%2FwsyLaiva7e6X8%2BIJpRQqDviM%2BYLHDm&oauth_token=qQlofK6P3ZDWqNgkwXYj6PXh4h3tRIimSCSvPOXFw9Aacsd9jR&client_id=jDSD1iaol9g5q5v3xlQZpFR7mAC3KZliGDMe0SUj1w88JlKn5a
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA5ySPU/DMBCG/0p1s5PYbg2JNyBLkehAy8KCTHJqIiV2ZDtFVdX/jlySiBR1YfHg
+        594P+XyCbV8U6BxIb3sk8ILOqT2CnACBV3Sd0Q5BnmBdgsyE4IIReGhNrz3IFY+ZoJRArnxQcspE
+        xGjE+Y4yyalk2TsQ2B27QFuj8fhhscD6gCUQeHNoB5Z/maZRQCBH52utfG10SISU8YiJNGLLu3SO
+        N6oNysdGVYvP8ZiPjL2vXW5Jr8us258XqbzvZJL0ysflhcWFaRN1UF5Zl8zMzwS2prcFTrn3q2VE
+        My5gJEP6s6n0Ijc43c/a/lL9nf9/z8n2TOCpQWVrvR+WF3p45XsHEjprwhe4bGljPDqQ3wAAAP//
+        UvIvSkktUjAAAUOFtPwihZDU4hKF1LLUvBIlHSW3VJCiaKR0YoxIJ4Z6BuBkAnW3W2JyZk5mSWJJ
+        fpGCW2qqUm2sjpJ/UWZ6Zl5iTkhRYl5xYjIs/vNKc3JAabMkMSWxJBHCr9VRis/JzMsuhnIBAAAA
+        //8DAO0tAd7LAgAA
+    headers:
+      cache-control: [private]
+      cf-ray: [2391610c29df0da9-SJC]
+      connection: [keep-alive]
+      content-encoding: [gzip]
+      content-type: [application/json; charset=utf-8]
+      date: ['Thu, 22 Oct 2015 01:20:20 GMT']
+      server: [cloudflare-nginx]
+      set-cookie: ['__cfduid=dfd254e4f1c0ce34a4921c8181970dfd01445476819; expires=Fri,
+          21-Oct-16 01:20:19 GMT; path=/; domain=.dwolla.com; HttpOnly']
+      strict-transport-security: [max-age=31536000]
+    status: {code: 200, message: OK}
+- request:
+    body: '{"fundsSource": "Balance", "pin": 4093, "notes": "Order 000001 for Test
+      event", "amount": "42.15", "oauth_token": "qQlofK6P3ZDWqNgkwXYj6PXh4h3tRIimSCSvPOXFw9Aacsd9jR",
+      "transactionId": 955251}'
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Length: ['192']
+      Content-Type: [application/json]
+      User-Agent: [dwolla-python/2.x]
+    method: POST
+    uri: https://uat.dwolla.com/oauth/rest/transactions/refund
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAzzLsQrCMBRG4Xf551SSixG8m+Di0EU7uUhIoxTjjfQmU+m7Sxfn850FtxZjUgXX
+        uSWDPqmGVwL/g8E16beIJvCCYQ6iIdapyGUEH70nf9jIs8l4DnU7yTrfOdsRDdYxWSZ/h8HpU5pU
+        8J52zq8GjzzJW8HScl5/AAAA//8DAGOTVuWJAAAA
+    headers:
+      cache-control: [private]
+      cf-ray: [23916111dc5a1edd-SJC]
+      connection: [keep-alive]
+      content-encoding: [gzip]
+      content-type: [application/json; charset=utf-8]
+      date: ['Thu, 22 Oct 2015 01:20:25 GMT']
+      server: [cloudflare-nginx]
+      set-cookie: ['__cfduid=deddd8610fcbb6bda49d6a15c7dbc36f31445476820; expires=Fri,
+          21-Oct-16 01:20:20 GMT; path=/; domain=.dwolla.com; HttpOnly']
+      strict-transport-security: [max-age=31536000]
+    status: {code: 200, message: OK}
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [dwolla-python/2.x]
+    method: GET
+    uri: https://uat.dwolla.com/oauth/rest/transactions/955256?client_secret=HdzUEIHaDD4zd1auCsb%2FwsyLaiva7e6X8%2BIJpRQqDviM%2BYLHDm&oauth_token=qQlofK6P3ZDWqNgkwXYj6PXh4h3tRIimSCSvPOXFw9Aacsd9jR&client_id=jDSD1iaol9g5q5v3xlQZpFR7mAC3KZliGDMe0SUj1w88JlKn5a
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA5ySMW/CMBCF/0p0s0NiQyh4a4sqUalFKunSBV2TK0R17Mh2qBDKf68MBBWqLvXg
+        we++uye/28OyLQpyDqS3LTF4IudwTSDPAoMXco3RjkDuYV6CnGaZyMYMbmvTag9yJAY8S1MGM/SB
+        FCnPYp7GQuQplyKVInsDBvmuCWptNO1WjrQHBq+O7Ol99mWUQmAwI+crjb4yOkyDCRfxzWgYp1OR
+        XcrPWAfy0Wx0NDN0KfZur/nf0LWBeX38gY33jUySFv2gPGiDwtQJbtGjdclF247B0rS2oPNEnk1i
+        PhxPoFdOc+8UbqL3/jqrF25/sH9R//d8bt4xuFeEttLrU3DBjUffOpDQWBPipzKYMJ7C28KWZKM0
+        HB59GBvl5HxE22OWDxSKdKsUg4Wt1pVGlVvUDos+y8Pm8LBlHkv0eCzvGKxUpT9PdPcNAAD//wMA
+        X47Rw5UCAAA=
+    headers:
+      cache-control: [private]
+      cf-ray: [239161314e79284c-SJC]
+      connection: [keep-alive]
+      content-encoding: [gzip]
+      content-type: [application/json; charset=utf-8]
+      date: ['Thu, 22 Oct 2015 01:20:26 GMT']
+      server: [cloudflare-nginx]
+      set-cookie: ['__cfduid=d807111a47ff69522b9218639f35cc2591445476825; expires=Fri,
+          21-Oct-16 01:20:25 GMT; path=/; domain=.dwolla.com; HttpOnly']
+      strict-transport-security: [max-age=31536000]
+    status: {code: 200, message: OK}
+version: 1
