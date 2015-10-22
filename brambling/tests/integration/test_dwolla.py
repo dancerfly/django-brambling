@@ -49,7 +49,7 @@ class DwollaChargeTestCase(TestCase):
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
-        order = OrderFactory(person=person, event=event)
+        order = OrderFactory(person=person, event=event, code='dwoll1')
         charge = dwolla_charge(
             sender=person,
             amount=42.15,
