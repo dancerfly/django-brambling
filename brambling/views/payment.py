@@ -11,33 +11,61 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 
-from brambling.models import Organization, Order, Transaction, Event
-from brambling.utils.payment import dwolla_prep, LIVE, dwolla_set_tokens
+from brambling.models import Organization, Order, Transaction, Person
+from brambling.utils.payment import (
+    dwolla_prep,
+    LIVE,
+    dwolla_set_tokens,
+    dwolla_customer_redirect_url,
+    dwolla_organization_redirect_url,
+)
 
 
 class DwollaConnectView(View):
     def get_object(self):
-        raise NotImplementedError
+        if self.request.GET.get('type') == 'person':
+            model = Person
+        elif self.request.GET.get('type') == 'order':
+            model = Order
+        elif self.request.GET.get('type') == 'organization':
+            model = Organization
+        else:
+            raise Http404
+        return get_object_or_404(model, pk=self.request.GET.get('id'))
 
     def get_success_url(self):
-        raise NotImplementedError
+        if ('next_url' in self.request.GET and
+                is_safe_url(url=self.request.GET['next_url'],
+                            host=self.request.get_host())):
+            return self.request.GET['next_url']
 
-    def get_redirect_url(self):
-        raise NotImplementedError
+        if isinstance(self.object, Person):
+            return reverse('brambling_user_profile')
+
+        if isinstance(self.object, Order):
+            return reverse('brambling_event_order_summary',
+                           kwargs={'event_slug': self.object.event.slug,
+                                   'organization_slug': self.object.event.organization.slug})
+
+        if isinstance(self.object, Organization):
+            return reverse('brambling_organization_update_payment',
+                           kwargs={'organization_slug': self.object.slug})
+
+        return '/'
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        redirect_url = self.object.get_dwolla_connect_url()
-        api_type = request.GET['api']
+
         if 'code' in request.GET:
-            qs = request.GET.copy()
-            del qs['code']
-            if qs:
-                redirect_url += "?" + "&".join([k + "=" + v
-                                                for k, v in qs.iteritems()])
+            redirect_url = request.build_absolute_uri(reverse('brambling_dwolla_connect'))
+            api_type = request.GET['api']
             dwolla_prep(api_type)
+            if isinstance(self.object, Organization):
+                redirect_url = dwolla_organization_redirect_url(self.object, request, api_type)
+            else:
+                redirect_url = dwolla_customer_redirect_url(self.object, api_type, request, next_url=request.GET.get('next_url'))
             oauth_tokens = oauth.get(request.GET['code'],
-                                     redirect=request.build_absolute_uri(redirect_url))
+                                     redirect=redirect_url)
             if 'access_token' in oauth_tokens:
                 token = oauth_tokens['access_token']
 
@@ -63,49 +91,6 @@ class DwollaConnectView(View):
             messages.error(request, "Unknown error during dwolla connection.")
 
         return HttpResponseRedirect(self.get_success_url())
-
-
-class OrganizationDwollaConnectView(DwollaConnectView):
-    def get_object(self):
-        return get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
-
-    def get_success_url(self):
-        return reverse('brambling_organization_update_payment',
-                       kwargs={'organization_slug': self.object.slug})
-
-
-class UserDwollaConnectView(DwollaConnectView):
-    def get_object(self):
-        if not self.request.user.is_authenticated():
-            raise Http404
-        return self.request.user
-
-    def get_success_url(self):
-        request = self.request
-        if ('next_url' in request.GET and
-                is_safe_url(url=request.GET['next_url'],
-                            host=request.get_host())):
-            return request.GET['next_url']
-        return reverse('brambling_user_profile')
-
-
-class OrderDwollaConnectView(DwollaConnectView):
-    def get_object(self):
-        event = get_object_or_404(
-            Event,
-            slug=self.kwargs['event_slug'],
-            organization__slug=self.kwargs['organization_slug']
-        )
-
-        try:
-            return Order.objects.for_request(event, self.request, create=False)[0]
-        except Order.DoesNotExist:
-            raise Http404
-
-    def get_success_url(self):
-        return reverse('brambling_event_order_summary',
-                       kwargs={'event_slug': self.object.event.slug,
-                               'organization_slug': self.object.event.organization.slug})
 
 
 class DwollaWebhookView(View):

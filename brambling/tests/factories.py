@@ -42,8 +42,8 @@ class PersonFactory(factory.DjangoModelFactory):
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
     dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_REFRESH_TOKEN'))
-    dwolla_test_access_token_expires = datetime(2015, 5, 23, 22, 29, 24, 745430, tzinfo=pytz.utc)
-    dwolla_test_refresh_token_expires = datetime(2015, 7, 22, 21, 29, 24, 745452, tzinfo=pytz.utc)
+    dwolla_test_access_token_expires = now() + timedelta(days=1)
+    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
 
 
 class OrganizationFactory(factory.DjangoModelFactory):
@@ -62,8 +62,8 @@ class OrganizationFactory(factory.DjangoModelFactory):
     dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_USER_ID'))
     dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN'))
     dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN'))
-    dwolla_test_access_token_expires = datetime(2015, 5, 23, 22, 22, 27, 144345, tzinfo=pytz.utc)
-    dwolla_test_refresh_token_expires = datetime(2015, 7, 22, 21, 22, 27, 144376, tzinfo=pytz.utc)
+    dwolla_test_access_token_expires = now() + timedelta(days=1)
+    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
 
 
 class EventFactory(factory.DjangoModelFactory):

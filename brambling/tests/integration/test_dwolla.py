@@ -1,13 +1,16 @@
 from decimal import Decimal
+import os
 
 from django.conf import settings
 from django.test import TestCase
 from dwolla import transactions
+import vcr
 
 from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
 from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund, dwolla_get_token
 
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 CHARGE_DATA = {
     u'Amount': 42.15,
@@ -38,6 +41,7 @@ CHARGE_DATA = {
 
 
 class DwollaChargeTestCase(TestCase):
+    @vcr.use_cassette(os.path.join(CURRENT_DIR, 'fixtures/test_dwolla_charge__user.yaml'))
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
@@ -45,7 +49,7 @@ class DwollaChargeTestCase(TestCase):
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
-        order = OrderFactory(person=person, event=event)
+        order = OrderFactory(person=person, event=event, code='dwoll1')
         charge = dwolla_charge(
             sender=person,
             amount=42.15,
@@ -57,14 +61,14 @@ class DwollaChargeTestCase(TestCase):
 
         self.assertIsInstance(charge, dict)
         self.assertEqual(charge["Type"], "money_received")
-        self.assertEqual(len(charge['Fees']), 2)
+        self.assertEqual(len(charge['Fees']), 1)
         self.assertEqual(charge["Notes"], "Order {} for {}".format(order.code, event.name))
 
         txn = Transaction.from_dwolla_charge(charge, event=event)
         # 42.15 * 0.025 = 1.05
         self.assertEqual(Decimal(txn.application_fee), Decimal('1.05'))
         # 0.25
-        self.assertEqual(Decimal(txn.processing_fee), Decimal('0.25'))
+        self.assertEqual(Decimal(txn.processing_fee), Decimal('0'))
 
         refund = dwolla_refund(
             order=order,
