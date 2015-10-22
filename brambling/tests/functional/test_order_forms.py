@@ -125,6 +125,16 @@ DWOLLA_CHARGE = {
     u'UserType': u'Dwolla'
 }
 
+DWOLLA_SOURCES = [
+    {
+        "Id": "Balance",
+        "Name": "My Dwolla Balance",
+        "Type": "",
+        "Verified": "true",
+        "ProcessingType": ""
+    },
+]
+
 
 class PaymentFormTestCase(TestCase):
     @patch('brambling.forms.orders.stripe_charge')
@@ -180,9 +190,12 @@ class PaymentFormTestCase(TestCase):
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
+
+    @patch('brambling.forms.orders.dwolla_get_sources')
     @patch('brambling.forms.orders.dwolla_charge')
-    def test_dwolla_payment_form(self, dwolla_charge):
+    def test_dwolla_payment_form(self, dwolla_charge, dwolla_get_sources):
         dwolla_charge.return_value = DWOLLA_CHARGE
+        dwolla_get_sources.return_value = DWOLLA_SOURCES
         order = OrderFactory()
         event = order.event
         person = PersonFactory()
@@ -192,11 +205,12 @@ class PaymentFormTestCase(TestCase):
         self.assertTrue(form.is_bound)
         self.assertFalse(form.errors)
         dwolla_charge.assert_called_once_with(
-            user_or_order=person,
+            sender=person,
             amount=42.15,
             event=event,
             pin=pin,
             source=source,
+            order=order,
         )
         txn = form.save()
         self.assertIsInstance(txn, Transaction)
