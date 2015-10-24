@@ -28,34 +28,31 @@
 				{% if attendee.pk %}
 					<span class="text-muted">Attendee information for</span><br>
 					{{ attendee.get_full_name }}
+				{% elif saved_attendee %}
+					<span class="text-muted">Attendee information for</span><br>
+					{{ saved_attendee.get_full_name }}
+				{% elif not basic_data_form.data %}
+					Prefill Attendee Details
 				{% else %}
 					New Attendee
 				{% endif %}
 			</h3>
 
 			{% if not saved_attendee and not basic_data_form.data and saved_attendees %}
-				<div class='row'>
+				<p>You can manage your saved attendee details in <a href="" target="_blank">your settings</a>.</p>
+				<div class="list-group">
 					{% for saved_attendee in saved_attendees %}
-						<div class='col-md-4'>
-							<div class='panel panel-default'>
-								<div class='panel-body'>
-									<h4>{{ saved_attendee.get_full_name }}</h4>
-									<h5>{{ saved_attendee.email }}</h5>
-									<a href="{% url 'brambling_user_attendee_edit' pk=saved_attendee.pk %}" class='btn btn-primary' target='_blank'><i class='fa fa-pencil'></i> Edit</a>
-									<a href="{{ request.path }}?saved_attendee={{ saved_attendee.pk }}" class='btn btn-primary js-hide-form'><i class='fa fa-check'></i> Use</a>
-								</div>
+						<div class="list-group-item">
+							<strong>{{ saved_attendee.get_full_name }}</strong> ({{ saved_attendee.email }})
+							<div class="pull-right">
+								<a href="{% url 'brambling_user_attendee_edit' pk=saved_attendee.pk %}" class='btn btn-xs btn-default' target='_blank'><i class='fa fa-pencil'></i> Edit</a>
+								<a href="{{ request.path }}?saved_attendee={{ saved_attendee.pk }}" class='btn btn-xs btn-success js-hide-form'>Use details <i class='fa fa-chevron-right'></i></a>
 							</div>
 						</div>
 					{% endfor %}
-					<div class='col-md-4'>
-						<div class='panel panel-default'>
-							<div class='panel-body'>
-								<h4>New attendee</h4>
-								<button type='submit' class='btn btn-primary js-show-form'>Create new attendee</button>
-							</div>
-						</div>
-					</div>
 				</div>
+
+				If you want to fill in details from scratch: <button type='submit' class='btn btn-sm btn-default js-show-form'>Don’t prefill <i class="fa fa-chevron-right"></i></button>
 			{% endif %}
 
 			{% if basic_data_form.errors %}
