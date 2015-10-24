@@ -57,7 +57,6 @@
 	  <li{% if active == 'summary' %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
 	  <li{% if active == 'payment' %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
 	  <li{% if active == 'discount' %} class="active"{% endif %}><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
-	  <li{% if active == 'notes' %} class="active"{% endif %}><a href="#notes" role="tab" data-toggle="tab">Notes</a></li>
 	</ul>
 
 	<!-- Tab panes -->
@@ -70,6 +69,23 @@
 					{% endfor %}
 				</div>
 				<div class='col-sm-6'>
+					<div class='panel panel-primary'>
+						<header class='panel-heading'>
+							<div class='panel-title'>
+								Notes
+							</div>
+						</header>
+						<div class='panel-body'>
+							<form method='post' action='{{ request.path }}'>
+								<input type='hidden' name='is_notes_form' value='1'>
+								{% csrf_token %}
+								{% form notes_form using %}
+									{% formrow notes_form.notes using "brambling/forms/rows/no_label.html" %}
+								{% endform %}
+								<button type='submit' class='btn btn-primary'>Save notes</button>
+							</form>
+						</div>
+					</div>
 					{% include "brambling/event/organizer/_attendee_summary.html" %}
 				</div>
 			</div>
@@ -97,18 +113,6 @@
 						{% csrf_token %}
 						{% form discount_form %}
 						<button type='submit' class='btn btn-primary'>Apply discount</button>
-					</form>
-				</div>
-			</div>
-		</div>
-		<div class="tab-pane{% if active == 'notes' %} active{% endif %}" id="notes">
-			<div class='row'>
-				<div class='col-sm-6 col-sm-offset-3'>
-					<form method='post' action='?active=notes'>
-						<input type='hidden' name='is_notes_form' value='1'>
-						{% csrf_token %}
-						{% form notes_form %}
-						<button type='submit' class='btn btn-primary'>Save notes</button>
 					</form>
 				</div>
 			</div>
