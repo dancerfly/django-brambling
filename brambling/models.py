@@ -10,7 +10,6 @@ from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
@@ -60,15 +59,6 @@ DEFAULT_ENVIRONMENTAL_FACTORS = (
     "Other smoke",
     "Alcohol",
     "Recreational drugs",
-)
-
-
-DEFAULT_DIETARY_RESTRICTIONS = (
-    "Gluten free",
-    "Vegetarian",
-    "Vegan",
-    "Kosher",
-    "Halal",
 )
 
 
@@ -211,16 +201,6 @@ class EnvironmentalFactor(models.Model):
         return smart_text(self.name)
 
 
-class DietaryRestriction(models.Model):
-    name = models.CharField(max_length=20, unique=True)
-
-    class Meta:
-        ordering = ('name',)
-
-    def __unicode__(self):
-        return smart_text(self.name)
-
-
 class HousingCategory(models.Model):
     name = models.CharField(max_length=20, unique=True)
 
@@ -241,13 +221,6 @@ def create_defaults(app_config, **kwargs):
             DanceStyle.objects.bulk_create([
                 DanceStyle(name=name)
                 for name in DEFAULT_DANCE_STYLES
-            ])
-        if not DietaryRestriction.objects.exists():
-            if kwargs.get('verbosity') >= 2:
-                print("Creating default dietary restrictions")
-            DietaryRestriction.objects.bulk_create([
-                DietaryRestriction(name=name)
-                for name in DEFAULT_DIETARY_RESTRICTIONS
             ])
         if not EnvironmentalFactor.objects.exists():
             if kwargs.get('verbosity') >= 2:
@@ -629,7 +602,6 @@ class PersonManager(BaseUserManager):
 class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
-    phone = models.CharField(max_length=50, blank=True)
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
 
@@ -649,42 +621,9 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     objects = PersonManager()
     ### End custom user requirements
 
-    dietary_restrictions = models.ManyToManyField(DietaryRestriction,
-                                                  blank=True,
-                                                  null=True)
-
-    ef_cause = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='person_cause',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="People around me may be exposed to")
-
-    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
-                                      related_name='person_avoid',
-                                      blank=True,
-                                      null=True,
-                                      verbose_name="I can't/don't want to be around")
-
-    person_prefer = models.TextField(blank=True,
-                                     verbose_name="I need to be placed with")
-
-    person_avoid = models.TextField(blank=True,
-                                    verbose_name="I do not want to be around")
-
-    housing_prefer = models.ManyToManyField(HousingCategory,
-                                            related_name='preferred_by',
-                                            blank=True,
-                                            null=True,
-                                            verbose_name="I prefer to stay somewhere that is (a/an)")
-
-    other_needs = models.TextField(blank=True)
-
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
     stripe_test_customer_id = models.CharField(max_length=36, blank=True, default='')
-
-    # Internal tracking
-    modified_directly = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = _('person')
@@ -1476,7 +1415,7 @@ class Attendee(AbstractNamedModel):
     )
     # Internal tracking data
     order = models.ForeignKey(Order, related_name='attendees')
-    person = models.ForeignKey(Person, blank=True, null=True)
+    saved_attendee = models.ForeignKey('SavedAttendee', blank=True, null=True, on_delete=models.SET_NULL)
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
@@ -1528,6 +1467,45 @@ class Attendee(AbstractNamedModel):
 
     def get_groupable_items(self):
         return self.bought_items.order_by('item_name', 'item_option_name', '-added')
+
+
+class SavedAttendee(AbstractNamedModel):
+    person = models.ForeignKey(Person)
+    email = models.EmailField(max_length=254)
+    phone = models.CharField(max_length=50, blank=True)
+    ef_cause = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='saved_attendee_cause',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="People around me may be exposed to")
+
+    ef_avoid = models.ManyToManyField(EnvironmentalFactor,
+                                      related_name='saved_attendee_avoid',
+                                      blank=True,
+                                      null=True,
+                                      verbose_name="I can't/don't want to be around")
+
+    person_prefer = models.TextField(blank=True,
+                                     verbose_name="I need to be placed with these people",
+                                     help_text="Provide a list of names, separated by line breaks.")
+
+    person_avoid = models.TextField(blank=True,
+                                    verbose_name="I do not want to be around these people",
+                                    help_text="Provide a list of names, separated by line breaks.")
+
+    housing_prefer = models.ManyToManyField(HousingCategory,
+                                            blank=True,
+                                            null=True,
+                                            verbose_name="I prefer to stay somewhere that is (a/an)")
+
+    other_needs = models.TextField(blank=True)
+
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    def __unicode__(self):
+        return self.get_full_name()
 
 
 class Home(models.Model):

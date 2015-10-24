@@ -5,12 +5,13 @@ from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
-                                  TemplateView, View)
+                                  TemplateView, View, ListView, DeleteView)
+import floppyforms.__future__ as forms
 import stripe
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, ProfileForm, BillingForm, HomeForm, SignUpForm
-from brambling.models import Person, Home, CreditCard, Order
+from brambling.models import Person, Home, CreditCard, Order, SavedAttendee
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
@@ -245,6 +246,67 @@ class CreditCardDeleteView(View):
 
     def post(self, *args, **kwargs):
         return self.delete(*args, **kwargs)
+
+
+class SavedAttendeesView(ListView):
+    template_name = 'brambling/user/attendee_list.html'
+    model = SavedAttendee
+    context_object_name = 'attendees'
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated():
+            raise Http404
+        return SavedAttendee.objects.filter(person=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super(SavedAttendeesView, self).get_context_data(**kwargs)
+        context.update({
+            'claimable_orders': self.request.user.get_claimable_orders(),
+        })
+        return context
+
+
+class SavedAttendeeManageView(UpdateView):
+    template_name = 'brambling/user/attendee_manage.html'
+    model = SavedAttendee
+
+    def get_form_class(self):
+        return forms.models.modelform_factory(SavedAttendee, exclude=('person',))
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated():
+            raise Http404
+        return SavedAttendee.objects.filter(person=self.request.user)
+
+    def get_object(self):
+        if 'pk' not in self.kwargs:
+            return None
+        return super(SavedAttendeeManageView, self).get_object()
+
+    def form_valid(self, form):
+        form.instance.person = self.request.user
+        return super(SavedAttendeeManageView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('brambling_user_attendee_edit', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super(SavedAttendeeManageView, self).get_context_data(**kwargs)
+        context.update({
+            'claimable_orders': self.request.user.get_claimable_orders(),
+        })
+        return context
+
+
+class SavedAttendeeDeleteView(DeleteView):
+    def get_queryset(self):
+        if not self.request.user.is_authenticated():
+            raise Http404
+        return SavedAttendee.objects.filter(person=self.request.user)
+
+    def get_success_url(self):
+        messages.success(self.request, 'Deleted attendee: {}'.format(self.object.get_full_name()))
+        return reverse('brambling_user_attendees')
 
 
 class HomeView(UpdateView):

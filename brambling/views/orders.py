@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -18,7 +19,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
-                              Invite, Person)
+                              Invite, Person, SavedAttendee)
 from brambling.utils.payment import dwolla_customer_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
@@ -93,7 +94,7 @@ class AttendeeStep(OrderStep):
         valid_statuses = (BoughtItem.RESERVED, BoughtItem.UNPAID, BoughtItem.BOUGHT)
         if order:
             self.bought_items = order.bought_items.filter(status__in=valid_statuses).order_by('item_name', 'item_option_name')
-            self.attendees = order.attendees.order_by('pk')
+            self.attendees = order.attendees.order_by('pk').select_related('saved_attendee')
         else:
             self.bought_items = []
             self.attendees = []
@@ -474,31 +475,33 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
 
 class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
     template_name = 'brambling/event/order/attendee_basic_data.html'
-    form_class = AttendeeBasicDataForm
     current_step_slug = 'attendees'
     workflow_class = RegistrationWorkflow
-    model = Attendee
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        self.basic_data_form = self.get_basic_data_form()
+        initial = model_to_dict(self.object.saved_attendee) if self.object.saved_attendee else {}
+
+        self.basic_data_form = self.get_basic_data_form(initial=initial)
         self.housing_form = None
         if self.event.collect_housing_data:
-            self.housing_form = self.get_housing_form()
+            self.housing_form = self.get_housing_form(initial=initial)
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        initial = model_to_dict(self.object.saved_attendee) if self.object.saved_attendee else {}
+
         all_valid = True
-        self.basic_data_form = self.get_basic_data_form()
+        self.basic_data_form = self.get_basic_data_form(initial=initial)
 
         if not self.basic_data_form.is_valid():
             all_valid = False
 
         self.housing_form = None
         if self.event.collect_housing_data and self.basic_data_form.cleaned_data.get('housing_status') == Attendee.NEED:
-            self.housing_form = self.get_housing_form()
+            self.housing_form = self.get_housing_form(initial=initial)
             if not self.housing_form.is_valid():
                 all_valid = False
 
@@ -516,31 +519,32 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
 
     def get_object(self):
         if 'pk' not in self.kwargs:
-            return Attendee(order=self.order)
+            saved_attendee = None
+            if self.request.user.is_authenticated() and 'saved_attendee' in self.request.GET:
+                try:
+                    saved_attendee = SavedAttendee.objects.get(
+                        person=self.request.user,
+                        pk=self.request.GET['saved_attendee'],
+                    )
+                except SavedAttendee.DoesNotExist:
+                    pass
+            return Attendee(order=self.order, saved_attendee=saved_attendee)
         # Saves a query and preserves any error information
         for attendee in self.current_step.attendees:
             if attendee.pk == int(self.kwargs['pk']):
                 return attendee
         raise Http404
 
-    def get_basic_data_form(self):
+    def get_basic_data_form(self, initial=None):
         fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
                   'phone', 'liability_waiver', 'photo_consent')
         if self.event.collect_housing_data:
             fields += ('housing_status',)
-        cls = floppyforms.models.modelform_factory(Attendee, self.form_class, fields=fields)
-
-        initial = {}
-        if len(self.current_step.attendees) == 0 and self.request.user.is_authenticated():
-            person = self.request.user
-            initial.update({
-                'given_name': person.given_name,
-                'middle_name': person.middle_name,
-                'surname': person.surname,
-                'name_order': person.name_order,
-                'email': person.email,
-                'phone': person.phone
-            })
+        cls = floppyforms.models.modelform_factory(
+            Attendee,
+            AttendeeBasicDataForm,
+            fields=fields
+        )
 
         kwargs = {
             'prefix': "basic",
@@ -552,10 +556,11 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             kwargs['data'] = self.request.POST
         return cls(**kwargs)
 
-    def get_housing_form(self):
+    def get_housing_form(self, initial=None):
         kwargs = {
             'prefix': "housing",
             'instance': self.object,
+            'initial': initial,
         }
         if self.request.method == 'POST':
             kwargs['data'] = self.request.POST
@@ -570,7 +575,14 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             'bought_items': self.current_step.bought_items,
             'basic_data_form': self.basic_data_form,
             'housing_form': self.housing_form,
+            'saved_attendee': self.object.saved_attendee,
         })
+        if self.object.pk is None and self.order.person:
+            context['saved_attendees'] = self.order.person.savedattendee_set.order_by(
+                '-last_modified',
+            ).exclude(
+                attendee__order=self.order,
+            )
         return context
 
 
