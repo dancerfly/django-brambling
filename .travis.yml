@@ -1,6 +1,7 @@
 language: python
 python:
 - '2.7'
+sudo: false
 env:
 - DB=sqlite3
 - DB=postgres
