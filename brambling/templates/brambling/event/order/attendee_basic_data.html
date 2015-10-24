@@ -40,7 +40,7 @@
 
 			{% if not saved_attendee and not basic_data_form.data and saved_attendees %}
 				<p>You can manage your saved attendee details in <a href="" target="_blank">your settings</a>.</p>
-				<div class="list-group">
+				<div class="list-group margin-trailer">
 					{% for saved_attendee in saved_attendees %}
 						<div class="list-group-item">
 							<strong>{{ saved_attendee.get_full_name }}</strong> ({{ saved_attendee.email }})
@@ -50,9 +50,8 @@
 							</div>
 						</div>
 					{% endfor %}
+					<a href="#" class="js-show-form list-group-item">Don’t prefill <i class="fa fa-chevron-right pull-right"></i></a>
 				</div>
-
-				If you want to fill in details from scratch: <button type='submit' class='btn btn-sm btn-default js-show-form'>Don’t prefill <i class="fa fa-chevron-right"></i></button>
 			{% endif %}
 
 			{% if basic_data_form.errors %}
@@ -169,6 +168,9 @@
 		toggleHousingForm();
 
 		$('body').on('click', '.js-hide-form', function () {$('#attendee_form').slideUp();});
-		$('body').on('click', '.js-show-form', function () {$('#attendee_form').slideDown();});
+		$('body').on('click', '.js-show-form', function () {
+			$(this).addClass('active');
+			$('#attendee_form').slideDown();
+		});
 	</script>
 {% endblock %}
