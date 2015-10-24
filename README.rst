@@ -1,4 +1,7 @@
-Dance event registration and ticketing app. In development.
+Dance event registration and ticketing app.
+
+.. image:: https://travis-ci.org/littleweaver/django-brambling.svg?branch=master
+    :target: https://travis-ci.org/littleweaver/django-brambling
 
 Naming
 ======
