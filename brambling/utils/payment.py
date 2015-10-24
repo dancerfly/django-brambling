@@ -32,6 +32,11 @@ def dwolla_prep(api_type):
 
 
 def dwolla_set_tokens(dwolla_obj, api_type, data):
+    if 'access_token' not in data:
+        if 'error_description' in data:
+            raise ValueError(data['error_description'])
+        else:
+            raise ValueError('Unknown error during token setting.')
     expires = timezone.now() + datetime.timedelta(seconds=data['expires_in'])
     refresh_expires = timezone.now() + datetime.timedelta(seconds=data['refresh_expires_in'])
 
@@ -82,37 +87,43 @@ def dwolla_get_token(dwolla_obj, api_type):
 
 def dwolla_update_tokens(days):
     """
-    Refreshes all tokens expiring within the next <days> days.
+    Refreshes or clears all tokens that will not be refreshable within the next <days> days.
     """
-    start = timezone.now()
-    end = start + datetime.timedelta(days=days)
+    end = timezone.now() + datetime.timedelta(days=days)
     count = 0
+    cleared_count = 0
     test_count = 0
+    cleared_test_count = 0
     from brambling.models import Organization, Person, Order
     for api_type in (LIVE, TEST):
         dwolla_prep(api_type)
         if api_type == LIVE:
             field = 'dwolla_refresh_token'
-            access_expires = 'dwolla_access_token_expires'
         else:
             field = 'dwolla_test_refresh_token'
-            access_expires = 'dwolla_test_access_token_expires'
         kwargs = {
-            field + '_expires__range': (start, end),
-            access_expires + '__lt': start,
+            field + '_expires__lt': end,
         }
         for model in (Organization, Person, Order):
             qs = model.objects.filter(**kwargs)
             for item in qs:
                 refresh_token = getattr(item, field)
                 oauth_data = oauth.refresh(refresh_token)
-                dwolla_set_tokens(item, api_type, oauth_data)
-                item.save()
-                if api_type == LIVE:
-                    count += 1
+                try:
+                    dwolla_set_tokens(item, api_type, oauth_data)
+                except ValueError:
+                    item.clear_dwolla_data(api_type)
+                    if api_type == LIVE:
+                        cleared_count += 1
+                    else:
+                        cleared_test_count += 1
                 else:
-                    test_count += 1
-    return count, test_count
+                    if api_type == LIVE:
+                        count += 1
+                    else:
+                        test_count += 1
+                item.save()
+    return count, cleared_count, test_count, cleared_test_count
 
 
 def dwolla_get_sources(user_or_order, event):
@@ -198,21 +209,53 @@ def dwolla_live_settings_valid():
     )
 
 
+def dwolla_customer_redirect_url(user_or_order, api_type, request, next_url=""):
+    redirect_url = "{}?api={}&type={}&id={}".format(
+        reverse('brambling_dwolla_connect'),
+        api_type,
+        user_or_order._meta.model_name,
+        user_or_order.pk,
+    )
+    if next_url:
+        redirect_url += "&next_url=" + next_url
+    return request.build_absolute_uri(redirect_url)
+
+
 def dwolla_customer_oauth_url(user_or_order, api_type, request, next_url=""):
     dwolla_prep(api_type)
     scope = "Send|AccountInfoFull|Funding"
-    redirect_url = user_or_order.get_dwolla_connect_url() + "?api=" + api_type
-    if next_url:
-        redirect_url += "&next_url=" + next_url
-    redirect_url = request.build_absolute_uri(redirect_url)
-    return oauth.genauthurl(redirect_url, scope=scope)
+    return oauth.genauthurl(
+        dwolla_customer_redirect_url(
+            user_or_order,
+            api_type,
+            request,
+            next_url,
+        ),
+        scope=scope,
+    )
+
+
+def dwolla_organization_redirect_url(organization, request, api_type):
+    redirect_url = "{}?api={}&type={}&id={}".format(
+        reverse('brambling_dwolla_connect'),
+        api_type,
+        organization._meta.model_name,
+        organization.pk,
+    )
+    return request.build_absolute_uri(redirect_url)
 
 
 def dwolla_organization_oauth_url(organization, request, api_type):
     dwolla_prep(api_type)
     scope = "Send|AccountInfoFull|Transactions"
-    redirect_url = request.build_absolute_uri(organization.get_dwolla_connect_url() + "?api=" + api_type)
-    return oauth.genauthurl(redirect_url, scope=scope)
+    return oauth.genauthurl(
+        dwolla_organization_redirect_url(
+            organization,
+            request,
+            api_type,
+        ),
+        scope=scope,
+    )
 
 
 def stripe_prep(api_type):

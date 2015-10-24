@@ -159,7 +159,9 @@
                                         {{ cell|linebreaksbr }}
                                     </span>
                                 {% else %}
-                                    {{ cell }}
+                                    <span style="white-space:nowrap;">
+                                        {{ cell|wordwrap:60|linebreaksbr }}
+                                    </span>
                                 {% endif %}
                             {% endblock %}
                             {% if not forloop.first %}

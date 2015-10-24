@@ -640,6 +640,9 @@ class OrderTable(CustomDataTable):
 
     def _add_data(self, queryset, fields):
         use_distinct = False
+        queryset = queryset.annotate(
+            completed_date=Min('transactions__timestamp'),
+        )
         for field in fields:
             if field.startswith('custom_'):
                 queryset = queryset.prefetch_related('custom_data')
@@ -671,10 +674,6 @@ class OrderTable(CustomDataTable):
                         brambling_boughtitem.status = 'refunded'
                     """,
                 })
-            elif field == 'completed_date':
-                queryset = queryset.annotate(
-                    completed_date=Min('transactions__timestamp'),
-                )
         return queryset, use_distinct
 
     def send_flyers_full_address(self, obj):
