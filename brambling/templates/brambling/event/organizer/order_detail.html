@@ -86,7 +86,36 @@
 							</form>
 						</div>
 					</div>
-					{% include "brambling/event/organizer/_attendee_summary.html" %}
+					{% for attendee_form in attendee_forms %}
+						<div class='panel panel-primary'>
+							<header class='panel-heading'>
+								<div class='panel-title'>
+									{{ attendee_form.instance.get_full_name }}
+								</div>
+							</header>
+							<div class='panel-body'>
+								<label>Items</label>
+								<ul class='list-inline'>
+									{% for item in attendee_form.instance.bought_items.all %}
+										{% if item.status == item.RESERVED or item.status == item.UNPAID or item.status == item.BOUGHT %}
+											<li>{{ item.item_option_name }}
+											({{ item.item_name }})</li>
+										{% endif %}
+									{% endfor %}
+								</ul>
+
+								<form method='post' action='{{ request.path }}'>
+									<input type='hidden' name='is_attendee_form' value='1'>
+									<input type='hidden' name='attendee_id' value='{{ attendee_form.instance.pk }}'>
+									{% csrf_token %}
+									{% form attendee_form using %}
+										{% formrow attendee_form.notes %}
+									{% endform %}
+									<button type='submit' class='btn btn-primary'>Save notes</button>
+								</form>
+							</div>
+						</div>
+					{% endfor %}
 				</div>
 			</div>
 		</div>

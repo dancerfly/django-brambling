@@ -405,7 +405,7 @@ class AttendeeTable(CustomDataTable):
         ('Order',
          ('order_code', 'order_placed_by')),
         ('Miscellaneous',
-         ('liability_waiver', 'photo_consent')),
+         ('liability_waiver', 'photo_consent', 'notes')),
     )
 
     label_overrides = {

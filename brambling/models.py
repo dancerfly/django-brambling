@@ -1520,6 +1520,9 @@ class Attendee(AbstractNamedModel):
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
+    # Admin-only data
+    notes = models.TextField(blank=True)
+
     def __unicode__(self):
         return self.get_full_name()
 
