@@ -9,9 +9,9 @@
 
 	<script>
 		$(function(){
-			$('a[target]').on('click', function(e){
+			$('.js-post-link').on('click', function(e){
 				e.preventDefault();
-				$.post($(this).attr('target'), function(){
+				$.post($(this).attr('href'), function(){
 					// For now, just reload the page.
 					location.reload();
 				});
@@ -22,37 +22,46 @@
 
 {% block main %}
 	{{ block.super }}
-	<h2 class="sr-only">Saved Attendees</h2>
+	<h2 class="sr-only">Attendee Details</h2>
 
-	<div class="row">
-		{% for attendee in attendees %}
-			<div class='col-md-4'>
+	<p>
+		{% if attendees %}
+			Here are attendee details stored with your account.
+			You can prefill forms with these details when registering for events.
+		{% else %}
+			Currently you don’t have any attendee details stored with your account.
+		{% endif %}
+	</p>
+	<p>
+		Save details here for anyone you might regularly register for events. These might include yourself, family, and significant others.
+	</p>
+
+	<div class="panel panel-default">
+		<header class="panel-heading clearfix">
+			<h3 class="panel-title pull-left">Attendee Details</h3>
+			<a class='btn btn-default btn-xs pull-right' href='{% url "brambling_user_attendee_add" %}'>
+				<i class='fa fa-fw fa-plus'></i> Add attendee
+			</a>
+		</header>
+		<div class="list-group">
+			{% for attendee in attendees %}
 				{% url "brambling_user_attendee_edit" pk=attendee.pk as attendee_url %}
 				{% url "brambling_user_attendee_remove" pk=attendee.pk as attendee_remove_url %}
-				<div class='panel panel-primary'>
-					<div class='panel-heading'>
-						<div class='panel-title'>
-							<a href='{{ attendee_url }}'>
-								{{ attendee.get_full_name }}
-							</a>
-							<a class='remove-link pull-right' href='{{ attendee_remove_url }}' target="{{ attendee_remove_url }}">
-								<i class='fa fa-fw fa-trash'></i>
-							</a>
-							<a href='{{ attendee_url }}' class="pull-right">
-								<i class='fa fa-fw fa-pencil'></i>
-							</a>
-						</div>
+				<div class="list-group-item">
+					<a class="a-secret" href='{{ attendee_url }}'>
+						<strong>{{ attendee.get_full_name }}</strong> ({{ attendee.email }})
+					</a>
+					<div class="pull-right">
+						<a href='{{ attendee_url }}' class='btn btn-success btn-xs'>
+							<i class='fa fa-fw fa-pencil'></i> Edit
+						</a>
+						<a class='remove-link js-post-link btn btn-danger btn-xs' href='{{ attendee_remove_url }}'>
+							<i class='fa fa-fw fa-trash'></i> Delete
+						</a>
 					</div>
 				</div>
-			</div>
-			{% cycle "" "" '<div class="clearfix visible-md-block visible-lg-block"></div>' %}
-		{% empty %}
-			<div class='col-md-4'>
-				<p><em>You don't currently have any saved attendees.</em></p>
-			</div>
-		{% endfor %}
-		<div class='col-md-4'><a class='btn btn-primary' href='{% url "brambling_user_attendee_add" %}'>
-			<i class='fa fa-fw fa-plus'></i> Add attendee
-		</a></div>
+			{% endfor %}
+		</div>
 	</div>
+
 {% endblock %}
