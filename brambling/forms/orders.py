@@ -214,7 +214,6 @@ class HostingForm(MemoModelForm, CustomDataForm):
                 self.initial.update({
                     'contact_name': person.get_full_name(),
                     'contact_email': person.email,
-                    'contact_phone': person.phone,
                 })
             home = self.instance.home
             if home is not None:
