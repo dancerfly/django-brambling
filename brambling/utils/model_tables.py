@@ -517,7 +517,7 @@ class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
          ('code', 'person', 'balance', 'purchased_items',
-          'refunded_items', 'completed_date')),
+          'refunded_items', 'completed_date', 'notes')),
     )
     survey_fieldsets = (
         ('Survey',
