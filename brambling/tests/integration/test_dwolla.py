@@ -10,7 +10,6 @@ from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
 from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund, dwolla_get_token
 
-CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 CHARGE_DATA = {
     u'Amount': 42.15,
@@ -41,7 +40,7 @@ CHARGE_DATA = {
 
 
 class DwollaChargeTestCase(TestCase):
-    @vcr.use_cassette(os.path.join(CURRENT_DIR, 'fixtures/test_dwolla_charge__user.yaml'))
+    @vcr.use_cassette('../brambling/tests/integration/fixtures/test_dwolla_charge__user.yaml')
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
