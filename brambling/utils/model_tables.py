@@ -15,7 +15,7 @@ from zenaida.templatetags.zenaida import format_money
 import six
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
-from brambling.models import Attendee, Order, BoughtItem
+from brambling.models import Attendee, Order, BoughtItem, Transaction
 from brambling.utils.timezones import format_as_localtime
 
 
@@ -395,15 +395,13 @@ class AttendeeTable(CustomDataTable):
         ('Identification',
          ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
         ('Status',
-         ('items', 'purchase_date', 'paid')),
+         ('items', 'purchase_date', 'pending', 'confirmed', 'order_code')),
         ('Contact',
          ('email', 'phone')),
         ('Housing',
          ('housing_status', 'housing_nights', 'housing_preferences',
           'environment_avoid', 'environment_cause', 'person_prefer',
           'person_avoid', 'other_needs')),
-        ('Order',
-         ('order_code', 'order_placed_by')),
         ('Miscellaneous',
          ('liability_waiver', 'photo_consent')),
     )
@@ -418,8 +416,7 @@ class AttendeeTable(CustomDataTable):
         'person_prefer': 'Housing People Preference',
         'person_avoid': 'Housing People Avoid',
         'other_needs': 'Other Housing Needs',
-        'order__code': 'Order Code',
-        'order_placed_by': 'Order Placed By',
+        'order_code': 'Order Code',
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
     }
@@ -452,10 +449,16 @@ class AttendeeTable(CustomDataTable):
         queryset = queryset.prefetch_related(
             Prefetch(
                 'bought_items',
-                queryset=BoughtItem.objects.filter(status=BoughtItem.BOUGHT),
+                queryset=BoughtItem.objects.filter(status=BoughtItem.BOUGHT).prefetch_related(
+                    Prefetch(
+                        'transactions',
+                        queryset=Transaction.objects.filter(is_confirmed=True),
+                        to_attr='confirmed_transactions',
+                    ),
+                ),
                 to_attr='items'
             ),
-            'items__discounts'
+            'items__discounts',
         )
         for field in fields:
             if field.startswith('custom_'):
@@ -470,8 +473,6 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.prefetch_related('ef_cause')
             elif field == 'order_code':
                 queryset = queryset.select_related('order')
-            elif field == 'order_placed_by':
-                queryset = queryset.select_related('order__person')
             elif field == 'purchase_date':
                 queryset = queryset.annotate(
                     purchase_date=Min('order__transactions__timestamp')
@@ -482,19 +483,23 @@ class AttendeeTable(CustomDataTable):
     def order_code(self, obj):
         return obj.order.code
 
-    def order_placed_by(self, obj):
-        person = obj.order.person
-        if person:
-            return "{} ({})".format(person.get_full_name(), person.email)
-        return obj.order.email
-
-    def paid(self, obj):
-        paid = 0
+    def pending(self, obj):
+        pending = 0
         for item in obj.items:
-            paid += item.price
-            for discount in item.discounts.all():
-                paid -= discount.savings()
-        return format_money(paid, self.event.currency)
+            if not item.confirmed_transactions:
+                pending += item.price
+                for discount in item.discounts.all():
+                    pending -= discount.savings()
+        return format_money(pending, self.event.currency)
+
+    def confirmed(self, obj):
+        confirmed = 0
+        for item in obj.items:
+            if item.confirmed_transactions:
+                confirmed += item.price
+                for discount in item.discounts.all():
+                    confirmed -= discount.savings()
+        return format_money(confirmed, self.event.currency)
 
     housing_nights = related_objects_list("nights")
     housing_preferences = related_objects_list("housing_prefer")
