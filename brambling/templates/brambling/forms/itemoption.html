@@ -23,12 +23,12 @@
 			<div class='row'>
 				{% get_current_timezone as TIME_ZONE_CURRENT %}
 				<div class='col-xs-6'>
-					{% formrow form.available_start %}
+					{% formrow form.available_start with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
 					<div class='help-block'>
 						Timezone: {{ TIME_ZONE_CURRENT }}
 					</div>
 				</div>
-				<div class='col-xs-6'>{% formrow form.available_end %}</div>
+				<div class='col-xs-6'>{% formrow form.available_end with prepend="<i class='fa fa-fw fa-calendar'></i>" %}</div>
 			</div>
 		{% endtimezone %}
 
