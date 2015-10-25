@@ -521,7 +521,7 @@ class AttendeeTable(CustomDataTable):
 class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
-         ('code', 'person', 'balance', 'purchased_items',
+         ('code', 'person', 'pending', 'confirmed', 'purchased_items',
           'refunded_items', 'completed_date')),
     )
     survey_fieldsets = (
@@ -647,7 +647,7 @@ class OrderTable(CustomDataTable):
         use_distinct = False
         queryset = queryset.annotate(
             completed_date=Min('transactions__timestamp'),
-        )
+        ).prefetch_related('transactions')
         for field in fields:
             if field.startswith('custom_'):
                 queryset = queryset.prefetch_related('custom_data')
@@ -659,10 +659,6 @@ class OrderTable(CustomDataTable):
                 queryset = queryset.prefetch_related('eventhousing__housing_categories')
             elif field == 'person':
                 queryset = queryset.select_related('person')
-            elif field == 'balance':
-                queryset = queryset.annotate(
-                    balance=Sum('transactions__amount'),
-                )
             elif field == 'purchased_items':
                 queryset = queryset.extra(select={
                     'purchased_items': """
@@ -754,8 +750,15 @@ class OrderTable(CustomDataTable):
         return self.get_eventhousing_csm(obj, 'housing_categories')
     housing_categories.short_description = 'hosting home categories'
 
-    def balance(self, obj):
-        return format_money(obj.balance or 0, self.event.currency)
+    def pending(self, obj):
+        pending = sum([txn.amount for txn in obj.transactions.all()
+                       if not txn.is_confirmed])
+        return format_money(pending, self.event.currency)
+
+    def confirmed(self, obj):
+        confirmed = sum([txn.amount for txn in obj.transactions.all()
+                         if txn.is_confirmed])
+        return format_money(confirmed, self.event.currency)
 
     def completed_date(self, obj):
         if obj.completed_date:
