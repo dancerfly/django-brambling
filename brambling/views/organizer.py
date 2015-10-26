@@ -12,6 +12,7 @@ from django.http import (Http404, HttpResponseRedirect, JsonResponse,
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
+from django.utils.encoding import force_text, force_bytes
 from django.utils.decorators import method_decorator
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View, DeleteView)
@@ -736,7 +737,7 @@ class ModelTableView(ListView):
             table = context['table']
             pseudo_buffer = Echo()
             writer = csv.writer(pseudo_buffer)
-            response = StreamingHttpResponse((writer.writerow([unicode(cell) for cell in row])
+            response = StreamingHttpResponse((writer.writerow([force_bytes(cell) for cell in row])
                                               for row in itertools.chain((table.header_row(),), table)),
                                              content_type="text/csv")
             response['Content-Disposition'] = 'attachment; filename="export.csv"'
@@ -749,7 +750,7 @@ class ModelTableView(ListView):
             ws.title = 'Data'
             for i, row in enumerate(all_rows):
                 for j, cell in enumerate(row):
-                    ws.cell(row=i+1, column=j+1, value=unicode(cell))
+                    ws.cell(row=i+1, column=j+1, value=force_text(cell))
             response = StreamingHttpResponse(
                 save_virtual_workbook(wb),
                 content_type='application/vnd.ms-excel')

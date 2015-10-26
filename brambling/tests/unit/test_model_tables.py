@@ -1,6 +1,9 @@
+# encoding: utf-8
 from unittest import TestCase
 
-from brambling.utils.model_tables import Row
+from django.utils.encoding import force_text, force_bytes
+
+from brambling.utils.model_tables import Row, Cell
 
 
 class PostalCodeTestCase(TestCase):
@@ -38,3 +41,15 @@ class PostalCodeTestCase(TestCase):
         self.assertEqual(id_cell.value, 5)
         self.assertEqual(name_cell.field, 'name')
         self.assertEqual(name_cell.value, 'Phil')
+
+
+class CellTestCase(TestCase):
+    def test_cell_to_text(self):
+        value = u'vålue'
+        cell = Cell('field', value)
+        self.assertEqual(force_text(cell), value)
+
+    def test_cell_to_bytes(self):
+        value = force_bytes(u'vålue')
+        cell = Cell('field', value)
+        self.assertEqual(force_bytes(cell), value)

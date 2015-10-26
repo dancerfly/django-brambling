@@ -9,6 +9,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q, Sum, Min, Prefetch
 from django.forms.forms import pretty_name
 from django.utils.datastructures import SortedDict
+from django.utils.encoding import force_bytes, force_text
 from django.utils.text import capfirst
 import floppyforms as forms
 from zenaida.templatetags.zenaida import format_money
@@ -58,6 +59,9 @@ class Cell(object):
         self.field = field
         self.value = value
 
+    def __str__(self):
+        return force_bytes(self.__unicode__())
+
     def __unicode__(self):
         """
         Return a comma-separated list if value is an iterable. Otherwise, return
@@ -66,8 +70,8 @@ class Cell(object):
         """
 
         if self.is_iterable():
-            return u"\n".join([unicode(x) for x in self.value])
-        return unicode(self.value)
+            return u"\n".join([force_text(x) for x in self.value])
+        return force_text(self.value)
 
     def __repr__(self):
         return u"{}: {}".format(self.field, self.value)
