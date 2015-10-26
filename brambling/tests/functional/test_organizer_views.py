@@ -1,3 +1,4 @@
+# encoding: utf-8
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase, RequestFactory
 
@@ -10,7 +11,7 @@ from brambling.tests.factories import (
     ItemOptionFactory,
     TransactionFactory,
 )
-from brambling.views.organizer import EventSummaryView
+from brambling.views.organizer import EventSummaryView, AttendeeFilterView
 
 
 class EventSummaryTestCase(TestCase):
@@ -128,3 +129,36 @@ class EventSummaryTestCase(TestCase):
         self.assertEqual(context_data['attendee_requesting_count'], 0)
         self.assertEqual(context_data['attendee_arranged_count'], 0)
         self.assertEqual(context_data['attendee_home_count'], 1)
+
+
+class ModelTableViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_unicode_csv(self):
+        event = EventFactory(collect_housing_data=True, currency='GBP')
+        order = OrderFactory(event=event)
+        transaction = TransactionFactory(event=event, order=order)
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        order.add_to_cart(item_option)
+        order.add_to_cart(item_option)
+        order.mark_cart_paid(transaction)
+
+        AttendeeFactory(
+            order=order,
+            bought_items=order.bought_items.all(),
+            housing_status=Attendee.HOME,
+        )
+
+        view = AttendeeFilterView()
+        view.event = event
+        view.request = self.factory.get('/?format=csv')
+        view.request.user = AnonymousUser()
+
+        table = view.get_table(Attendee.objects.all())
+        response = view.render_to_response({'table': table})
+        self.assertEqual(response['content-disposition'], 'attachment; filename="export.csv"')
+        content = list(response)
+        self.assertIn('£200.00', content[1])
