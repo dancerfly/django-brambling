@@ -50,8 +50,6 @@ class CustomDataForm(forms.ModelForm):
 
 
 class AttendeeBasicDataForm(CustomDataForm):
-    items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
-
     class Meta:
         model = Attendee
         exclude = ()
@@ -63,21 +61,6 @@ class AttendeeBasicDataForm(CustomDataForm):
         self.order = order
         super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
         self.fields['liability_waiver'].required = True
-        items = self.order.bought_items.filter(
-            Q(attendee__isnull=True) | Q(attendee=self.instance)
-        ).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED))
-        self.has_items = bool(items)
-        if self.has_items:
-            self.fields['items'].queryset = items
-            if self.instance.pk:
-                self.fields['items'].initial = [
-                    item for item in items
-                    if item.attendee_id == self.instance.pk
-                ]
-            else:
-                self.fields['items'].initial = items
-        else:
-            del self.fields['items']
 
         if 'housing_status' in self.fields:
             self.fields['housing_status'].label = "Housing"
@@ -101,13 +84,7 @@ class AttendeeBasicDataForm(CustomDataForm):
     def save(self):
         self.instance.order = self.order
         self.instance.basic_completed = True
-        instance = super(AttendeeBasicDataForm, self).save()
-        if self.has_items:
-            old_additional = self.order.bought_items.filter(attendee=instance)
-            old_additional.update(attendee=None)
-            if self.cleaned_data.get('items'):
-                self.cleaned_data['items'].update(attendee=instance)
-        return instance
+        return super(AttendeeBasicDataForm, self).save()
 
 
 class AttendeeHousingDataForm(CustomDataForm):

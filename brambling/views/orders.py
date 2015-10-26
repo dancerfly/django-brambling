@@ -517,6 +517,16 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
+    def get_success_url(self):
+        if self.request.POST.get('next') == 'add':
+            view = 'brambling_event_attendee_add'
+        else:
+            view = 'brambling_event_attendee_list'
+        return reverse(view, kwargs={
+            'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
+        })
+
     def get_object(self):
         if 'pk' not in self.kwargs:
             saved_attendee = None
