@@ -26,8 +26,8 @@
 									<li class='list-group-item {{#if this.id == selectedItem.id}}active{{/if}}' on-tap="toggleSelectedItem(this)">{{ item_option_name }} ({{ item_name }})</li>
 								{{/each}}
 							{{else}}
-								<li class='list-group-item list-group-item-danger'>
-									Must have at least one item.
+								<li class='list-group-item text-muted'>
+									No items.
 								</li>
 							{{/if}}
 						</ul>
@@ -49,30 +49,19 @@
 			</div>
 			<ul class='list-group'>
 				{{#if unassigned_items }}
-					{{#each grouped(unassigned_items)}}
-						<li class='list-group-item'><strong>{{ item_name }}</strong></li>
-						{{#each this.boughtitems}}
-							<li class='list-group-item {{#if this.id == selectedItem.id}}active{{/if}}' on-tap="toggleSelectedItem(this)">
-								{{ this.item_option_name }}
-							</li>
-						{{/each}}
+					{{#each unassigned_items}}
+						<li class="list-group-item {{#if this.id == selectedItem.id}}active{{/if}}" on-tap="toggleSelectedItem(this)">{{ item_option_name }} ({{ item_name }})</li>
 					{{/each}}
 				{{else}}
-					<li class='list-group-item'>
+					<li class='list-group-item muted'>
 						No unassigned items remain.
 					</li>
 				{{/if}}
 			</ul>
 			<div class='panel-footer'>
-				{{#if selectedItem}}
-					<span class='btn btn-default btn-block disabled'>
-						Return to shop for more
-					</span>
-				{{else}}
-					<a class='btn btn-default btn-block' href='../shop'>
-						Return to shop for more
-					</a>
-				{{/if}}
+				<a class='btn btn-default btn-block' href='../shop'>
+					Shop for more items
+				</a>
 			</div>
 		</div>
 		<p class='help-block'>All items must be assigned to an attendee</p>
