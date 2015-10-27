@@ -20,17 +20,20 @@ var Attendees = Ractive.extend({
 				if (!map[item.item_name]) {
 					map[item.item_name] = [];
 				}
-				map[item.item_name].push(item.item_option_name);
+				map[item.item_name].push(item);
 			});
 			$.each(map, function (item_name, item_options) {
 				list.push({
 					'item_name': item_name,
-					'item_options': item_options.sort()
-				})
+					'boughtitems': item_options.sort(function (a, b) {
+						return a.item_option_name.localeCompare(b.item_option_name);
+					})
+				});
 			});
 			list.sort(function (a, b) {
 				return a.item_name.localeCompare(b.item_name);
 			});
+			return list;
 		}
 	},
 	linkToKeypath: function (link) {
@@ -88,6 +91,48 @@ var Attendees = Ractive.extend({
 			},
 			success: function (data) {
 				thisObj.set('attendees', data);
+			}
+		});
+	},
+
+	toggleSelectedItem: function (item) {
+		var selectedItem = this.get('selectedItem');
+		if (selectedItem && selectedItem.id != item.id) return;
+
+		if (this.event) this.event.original.stopPropagation();
+
+		if (!selectedItem) {
+			this.set('selectedItem', item);
+		} else {
+			this.set('selectedItem', undefined);
+		}
+	},
+
+	assignSelectedItem: function (item, attendee) {
+		if (!item) {
+			return;
+		}
+		var thisObj = this,
+			boughtitems = thisObj.get('boughtitems'),
+			realItem = undefined;
+		$.each(boughtitems, function (idx, boughtitem) {
+			if (boughtitem.id == item.id) realItem = boughtitem;
+		});
+
+		if (!realItem) return;
+
+		realItem.attendee = attendee ? attendee.link : null;
+		thisObj.set({
+			'boughtitems': boughtitems,
+			'selectedItem': null
+		});
+		$.ajax({
+			url: thisObj.apiEndpoints['boughtitem'] + realItem.id + '/',
+			method: 'patch',
+			cache: false,
+			data: {
+				order: thisObj.get('order').link,
+				attendee: realItem.attendee
 			}
 		});
 	},

@@ -6,7 +6,7 @@
 		<div class="row margin-trailer">
 			{{#each attendees }}
 				<div class='col-md-6'>
-					<div class='panel panel-primary'>
+					<div class='panel panel-primary' on-tap='assignSelectedItem(selectedItem,this)'>
 						<div class='panel-heading'>
 							<div class='panel-title'>
 								<a href='{{ id }}/'>
@@ -23,7 +23,7 @@
 						<ul class='list-group'>
 							{{#if this.boughtitems }}
 								{{#each this.boughtitems}}
-									<li class='list-group-item'>{{ item_option_name }} ({{ item_name }})</li>
+									<li class='list-group-item {{#if this.id == selectedItem.id}}active{{/if}}' on-tap="toggleSelectedItem(this)">{{ item_option_name }} ({{ item_name }})</li>
 								{{/each}}
 							{{else}}
 								<li class='list-group-item list-group-item-danger'>
@@ -43,7 +43,7 @@
 		</div>
 	</div>
 	<div class='col-md-4'>
-		<div class='panel panel-default'>
+		<div class='panel panel-default' on-tap='assignSelectedItem(selectedItem,null)'>
 			<div class='panel-heading'>
 				<h4 class='panel-title'>Unassigned items</h4>
 			</div>
@@ -51,8 +51,10 @@
 				{{#if unassigned_items }}
 					{{#each grouped(unassigned_items)}}
 						<li class='list-group-item'><strong>{{ item_name }}</strong></li>
-						{{#each item_options}}
-							<li class='list-group-item'>{{ this }}</li>
+						{{#each this.boughtitems}}
+							<li class='list-group-item {{#if this.id == selectedItem.id}}active{{/if}}' on-tap="toggleSelectedItem(this)">
+								{{ this.item_option_name }}
+							</li>
 						{{/each}}
 					{{/each}}
 				{{else}}
@@ -62,9 +64,15 @@
 				{{/if}}
 			</ul>
 			<div class='panel-footer'>
-				<a class='btn btn-default btn-block' href='../shop'>
-					Return to shop for more
-				</a>
+				{{#if selectedItem}}
+					<span class='btn btn-default btn-block disabled'>
+						Return to shop for more
+					</span>
+				{{else}}
+					<a class='btn btn-default btn-block' href='../shop'>
+						Return to shop for more
+					</a>
+				{{/if}}
 			</div>
 		</div>
 		<p class='help-block'>All items must be assigned to an attendee</p>
