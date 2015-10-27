@@ -1,0 +1,74 @@
+{# This whole template is verbatim - use ractive, not Django. #}
+{% verbatim %}
+
+<div class="row">
+	<div class="col-md-8">
+		<div class="row margin-trailer">
+			{{#each attendees }}
+				<div class='col-md-6'>
+					<div class='panel panel-primary'>
+						<div class='panel-heading'>
+							<div class='panel-title'>
+								<a href='{{ id }}/'>
+									{{ full_name }}
+								</a>
+								<a class='remove-link pull-right' href='javascript://'>
+									<i class='fa fa-fw fa-trash'></i>
+								</a>
+								<a href='{{ id }}/' class="pull-right">
+									<i class='fa fa-fw fa-pencil'></i>
+								</a>
+							</div>
+						</div>
+						<ul class='list-group'>
+							{{#if this.boughtitems }}
+								{{#each this.boughtitems}}
+									<li class='list-group-item'>{{ item_option_name }} ({{ item_name }})</li>
+								{{/each}}
+							{{else}}
+								<li class='list-group-item list-group-item-danger'>
+									Must have at least one item.
+								</li>
+							{{/if}}
+						</ul>
+					</div>
+				</div>
+				{{#if @index % 2 == 1}}
+					<div class="clearfix visible-md-block visible-lg-block"></div>
+				{{/if}}
+			{{/each}}
+			<div class='col-md-4'><a class='btn btn-primary' href='add/'>
+				<i class='fa fa-fw fa-plus'></i> Add attendee
+			</a></div>
+		</div>
+	</div>
+	<div class='col-md-4'>
+		<div class='panel panel-default'>
+			<div class='panel-heading'>
+				<h4 class='panel-title'>Unassigned items</h4>
+			</div>
+			<ul class='list-group'>
+				{{#if unassigned_items }}
+					{{#each grouped(unassigned_items)}}
+						<li class='list-group-item'><strong>{{ item_name }}</strong></li>
+						{{#each item_options}}
+							<li class='list-group-item'>{{ this }}</li>
+						{{/each}}
+					{{/each}}
+				{{else}}
+					<li class='list-group-item'>
+						No unassigned items remain.
+					</li>
+				{{/if}}
+			</ul>
+			<div class='panel-footer'>
+				<a class='btn btn-default btn-block' href='../shop'>
+					Return to shop for more
+				</a>
+			</div>
+		</div>
+		<p class='help-block'>All items must be assigned to an attendee</p>
+	</div>
+</div>
+
+{% endverbatim %}
