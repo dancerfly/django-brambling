@@ -1223,8 +1223,10 @@ class Transaction(models.Model):
     def can_refund(self):
         refunded = self.related_transaction_set.filter(
             transaction_type=Transaction.REFUND
-        ).aggregate(refunded=Sum('amount'))['refunded'] or 0
-        return self.amount + refunded > 0
+        ).aggregate(refunded=Sum('amount'))['refunded']
+        # None means there are no refunds, which is relevant
+        # for 0-amount transactions.
+        return refunded is None or self.amount + refunded > 0
 
     def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
         if amount is None:
