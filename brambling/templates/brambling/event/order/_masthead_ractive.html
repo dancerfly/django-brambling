@@ -117,11 +117,11 @@
 {{#if steps }}
   <div class="stepbar stepbar-{{ steps.length }}-up {{#unless showEventDescription}}stepbar-hug-masthead{{/unless}}">
     {{#steps}}
-      {{#if slug == 'shop'}}
+      {{#if slug == activeStep}}
         <div class='step current'>{{ name }}</div>
-      {{elseif is_completed}}
+      {{elseif is_accessible && is_completed}}
         <a href='{{ url }}' class='step complete'>
-          <i class='fa fa-check fa-fw'>
+          <i class='fa fa-check fa-fw'></i>
           {{ name }}
         </a>
       {{elseif is_accessible}}

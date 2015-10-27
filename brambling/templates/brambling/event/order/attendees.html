@@ -42,7 +42,7 @@
 				{
 					slug: "{{ step.slug }}",
 					name: "{{ step.name }}",
-					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug as step_url %}",
+					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug %}",
 					is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
 					is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %}
 				}{% if not forloop.last %},{% endif %}
@@ -67,9 +67,31 @@
 						unassigned_items.push(item);
 					}
 				});
+
+				var canContinue = true;
+				if (unassigned_items.length) canContinue = false;
+				$.each(atts, function (idx, att) {
+					if (!att.boughtitems.length) canContinue = false;
+				});
+
+				var steps = attendees.get('steps');
+
+				if (canContinue) {
+					steps[1].is_completed = true;
+					$.each(steps, function (idx, step) {
+						if (idx > 1 && steps[idx - 1].is_completed) step.is_accessible = true;
+					});
+				} else {
+					steps[1].is_completed = false;
+					$.each(steps, function (idx, step) {
+						if (idx > 1) step.is_accessible = false;
+					});
+				}
+
 				attendees.set({
 					'attendees': atts,
-					'unassigned_items': unassigned_items
+					'unassigned_items': unassigned_items,
+					'steps': steps
 				});
 			}
 		});
@@ -84,3 +106,5 @@
 		{% include 'brambling/event/order/_attendees_ractive.html' %}
 	</script>
 {% endblock %}
+
+{% block next_step_button %}{% endblock %}

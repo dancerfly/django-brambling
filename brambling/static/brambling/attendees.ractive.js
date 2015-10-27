@@ -2,6 +2,7 @@ var Attendees = Ractive.extend({
 	apiEndpoints: null,
 	eventId: null,
 	data: {
+		activeStep: 'attendees',
 		linebreaks: function(text) {
 			// for now w/e.
 			return text;

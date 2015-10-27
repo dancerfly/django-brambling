@@ -2,6 +2,7 @@ var Shop = Ractive.extend({
     apiEndpoints: null,
     eventId: null,
     data: {
+    	activeStep: 'shop',
         has_cart: function(order) {
             var has_cart = false;
             if (order && order.bought_items) {

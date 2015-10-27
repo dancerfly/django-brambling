@@ -60,7 +60,7 @@
 				{
 					slug: "{{ step.slug }}",
 					name: "{{ step.name }}",
-					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug as step_url %}",
+					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug %}",
 					is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
 					is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %}
 				}{% if not forloop.last %},{% endif %}
