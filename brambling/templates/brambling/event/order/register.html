@@ -56,7 +56,7 @@
 			eventId: "{{ event.pk }}",
 			data: {
 				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %},
-				showEventDescription: true
+				hugSteps: false
 			}
 		});
 		shop.set('steps', [
@@ -73,11 +73,17 @@
 	</script>
 {% endblock %}
 
+{% block masthead %}
+	{% include "brambling/event/order/_masthead.html" %}
+{% endblock %}
+
 {% block main %}
+	{{ block.super }}
+
 	<div id='ractiveContainer'></div>
 
 	<script id='ractiveTemplate' type='text/ractive'>
-		{% include "brambling/event/order/_masthead_ractive.html" %}
+		{% include "brambling/event/order/_steps_ractive.html" %}
 		{% include "brambling/event/order/_register_ractive.html" %}
 	</script>
 {% endblock main %}
