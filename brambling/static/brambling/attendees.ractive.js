@@ -95,6 +95,36 @@ var Attendees = Ractive.extend({
 			}
 		});
 	},
+	deleteAttendee: function (attendee) {
+		var thisObj = this,
+			order = thisObj.get('order'),
+			attendees = thisObj.get('attendees'),
+			boughtitems = thisObj.get('boughtitems'),
+			removeIndex = null;
+		$.each(attendees, function (idx, att) {
+			if (att.id == attendee.id) {
+				removeIndex = idx;
+				return false;
+			}
+		});
+		$.each(boughtitems, function (idx, item) {
+			if (item.attendee == attendee.link) {
+				item.attendee = null;
+			}
+		});
+		thisObj.set('boughtitems', boughtitems);
+		if (removeIndex !== null) {
+			thisObj.splice('attendees', removeIndex, 1);
+		}
+		$.ajax({
+			url: attendee.link,
+			method: 'delete',
+			cache: false,
+			data: {
+				order: order.id,
+			}
+		});
+	},
 
 	toggleSelectedItem: function (item) {
 		var selectedItem = this.get('selectedItem');
