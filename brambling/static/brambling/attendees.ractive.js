@@ -217,5 +217,52 @@ var Attendees = Ractive.extend({
 			thisObj.loadAttendees(thisObj.get('order'));
 			thisObj.loadBoughtItems(thisObj.get('order'));
 		});
+
+		this.observe('attendees boughtitems', function () {
+			var atts = thisObj.get('attendees'),
+				boughtitems = thisObj.get('boughtitems');
+
+			if (atts && boughtitems) {
+				var unassigned_items = [],
+					att_map = {};
+				$.each(atts, function (idx, att) {
+					att_map[att.link] = att;
+					att.boughtitems = [];
+				});
+				$.each(boughtitems, function (idx, item) {
+					if (item.attendee && att_map[item.attendee]) {
+						att_map[item.attendee].boughtitems.push(item);
+					} else {
+						unassigned_items.push(item);
+					}
+				});
+
+				var canContinue = true;
+				if (unassigned_items.length) canContinue = false;
+				$.each(atts, function (idx, att) {
+					if (!att.boughtitems.length) canContinue = false;
+				});
+
+				var steps = thisObj.get('steps');
+
+				if (canContinue) {
+					steps[1].is_completed = true;
+					$.each(steps, function (idx, step) {
+						if (idx > 1 && steps[idx - 1].is_completed) step.is_accessible = true;
+					});
+				} else {
+					steps[1].is_completed = false;
+					$.each(steps, function (idx, step) {
+						if (idx > 1) step.is_accessible = false;
+					});
+				}
+
+				thisObj.set({
+					'attendees': atts,
+					'unassigned_items': unassigned_items,
+					'steps': steps
+				});
+			}
+		});
 	}
 });
