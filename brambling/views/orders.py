@@ -451,15 +451,21 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
     workflow_class = RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
-        if self.current_step.attendees:
-            return self.render_to_response(self.get_context_data())
-
-        kwargs = {
-            'event_slug': self.event.slug,
-            'organization_slug': self.event.organization.slug,
-        }
-        return HttpResponseRedirect(reverse('brambling_event_attendee_add',
-                                            kwargs=kwargs))
+        if not self.current_step.attendees:
+            kwargs = {
+                'event_slug': self.event.slug,
+                'organization_slug': self.event.organization.slug,
+            }
+            return HttpResponseRedirect(reverse('brambling_event_attendee_add',
+                                                kwargs=kwargs))
+        self.unassigned_items = [item for item in self.current_step.bought_items
+                                 if item.attendee_id is None]
+        if len(self.current_step.attendees) == 1:
+            for item in self.unassigned_items:
+                item.attendee = self.current_step.attendees[0]
+                item.save()
+            self.unassigned_items = []
+        return self.render_to_response(self.get_context_data())
 
     def get_context_data(self, **kwargs):
         context = super(AttendeesView, self).get_context_data(**kwargs)
@@ -467,8 +473,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
         context.update({
             'errors': self.current_step.errors,
             'attendees': self.current_step.attendees,
-            'unassigned_items': [item for item in self.current_step.bought_items
-                                 if item.attendee_id is None],
+            'unassigned_items': self.unassigned_items,
         })
         return context
 
