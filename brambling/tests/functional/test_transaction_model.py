@@ -29,3 +29,49 @@ class TransactionModelTestCase(TestCase):
             amount=Decimal("0"),
         )
         self.assertTrue(txn.can_refund())
+
+    def test_refund(self):
+        txn = TransactionFactory(amount=Decimal("2.00"))
+        self.assertTrue(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 0)
+        refund = txn.refund()
+        self.assertIsInstance(refund, Transaction)
+        self.assertFalse(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 1)
+
+    def test_refund__refunded(self):
+        txn = TransactionFactory(amount=Decimal("2.00"))
+        self.assertTrue(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 0)
+        refund = txn.refund()
+        self.assertIsInstance(refund, Transaction)
+        self.assertFalse(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 1)
+
+        refund = txn.refund()
+        self.assertIsNone(refund)
+        self.assertFalse(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 1)
+
+    def test_refund__zero_amount(self):
+        txn = TransactionFactory(amount=Decimal("0"))
+        self.assertTrue(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 0)
+        refund = txn.refund()
+        self.assertIsInstance(refund, Transaction)
+        self.assertFalse(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 1)
+
+    def test_refund__zero_amount__refunded(self):
+        txn = TransactionFactory(amount=Decimal("0"))
+        self.assertTrue(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 0)
+        refund = txn.refund()
+        self.assertIsInstance(refund, Transaction)
+        self.assertFalse(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 1)
+
+        refund = txn.refund()
+        self.assertIsNone(refund)
+        self.assertFalse(txn.can_refund())
+        self.assertEqual(txn.related_transaction_set.count(), 1)

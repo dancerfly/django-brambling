@@ -1234,13 +1234,18 @@ class Transaction(models.Model):
         if bought_items is None:
             bought_items = self.bought_items.all()
 
-        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum'] or 0
-        refundable = self.amount + total_refunds
-        if refundable < amount:
-            raise ValueError("Not enough money available")
+        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum']
+        if total_refunds is not None:
+            refundable = self.amount + total_refunds
+            if refundable == 0:
+                return None
 
-        if refundable == 0:
-            return None
+            # SB: Pretty sure this just disables completing partial
+            # refunds.
+            if refundable < amount:
+                raise ValueError("Not enough money available")
+        else:
+            refundable = self.amount
 
         refund_kwargs = {
             'order': self.order,
