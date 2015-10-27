@@ -128,7 +128,7 @@ var Attendees = Ractive.extend({
 			'selectedItem': null
 		});
 		$.ajax({
-			url: thisObj.apiEndpoints['boughtitem'] + realItem.id + '/',
+			url: realItem.link,
 			method: 'patch',
 			cache: false,
 			data: {
