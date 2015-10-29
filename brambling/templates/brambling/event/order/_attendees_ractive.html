@@ -6,7 +6,7 @@
 		<div class="row margin-trailer">
 			{{#each attendees }}
 				<div class='col-md-6'>
-					<div class='panel panel-primary' on-tap='assignSelectedItem(selectedItem,this)'>
+					<div class='panel panel-primary{{#if selectedItem && selectedItem.attendee != this.link }} panel-select-target{{/if}}' on-tap='assignSelectedItem(selectedItem,this)'>
 						<div class='panel-heading'>
 							<div class='panel-title'>
 								<a href='{{ id }}/'>
@@ -45,7 +45,7 @@
 	<div class='col-md-4'>
 		<p class='help-block'>To reassign an item, click once on the item and then once on its destination.</p>
 		<p class='help-block'>All items must be assigned to an attendee, and all attendees must have at least one item.</p>
-		<div class='panel panel-default' on-tap='assignSelectedItem(selectedItem,null)'>
+		<div class='panel panel-default{{#if selectedItem && selectedItem.attendee !== null}} panel-select-target{{/if}}' on-tap='assignSelectedItem(selectedItem,null)'>
 			<div class='panel-heading'>
 				<h4 class='panel-title'>Unassigned items</h4>
 			</div>

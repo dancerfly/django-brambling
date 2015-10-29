@@ -13,3 +13,28 @@
 
 .panel > .scroll-x > table
 	margin-bottom: 0
+
+.panel-select-target
+	position: relative
+
+	&:before
+		position: absolute
+		display: block
+		top: 0
+		bottom: 0
+		left: 0
+		right: 0
+		content: ""
+		background: rgba(100, 100, 100, .9)
+		z-index: 10
+
+	&:after
+		position: absolute
+		display: block
+		top: 50%
+		left: 50%
+		transform: translateY(-50%) translateX(-50%)
+		content: "Click here to assign"
+		z-index: 11
+		color: white
+		font-weight: bold
