@@ -1,106 +1,70 @@
 {% extends 'brambling/event/order/__base.html' %}
 
-{% load floppyforms zenaida %}
+{% load floppyforms zenaida staticfiles %}
 
 {% block title %}Assign items to attendees – {{ block.super }}{% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ractive/0.7.3/ractive.js"></script>
 
-	{% include 'brambling/event/order/_use_discount_js.html' %}
+	<script type="text/javascript" src="{% static "brambling/lib/ractive-events-tap.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/attendees.ractive.js" %}"></script>
 
 	<script>
-		$(function(){
-			$('a[target]').on('click', function(e){
-				e.preventDefault();
-				$.post($(this).attr('target'), function(){
-					// For now, just reload the page.
-					location.reload();
-				});
-			})
+		var attendees = new Attendees({
+			el: '#ractiveContainer',
+			template: '#ractiveTemplate',
+			apiEndpoints: {
+				"root": "{% url 'api-root' %}",
+				"housingcategory": "{% url 'housingcategory-list' %}",
+				"environmentalfactor": "{% url 'environmentalfactor-list' %}",
+				"dancestyle": "{% url 'dancestyle-list' %}",
+				"organization": "{% url 'organization-list' %}",
+				"event": "{% url 'event-list' %}",
+				"attendee": "{% url 'attendee-list' %}",
+				"eventhousing": "{% url 'eventhousing-list' %}",
+				"order": "{% url 'order-list' %}",
+				"boughtitem": "{% url 'boughtitem-list' %}",
+				"item": "{% url 'item-list' %}",
+				"itemimage": "{% url 'itemimage-list' %}",
+				"itemoption": "{% url 'itemoption-list' %}",
+				"orderdiscount": "{% url 'orderdiscount-list' %}",
+				"daguerre": "/daguerre/info/"
+			},
+			eventId: "{{ event.pk }}",
+			data: {
+				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %},
+				hugSteps: {% if order.has_cart %}false{% else %}true{% endif %}
+			}
 		});
+		attendees.set('steps', [
+			{% for step in workflow.active_steps %}
+				{
+					slug: "{{ step.slug }}",
+					name: "{{ step.name }}",
+					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug %}",
+					is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
+					is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %}
+				}{% if not forloop.last %},{% endif %}
+			{% endfor %}
+		]);
 	</script>
+{% endblock %}
+
+{% block masthead %}
+	{% include "brambling/event/order/_masthead.html" %}
 {% endblock %}
 
 {% block main %}
 	{{ block.super }}
 
-	{% if errors %}
-		<div class='alert alert-danger'>
-			Please correct the errors below.
-		</div>
-	{% endif %}
+	<div id='ractiveContainer'></div>
 
-
-	{% if unassigned_items %}
-		<div class="row">
-			<div class="col-md-8">
-	{% endif %}
-				<div class="row">
-					{% for attendee in attendees %}
-						<div class='{% if unassigned_items %}col-md-6{% else %}col-md-4{% endif %}'>
-							{% url "brambling_event_attendee_edit" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
-							{% url "brambling_event_attendee_remove" pk=attendee.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_remove_url %}
-							<div class='panel panel-primary'>
-								<div class='panel-heading'>
-									<div class='panel-title'>
-										<a href='{{ attendee_url }}'>
-											{{ attendee.get_full_name }}
-										</a>
-										<a class='remove-link pull-right' href='{{ attendee_remove_url }}' target="{{ attendee_remove_url }}">
-											<i class='fa fa-fw fa-trash'></i>
-										</a>
-										<a href='{{ attendee_url }}' class="pull-right">
-											<i class='fa fa-fw fa-pencil'></i>
-										</a>
-									</div>
-								</div>
-								{% if attendee.items or attendee.errors %}
-									<ul class='list-group'>
-										{% for item in attendee.items %}
-											<li class='list-group-item'>{{ item.item_option_name }} ({{ item.item_name }})</li>
-										{% endfor %}
-										{% for error in attendee.errors %}
-											<li class='list-group-item list-group-item-danger'>
-												{{ error }}
-											</li>
-										{% endfor %}
-									</ul>
-								{% endif %}
-							</div>
-						</div>
-						{% if unassigned_items %}
-							{% cycle "" '<div class="clearfix visible-md-block visible-lg-block"></div>' %}
-						{% else %}
-							{% cycle "" "" '<div class="clearfix visible-md-block visible-lg-block"></div>' %}
-						{% endif %}
-					{% endfor %}
-					<div class='col-md-4'><a class='btn btn-primary' href='{% url "brambling_event_attendee_add" event_slug=event.slug organization_slug=event.organization.slug %}'>
-						<i class='fa fa-fw fa-plus'></i> Add attendee
-					</a></div>
-				</div>
-	{% if unassigned_items %}
-			</div>
-			<div class='col-md-4'>
-				<div class='panel panel-default'>
-					<ul class='list-group'>
-						{% regroup unassigned_items by item_name as item_list %}
-						{% for item in item_list %}
-							<li class='list-group-item'><strong>{{ item.grouper }}</strong></li>
-							{% for bought_item in item.list %}
-								<li class='list-group-item'>{{ bought_item.item_option_name }}</li>
-							{% endfor %}
-						{% endfor %}
-						{% if errors.bought_items %}
-							{% for error in errors.bought_items %}
-								<li class='list-group-item list-group-item-danger'>
-									{{ error }}
-								</li>
-							{% endfor %}
-						{% endif %}
-					</ul>
-				</div>
-			</div>
-		</div>
-	{% endif %}
+	<script id='ractiveTemplate' type='text/ractive'>
+		{% include 'brambling/event/order/_steps_ractive.html' %}
+		{% include 'brambling/event/order/_attendees_ractive.html' %}
+	</script>
 {% endblock %}
+
+{% block next_step_button %}{% endblock %}

@@ -16,12 +16,31 @@
 		<div class='col-md-4'>
 			<ul class='list-group'>
 				{% for att in attendees %}
-					{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
-					<a href="{{ attendee_url }}"class='list-group-item{% if att == attendee %} active{% elif att.attendee_id %} disabled{% endif %}'>
-						<strong>{{ att.get_full_name }}</strong>
-					</a>
+					{% if att == attendee %}
+						<span class='list-group-item active'>
+							<strong>{{ att.get_full_name }}</strong>
+						</span>
+					{% else %}
+						{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
+						<a href="{{ attendee_url }}"class='list-group-item'>
+							<strong>{{ att.get_full_name }}</strong>
+						</a>
+					{% endif %}
 				{% endfor %}
+				{% if attendee.pk %}
+					<a class='list-group-item' href="{% url 'brambling_event_attendee_add' event_slug=event.slug organization_slug=event.organization.slug %}">
+						<strong><i class='fa fa-fw fa-plus'></i> Add an attendee</strong>
+					</a>
+				{% else %}
+					<span class='list-group-item active'>
+						<strong>{% if saved_attendee %}{{ saved_attendee.get_full_name }}{% else %}New Attendee{% endif %}</strong>
+					</span>
+				{% endif %}
 			</ul>
+
+			<a class='btn btn-primary btn-block btn-lg' href='../'>
+				Return to list
+			</a>
 		</div>
 		<div class="col-md-8">
 			<h3 class="margin-leader-0">
@@ -87,8 +106,6 @@
 					{% formrow basic_data_form.email %}
 					{% formrow basic_data_form.phone %}
 
-					{% formrow basic_data_form.items %}
-
 					{% if basic_data_form.housing_status %}
 						{% formrow basic_data_form.housing_status %}
 					{% endif %}
@@ -147,8 +164,16 @@
 						</div>
 					</div>
 				{% endif %}
-				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Save and continue{% endif %}</button>
-				{% if attendee.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
+				{% if attendee.pk %}
+					<button class='btn btn-primary' type="submit" name='next' value='review'>Save changes</button>
+					<a href="../" class="btn btn-link">Cancel</a>
+				{% else %}
+					<button class='btn btn-primary' type="submit" name='next' value='review'>Continue</button>
+					<button class='btn btn-default' type="submit" name='next' value='add'>Register another attendee</button>
+					{% if attendees.count > 0 %}
+						<a href="../" class="btn btn-link">Cancel</a>
+					{% endif %}
+				{% endif %}
 			</form>
 		</div>
 	</div>
