@@ -1,6 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.fields import empty
 
 from brambling.models import (Order, EventHousing, BoughtItem,
                               EnvironmentalFactor, HousingCategory,
@@ -148,6 +149,8 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
         if self.instance is not None:
             # If this is not a creation, set various fields to read-only
             self.fields['status'].read_only = True
+            # Workaround for https://github.com/tomchristie/django-rest-framework/issues/3565
+            self.fields['status'].default = empty
             self.fields['order'].read_only = True
             self.fields['item_option'].read_only = True
 
