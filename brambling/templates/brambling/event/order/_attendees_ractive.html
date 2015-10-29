@@ -31,6 +31,11 @@
 								</li>
 							{{/if}}
 						</ul>
+						{{#if selectedItem && selectedItem.attendee != this.link }}
+							<p class='panel-select-target-text'>
+								Click here to assign to {{ full_name }}
+							</p>
+						{{/if}}
 					</div>
 				</div>
 				{{#if @index % 2 == 1}}
@@ -65,6 +70,11 @@
 					Shop for more items
 				</a>
 			</div>
+			{{#if selectedItem && selectedItem.attendee != this.link }}
+				<p class='panel-select-target-text'>
+					Click here to unassign
+				</p>
+			{{/if}}
 		</div>
 	</div>
 </div>
