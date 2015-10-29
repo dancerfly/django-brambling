@@ -101,8 +101,8 @@
 
 			$('.field-list').formset({
 				prefix: '{{ formset.prefix }}',
-				deleteTrigger: '<a href="#"><i class="fa fa-trash"></i></a>',
-				deleteWrapper: '.actions',
+				deleteTrigger: '<a class="btn btn-link" href="#"><i class="fa fa-fw fa-trash"></i></a>',
+				deleteWrapper: '.js-delete-field',
 				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add a field</a>',
 				addWrapper: '.js-formset-add.field-add',
 				formTemplate: '.field-template',
