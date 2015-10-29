@@ -506,6 +506,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
         self.object = self.get_object()
         initial = model_to_dict(self.object.saved_attendee) if self.object.saved_attendee else {}
 
+        created = not self.object.pk
         all_valid = True
         self.basic_data_form = self.get_basic_data_form(initial=initial)
 
@@ -531,7 +532,8 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             # skip rendering the attendee assignment screen. (Received by
             # AttendeesView above.)
             if (len(self.workflow.steps['attendees'].attendees) == 1 and
-                                 self.request.POST.get('next') != 'add'):
+                    self.request.POST.get('next') != 'add' and
+                    created):
                 success_url = "{0}?skip=1".format(success_url)
             return HttpResponseRedirect(success_url)
         context = self.get_context_data(**kwargs)
