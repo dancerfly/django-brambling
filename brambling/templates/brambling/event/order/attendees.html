@@ -29,7 +29,7 @@
 								}{% if not forloop.last %},{% endif %}
 							{% endfor %}
 						],
-						classes: "{% if order.has_cart %}{% else %}stepbar-hug-masthead{% endif %}"
+						classes: "{% if not order.has_cart %}stepbar-hug-masthead{% endif %}"
 					}
 				}
 			}),
