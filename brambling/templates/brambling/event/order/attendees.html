@@ -10,45 +10,55 @@
 
 	<script type="text/javascript" src="{% static "brambling/lib/ractive-events-tap.js" %}"></script>
 	<script type="text/javascript" src="{% static "brambling/javascript/components/attendees.ractive.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/javascript/components/stepbar.ractive.js" %}"></script>
 
 	<script>
-		var attendees = new components.Attendees({
-			el: '#ractiveContainer',
-			template: '#ractiveTemplate',
-			apiEndpoints: {
-				"root": "{% url 'api-root' %}",
-				"housingcategory": "{% url 'housingcategory-list' %}",
-				"environmentalfactor": "{% url 'environmentalfactor-list' %}",
-				"dancestyle": "{% url 'dancestyle-list' %}",
-				"organization": "{% url 'organization-list' %}",
-				"event": "{% url 'event-list' %}",
-				"attendee": "{% url 'attendee-list' %}",
-				"eventhousing": "{% url 'eventhousing-list' %}",
-				"order": "{% url 'order-list' %}",
-				"boughtitem": "{% url 'boughtitem-list' %}",
-				"item": "{% url 'item-list' %}",
-				"itemimage": "{% url 'itemimage-list' %}",
-				"itemoption": "{% url 'itemoption-list' %}",
-				"orderdiscount": "{% url 'orderdiscount-list' %}",
-				"daguerre": "/daguerre/info/"
-			},
-			eventId: "{{ event.pk }}",
-			data: {
-				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %},
-				hugSteps: {% if order.has_cart %}false{% else %}true{% endif %}
-			}
-		});
-		attendees.set('steps', [
-			{% for step in workflow.active_steps %}
-				{
-					slug: "{{ step.slug }}",
-					name: "{{ step.name }}",
-					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug %}",
-					is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
-					is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %}
-				}{% if not forloop.last %},{% endif %}
-			{% endfor %}
-		]);
+		var stepbar = components.Stepbar.extend({
+				template: '#StepbarRactive',
+				data: function () {
+					return {
+						steps: [
+							{% for step in workflow.active_steps %}
+								{
+									key: "{{ step.slug }}",
+									name: "{{ step.name }}",
+									url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug %}",
+									is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
+									is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %},
+									is_active: false
+								}{% if not forloop.last %},{% endif %}
+							{% endfor %}
+						],
+						classes: "{% if order.has_cart %}{% else %}stepbar-hug-masthead{% endif %}"
+					}
+				}
+			}),
+			attendees = new components.Attendees({
+				el: '#AttendeesContainer',
+				template: '#AttendeesRactive',
+				components: {stepbar: stepbar},
+				apiEndpoints: {
+					"root": "{% url 'api-root' %}",
+					"housingcategory": "{% url 'housingcategory-list' %}",
+					"environmentalfactor": "{% url 'environmentalfactor-list' %}",
+					"dancestyle": "{% url 'dancestyle-list' %}",
+					"organization": "{% url 'organization-list' %}",
+					"event": "{% url 'event-list' %}",
+					"attendee": "{% url 'attendee-list' %}",
+					"eventhousing": "{% url 'eventhousing-list' %}",
+					"order": "{% url 'order-list' %}",
+					"boughtitem": "{% url 'boughtitem-list' %}",
+					"item": "{% url 'item-list' %}",
+					"itemimage": "{% url 'itemimage-list' %}",
+					"itemoption": "{% url 'itemoption-list' %}",
+					"orderdiscount": "{% url 'orderdiscount-list' %}",
+					"daguerre": "/daguerre/info/"
+				},
+				eventId: "{{ event.pk }}",
+				data: {
+					editableByUser: {% if editable_by_user %}true{% else %}false{% endif %},
+				}
+			});
 	</script>
 {% endblock %}
 
@@ -59,11 +69,14 @@
 {% block main %}
 	{{ block.super }}
 
-	<div id='ractiveContainer'></div>
+	<div id='AttendeesContainer'></div>
 
-	<script id='ractiveTemplate' type='text/ractive'>
-		{% include 'brambling/event/order/_steps_ractive.html' %}
+	<script id='AttendeesRactive' type='text/ractive'>
 		{% include 'brambling/event/order/_attendees_ractive.html' %}
+	</script>
+
+	<script id='StepbarRactive' type="text/ractive">
+		{% include 'brambling/event/order/_steps_ractive.html' %}
 	</script>
 {% endblock %}
 

@@ -246,24 +246,20 @@
 						if (!att.boughtitems.length) canContinue = false;
 					});
 
-					var steps = thisObj.get('steps');
-
-					if (canContinue) {
-						steps[1].is_completed = true;
-						$.each(steps, function(idx, step) {
-							if (idx > 1 && steps[idx - 1].is_completed) step.is_accessible = true;
-						});
-					} else {
-						steps[1].is_completed = false;
-						$.each(steps, function(idx, step) {
-							if (idx > 1) step.is_accessible = false;
-						});
+					// If this ractive has a stepbar subcomponent, be prepared to update it
+					// accordingly. TODO: the attendees component should not be responsible
+					// for updating the stepbar. Someday we'll want a parent Shop component
+					// to handle that.
+					if (thisObj.components.stepbar) {
+						var stepbar = thisObj.findComponent('stepbar');
+						stepbar.setAccessible(stepbar.getNextAfter('attendees').key, canContinue);
+						stepbar.setCompleted('attendees', canContinue)
 					}
+
 
 					thisObj.set({
 						'attendees': atts,
 						'unassigned_items': unassigned_items,
-						'steps': steps
 					});
 				}
 			});

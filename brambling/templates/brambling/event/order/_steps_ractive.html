@@ -1,9 +1,9 @@
 {# This whole template is verbatim - use ractive, not Django. #}
 {% verbatim %}
 {{#if steps }}
-  <div class="stepbar stepbar-{{ steps.length }}-up {{#if hugSteps}}stepbar-hug-masthead{{/if}}">
+  <div class="stepbar stepbar-{{ steps.length }}-up {{ classes }}">
     {{#steps}}
-      {{#if slug == activeStep}}
+      {{#if key == activeStep}}
         <div class='step current'>{{ name }}</div>
       {{elseif is_accessible && is_completed}}
         <a href='{{ url }}' class='step complete'>
