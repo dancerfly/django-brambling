@@ -105,8 +105,9 @@ class AttendeeFactory(factory.DjangoModelFactory):
         if not create:
             return
 
-        for bought_item in extracted:
-            self.bought_items.add(bought_item)
+        if extracted:
+            for bought_item in extracted:
+                self.bought_items.add(bought_item)
 
 
 class InviteFactory(factory.DjangoModelFactory):
