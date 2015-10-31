@@ -193,7 +193,7 @@ class AttendeeViewSet(viewsets.ModelViewSet):
     permission_classes = [AttendeePermission]
 
     def get_queryset(self):
-        qs = self.queryset.all()
+        qs = self.queryset.all().distinct()
 
         if 'order' in self.request.GET:
             qs = qs.filter(order=self.request.GET['order'])
@@ -250,7 +250,7 @@ class BoughtItemViewSet(viewsets.ModelViewSet):
     permission_classes = [BoughtItemPermission]
 
     def get_queryset(self):
-        qs = self.queryset.all()
+        qs = self.queryset.all().distinct()
 
         if 'order' in self.request.GET:
             qs = qs.filter(order=self.request.GET['order'])
