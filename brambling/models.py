@@ -862,7 +862,7 @@ class Order(AbstractDwollaModel):
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
-    # Admin-only data
+    # Organizer-only data
     notes = models.TextField(blank=True)
 
     objects = OrderManager()
@@ -1459,7 +1459,7 @@ class Attendee(AbstractNamedModel):
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
-    # Admin-only data
+    # Organizer-only data
     notes = models.TextField(blank=True)
 
     def __unicode__(self):
