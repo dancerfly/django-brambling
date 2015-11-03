@@ -1,7 +1,7 @@
 ;(function () {
 	"use strict";
 
-	var QuickFind = window.QuickFind = Ractive.extend({
+	var QuickFind = window.components.QuickFind = Ractive.extend({
 		apiEndpoints: null,
 		eventId: null,
 		data: {

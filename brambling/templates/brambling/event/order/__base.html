@@ -115,10 +115,12 @@
 	<script type="text/javascript">
 		{# TODO: Rewrite this javascript not to use the `target` attribute. Probably to submit forms. #}
 		$(function(){
-			$('a[target]').on('click', function(e){
+			$('body').on('click', 'a[target]', function(e) {
 				var $this = $(this);
-				if ($this.attr('target') === '_blank') return true;
-				$.post($this.attr('target'), function(data){
+				var target = $this.attr('target');
+				if (target === '_blank') return true;
+				$this.removeAttr('target');
+				$.post(target, function(data){
 					if (data.success) {
 						// just refresh for now
 						document.location.reload()
@@ -126,6 +128,7 @@
 						$('.stepbar').after(
 							"<div class='alert alert-dismissable alert-danger'><button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button> " + data.error + "</div>"
 						);
+						$this.attr('target', target);
 					}
 				});
 				e.preventDefault();

@@ -32,48 +32,24 @@
 
 		{# template for additional field forms #}
 		<script type="text/html" class="field-template">
-			<div class='panel panel-default field'>
-				<header class='panel-heading'>
-					<div class='panel-title'>
-						<a href="#{{ formset.empty_form.prefix }}-collapse" data-toggle="collapse">
-							<i class="fa fa-fw fa-chevron-down"></i> Field <span class="count"></span>
-						</a>
-						<div class="actions pull-right"></div>
-					</div>
-				</header>
-				<div class="panel-collapse collapse in" id="{{ formset.empty_form.prefix }}-collapse">
-					<div class='panel-body'>
-						{% form formset.empty_form using "brambling/forms/customformfield.html" %}
-					</div>
-				</div>
+			<div class='list-group-item field'>
+				{% form formset.empty_form using "brambling/forms/customformfield.html" %}
 			</div>
 		</script>
 
-		<div class="field-list panel-group">
-			{% for form in formset.forms %}
-				<div class='panel panel-{% if form.errors %}danger{% else %}default{% endif %} field'>
-					<header class='panel-heading'>
-						<div class='panel-title'>
-							<a href="#{{ form.prefix }}-collapse" title="click to expand" data-toggle="collapse">
-								<i class="fa fa-fw fa-chevron-down"></i> Field <span class="count">{{ forloop.counter }}</span>
-							</a>
-							<div class="actions pull-right"></div>
-						</div>{# /.panel-title #}
-					</header>
-						<div class="panel-collapse collapse{% if form.errors or not form.instance.pk %} in{% endif %}" id="{{ form.prefix }}-collapse">
-							<div class='panel-body'>
-								{% form form using "brambling/forms/customformfield.html" %}
-							</div>
-						</div>
-				</div>
-			{% endfor %}
-		</div>
 
-		<div class='panel panel-default'>
-			<header class='panel-heading'>
-				<div class='panel-title js-formset-add option-add'>
-				</div>{# /.panel-title #}
-			</header>
+		<div class="panel panel-default">
+			<div class='field-list list-group'>
+				{% for form in formset.forms %}
+					<div class='list-group-item list-group-item-{% if form.errors %}danger{% else %}default{% endif %} field'>
+						{% form form using "brambling/forms/customformfield.html" %}
+					</div>
+				{% endfor %}
+			</div>
+			<div class='panel-footer'>
+				<div class='js-formset-add field-add'>
+				</div>
+			</div>
 		</div>
 
 		<button class='btn btn-primary' type="submit">Save</button>
@@ -91,11 +67,11 @@
 
 			var setChoicesDisabled = function(ele) {
 				var $ele = $(ele),
-					$choices = $ele.parent().parent().find('textarea[id$=choices]').parent();
+					$choices = $ele.parent().parent().parent().parent().find('.js-form-choices');
 				if (choice_types.indexOf($ele.val()) !== -1) {
-					$choices.removeClass('hidden');
+					$choices.slideDown();
 				} else {
-					$choices.addClass('hidden');
+					$choices.slideUp();
 				}
 			}
 
@@ -125,10 +101,10 @@
 
 			$('.field-list').formset({
 				prefix: '{{ formset.prefix }}',
-				deleteTrigger: '<a href="#"><i class="fa fa-times"></i></a>',
-				deleteWrapper: '.actions',
-				addTrigger: '<a href="#"><i class="fa fa-fw fa-plus"></i> Add a field</a>',
-				addWrapper: '.js-formset-add.option-add',
+				deleteTrigger: '<a class="btn btn-link" href="#"><i class="fa fa-fw fa-trash"></i></a>',
+				deleteWrapper: '.js-delete-field',
+				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add a field</a>',
+				addWrapper: '.js-formset-add.field-add',
 				formTemplate: '.field-template',
 				sortableHandle: '.panel-heading',
 				sortableField: 'index'

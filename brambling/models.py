@@ -862,7 +862,7 @@ class Order(AbstractDwollaModel):
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
 
-    # Admin-only data
+    # Organizer-only data
     notes = models.TextField(blank=True)
 
     objects = OrderManager()
@@ -1223,22 +1223,35 @@ class Transaction(models.Model):
     def can_refund(self):
         refunded = self.related_transaction_set.filter(
             transaction_type=Transaction.REFUND
-        ).aggregate(refunded=Sum('amount'))['refunded'] or 0
-        return self.amount + refunded > 0
+        ).aggregate(refunded=Sum('amount'))['refunded']
+        # None means there are no refunds, which is relevant
+        # for 0-amount transactions.
+        return refunded is None or self.amount + refunded > 0
 
     def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
         if amount is None:
             amount = self.amount
         if bought_items is None:
-            bought_items = self.bought_items.all()
+            bought_items = self.bought_items.filter(status=BoughtItem.BOUGHT)
 
-        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum'] or 0
-        refundable = self.amount + total_refunds
-        if refundable < amount:
+        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum']
+        if total_refunds is not None:
+            refundable = self.amount + total_refunds
+
+            # If there's no money to refund, just return.
+            # TODO: Long term this should actually be a check of whether
+            # bought_items has length and should apply whether or not
+            # there are already refunds.
+            if refundable == 0:
+                return None
+        else:
+            refundable = self.amount
+
+        # Refundable is the amount that hasn't been refunded from total.
+        # Amount is how much we're trying to refund. If we know amount is greater
+        # than what's left on the transaction, don't go through with it.
+        if amount > refundable:
             raise ValueError("Not enough money available")
-
-        if refundable == 0:
-            return None
 
         refund_kwargs = {
             'order': self.order,
@@ -1254,7 +1267,7 @@ class Transaction(models.Model):
                 event=self.order.event,
                 order=self.order,
                 payment_id=self.remote_id,
-                amount=refundable,
+                amount=amount,
             )
             txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
         elif self.method == Transaction.DWOLLA:
@@ -1262,14 +1275,14 @@ class Transaction(models.Model):
                 order=self.order,
                 event=self.order.event,
                 payment_id=self.remote_id,
-                amount=refundable,
+                amount=amount,
                 pin=dwolla_pin,
             )
             txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
         else:
             txn = Transaction.objects.create(
                 transaction_type=Transaction.REFUND,
-                amount=-1 * refundable,
+                amount=-1 * amount,
                 is_confirmed=True,
                 remote_id='',
                 method=self.method,
@@ -1458,6 +1471,9 @@ class Attendee(AbstractNamedModel):
     other_needs = models.TextField(blank=True)
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
+
+    # Organizer-only data
+    notes = models.TextField(blank=True)
 
     def __unicode__(self):
         return self.get_full_name()

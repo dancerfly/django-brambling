@@ -22,14 +22,18 @@
 	{{ block.super }}
 
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ractive/0.7.3/ractive.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.16.1/URI.js"></script>
 
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
 
-	<script type="text/javascript" src="{% static "brambling/register.ractive.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/lib/ractive-transitions-slide.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/lib/ractive-transitions-fade.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/lib/ractive-events-tap.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/javascript/components/register.ractive.js" %}"></script>
 
 	<script type="text/javascript">
-		var shop = new Shop({
+		var shop = new components.Shop({
 			el: '#ractiveContainer',
 			template: '#ractiveTemplate',
 			apiEndpoints: {
@@ -51,7 +55,8 @@
 			},
 			eventId: "{{ event.pk }}",
 			data: {
-				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %}
+				editableByUser: {% if editable_by_user %}true{% else %}false{% endif %},
+				hugSteps: false
 			}
 		});
 		shop.set('steps', [
@@ -59,7 +64,7 @@
 				{
 					slug: "{{ step.slug }}",
 					name: "{{ step.name }}",
-					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug as step_url %}",
+					url: "{% url step.view_name organization_slug=event.organization.slug event_slug=event.slug %}",
 					is_completed: {% if step.is_completed %}true{% else %}false{% endif %},
 					is_accessible: {% if step.is_accessible %}true{% else %}false{% endif %}
 				}{% if not forloop.last %},{% endif %}
@@ -68,10 +73,17 @@
 	</script>
 {% endblock %}
 
+{% block masthead %}
+	{% include "brambling/event/order/_masthead.html" %}
+{% endblock %}
+
 {% block main %}
+	{{ block.super }}
+
 	<div id='ractiveContainer'></div>
 
 	<script id='ractiveTemplate' type='text/ractive'>
+		{% include "brambling/event/order/_steps_ractive.html" %}
 		{% include "brambling/event/order/_register_ractive.html" %}
 	</script>
 {% endblock main %}

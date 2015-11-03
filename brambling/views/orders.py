@@ -451,15 +451,29 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
     workflow_class = RegistrationWorkflow
 
     def get(self, request, *args, **kwargs):
-        if self.current_step.attendees:
-            return self.render_to_response(self.get_context_data())
-
-        kwargs = {
-            'event_slug': self.event.slug,
-            'organization_slug': self.event.organization.slug,
-        }
-        return HttpResponseRedirect(reverse('brambling_event_attendee_add',
-                                            kwargs=kwargs))
+        if not self.current_step.attendees:
+            kwargs = {
+                'event_slug': self.event.slug,
+                'organization_slug': self.event.organization.slug,
+            }
+            return HttpResponseRedirect(reverse('brambling_event_attendee_add',
+                                                kwargs=kwargs))
+        self.unassigned_items = [item for item in self.current_step.bought_items
+                                 if item.attendee_id is None]
+        # If there's only one attendee, automatically assign items:
+        if len(self.current_step.attendees) == 1:
+            for item in self.unassigned_items:
+                item.attendee = self.current_step.attendees[0]
+                item.save()
+            self.unassigned_items = []
+        # If GET params say to skip this step (i.e., when there's only one
+        # attendee and the user is coming from the attendee form):
+        if request.GET.get('skip'):
+            return HttpResponseRedirect(reverse(
+                                        self.current_step.next_step.view_name,
+                                        kwargs=kwargs
+                                        ))
+        return self.render_to_response(self.get_context_data())
 
     def get_context_data(self, **kwargs):
         context = super(AttendeesView, self).get_context_data(**kwargs)
@@ -467,8 +481,7 @@ class AttendeesView(OrderMixin, WorkflowMixin, TemplateView):
         context.update({
             'errors': self.current_step.errors,
             'attendees': self.current_step.attendees,
-            'unassigned_items': [item for item in self.current_step.bought_items
-                                 if item.attendee_id is None],
+            'unassigned_items': self.unassigned_items,
         })
         return context
 
@@ -493,6 +506,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
         self.object = self.get_object()
         initial = model_to_dict(self.object.saved_attendee) if self.object.saved_attendee else {}
 
+        created = not self.object.pk
         all_valid = True
         self.basic_data_form = self.get_basic_data_form(initial=initial)
 
@@ -513,9 +527,27 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
             self.basic_data_form.save()
             if self.housing_form:
                 self.housing_form.save()
-            return HttpResponseRedirect(self.get_success_url())
+            success_url = self.get_success_url()
+            # If they are only saving a single attendee, add a GET param to
+            # skip rendering the attendee assignment screen. (Received by
+            # AttendeesView above.)
+            if (len(self.workflow.steps['attendees'].attendees) == 1 and
+                    self.request.POST.get('next') != 'add' and
+                    created):
+                success_url = "{0}?skip=1".format(success_url)
+            return HttpResponseRedirect(success_url)
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
+
+    def get_success_url(self):
+        if self.request.POST.get('next') == 'add':
+            view = 'brambling_event_attendee_add'
+        else:
+            view = 'brambling_event_attendee_list'
+        return reverse(view, kwargs={
+            'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
+        })
 
     def get_object(self):
         if 'pk' not in self.kwargs:
@@ -584,16 +616,6 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
                 attendee__order=self.order,
             )
         return context
-
-
-class RemoveAttendeeView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if self.order is None:
-            raise Http404
-
-        Attendee.objects.filter(order=self.order, pk=kwargs['pk']).delete()
-        return JsonResponse({'success': True})
 
 
 class SurveyDataView(OrderMixin, WorkflowMixin, UpdateView):

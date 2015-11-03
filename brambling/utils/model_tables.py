@@ -403,7 +403,7 @@ class AttendeeTable(CustomDataTable):
           'environment_avoid', 'environment_cause', 'person_prefer',
           'person_avoid', 'other_needs')),
         ('Miscellaneous',
-         ('liability_waiver', 'photo_consent')),
+         ('liability_waiver', 'photo_consent', 'notes')),
     )
 
     label_overrides = {
@@ -521,8 +521,8 @@ class AttendeeTable(CustomDataTable):
 class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
-         ('code', 'person', 'pending', 'confirmed', 'purchased_items',
-          'refunded_items', 'completed_date')),
+         ('code', 'person', 'pending', 'confirmed', 'balance',
+          'purchased_items', 'refunded_items', 'completed_date', 'notes')),
     )
     survey_fieldsets = (
         ('Survey',

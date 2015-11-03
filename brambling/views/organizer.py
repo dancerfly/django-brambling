@@ -1,4 +1,3 @@
-import csv
 import itertools
 import logging
 import pprint
@@ -21,12 +20,14 @@ from floppyforms.__future__.models import modelform_factory
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 import requests
+import unicodecsv as csv
 
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
                                        CustomFormForm, CustomFormFieldFormSet,
-                                       OrderNotesForm, OrganizationPaymentForm)
+                                       OrderNotesForm, OrganizationPaymentForm,
+                                       AttendeeNotesForm)
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -935,6 +936,8 @@ class OrderDetailView(DetailView):
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.discount_form = ManualDiscountForm(order=self.order)
         self.notes_form = OrderNotesForm(instance=self.order)
+        self.attendee_forms = [AttendeeNotesForm(instance=attendee)
+                               for attendee in self.order.attendees.prefetch_related('bought_items')]
         if self.request.method == 'POST':
             if 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
@@ -946,7 +949,13 @@ class OrderDetailView(DetailView):
             elif 'is_notes_form' in self.request.POST:
                 self.notes_form = OrderNotesForm(instance=self.order,
                                                  data=self.request.POST)
-        return self.payment_form, self.discount_form, self.notes_form
+            elif 'is_attendee_form' in self.request.POST:
+                for form in self.attendee_forms:
+                    if str(form.instance.pk) == self.request.POST['attendee_id']:
+                        form.data = self.request.POST
+                        form.is_bound = True
+                        break
+        return [self.payment_form, self.discount_form, self.notes_form] + self.attendee_forms
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
@@ -966,7 +975,7 @@ class OrderDetailView(DetailView):
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'active': active,
-            'attendees': self.order.attendees.all(),
+            'attendee_forms': self.attendee_forms,
         })
         context.update(self.order.get_summary_data())
         return context

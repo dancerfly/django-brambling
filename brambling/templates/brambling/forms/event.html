@@ -8,19 +8,21 @@
 	<div class="panel-body">
 		{% formrow form.name %}
 		{% if form.slug %}
-			{% formrow form.slug %}
+			{% formrow form.slug with prepend="https://dancerfly.com/"|add:organization.slug|add:"/" label="URL" %}
 		{% else %}
 			<div class="form-group">
 				<label class="control-label" for="id_slug">
-				Slug
-				 <span class="required">*</span>
+				URL
 				</label>
-				<input class="form-control" type="text" value="{{ event.slug }}" disabled>
+				<div class='input-group'>
+					<div class='input-group-addon'>https://dancerfly.com/{{ organization.slug }}/</div>
+					<input class="form-control" type="text" value="{{ event.slug }}" disabled>
+				</div>
 				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
 			</div>
 		{% endif %}
-		{% formrow form.website_url %}
-		{% formrow form.facebook_url %}
+		{% formrow form.website_url with help_text="If your event has its own website, enter the URL here and we'll link to it." %}
+		{% formrow form.facebook_url with help_text="If your event is on Facebook, enter that URL here and we'll link to it." %}
 		{% formrow form.description %}
 		{% formrow form.banner_image with help_text="Images will be scaled and cropped to 940 x 300 pixels.<br />Supported formats: .jpg, .png, .gif" %}
 		{% formrow form.dance_styles %}
@@ -36,10 +38,10 @@
 	<div class="panel-body">
 		<div class='row'>
 			<div class='col-sm-4'>
-				{% formrow form.start_date %}
+				{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
 			</div>
 			<div class='col-sm-4'>
-				{% formrow form.end_date %}
+				{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
 			</div>
 			<div class='col-sm-4'>
 				<label for='startEnd'>Add start / end times</label><br />
@@ -48,10 +50,10 @@
 		</div>
 		<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
 			<div class='col-sm-4'>
-				{% formrow form.start_time %}
+				{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
 			</div>
 			<div class='col-sm-4'>
-				{% formrow form.end_time %}
+				{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
 			</div>
 		</div>
 

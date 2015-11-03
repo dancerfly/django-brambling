@@ -60,7 +60,7 @@
 
 	{# template for additional item option forms #}
 	<script type="text/html" class="item-option-template">
-		<div class='list-group-item item-option item-option-template'>
+		<div class='list-group-item item-option'>
 			{% form itemoption_formset.empty_form using "brambling/forms/itemoption.html" %}
 		</div>
 	</script>
@@ -75,7 +75,7 @@
 		</div>
 		<div class="panel-footer">
 			<div class='js-formset-add option-add'>
-			</div>{# /.list-group-item #}
+			</div>
 		</div>
 	</div>
 
