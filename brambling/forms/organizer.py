@@ -497,3 +497,9 @@ class OrderNotesForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = ('notes',)
+
+
+class AttendeeNotesForm(forms.ModelForm):
+    class Meta:
+        model = Attendee
+        fields = ('notes',)

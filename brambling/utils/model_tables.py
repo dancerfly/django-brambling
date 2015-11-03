@@ -405,7 +405,7 @@ class AttendeeTable(CustomDataTable):
         ('Order',
          ('order_code', 'order_placed_by')),
         ('Miscellaneous',
-         ('liability_waiver', 'photo_consent')),
+         ('liability_waiver', 'photo_consent', 'notes')),
     )
 
     label_overrides = {
@@ -517,7 +517,7 @@ class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
          ('code', 'person', 'balance', 'purchased_items',
-          'refunded_items', 'completed_date')),
+          'refunded_items', 'completed_date', 'notes')),
     )
     survey_fieldsets = (
         ('Survey',
