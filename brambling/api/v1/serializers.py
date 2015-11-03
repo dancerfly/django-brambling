@@ -1,6 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.fields import empty
 
 from brambling.models import (Order, EventHousing, BoughtItem,
                               EnvironmentalFactor, HousingCategory,
@@ -85,6 +86,7 @@ class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
     )
     order = serializers.HyperlinkedRelatedField(view_name='order-detail', read_only=True)
     link = serializers.HyperlinkedIdentityField(view_name='attendee-detail')
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Attendee
@@ -92,10 +94,13 @@ class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
             'id', 'link', 'order', 'given_name', 'middle_name', 'surname',
             'name_order', 'basic_completed', 'email', 'phone',
             'liability_waiver', 'photo_consent', 'housing_status',
-            'housing_completed', 'nights', 'ef_cause', 'ef_avoid',
+            'housing_completed', 'ef_cause', 'ef_avoid',
             'person_prefer', 'person_avoid', 'housing_prefer',
-            'housing_avoid', 'other_needs',
+            'other_needs', 'full_name',
         )
+
+    def get_full_name(self, obj):
+        return obj.get_full_name()
 
 
 class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
@@ -131,6 +136,7 @@ class EventHousingSerializer(serializers.HyperlinkedModelSerializer):
 class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
     status = serializers.ChoiceField(choices=(BoughtItem.STATUS_CHOICES), default=BoughtItem.RESERVED)
     order = serializers.HyperlinkedRelatedField(view_name='order-detail', queryset=Order.objects.all())
+    attendee = serializers.HyperlinkedRelatedField(view_name='attendee-detail', queryset=Attendee.objects.all(), allow_null=True)
     link = serializers.HyperlinkedIdentityField(view_name='boughtitem-detail')
     item_name = serializers.ReadOnlyField()
     item_description = serializers.ReadOnlyField()
@@ -143,6 +149,8 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
         if self.instance is not None:
             # If this is not a creation, set various fields to read-only
             self.fields['status'].read_only = True
+            # Workaround for https://github.com/tomchristie/django-rest-framework/issues/3565
+            self.fields['status'].default = empty
             self.fields['order'].read_only = True
             self.fields['item_option'].read_only = True
 

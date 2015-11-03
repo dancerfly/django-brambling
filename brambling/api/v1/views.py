@@ -187,14 +187,16 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.filter(event=event)
 
 
-
 class AttendeeViewSet(viewsets.ModelViewSet):
     queryset = Attendee.objects.all()
     serializer_class = AttendeeSerializer
     permission_classes = [AttendeePermission]
 
     def get_queryset(self):
-        qs = self.queryset.all()
+        qs = self.queryset.all().distinct()
+
+        if 'order' in self.request.GET:
+            qs = qs.filter(order=self.request.GET['order'])
 
         # Superusers can see all the things.
         if self.request.user.is_superuser:
@@ -248,7 +250,13 @@ class BoughtItemViewSet(viewsets.ModelViewSet):
     permission_classes = [BoughtItemPermission]
 
     def get_queryset(self):
-        qs = self.queryset.all()
+        qs = self.queryset.all().distinct()
+
+        if 'order' in self.request.GET:
+            qs = qs.filter(order=self.request.GET['order'])
+
+        if 'status[]' in self.request.GET:
+            qs = qs.filter(status__in=self.request.GET.getlist('status[]'))
 
         # Superusers can see all the things.
         if self.request.user.is_superuser:

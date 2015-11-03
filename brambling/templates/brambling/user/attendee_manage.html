@@ -16,7 +16,7 @@
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
-					<h4 class="panel-title">Profile Information</h4>
+					<h4 class="panel-title">Basic Information</h4>
 				</header>
 				<div class="panel-body">
 					<div class="row">
@@ -38,6 +38,8 @@
 					{% if form.instance.name_order == "GMS" and form.instance.middle_name == "" %}
 						<small><a href="#nameOptions" data-toggle="collapse" class="pull-right more-name-options"><i class="fa fa-plus"></i> More Name Options</a></small>
 					{% endif %}
+					{% formrow form.email %}
+					{% formrow form.phone %}
 				</div>
 			</div>{# /.panel #}
 			<div class="panel panel-default">
@@ -45,12 +47,24 @@
 					<h4 class="panel-title">Environmental factors</h4>
 				</header>
 				<div class="panel-body">
-					{% formrow form.dietary_restrictions %}
+					{% formrow form.housing_prefer %}
+					{% formrow form.ef_cause %}
+					{% formrow form.ef_avoid %}
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">People and Other Needs</h4>
+				</header>
+				<div class="panel-body">
+					{% formrow form.person_prefer %}
+					{% formrow form.person_avoid %}
+					{% formrow form.other_needs %}
 				</div>
 			</div>
 		{% endform %}
 		<button class="btn btn-primary" type="submit">Save changes</button>
-		<a href="" class="btn btn-link">Cancel</a>
+		<a href="../" class="btn btn-link">Cancel</a>
 	</form>
 
 {% endblock %}

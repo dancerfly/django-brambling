@@ -17,7 +17,6 @@ from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
                                      stripe_prep, stripe_charge)
 
 
-CONFIRM_ERROR = "Please check this box to confirm the value is correct"
 STRIPE_API_ERROR = mark_safe("We're having trouble connecting to the payment "
                              "processor. Sorry for the inconvenience! "
                              "<a class='alert-link' href='https://status.stripe.com/'>Check their system status</a> and try again later.")
@@ -51,8 +50,6 @@ class CustomDataForm(forms.ModelForm):
 
 
 class AttendeeBasicDataForm(CustomDataForm):
-    items = forms.ModelMultipleChoiceField(BoughtItem, required=False)
-
     class Meta:
         model = Attendee
         exclude = ()
@@ -64,21 +61,6 @@ class AttendeeBasicDataForm(CustomDataForm):
         self.order = order
         super(AttendeeBasicDataForm, self).__init__(*args, **kwargs)
         self.fields['liability_waiver'].required = True
-        items = self.order.bought_items.filter(
-            Q(attendee__isnull=True) | Q(attendee=self.instance)
-        ).exclude(status__in=(BoughtItem.REFUNDED, BoughtItem.TRANSFERRED))
-        self.has_items = bool(items)
-        if self.has_items:
-            self.fields['items'].queryset = items
-            if self.instance.pk:
-                self.fields['items'].initial = [
-                    item for item in items
-                    if item.attendee_id == self.instance.pk
-                ]
-            else:
-                self.fields['items'].initial = items
-        else:
-            del self.fields['items']
 
         if 'housing_status' in self.fields:
             self.fields['housing_status'].label = "Housing"
@@ -102,13 +84,7 @@ class AttendeeBasicDataForm(CustomDataForm):
     def save(self):
         self.instance.order = self.order
         self.instance.basic_completed = True
-        instance = super(AttendeeBasicDataForm, self).save()
-        if self.has_items:
-            old_additional = self.order.bought_items.filter(attendee=instance)
-            old_additional.update(attendee=None)
-            if self.cleaned_data.get('items'):
-                self.cleaned_data['items'].update(attendee=instance)
-        return instance
+        return super(AttendeeBasicDataForm, self).save()
 
 
 class AttendeeHousingDataForm(CustomDataForm):
@@ -119,32 +95,6 @@ class AttendeeHousingDataForm(CustomDataForm):
 
     def __init__(self, *args, **kwargs):
         super(AttendeeHousingDataForm, self).__init__(*args, **kwargs)
-
-        if self.instance.person and self.instance.person == self.instance.order.person:
-            self.fields['save_as_defaults'] = forms.BooleanField(initial=True, required=False)
-
-            if self.instance.person and not self.instance.housing_completed:
-                if self.instance.person.modified_directly:
-                    self.fields['ef_cause_confirm'] = forms.BooleanField(
-                        required=True,
-                        error_messages={'required': CONFIRM_ERROR},
-                        label="Is this still correct?",
-                    )
-                    self.fields['ef_avoid_confirm'] = forms.BooleanField(
-                        required=True,
-                        error_messages={'required': CONFIRM_ERROR},
-                        label="Is this still correct?",
-                    )
-
-                owner = self.instance.person
-                self.initial.update({
-                    'ef_cause': owner.ef_cause.all(),
-                    'ef_avoid': owner.ef_avoid.all(),
-                    'person_prefer': owner.person_prefer,
-                    'person_avoid': owner.person_prefer,
-                    'housing_prefer': owner.housing_prefer.all(),
-                    'other_needs': owner.other_needs,
-                })
 
         self.fields['nights'].required = True
         event = self.instance.order.event
@@ -157,20 +107,7 @@ class AttendeeHousingDataForm(CustomDataForm):
 
     def save(self):
         self.instance.housing_completed = True
-        instance = super(AttendeeHousingDataForm, self).save()
-        if (self.instance.person and
-                self.instance.person == self.instance.order.person and
-                self.cleaned_data['save_as_defaults']):
-            person = self.instance.person
-            person.ef_cause = instance.ef_cause.all()
-            person.ef_avoid = instance.ef_avoid.all()
-            person.person_prefer = instance.person_prefer
-            person.person_avoid = instance.person_avoid
-            person.housing_prefer = instance.housing_prefer.all()
-            person.other_needs = instance.other_needs
-            person.modified_directly = True
-            person.save()
-        return instance
+        return super(AttendeeHousingDataForm, self).save()
 
 
 class SurveyDataForm(CustomDataForm):
@@ -254,25 +191,9 @@ class HostingForm(MemoModelForm, CustomDataForm):
                 self.initial.update({
                     'contact_name': person.get_full_name(),
                     'contact_email': person.email,
-                    'contact_phone': person.phone,
                 })
             home = self.instance.home
             if home is not None:
-                self.fields['ef_present_confirm'] = forms.BooleanField(
-                    required=True,
-                    error_messages={'required': CONFIRM_ERROR},
-                    label="Is this still correct?",
-                )
-                self.fields['ef_avoid_confirm'] = forms.BooleanField(
-                    required=True,
-                    error_messages={'required': CONFIRM_ERROR},
-                    label="Is this still correct?",
-                )
-                self.fields['housing_categories_confirm'] = forms.BooleanField(
-                    required=True,
-                    error_messages={'required': CONFIRM_ERROR},
-                    label="Is this still correct?",
-                )
                 self.initial.update({
                     'address': home.address,
                     'address_2': home.address_2,

@@ -2,9 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import Count
 from brambling.models import (Person, Event, DanceStyle,
-                              EnvironmentalFactor, DietaryRestriction,
-                              HousingCategory, CustomForm, CustomFormField,
-                              Organization, Order)
+                              EnvironmentalFactor, HousingCategory, CustomForm,
+                              CustomFormField, Organization, Order)
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
 
 
@@ -30,14 +29,6 @@ class PersonAdmin(UserAdmin):
         )}),
         ('Permissions', {'fields': (
             ('is_active', 'is_superuser',), 'user_permissions', 'groups'
-        )}),
-        ('Registration Settings', {'fields': (
-            'dietary_restrictions',
-            ('ef_cause', 'ef_avoid'),
-            'person_prefer',
-            'person_avoid',
-            'housing_prefer',
-            'other_needs',
         )}),
         ('Financial Transactions', {'fields': (
             ('stripe_customer_id', 'stripe_test_customer_id'),
@@ -226,6 +217,5 @@ admin.site.register(Event, EventAdmin)
 admin.site.register(CustomForm, CustomFormAdmin)
 admin.site.register(DanceStyle)
 admin.site.register(EnvironmentalFactor)
-admin.site.register(DietaryRestriction)
 admin.site.register(HousingCategory)
 admin.site.register(Order)

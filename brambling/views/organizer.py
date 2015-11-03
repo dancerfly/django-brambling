@@ -1,4 +1,3 @@
-import csv
 import itertools
 import logging
 import pprint
@@ -21,6 +20,7 @@ from floppyforms.__future__.models import modelform_factory
 from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 import requests
+import unicodecsv as csv
 
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
@@ -80,6 +80,7 @@ class OrganizationUpdateView(UpdateView):
 class OrganizationPaymentView(OrganizationUpdateView):
     form_class = OrganizationPaymentForm
     template_name = 'brambling/organization/payment.html'
+    success_view_name = 'brambling_organization_update_payment'
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationPaymentView, self).get_context_data(**kwargs)

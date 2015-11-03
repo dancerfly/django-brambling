@@ -15,24 +15,63 @@
 	<div class="row">
 		<div class='col-md-4'>
 			<ul class='list-group'>
-				{# these are BoughtItems #}
 				{% for att in attendees %}
-					{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
-					<a href="{{ attendee_url }}"class='list-group-item{% if att == attendee %} active{% elif att.attendee_id %} disabled{% endif %}'>
-						<strong>{{ att.get_full_name }}</strong>
-					</a>
+					{% if att == attendee %}
+						<span class='list-group-item active'>
+							<strong>{{ att.get_full_name }}</strong>
+						</span>
+					{% else %}
+						{% url "brambling_event_attendee_edit" pk=att.pk event_slug=event.slug organization_slug=event.organization.slug as attendee_url %}
+						<a href="{{ attendee_url }}"class='list-group-item'>
+							<strong>{{ att.get_full_name }}</strong>
+						</a>
+					{% endif %}
 				{% endfor %}
+				{% if attendee.pk %}
+					<a class='list-group-item' href="{% url 'brambling_event_attendee_add' event_slug=event.slug organization_slug=event.organization.slug %}">
+						<strong><i class='fa fa-fw fa-plus'></i> Add an attendee</strong>
+					</a>
+				{% else %}
+					<span class='list-group-item active'>
+						<strong>{% if saved_attendee %}{{ saved_attendee.get_full_name }}{% else %}New Attendee{% endif %}</strong>
+					</span>
+				{% endif %}
 			</ul>
+
+			<a class='btn btn-primary btn-block btn-lg' href='../'>
+				Return to list
+			</a>
 		</div>
 		<div class="col-md-8">
 			<h3 class="margin-leader-0">
 				{% if attendee.pk %}
 					<span class="text-muted">Attendee information for</span><br>
 					{{ attendee.get_full_name }}
+				{% elif saved_attendee %}
+					<span class="text-muted">Attendee information for</span><br>
+					{{ saved_attendee.get_full_name }}
+				{% elif not basic_data_form.data %}
+					Prefill Attendee Details
 				{% else %}
 					New Attendee
 				{% endif %}
 			</h3>
+
+			{% if not saved_attendee and not basic_data_form.data and saved_attendees %}
+				<p>You can manage your saved attendee details in <a href="" target="_blank">your settings</a>.</p>
+				<div class="list-group margin-trailer">
+					{% for saved_attendee in saved_attendees %}
+						<div class="list-group-item">
+							<strong>{{ saved_attendee.get_full_name }}</strong> ({{ saved_attendee.email }})
+							<div class="pull-right">
+								<a href="{% url 'brambling_user_attendee_edit' pk=saved_attendee.pk %}" class='btn btn-xs btn-default' target='_blank'><i class='fa fa-pencil'></i> Edit</a>
+								<a href="{{ request.path }}?saved_attendee={{ saved_attendee.pk }}" class='btn btn-xs btn-success js-hide-form'>Use details <i class='fa fa-chevron-right'></i></a>
+							</div>
+						</div>
+					{% endfor %}
+					<a href="#" class="js-show-form list-group-item">Don’t prefill <i class="fa fa-chevron-right pull-right"></i></a>
+				</div>
+			{% endif %}
 
 			{% if basic_data_form.errors %}
 				{% include "brambling/forms/_top_error_list.html" with form=basic_data_form %}
@@ -40,7 +79,7 @@
 				{% include "brambling/forms/_top_error_list.html" with form=housing_form %}
 			{% endif %}
 
-			<form action="{{ request.path }}" method="post" novalidate>
+			<form id='attendee_form' action="{{ request.path }}{% if saved_attendee and not object.pk %}?saved_attendee={{ saved_attendee.pk }}{% endif %}" method="post" novalidate {% if not saved_attendee and not basic_data_form.data and saved_attendees %} style='display:none;'{% endif %}>
 				{% csrf_token %}
 				{% form basic_data_form using %}
 					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
@@ -66,8 +105,6 @@
 					<a href="#extraName" data-toggle="collapse" class="{% if masthead %}masthead-link {% endif %}pull-right more-name-options"><small><i class="fa fa-plus"></i> More Name Options</small></a>
 					{% formrow basic_data_form.email %}
 					{% formrow basic_data_form.phone %}
-
-					{% formrow basic_data_form.items %}
 
 					{% if basic_data_form.housing_status %}
 						{% formrow basic_data_form.housing_status %}
@@ -107,11 +144,9 @@
 								<div class='row'>
 									<div class='col-md-6'>
 										{% formrow housing_form.ef_cause %}
-										{% if housing_form.ef_cause_confirm %}{% formrow housing_form.ef_cause_confirm %}{% endif %}
 									</div>
 									<div class='col-md-6'>
 										{% formrow housing_form.ef_avoid %}
-										{% if housing_form.ef_avoid_confirm %}{% formrow housing_form.ef_avoid_confirm %}{% endif %}
 									</div>
 								</div>
 
@@ -125,15 +160,20 @@
 								{% for field in housing_form.custom_fields %}
 									{% formrow field %}
 								{% endfor %}
-
-								{% formrow housing_form.save_as_defaults %}
-
 							{% endform %}
 						</div>
 					</div>
 				{% endif %}
-				<button class='btn btn-primary' type="submit">{% if attendee.pk %}Save changes{% else %}Save and continue{% endif %}</button>
-				{% if attendee.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
+				{% if attendee.pk %}
+					<button class='btn btn-primary' type="submit" name='next' value='review'>Save changes</button>
+					<a href="../" class="btn btn-link">Cancel</a>
+				{% else %}
+					<button class='btn btn-primary' type="submit" name='next' value='review'>Continue</button>
+					<button class='btn btn-default' type="submit" name='next' value='add'>Register another attendee</button>
+					{% if attendees.count > 0 %}
+						<a href="../" class="btn btn-link">Cancel</a>
+					{% endif %}
+				{% endif %}
 			</form>
 		</div>
 	</div>
@@ -151,5 +191,11 @@
 		};
 		$('input[name=basic-housing_status]').on('click', toggleHousingForm);
 		toggleHousingForm();
+
+		$('body').on('click', '.js-hide-form', function () {$('#attendee_form').slideUp();});
+		$('body').on('click', '.js-show-form', function () {
+			$(this).addClass('active');
+			$('#attendee_form').slideDown();
+		});
 	</script>
 {% endblock %}
