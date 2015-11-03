@@ -59,7 +59,7 @@ $(function() {
 
     // In the absense of a good timepicker or server-side time-parsing, add help text to time fields.
     if (!Modernizr.inputtypes.time) {
-        $('input[type="time"]').after('<p class="help-block">24-hour format, e.g., 13:45.</p>')
+        $('input[type="time"]').parent('.input-group').after('<p class="help-block">24-hour format, e.g., 13:45.</p>')
     }
 
     // Keep an orange line at the top when you scroll down
