@@ -28,23 +28,19 @@
 <div class="panel-group">
 	<div class="panel panel-default">
 		<header class="panel-heading">
-			<a href="#collapseAdvanced" data-toggle="collapse">
-				<h4 class="panel-title"><i class="fa fa-chevron-down"></i> Advanced options</h4>
-			</a>
+			<h4 class="panel-title">Availability</h4>
 		</header>
-		<div class="panel-collapse collapse" id="collapseAdvanced">
-			<div class="panel-body">
-				{% timezone event.timezone %}
-				{% get_current_timezone as TIME_ZONE_CURRENT %}
-				<div class="row">
-					<div class="col-md-6">
-						{% formrow form.available_start %}
-						<div class='help-block'>Timezone: {{ TIME_ZONE_CURRENT }}</div>
-					</div>
-					<div class="col-md-6">{% formrow form.available_end %}</div>
+		<div class="panel-body">
+			{% timezone event.timezone %}
+			{% get_current_timezone as TIME_ZONE_CURRENT %}
+			<div class="row">
+				<div class="col-md-6">
+					{% formrow form.available_start with prepend="<i class='fa fa-fw fa-calendar'></i>" label="Start" %}
+					<div class='help-block'>Timezone: {{ TIME_ZONE_CURRENT }}</div>
 				</div>
-				{% endtimezone %}
+				<div class="col-md-6">{% formrow form.available_end with prepend="<i class='fa fa-fw fa-calendar'></i>" label="End" %}</div>
 			</div>
+			{% endtimezone %}
 		</div>
 	</div>
 </div>
