@@ -4,18 +4,46 @@
 {% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 {% block rows %}
-	{% formrow form.name %}
-	{% formrow form.field_type %}
-	{% formrow form.default %}
-	{% formrow form.required %}
-	{% formrow form.help_text %}
-	{% formrow form.choices %}
-	<div class='row js-hide'>
-		<div class='col-md-6'>{% formrow form.index %}</div>
-		<div class='col-md-6'>{% formrow form.DELETE %}</div>
+	<div class='row'>
+		<div class='col-sm-1 hidden-xs'>
+			<span class="js-sortable-handle btn btn-link btn-block a-secret pull-right"><i class="fa fa-fw fa-bars"></i></span>
+		</div>
+		<div class='margin-trailer-half-xs col-sm-4'>
+			{% formrow form.name using "brambling/forms/rows/no_label.html" with placeholder="Do you snore?" %}
+		</div>
+		<div class='margin-trailer-half-xs col-sm-3'>
+			{% formrow form.field_type using "brambling/forms/rows/no_label.html" %}
+		</div>
+		<div class="col-sm-3">
+			{% formrow form.required %}
+		</div>
+		<div class='col-sm-1 js-delete-field'>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class='col-sm-5 col-sm-offset-1'>
+			{% formrow form.default %}
+		</div>
+		<div class='col-sm-6'>
+			{% formrow form.help_text %}
+		</div>
+	</div>
+
+
+	<div class="row js-form-choices" style="display:none;">
+		<div class='col-sm-11 col-sm-offset-1'>
+			{% formrow form.choices %}
+		</div>
 	</div>
 
 	{% for field in form.hidden_fields %}
 		{% formfield field %}
 	{% endfor %}
+	{# The following form fields are controlled with javascript: #}
+	<div class='hide'>
+		{% formrow form.index %}
+		{# Don't render delete box if this is a dynamic form. We'll delete those by removing the DOM element with javascript. #}
+		{% if not "__prefix__" in form.prefix %}{% formrow form.DELETE %}{% endif %}
+	</div>
 {% endblock %}
