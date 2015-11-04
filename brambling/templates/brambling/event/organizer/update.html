@@ -1,9 +1,295 @@
+{% load floppyforms %}
 {% extends 'brambling/event/organizer/__narrow.html' %}
 
 {% block main %}
 	{{ block.super }}
 
-	{% include "brambling/event/organizer/_form.html" %}
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Information</h4>
+				</header>
+				<div class="panel-body">
+					{% formrow form.name %}
+					{% if form.slug %}
+						{% formrow form.slug with prepend="https://dancerfly.com/"|add:organization.slug|add:"/" label="URL" %}
+					{% else %}
+						<div class="form-group">
+							<label class="control-label" for="id_slug">
+							URL
+							</label>
+							<div class='input-group'>
+								<div class='input-group-addon'>https://dancerfly.com/{{ organization.slug }}/</div>
+								<input class="form-control" type="text" value="{{ event.slug }}" disabled>
+							</div>
+							<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+						</div>
+					{% endif %}
+					{% formrow form.website_url with help_text="If your event has its own website, enter the URL here and we'll link to it." %}
+					{% formrow form.facebook_url with help_text="If your event is on Facebook, enter that URL here and we'll link to it." %}
+					{% formrow form.description %}
+					{% formrow form.banner_image with help_text="Images will be scaled and cropped to 940 x 300 pixels.<br />Supported formats: .jpg, .png, .gif" %}
+					{% formrow form.dance_styles %}
+					{% formrow form.has_dances %}
+					{% formrow form.has_classes %}
+				</div>{# /.panel-body #}
+			</div>{# /.panel #}
+
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Details</h4>
+				</header>
+				<div class="panel-body">
+					<div class='row'>
+						<div class='col-sm-4'>
+							{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+						</div>
+						<div class='col-sm-4'>
+							{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+						</div>
+						<div class='col-sm-4'>
+							<label for='startEnd'>Add start / end times</label><br />
+							<input type='checkbox' id='startEnd'{% if event.start_time or event.end_time %} checked{% endif %}>
+						</div>
+					</div>
+					<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
+						<div class='col-sm-4'>
+							{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+						</div>
+						<div class='col-sm-4'>
+							{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-sm-5">
+							{% formrow form.city %}
+						</div>
+						<div class="col-sm-3">
+							{% formrow form.state_or_province %}
+						</div>
+						<div class="col-sm-4">
+							{% formrow form.country %}
+						</div>
+					</div>{# /.row #}
+
+					{% formrow form.timezone %}
+					{% formrow form.currency %}
+				</div>{# /.panel-body #}
+			</div>{# /.panel #}
+
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Registration</h4>
+				</header>
+				<div class="panel-body">
+					{% if form.instance.is_published %}
+						{% formrow form.privacy %}
+					{% else %}
+						{% formrow form.privacy with help_text="This setting only has an effect once the event is published. For now, the event is only visible to admins." %}
+					{% endif %}
+					<div id="invite-info">
+						{% if not event.is_published %}
+							<p class='help-block'>You can send out invitations after publishing the event.</p>
+						{% else %}
+							<p>The following invitations to attend this event are outstanding.</p>
+							<div class="table-responsive">
+								<table class='table table-striped'>
+									<tbody>
+										{% for invite in event.get_invites %}
+											<tr>
+												<th>{{ invite.email }}</th>
+												<td>
+													{% if invite.is_sent %}
+														<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+													{% else %}
+														<i class='fa fa-fw fa-envelope'></i> Not sent
+													{% endif %}
+												</td>
+												<td>
+													<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+													<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+												</td>
+											</tr>
+										{% empty %}
+											<tr>
+												<td><em>There are no outstanding invitations. Either you haven't sent any or they've all been accepted!</em></td>
+											</tr>
+										{% endfor %}
+									</tbody>
+								</table>
+							</div>
+							{% formrow form.invite_attendees %}
+						{% endif %}
+					</div>
+					{% formrow form.cart_timeout %}
+					{% formrow form.transfers_allowed %}
+					<div class='form-group'>
+						{% with field=form.collect_housing_data %}
+							<div class='checkbox'>
+								<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+								<small><a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-html="true" data-content="
+									{% filter force_escape %}
+										<p>If checked, attendees will be asked whether they would like to request or offer housing and presented with additional housing-related forms based on their selection.</p>
+									{% endfilter %}
+								" tabindex="-1">What is housing data?</a></small>
+							</div>
+						{% endwith %}
+						{% with field=form.collect_survey_data %}
+							<div class='checkbox'>
+								<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+								<small><a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-html="true" data-content="
+									{% filter force_escape %}
+										<p>If checked, attendees will be presented with the following questions upon registration:</p>
+										<ul>
+											<li>How did you hear about this event?</li>
+											<li>Would you like to distribute promotional materials?</li>
+										</ul>
+									{% endfilter %}
+								" tabindex="-1">What is the survey?</a></small>
+							</div>
+						{% endwith %}
+					</div>
+					{% formrow form.liability_waiver %}
+				</div>{# /.panel-body #}
+			</div>{# /.panel #}
+
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Editors</h4>
+				</header>
+				<div class="panel-body">
+
+					<p>
+						The following people can edit <em>all</em> events run by <strong>{{ event.organization }}</strong>.
+						{% if request.user == organization.owner %}
+							This list can be updated in the <a href="{% url 'brambling_organization_update_permissions' organization_slug=organization.slug %}">organization settings</a>.
+						{% else %}
+							Only the organization owner can change this list.
+						{% endif %}
+					</p>
+
+					<div class="table-responsive">
+						<table class='table table-striped'>
+							<tbody>
+								<tr>
+									<th>{{ organization.owner.get_full_name }}</th>
+									<td>{{ organization.owner.email }}</td>
+									<td><i class='fa fa-fw fa-lock'></i> Owner</td>
+									{% if organization_editable_by %}<td></td>{% endif %}
+								</tr>
+								{% for editor in organization.editors.all %}
+									<tr>
+										<th>{{ editor.get_full_name }}</th>
+										<td>{{ editor.email }}</td>
+										<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
+										{% if organization_editable_by %}<td></td>{% endif %}
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+
+					<hr />
+
+					<p>The following people can edit this event. Only organization owners and editors (listed above) can change this list.</p>
+
+					<div class="table-responsive">
+						<table class='table table-striped'>
+							<tbody>
+								{% if event.pk %}
+									{% for editor in event.additional_editors.all %}
+										<tr>
+											<th>{{ editor.get_full_name }}</th>
+											<td>{{ editor.email }}</td>
+											<td><i class='fa fa-fw fa-pencil'></i> Editor (Event)</td>
+											{% if organization_editable_by %}
+												<td>
+													<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug organization_slug=event.organization.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+												</td>
+											{% endif %}
+										</tr>
+									{% endfor %}
+								{% endif %}
+								{% for invite in event.get_editor_invites %}
+									<tr>
+										<th>{{ invite.email }}</th>
+										<td>{{ invite.email }}</td>
+										<td>
+											{% if invite.is_sent %}
+												<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+											{% else %}
+												<i class='fa fa-fw fa-envelope'></i> Not sent
+											{% endif %}
+										</td>
+										{% if organization_editable_by %}
+											<td>
+												<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+												<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+											</td>
+										{% endif %}
+									</tr>
+								{% empty %}
+									{% if not event.pk or not event.additional_editors.exists %}
+										<tr>
+											<td><em>This event does not have additional editors.</em></td>
+										</tr>
+									{% endif %}
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+
+					{% formrow form.editors with label="Invite more editors" %}
+				</div>{# /.panel-body #}
+			</div>{# /.panel #}
+
+
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Payment</h4>
+				</header>
+				<div class="panel-body">
+					{% if organization_editable_by %}
+						<p>Payment methods can be managed in the <a href="{% url 'brambling_organization_update_payment' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
+					{% else %}
+						Payment methods can only be updated by people with permission to edit the organization.
+					{% endif %}
+
+					<div class="row">
+						{% with stripe=event.stripe_connected dwolla=event.dwolla_connected check=event.organization.check_payment_allowed %}
+							<div class="col-sm-4"><div class='alert {% if stripe %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if stripe %}fa-check{% else %}fa-ban{% endif %}'></i> Stripe</div></div>
+							<div class="col-sm-4"><div class='alert {% if dwolla %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if dwolla %}fa-check{% else %}fa-ban{% endif %}'></i> Dwolla</div></div>
+							<div class="col-sm-4"><div class='alert {% if check %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if check %}fa-check{% else %}fa-ban{% endif %}'></i> Check</div></div>
+						{% endwith %}
+					</div>{# /.row #}
+
+					{% if event.organization.check_payment_allowed %}
+						{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}
+					{% endif %}
+
+					{% if event.is_demo %}
+						<p class='text-muted'>Note: This is a demo event which uses test APIs. None of the transactions made through this event can result in real money changing hands.</p>
+					{% endif %}
+				</div>{# /.panel-body #}
+			</div>{# /.panel #}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+		<a class="btn btn-link" href="{{ event.get_absolute_url }}">
+			Cancel
+		</a>
+
+	</form>
 {% endblock %}
 
 {% block javascripts %}

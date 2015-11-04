@@ -1,6 +1,7 @@
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
+from django.db.models import Q
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
@@ -151,6 +152,48 @@ class OrganizationPaymentForm(forms.ModelForm):
         return super(OrganizationPaymentForm, self).save()
 
 
+class EventCreateForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ('name', 'slug', 'start_date', 'end_date', 'start_time',
+                  'end_time', 'organization')
+
+    def __init__(self, request, *args, **kwargs):
+        super(EventCreateForm, self).__init__(*args, **kwargs)
+        self.request = request
+        if not request.user.is_authenticated():
+            raise ValueError("EventCreateForm requires an authenticated user.")
+        self.fields['organization'].queryset = Organization.objects.filter(
+            Q(owner=request.user) |
+            Q(editors=request.user)
+        ).order_by('name').distinct()
+
+    def clean_slug(self):
+        slug = self.cleaned_data['slug']
+        events = Event.objects.filter(organization=self.organization,
+                                      slug=slug)
+
+        if events.exists():
+            raise ValidationError('Slug already in use by another event, '
+                                  'please choose a different one.')
+        return slug
+
+    def clean(self):
+        cleaned_data = super(EventForm, self).clean()
+        if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
+                cleaned_data['start_date'] > cleaned_data['end_date']):
+            raise ValidationError("Start date must be before or equal to "
+                                  "the end date.")
+        return cleaned_data
+
+    def save(self):
+        if self.instance.is_demo():
+            self.instance.api_type = Event.TEST
+
+        self.instance.application_fee_percent = self.instance.organization.default_application_fee_percent
+        return super(EventCreateForm, self).save()
+
+
 class EventForm(forms.ModelForm):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
@@ -181,17 +224,13 @@ class EventForm(forms.ModelForm):
         if not self.organization_editable_by:
             del self.fields['editors']
 
-        if self.instance.pk is None:
-            self.instance.application_fee_percent = organization.default_application_fee_percent
-
         # Always display the timezone that is currently chosen,
         # even if it wouldn't otherwise be displayed.
-        if self.instance.pk is not None:
-            timezone = self.instance.timezone
-            if (timezone, timezone) not in self.fields['timezone'].choices:
-                self.fields['timezone'].choices += ((timezone, timezone),)
+        timezone = self.instance.timezone
+        if (timezone, timezone) not in self.fields['timezone'].choices:
+            self.fields['timezone'].choices += ((timezone, timezone),)
 
-        if self.instance.is_demo() and self.instance.pk:
+        if self.instance.is_demo():
             del self.fields['slug']
 
         if self.instance.organization.check_payment_allowed:
@@ -225,10 +264,10 @@ class EventForm(forms.ModelForm):
 
     def clean_slug(self):
         slug = self.cleaned_data['slug']
-        events = Event.objects.filter(organization=self.organization,
-                                      slug=slug)
-        if self.instance.pk is not None:
-            events = events.exclude(id=self.instance.pk)
+        events = Event.objects.filter(
+            organization=self.organization,
+            slug=slug
+        ).exclude(id=self.instance.pk)
 
         if events.exists():
             raise ValidationError('Slug already in use by another event, '
@@ -244,9 +283,6 @@ class EventForm(forms.ModelForm):
         return cleaned_data
 
     def save(self):
-        created = self.instance.pk is None
-        if self.instance.is_demo():
-            self.instance.api_type = Event.TEST
         instance = super(EventForm, self).save()
 
         if self.organization_editable_by and self.cleaned_data['editors']:

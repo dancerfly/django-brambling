@@ -26,4 +26,10 @@
 			</a>
 		{% endfor %}
 	</div>
+	<div class="panel-footer">
+		<a class='btn btn-success btn-block' href='{% url "brambling_event_create" %}?organization={{ organization.pk }}'>
+			<i class='fa fa-fw fa-plus'></i>
+			Create an event
+		</a>
+	</div>
 </div>

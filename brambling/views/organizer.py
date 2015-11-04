@@ -27,7 +27,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        ManualPaymentForm, ManualDiscountForm,
                                        CustomFormForm, CustomFormFieldFormSet,
                                        OrderNotesForm, OrganizationPaymentForm,
-                                       AttendeeNotesForm)
+                                       AttendeeNotesForm, EventCreateForm)
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -193,24 +193,23 @@ class OrderRedirectView(View):
 
 class EventCreateView(CreateView):
     model = Event
-    template_name = 'brambling/organization/event_create.html'
-    form_class = EventForm
-
-    def dispatch(self, request, *args, **kwargs):
-        if request.method.lower() in self.http_method_names:
-            self.organization = Organization.objects.get(slug=kwargs['organization_slug'])
-            if not self.organization.editable_by(request.user):
-                raise Http404
-        return super(EventCreateView, self).dispatch(request, *args, **kwargs)
+    template_name = 'brambling/event/organizer/create.html'
+    form_class = EventCreateForm
 
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class)
 
+    def get_initial(self):
+        initial = super(EventCreateView, self).get_initial()
+        if 'organization' in self.request.GET:
+            initial['organization'] = self.request.GET['organization']
+        if 'copy' in self.request.GET:
+            initial['template_event'] = self.request.GET['copy']
+        return initial
+
     def get_form_kwargs(self):
         kwargs = super(EventCreateView, self).get_form_kwargs()
         kwargs['request'] = self.request
-        kwargs['organization'] = self.organization
-        kwargs['organization_editable_by'] = True
         return kwargs
 
     def get_success_url(self):
@@ -221,9 +220,6 @@ class EventCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
         context.update({
-            'organization': self.organization,
-            'organization_editable_by': True,
-            'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
             'event': context['form'].instance,
         })
         return context

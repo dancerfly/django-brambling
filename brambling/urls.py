@@ -242,9 +242,6 @@ organization_urlpatterns = patterns('',
     url(r'^edit/payment/$',
         OrganizationPaymentView.as_view(),
         name='brambling_organization_update_payment'),
-    url(r'^create/$',
-        EventCreateView.as_view(),
-        name="brambling_event_create"),
     url(r'^remove_editor/(?P<pk>\d+)$',
         OrganizationRemoveEditorView.as_view(),
         name="brambling_organization_remove_editor"),
@@ -359,6 +356,10 @@ urlpatterns = patterns('',
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 
     url(r'^api/', include('brambling.api.urls')),
+
+    url(r'^create/$',
+        EventCreateView.as_view(),
+        name="brambling_event_create"),
 
     url(r'^(?P<organization_slug>[\w-]+)/', include(organization_urlpatterns)),
 )

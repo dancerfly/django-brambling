@@ -73,7 +73,6 @@ def get_organization_admin_nav(organization, request):
         ('brambling_organization_update', 'Organization Profile', 'fa-institution'),
         ('brambling_organization_update_payment', 'Payment', 'fa-money'),
         ('brambling_organization_update_permissions', 'Permissions', 'fa-group'),
-        ('brambling_event_create', 'Create a New Event', 'fa-plus'),
     )
     return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
             for view_name, label, icon in items]

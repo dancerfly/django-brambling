@@ -1,0 +1,73 @@
+{% extends 'brambling/layouts/12_sm.html' %}
+
+{% load staticfiles %}
+{% load floppyforms %}
+
+{% block title %}Create New Event – {{ block.super }}{% endblock %}
+
+{% block main %}
+	<h2>Create new event</h2>
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			{% formrow form.name %}
+			<div class="form-group">
+				<label class="control-label" for="id_slug">
+				URL
+				</label>
+				<div class='form-inline'>
+					<strong>dancerfly.com/</strong>
+					<select class='chosen-select chosen-width-auto'>
+						{% for organization in form.fields.organization.queryset %}
+							<option value="{{ organization.pk }}"{% if form.initial.organization == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
+						{% endfor %}
+					</select>
+					<strong>/</strong>
+					{% formfield form.slug %}
+				</div>
+				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+			</div>
+
+			<div class='row'>
+				<div class='col-sm-4'>
+					{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					<label for='startEnd'>Add start / end times</label><br />
+					<input type='checkbox' id='startEnd'{% if event.start_time or event.end_time %} checked{% endif %}>
+				</div>
+			</div>
+			<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
+				<div class='col-sm-4'>
+					{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+			</div>
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Create event
+		</button>
+
+	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript">window.django = window.grp = {'jQuery': jQuery};</script>
+	<script type="text/javascript" src="{% static "admin/js/urlify.js" %}"></script>
+	<script type="text/javascript" src="{% static "admin/js/prepopulate.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/brambling.slug.js" %}"></script>
+
+	{% include "brambling/event/organizer/_form_js.html" %}
+{% endblock %}
