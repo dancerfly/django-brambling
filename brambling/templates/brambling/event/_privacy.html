@@ -1,0 +1,26 @@
+{% if event.privacy == event.PUBLIC %}
+	<span class='tipped' title='Anyone can view and register for this event'>
+		<i class='fa fa-fw fa-globe'></i>
+		Public
+	</span>
+{% elif event.privacy == event.LINK %}
+	<span class='tipped' title='Anyone with the link can view and register for this event'>
+		<i class='fa fa-fw fa-eye-slash'></i>
+		Hidden
+	</span>
+{% elif event.privacy == event.HALF_PUBLIC %}
+	<span class='tipped' title='Anyone can view this event, but only people with invitations can register'>
+		<i class='fa fa-fw fa-envelope-o'></i>
+		Invite
+	</span>
+{% elif event.privacy == event.INVITED %}
+	<span class='tipped' title="Only people with invitations can view and register for this event.">
+		<i class='fa fa-fw fa-lock'></i>
+		Secret
+	</span>
+{% else %}
+	<span class='tipped' title="Uh oh! This isn't a recognized privacy setting!">
+		<i class='fa fa-fw fa-question'></i>
+		Unknown
+	</span>
+{% endif %}

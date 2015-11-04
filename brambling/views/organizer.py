@@ -141,17 +141,13 @@ class OrganizationDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationDetailView, self).get_context_data(**kwargs)
-        # TODO: This will probably cause timezone issues in some cases.
-        today = timezone.now().date()
-        upcoming_events = Event.objects.filter(
+        events = Event.objects.filter(
             organization=self.object,
-            privacy__in=(Event.PUBLIC, Event.HALF_PUBLIC),
-            is_published=True,
-        ).filter(start_date__gte=today).order_by('start_date').distinct()
+        ).order_by('-start_date').distinct()
 
         context.update({
-            'upcoming_events': upcoming_events,
-            'organization_editable_by': self.object.editable_by(self.request.user)
+            'events': events,
+            'organization_editable_by': self.object.editable_by(self.request.user),
         })
 
         if context['organization_editable_by']:
@@ -163,22 +159,17 @@ class OrganizationDetailView(DetailView):
                 Q(organization__editors=self.request.user) |
                 Q(additional_editors=self.request.user),
                 organization=self.object,
-            ).order_by('-last_modified').distinct()
+            ).distinct()
 
-            registered_events_qs = Event.objects.filter(
+            registered_events = Event.objects.filter(
                 order__person=self.request.user,
                 order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.RESERVED),
                 organization=self.object,
-            ).filter(start_date__gte=today).order_by('start_date').distinct()
-            registered_events = list(registered_events_qs)
-
-            # Exclude registered events from upcoming events:
-            upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
+            ).distinct()
 
             context.update({
-                'admin_events': admin_events,
-                'registered_events': registered_events,
-                'upcoming_events': upcoming_events
+                'admin_events': set(admin_events),
+                'registered_events': set(registered_events),
             })
         return context
 
