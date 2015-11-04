@@ -33,18 +33,6 @@
 					</div>
 				</div>
 			{% endif %}
-			{% if past_events %}
-				<div class="panel panel-default">
-					<header class="panel-heading">
-						<h4 class="panel-title">Past Events You Registered For</h4>
-					</header>
-					<div class="list-group">
-						{% for event in past_events %}
-							{% include "brambling/_event_list-group-item.html" %}
-						{% endfor %}
-					</div>
-				</div>
-			{% endif %}
 			{% if organizations %}
 				<div class="panel panel-default">
 					<div class="panel-heading">
