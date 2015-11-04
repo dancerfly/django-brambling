@@ -9,4 +9,4 @@ register = template.Library()
 
 @register.filter
 def get_value(form, field):
-    return form._raw_value(field)
+    return form[field].value()

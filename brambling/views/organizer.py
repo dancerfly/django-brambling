@@ -203,8 +203,8 @@ class EventCreateView(CreateView):
         initial = super(EventCreateView, self).get_initial()
         if 'organization' in self.request.GET:
             initial['organization'] = self.request.GET['organization']
-        if 'copy' in self.request.GET:
-            initial['template_event'] = self.request.GET['copy']
+        if 'template_event' in self.request.GET:
+            initial['template_event'] = self.request.GET['template_event']
         return initial
 
     def get_form_kwargs(self):
