@@ -185,12 +185,16 @@ class EventCreateForm(forms.ModelForm):
         return slug
 
     def clean(self):
-        cleaned_data = super(EventForm, self).clean()
-        if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
-                cleaned_data['start_date'] > cleaned_data['end_date']):
-            raise ValidationError("Start date must be before or equal to "
-                                  "the end date.")
-        return cleaned_data
+        cd = super(EventCreateForm, self).clean()
+        if ('start_date' in cd and 'end_date' in cd and
+                cd['start_date'] > cd['end_date']):
+            self.add_error('start_date', "Start date must be before or equal to the end date.")
+
+        if (cd.get('template_event') and cd.get('organization') and
+                cd['template_event'].organization_id != cd['organization'].id):
+            self.add_error('template_event', "Template event and new event must be from the same organization.")
+
+        return cd
 
     def save(self):
         if self.instance.is_demo():

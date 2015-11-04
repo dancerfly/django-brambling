@@ -2,6 +2,7 @@
 
 {% load staticfiles %}
 {% load floppyforms %}
+{% load brambling_forms %}
 
 {% block title %}Create New Event – {{ block.super }}{% endblock %}
 
@@ -48,10 +49,12 @@
 				</label>
 				<div class='form-inline'>
 					<strong>dancerfly.com/</strong>
-					<select class='chosen-select chosen-width-auto' id="id_organization">
-						{% for organization in form.fields.organization.queryset %}
-							<option value="{{ organization.pk }}"{% if form.initial.organization == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
-						{% endfor %}
+					<select class='chosen-select chosen-width-auto' id="id_organization" name="organization">
+						{% with organization_value=form|get_value:"organization" %}
+							{% for organization in form.fields.organization.queryset %}
+								<option value="{{ organization.pk }}"{% if organization_value == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
+							{% endfor %}
+						{% endwith %}
 					</select>
 					<strong>/</strong>
 					{% formfield form.slug %}
@@ -80,16 +83,24 @@
 				</div>
 			</div>
 
-			<div class='form-group'>
-				<label for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
-				<select class='chosen-select' id="id_template_event">
-					<option value=""></option>
-					{% for event in form.fields.template_event.queryset %}
-						<option value="{{ event.pk }}" data-org-id="{{ event.organization_id }}">{{ event.name }}</option>
-					{% endfor %}
-				</select>
-				<p class='help-block'>If you choose a template event, all settings (including forms, discounts, and items) will be copied to your new event.</p>
-			</div>
+			{% with field=form.template_event %}
+				<div class='form-group {% if field.errors %} has-error{% endif %}'>
+					<label class='control-label' for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
+					<select class='chosen-select' id="id_template_event" name="template_event">
+						<option value=""></option>
+						{% with template_event_value=form|get_value:"template_event" %}
+							{% for event in field.field.queryset %}
+								<option value="{{ event.pk }}" data-org-id="{{ event.organization_id }}"{% if template_event_value == event.pk|stringformat:"i" %} selected{% endif %}>{{ event.name }}</option>
+							{% endfor %}
+						{% endwith %}
+					</select>
+					<p class='help-block'>If you choose a template event, all settings (including forms, discounts, and items) will be copied to your new event.</p>
+
+					{% if field.errors %}
+						{% include "floppyforms/errors.html" with errors=field.errors %}
+					{% endif %}
+				</div>
+			{% endwith %}
 		{% endform %}
 
 		<button class="btn btn-primary" type="submit">
