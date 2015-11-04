@@ -32,22 +32,6 @@ class OrganizationProfileForm(forms.ModelForm):
         )
 
 
-class OrganizationEventDefaultsForm(forms.ModelForm):
-    def __init__(self, request, *args, **kwargs):
-        super(OrganizationEventDefaultsForm, self).__init__(*args, **kwargs)
-
-    class Meta:
-        widgets = {
-            'default_event_country': forms.Select,
-        }
-        model = Organization
-        fields = (
-            'default_event_city', 'default_event_state_or_province',
-            'default_event_country', 'default_event_timezone',
-            'default_event_currency',
-        )
-
-
 class OrganizationPermissionForm(forms.Form):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
