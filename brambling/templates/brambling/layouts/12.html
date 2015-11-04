@@ -1,10 +1,12 @@
 {% extends "brambling/__base.html" %}
 
 {% block content %}
-	{% block before %}{% endblock %}
-	{% block messages %}
-		{% include "brambling/layouts/_messages.html" %}
-	{% endblock %}
-	{% block main %}{% endblock %}
-	{% block after %}{% endblock %}
+	<div class='container'>
+		{% block before %}{% endblock %}
+		{% block messages %}
+			{% include "brambling/layouts/_messages.html" %}
+		{% endblock %}
+		{% block main %}{% endblock %}
+		{% block after %}{% endblock %}
+	</div>
 {% endblock %}

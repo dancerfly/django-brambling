@@ -212,6 +212,11 @@ class EventCreateView(CreateView):
         kwargs['request'] = self.request
         return kwargs
 
+    def get_form(self, form_class):
+        if not self.request.user.is_authenticated():
+            return None
+        return super(EventCreateView, self).get_form(form_class)
+
     def get_success_url(self):
         return reverse('brambling_event_update',
                        kwargs={'event_slug': self.object.slug,
@@ -220,7 +225,7 @@ class EventCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super(EventCreateView, self).get_context_data(**kwargs)
         context.update({
-            'event': context['form'].instance,
+            'event': getattr(context['form'], 'instance', None),
         })
         return context
 

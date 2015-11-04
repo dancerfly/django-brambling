@@ -5,6 +5,32 @@
 
 {% block title %}Create New Event – {{ block.super }}{% endblock %}
 
+{% block content %}
+	{% if not form or not form.fields.organization.queryset %}
+		<div class='marketing text-center'>
+			<div class="container-xl">
+				<div class='text-jumbo'>
+					<p>
+						<span class="dancerfly-brand">Dancerfly</span> is a great platform for workshops, exchanges, series classes, &amp; more.
+					</p>
+				</div>
+				<p class='margin-leader-dbl'>
+					Get set up and start creating events today!
+				</p>
+				<p class='margin-leader-dbl'>
+					<a href='mailto:support@dancerfly.com' class='btn btn-xl btn-primary'>Email us to get started!</a>
+					<a href='/about/#section2' class='btn btn-xl btn-primary'>Learn more</a>
+				</p>
+				<div class="max-width-md block-center hidden-xxs">
+					<img src='{% static "brambling/images/all-dancers.gif" %}' class="full-width marketing-dancers-img">
+				</div>
+			</div>
+		</div>
+	{% else %}
+		{{ block.super }}
+	{% endif %}
+{% endblock %}
+
 {% block main %}
 	<h2>Create new event</h2>
 	{% include "brambling/forms/_top_error_list.html" %}
