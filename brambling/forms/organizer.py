@@ -153,16 +153,22 @@ class OrganizationPaymentForm(forms.ModelForm):
 
 
 class EventCreateForm(forms.ModelForm):
+    template_event = forms.ModelChoiceField(queryset=Event.objects.all(), required=False)
+
     class Meta:
         model = Event
         fields = ('name', 'slug', 'start_date', 'end_date', 'start_time',
-                  'end_time', 'organization')
+                  'end_time', 'organization', 'template_event')
 
     def __init__(self, request, *args, **kwargs):
         super(EventCreateForm, self).__init__(*args, **kwargs)
         self.request = request
         if not request.user.is_authenticated():
             raise ValueError("EventCreateForm requires an authenticated user.")
+        self.fields['template_event'].queryset = Event.objects.filter(
+            Q(organization__owner=request.user) |
+            Q(organization__editors=request.user)
+        ).order_by('-last_modified').distinct()
         self.fields['organization'].queryset = Organization.objects.filter(
             Q(owner=request.user) |
             Q(editors=request.user)

@@ -48,7 +48,7 @@
 				</label>
 				<div class='form-inline'>
 					<strong>dancerfly.com/</strong>
-					<select class='chosen-select chosen-width-auto'>
+					<select class='chosen-select chosen-width-auto' id="id_organization">
 						{% for organization in form.fields.organization.queryset %}
 							<option value="{{ organization.pk }}"{% if form.initial.organization == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
 						{% endfor %}
@@ -79,6 +79,17 @@
 					{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
 				</div>
 			</div>
+
+			<div class='form-group'>
+				<label for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
+				<select class='chosen-select' id="id_template_event">
+					<option value=""></option>
+					{% for event in form.fields.template_event.queryset %}
+						<option value="{{ event.pk }}" data-org-id="{{ event.organization_id }}">{{ event.name }}</option>
+					{% endfor %}
+				</select>
+				<p class='help-block'>If you choose a template event, all settings (including forms, discounts, and items) will be copied to your new event.</p>
+			</div>
 		{% endform %}
 
 		<button class="btn btn-primary" type="submit">
@@ -96,4 +107,24 @@
 	<script type="text/javascript" src="{% static "brambling/brambling.slug.js" %}"></script>
 
 	{% include "brambling/event/organizer/_form_js.html" %}
+
+	<script>
+		var allEvents = $('#id_template_event').children(),
+			updateAvailableEvents = function() {
+				var orgId = $('#id_organization').val(),
+					$field = $('#id_template_event');
+				$field.children().remove();
+				allEvents.each(function (idx, ele) {
+					var $ele = $(ele);
+					if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
+						$field.append($ele);
+					}
+				});
+				$field.trigger("chosen:updated");
+			};
+		updateAvailableEvents();
+		$('#id_organization').on('change', function() {
+			updateAvailableEvents();
+		});
+	</script>
 {% endblock %}
