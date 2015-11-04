@@ -9,9 +9,18 @@
 		<h1>
 			{{ organization.name }}
 			{% if organization_editable_by %}
-				<a href="{% url "brambling_organization_update" organization_slug=organization.slug %}" class="btn btn-primary pull-right">
-					<i class="fa fa-cog fa-fw"></i> Settings
-				</a>
+				<ul class='list-inline pull-right'>
+					<li>
+						<a href="{% url "brambling_event_create" organization_slug=organization.slug %}" class="btn btn-success pull-right">
+							<i class="fa fa-plus fa-fw"></i> Create a new event
+						</a>
+					</li>
+					<li>
+						<a href="{% url "brambling_organization_update" organization_slug=organization.slug %}" class="btn btn-primary pull-right">
+							<i class="fa fa-cog fa-fw"></i> Settings
+						</a>
+					</li>
+				</ul>
 			{% endif %}
 		</h1>
 
