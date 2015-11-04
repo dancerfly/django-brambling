@@ -7,7 +7,7 @@ import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, Invite, CustomForm,
-                              CustomFormField, Order, Organization)
+                              CustomFormField, Order, Organization, SavedReport)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE, TEST
 
@@ -174,16 +174,6 @@ class EventCreateForm(forms.ModelForm):
             Q(editors=request.user)
         ).order_by('name').distinct()
 
-    def clean_slug(self):
-        slug = self.cleaned_data['slug']
-        events = Event.objects.filter(organization=self.organization,
-                                      slug=slug)
-
-        if events.exists():
-            raise ValidationError('Slug already in use by another event, '
-                                  'please choose a different one.')
-        return slug
-
     def clean(self):
         cd = super(EventCreateForm, self).clean()
         if ('start_date' in cd and 'end_date' in cd and
@@ -194,6 +184,10 @@ class EventCreateForm(forms.ModelForm):
                 cd['template_event'].organization_id != cd['organization'].id):
             self.add_error('template_event', "Template event and new event must be from the same organization.")
 
+        if 'slug' in cd and cd.get('organization'):
+            if Event.objects.filter(organization=cd['organization'], slug=cd['slug']).exists():
+                self.add_error('slug', 'Slug is already in use by another event; please choose a different one.')
+
         return cd
 
     def save(self):
@@ -201,7 +195,59 @@ class EventCreateForm(forms.ModelForm):
             self.instance.api_type = Event.TEST
 
         self.instance.application_fee_percent = self.instance.organization.default_application_fee_percent
-        return super(EventCreateForm, self).save()
+        instance = super(EventCreateForm, self).save()
+
+        template = self.cleaned_data.get('template_event')
+        if template:
+            fields = (
+                'description', 'website_url', 'banner_image', 'city',
+                'state_or_province', 'country', 'timezone', 'currency',
+                'has_dances', 'has_classes', 'liability_waiver', 'privacy',
+                'collect_housing_data', 'collect_survey_data', 'cart_timeout',
+                'check_postmark_cutoff', 'transfers_allowed', 'facebook_url',
+            )
+            for field in fields:
+                setattr(instance, field, getattr(template, field))
+
+            items = Item.objects.filter(event=template).prefetch_related('options', 'images')
+            for item in items:
+                options = list(item.options.all())
+                images = list(item.images.all())
+                item.pk = None
+                item.event = instance
+                item.save()
+                for option in options:
+                    option.pk = None
+                    option.item = item
+                ItemOption.objects.bulk_create(options)
+                for image in images:
+                    image.pk = None
+                    image.item = item
+                ItemImage.objects.bulk_create(images)
+
+            discounts = list(Discount.objects.filter(event=template))
+            for discount in discounts:
+                discount.pk = None
+                discount.event = instance
+            Discount.objects.bulk_create(discounts)
+
+            saved_reports = list(SavedReport.objects.filter(event=template))
+            for saved_report in saved_reports:
+                saved_report.pk = None
+                saved_report.event = instance
+            SavedReport.objects.bulk_create(saved_reports)
+
+            forms = CustomForm.objects.filter(event=template).prefetch_related('fields')
+            for form in forms:
+                fields = list(form.fields.all())
+                form.pk = None
+                form.event = instance
+                form.save()
+                for field in fields:
+                    field.pk = None
+                    field.form = form
+                CustomFormField.objects.bulk_create(fields)
+        return instance
 
 
 class EventForm(forms.ModelForm):
