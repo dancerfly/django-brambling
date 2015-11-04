@@ -70,17 +70,6 @@ class OrganizationAdmin(admin.ModelAdmin):
             'classes': ('grp-collapse grp-closed',),
             'fields': ("owner", "editors"),
         }),
-        ("Event defaults", {
-            'classes': ('grp-collapse grp-closed',),
-            'fields': (
-                'default_event_city',
-                'default_event_state_or_province',
-                'default_event_country',
-                'default_event_dance_styles',
-                'default_event_timezone',
-                'default_event_currency',
-            ),
-        }),
         ("Stripe info", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
@@ -118,7 +107,7 @@ class OrganizationAdmin(admin.ModelAdmin):
         }),
     )
     raw_id_fields = ('owner',)
-    filter_horizontal = ("dance_styles", "default_event_dance_styles", "editors")
+    filter_horizontal = ("dance_styles", "editors")
     list_display = ('name', 'created', 'default_application_fee_percent', 'published_events', 'all_events')
     ordering = ('-created',)
 

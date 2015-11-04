@@ -203,17 +203,6 @@ class EventCreateView(CreateView):
                 raise Http404
         return super(EventCreateView, self).dispatch(request, *args, **kwargs)
 
-    def get_initial(self):
-        "Instantiate form with owner as current user."
-        return {
-            'city': self.organization.default_event_city,
-            'state_or_province': self.organization.default_event_state_or_province,
-            'country': self.organization.default_event_country,
-            'timezone': self.organization.default_event_timezone,
-            'currency': self.organization.default_event_currency,
-            'dance_styles': self.organization.default_event_dance_styles.all(),
-        }
-
     def get_form_class(self):
         return modelform_factory(self.model, form=self.form_class)
 
