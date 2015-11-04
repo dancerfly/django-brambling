@@ -190,6 +190,14 @@ class EventCreateForm(forms.ModelForm):
 
         return cd
 
+    def _adjust_date(self, old_event, new_event, date):
+        """
+        Returns a date relative to the new event's start date as the given date
+        is relative to the olde event's start date.
+
+        """
+        return date + (new_event.start_date - old_event.start_date)
+
     def save(self):
         if self.instance.is_demo():
             self.instance.api_type = Event.TEST
@@ -219,6 +227,8 @@ class EventCreateForm(forms.ModelForm):
                 for option in options:
                     option.pk = None
                     option.item = item
+                    option.available_start = self._adjust_date(template, instance, option.available_start)
+                    option.available_end = self._adjust_date(template, instance, option.available_end)
                 ItemOption.objects.bulk_create(options)
                 for image in images:
                     image.pk = None
@@ -229,6 +239,8 @@ class EventCreateForm(forms.ModelForm):
             for discount in discounts:
                 discount.pk = None
                 discount.event = instance
+                discount.available_start = self._adjust_date(template, instance, discount.available_start)
+                discount.available_end = self._adjust_date(template, instance, discount.available_end)
             Discount.objects.bulk_create(discounts)
 
             saved_reports = list(SavedReport.objects.filter(event=template))

@@ -1,3 +1,5 @@
+from datetime import datetime, date, timedelta
+
 from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
@@ -40,9 +42,35 @@ class EventCreateFormTestCase(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
+    def test_adjust_date(self):
+        request = self.factory.get('/')
+        request.user = PersonFactory()
+        td = timedelta(days=3)
+        old_date = date(2015, 10, 2)
+        old_event = EventFactory(start_date=date(2015, 10, 5))
+        new_event = EventFactory(start_date=old_event.start_date + td)
+        form = EventCreateForm(request)
+        new_date = form._adjust_date(old_event, new_event, old_date)
+        self.assertEqual(new_date, old_date + td)
+
+    def test_adjust_datetime(self):
+        request = self.factory.get('/')
+        request.user = PersonFactory()
+        td = timedelta(days=3)
+        old_date = datetime(2015, 10, 2, 5, 5, 5)
+        old_event = EventFactory(start_date=date(2015, 10, 5))
+        new_event = EventFactory(start_date=old_event.start_date + td)
+        form = EventCreateForm(request)
+        new_date = form._adjust_date(old_event, new_event, old_date)
+        self.assertEqual(new_date, old_date + td)
+
     def test_duplication(self):
         """Passing in a template_event should result in settings and relevant related objects being copied"""
-        template = EventFactory()
+        threedays = timedelta(days=3)
+        template = EventFactory(
+            start_date=timezone.now() - threedays,
+            end_date=timezone.now() - threedays,
+        )
         item = ItemFactory(event=template)
         ItemOptionFactory(item=item)
         ItemImageFactory(item=item)
@@ -94,3 +122,14 @@ class EventCreateFormTestCase(TestCase):
         self.assertEqual(event.forms.count(), 1)
         custom_form = event.forms.all()[0]
         self.assertEqual(custom_form.fields.count(), 1)
+
+        # Check that dates have been adjusted properly.
+        old_item = template.items.all()[0]
+        old_option = old_item.options.all()[0]
+        new_item = event.items.all()[0]
+        new_option = new_item.options.all()[0]
+        self.assertEqual(new_option.available_start - old_option.available_start, threedays)
+
+        old_discount = template.discount_set.all()[0]
+        new_discount = event.discount_set.all()[0]
+        self.assertEqual(new_discount.available_start - old_discount.available_start, threedays)
