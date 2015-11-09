@@ -130,7 +130,7 @@
 			{% endif %}
 
 			{% if upcoming_events %}
-				{% for event in upcoming_events|slice:"5" %}
+				{% for event in upcoming_events %}
 					{% cycle 'col1' 'col2' as col silent %}
 					{% if col = 'col1' %}<div class="row">{% endif %}
 					{% include "brambling/_event_list_item.html" %}
