@@ -7,8 +7,6 @@ django-libsass==0.4
 django-appconf==0.6
 django-compressor==1.5
 django-countries==3.4.1
-django-debug-toolbar==1.4
-django-debug-toolbar-template-timings==0.6.4
 django-filter==0.11.0
 django-grappelli==2.6.4
 Pillow==2.8.1
@@ -27,6 +25,10 @@ unicodecsv==0.14.1
 
 # our own django-zenaida - @master until we reach a peggable point.
 https://github.com/littleweaver/django-zenaida/tarball/master
+
+# Debugging
+django-debug-toolbar==1.4
+django-debug-toolbar-template-timings==0.6.4
 
 # Testing
 mock==1.0.1
