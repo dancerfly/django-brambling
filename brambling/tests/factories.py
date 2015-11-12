@@ -1,12 +1,14 @@
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 from django.utils.timezone import now
 import factory
-import pytz
 
-from brambling.models import (Event, Person, Order, CreditCard, Invite,
-                              Organization, Transaction, Item, ItemOption,
-                              Discount, Attendee)
+from brambling.models import (
+    Event, Person, Order, CreditCard, Invite,
+    Organization, Transaction, Item, ItemOption,
+    Discount, Attendee, ItemImage, SavedReport,
+    CustomForm, CustomFormField,
+)
 
 
 def lazy_setting(setting):
@@ -146,6 +148,15 @@ class ItemOptionFactory(factory.DjangoModelFactory):
     order = 1
 
 
+class ItemImageFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = ItemImage
+
+    item = factory.SubFactory(ItemFactory)
+    order = 1
+    image = 'path/to/nothing.png'
+
+
 class DiscountFactory(factory.DjangoModelFactory):
     class Meta:
         model = Discount
@@ -166,3 +177,32 @@ class DiscountFactory(factory.DjangoModelFactory):
 
         for item_option in extracted:
             self.item_options.add(item_option)
+
+
+class SavedReportFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = SavedReport
+
+    report_type = SavedReport.ATTENDEE
+    event = factory.SubFactory(EventFactory)
+    name = factory.Sequence(lambda n: "Saved Report {}".format(n))
+    querystring = ''
+
+
+class CustomFormFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = CustomForm
+
+    form_type = CustomForm.ATTENDEE
+    event = factory.SubFactory(EventFactory)
+    name = factory.Sequence(lambda n: "Custom Form {}".format(n))
+    index = 1
+
+
+class CustomFormFieldFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = CustomFormField
+
+    field_type = CustomFormField.TEXT
+    form = factory.SubFactory(CustomFormFactory)
+    name = factory.Sequence(lambda n: "Custom Form Field {}".format(n))

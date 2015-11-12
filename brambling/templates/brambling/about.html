@@ -1,4 +1,4 @@
-{% extends "brambling/__marketing.html" %}
+{% extends "brambling/__base.html" %}
 
 {% load staticfiles %}
 
@@ -29,7 +29,7 @@
 		</div>
 	</div>
 
-	<div class='marketing marketing-grey'>
+	<div class='marketing marketing-grey' id='section2'>
 		<div class="container-xl">
 			<div class='row'>
 				<div class='col-sm-4 margin-leader-dbl'>
@@ -139,7 +139,7 @@
 			<div class='text-center margin-leader-dbl max-width-md block-center'>
 				<p>
 					You can use any or all of the above payment methods for your events.
-					We'll never invoice you for payment; our portion 
+					We'll never invoice you for payment; our portion
 					<span class="inline-block">(if any)</span> is automatically taken out
 					during payment processing and reported in your finances tab!
 					<em><a href='{% url "brambling_pricing" %}' class='marketing-brand-link inline-block'>Learn more about pricing <i class="fa fa-angle-double-right"></i></a></em>

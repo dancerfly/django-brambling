@@ -1,0 +1,148 @@
+{% extends 'brambling/layouts/12_sm.html' %}
+
+{% load staticfiles %}
+{% load floppyforms %}
+{% load brambling_forms %}
+
+{% block title %}Create New Event – {{ block.super }}{% endblock %}
+
+{% block content %}
+	{% if not form or not form.fields.organization.queryset %}
+		<div class='marketing text-center'>
+			<div class="container-xl">
+				<div class='text-jumbo'>
+					<p>
+						<span class="dancerfly-brand">Dancerfly</span> is a great platform for workshops, exchanges, series classes, &amp; more.
+					</p>
+				</div>
+				<p class='margin-leader-dbl'>
+					Get set up and start creating events today!
+				</p>
+				<p class='margin-leader-dbl'>
+					<a href='mailto:support@dancerfly.com' class='btn btn-xl btn-primary'>Email us to get started!</a>
+					<a href='/about/#section2' class='btn btn-xl btn-primary'>Learn more</a>
+				</p>
+				<div class="max-width-md block-center hidden-xxs">
+					<img src='{% static "brambling/images/all-dancers.gif" %}' class="full-width marketing-dancers-img">
+				</div>
+			</div>
+		</div>
+	{% else %}
+		{{ block.super }}
+	{% endif %}
+{% endblock %}
+
+{% block main %}
+	<h2>Create new event</h2>
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			{% formrow form.name %}
+			<div class="form-group">
+				<label class="control-label" for="id_slug">
+				URL
+				</label>
+				<div class='form-inline'>
+					<strong>dancerfly.com/</strong>
+					<select class='chosen-select chosen-width-auto' id="id_organization" name="organization">
+						{% with organization_value=form|get_value:"organization" %}
+							{% for organization in form.fields.organization.queryset %}
+								<option value="{{ organization.pk }}"{% if organization_value == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
+							{% endfor %}
+						{% endwith %}
+					</select>
+					<strong>/</strong>
+					{% formfield form.slug %}
+				</div>
+				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+			</div>
+
+			<div class='row'>
+				<div class='col-sm-4'>
+					{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					<label for='startEnd'>Add start / end times</label><br />
+					<input type='checkbox' id='startEnd'{% if event.start_time or event.end_time %} checked{% endif %}>
+				</div>
+			</div>
+			<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
+				<div class='col-sm-4'>
+					{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+			</div>
+
+			{% with field=form.template_event %}
+				<div class='form-group {% if field.errors %} has-error{% endif %}'>
+					<label class='control-label' for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
+					<div>
+						<select class='chosen-select chosen-width-auto' id="id_template_event" name="template_event">
+							<option value=""></option>
+							{% with template_event_value=form|get_value:"template_event" %}
+								{% for event in field.field.queryset %}
+									<option value="{{ event.pk }}" data-org-id="{{ event.organization_id }}">{{ event.name }}</option>
+								{% endfor %}
+							{% endwith %}
+						</select>
+					</div>
+					<p class='help-block'>If you choose a template event, all settings (including forms, discounts, and items) will be copied to your new event.</p>
+
+					{% if field.errors %}
+						{% include "floppyforms/errors.html" with errors=field.errors %}
+					{% endif %}
+				</div>
+			{% endwith %}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Create event
+		</button>
+
+	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript">window.django = window.grp = {'jQuery': jQuery};</script>
+	<script type="text/javascript" src="{% static "admin/js/urlify.js" %}"></script>
+	<script type="text/javascript" src="{% static "admin/js/prepopulate.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "brambling/brambling.slug.js" %}"></script>
+
+	{% include "brambling/event/organizer/_form_js.html" %}
+
+	<script>
+		(function() {
+			var template_event_default = {{ form|get_value:"template_event" }},
+				$field = $('#id_template_event'),
+				allEvents = $('#id_template_event').children(),
+				updateAvailableEvents = function() {
+					var orgId = $('#id_organization').val();
+					$field.children().remove();
+					allEvents.each(function (idx, ele) {
+						var $ele = $(ele);
+						if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
+							$field.append($ele);
+						}
+					});
+					$field.val(template_event_default);
+					template_event_default = null;
+					$field.trigger("chosen:updated");
+				};
+			updateAvailableEvents();
+			$('#id_organization').on('change', function() {
+				updateAvailableEvents();
+			});
+		})();
+	</script>
+{% endblock %}

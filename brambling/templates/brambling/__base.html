@@ -33,12 +33,12 @@
 		{% include "brambling/_navbar.html" %}
 	{% endblock %}
 
-    <div class="container">
-        <!--[if lt IE 7]>
-            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-        <![endif]-->
-        {% block content %}{% endblock %}
-    </div>
+	<!--[if lt IE 7]>
+		<div class="container">
+			<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+		</div>
+    <![endif]-->
+	{% block content %}{% endblock %}
 
 	{% block bottom %}
 		{% include "brambling/_footer.html" %}
@@ -56,14 +56,15 @@
 		<script type="text/javascript" src="{% static "zenaida/lib/chosen/chosen.jquery.min.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/lib/modernizr.js" %}"></script>
 		<script type="text/javascript">
-			$('.chosen-select').each(function () {
+			$('select.chosen-select').each(function () {
 				var $this = $(this),
 					first_child = $this.children("option").eq(0),
 					options = {
-						width: "100%",
+						width: $this.hasClass('chosen-width-auto') ? "auto" : "100%",
 						allow_single_deselect: (typeof $this.attr('required')) === "undefined" && first_child.val() === "",
 						placeholder_text_multiple: "Select all that apply",
-						placeholder_text_single: "Select one"
+						placeholder_text_single: "Select one",
+						inherit_select_classes: true
 					};
 				// If the first child has no value, blank its label.
 				if (first_child.val() === "") first_child.html("");

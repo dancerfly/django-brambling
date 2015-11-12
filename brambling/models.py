@@ -262,12 +262,6 @@ class Organization(AbstractDwollaModel):
                                      related_name='editor_orgs',
                                      blank=True, null=True)
 
-    default_event_city = models.CharField(max_length=50, blank=True)
-    default_event_state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
-    default_event_country = CountryField(default='US', blank=True)
-    default_event_dance_styles = models.ManyToManyField(DanceStyle, blank=True, related_name='organization_event_default_set')
-    default_event_timezone = models.CharField(max_length=40, default='America/New_York', blank=True, choices=((tz, tz) for tz in pytz.common_timezones))
-    default_event_currency = models.CharField(max_length=10, default='USD', blank=True)
     # This is a secret value set by admins. It will be cached on the event model.
     default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])

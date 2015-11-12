@@ -521,7 +521,7 @@ class AttendeeTable(CustomDataTable):
 class OrderTable(CustomDataTable):
     fieldsets = (
         (None,
-         ('code', 'person', 'pending', 'confirmed', 'balance',
+         ('code', 'person', 'pending', 'confirmed',
           'purchased_items', 'refunded_items', 'completed_date', 'notes')),
     )
     survey_fieldsets = (
