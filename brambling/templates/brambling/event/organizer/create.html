@@ -86,14 +86,16 @@
 			{% with field=form.template_event %}
 				<div class='form-group {% if field.errors %} has-error{% endif %}'>
 					<label class='control-label' for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
-					<select class='chosen-select' id="id_template_event" name="template_event">
-						<option value=""></option>
-						{% with template_event_value=form|get_value:"template_event" %}
-							{% for event in field.field.queryset %}
-								<option value="{{ event.pk }}" data-org-id="{{ event.organization_id }}"{% if template_event_value == event.pk|stringformat:"i" %} selected{% endif %}>{{ event.name }}</option>
-							{% endfor %}
-						{% endwith %}
-					</select>
+					<div>
+						<select class='chosen-select chosen-width-auto' id="id_template_event" name="template_event">
+							<option value=""></option>
+							{% with template_event_value=form|get_value:"template_event" %}
+								{% for event in field.field.queryset %}
+									<option value="{{ event.pk }}" data-org-id="{{ event.organization_id }}">{{ event.name }}</option>
+								{% endfor %}
+							{% endwith %}
+						</select>
+					</div>
 					<p class='help-block'>If you choose a template event, all settings (including forms, discounts, and items) will be copied to your new event.</p>
 
 					{% if field.errors %}
@@ -120,22 +122,27 @@
 	{% include "brambling/event/organizer/_form_js.html" %}
 
 	<script>
-		var allEvents = $('#id_template_event').children(),
-			updateAvailableEvents = function() {
-				var orgId = $('#id_organization').val(),
-					$field = $('#id_template_event');
-				$field.children().remove();
-				allEvents.each(function (idx, ele) {
-					var $ele = $(ele);
-					if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
-						$field.append($ele);
-					}
-				});
-				$field.trigger("chosen:updated");
-			};
-		updateAvailableEvents();
-		$('#id_organization').on('change', function() {
+		(function() {
+			var template_event_default = {{ form|get_value:"template_event" }},
+				$field = $('#id_template_event'),
+				allEvents = $('#id_template_event').children(),
+				updateAvailableEvents = function() {
+					var orgId = $('#id_organization').val();
+					$field.children().remove();
+					allEvents.each(function (idx, ele) {
+						var $ele = $(ele);
+						if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
+							$field.append($ele);
+						}
+					});
+					$field.val(template_event_default);
+					template_event_default = null;
+					$field.trigger("chosen:updated");
+				};
 			updateAvailableEvents();
-		});
+			$('#id_organization').on('change', function() {
+				updateAvailableEvents();
+			});
+		})();
 	</script>
 {% endblock %}
