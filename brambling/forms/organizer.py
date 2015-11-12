@@ -1,12 +1,13 @@
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
+from django.db.models import Q
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, Invite, CustomForm,
-                              CustomFormField, Order, Organization)
+                              CustomFormField, Order, Organization, SavedReport)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE, TEST
 
@@ -29,22 +30,6 @@ class OrganizationProfileForm(forms.ModelForm):
             'name', 'slug', 'description', 'website_url',
             'facebook_url', 'banner_image', 'city',
             'state_or_province', 'country', 'dance_styles'
-        )
-
-
-class OrganizationEventDefaultsForm(forms.ModelForm):
-    def __init__(self, request, *args, **kwargs):
-        super(OrganizationEventDefaultsForm, self).__init__(*args, **kwargs)
-
-    class Meta:
-        widgets = {
-            'default_event_country': forms.Select,
-        }
-        model = Organization
-        fields = (
-            'default_event_city', 'default_event_state_or_province',
-            'default_event_country', 'default_event_timezone',
-            'default_event_currency',
         )
 
 
@@ -167,6 +152,118 @@ class OrganizationPaymentForm(forms.ModelForm):
         return super(OrganizationPaymentForm, self).save()
 
 
+class EventCreateForm(forms.ModelForm):
+    template_event = forms.ModelChoiceField(queryset=Event.objects.all(), required=False)
+
+    class Meta:
+        model = Event
+        fields = ('name', 'slug', 'start_date', 'end_date', 'start_time',
+                  'end_time', 'organization', 'template_event')
+
+    def __init__(self, request, *args, **kwargs):
+        super(EventCreateForm, self).__init__(*args, **kwargs)
+        self.request = request
+        if not request.user.is_authenticated():
+            raise ValueError("EventCreateForm requires an authenticated user.")
+        self.fields['template_event'].queryset = Event.objects.filter(
+            Q(organization__owner=request.user) |
+            Q(organization__editors=request.user)
+        ).order_by('-last_modified').distinct()
+        self.fields['organization'].queryset = Organization.objects.filter(
+            Q(owner=request.user) |
+            Q(editors=request.user)
+        ).order_by('name').distinct()
+
+    def clean(self):
+        cd = super(EventCreateForm, self).clean()
+        if ('start_date' in cd and 'end_date' in cd and
+                cd['start_date'] > cd['end_date']):
+            self.add_error('start_date', "Start date must be before or equal to the end date.")
+
+        if (cd.get('template_event') and cd.get('organization') and
+                cd['template_event'].organization_id != cd['organization'].id):
+            self.add_error('template_event', "Template event and new event must be from the same organization.")
+
+        if 'slug' in cd and cd.get('organization'):
+            if Event.objects.filter(organization=cd['organization'], slug=cd['slug']).exists():
+                self.add_error('slug', 'Slug is already in use by another event; please choose a different one.')
+
+        return cd
+
+    def _adjust_date(self, old_event, new_event, date):
+        """
+        Returns a date relative to the new event's start date as the given date
+        is relative to the olde event's start date.
+
+        """
+        return date + (new_event.start_date - old_event.start_date)
+
+    def save(self):
+        if self.instance.is_demo():
+            self.instance.api_type = Event.TEST
+
+        self.instance.application_fee_percent = self.instance.organization.default_application_fee_percent
+
+        template = self.cleaned_data.get('template_event')
+        if template:
+            fields = (
+                'description', 'website_url', 'banner_image', 'city',
+                'state_or_province', 'country', 'timezone', 'currency',
+                'has_dances', 'has_classes', 'liability_waiver', 'privacy',
+                'collect_housing_data', 'collect_survey_data', 'cart_timeout',
+                'check_postmark_cutoff', 'transfers_allowed', 'facebook_url',
+            )
+            for field in fields:
+                setattr(self.instance, field, getattr(template, field))
+
+        instance = super(EventCreateForm, self).save()
+
+        if template:
+            items = Item.objects.filter(event=template).prefetch_related('options', 'images')
+            for item in items:
+                options = list(item.options.all())
+                images = list(item.images.all())
+                item.pk = None
+                item.event = instance
+                item.save()
+                for option in options:
+                    option.pk = None
+                    option.item = item
+                    option.available_start = self._adjust_date(template, instance, option.available_start)
+                    option.available_end = self._adjust_date(template, instance, option.available_end)
+                ItemOption.objects.bulk_create(options)
+                for image in images:
+                    image.pk = None
+                    image.item = item
+                ItemImage.objects.bulk_create(images)
+
+            discounts = list(Discount.objects.filter(event=template))
+            for discount in discounts:
+                discount.pk = None
+                discount.event = instance
+                discount.available_start = self._adjust_date(template, instance, discount.available_start)
+                discount.available_end = self._adjust_date(template, instance, discount.available_end)
+            Discount.objects.bulk_create(discounts)
+
+            saved_reports = list(SavedReport.objects.filter(event=template))
+            for saved_report in saved_reports:
+                saved_report.pk = None
+                saved_report.event = instance
+            SavedReport.objects.bulk_create(saved_reports)
+
+            forms = CustomForm.objects.filter(event=template).prefetch_related('fields')
+            for form in forms:
+                fields = list(form.fields.all())
+                form.pk = None
+                form.event = instance
+                form.save()
+                for field in fields:
+                    field.pk = None
+                    field.form = form
+                CustomFormField.objects.bulk_create(fields)
+        return instance
+
+
 class EventForm(forms.ModelForm):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
@@ -197,17 +294,13 @@ class EventForm(forms.ModelForm):
         if not self.organization_editable_by:
             del self.fields['editors']
 
-        if self.instance.pk is None:
-            self.instance.application_fee_percent = organization.default_application_fee_percent
-
         # Always display the timezone that is currently chosen,
         # even if it wouldn't otherwise be displayed.
-        if self.instance.pk is not None:
-            timezone = self.instance.timezone
-            if (timezone, timezone) not in self.fields['timezone'].choices:
-                self.fields['timezone'].choices += ((timezone, timezone),)
+        timezone = self.instance.timezone
+        if (timezone, timezone) not in self.fields['timezone'].choices:
+            self.fields['timezone'].choices += ((timezone, timezone),)
 
-        if self.instance.is_demo() and self.instance.pk:
+        if self.instance.is_demo():
             del self.fields['slug']
 
         if self.instance.organization.check_payment_allowed:
@@ -241,10 +334,10 @@ class EventForm(forms.ModelForm):
 
     def clean_slug(self):
         slug = self.cleaned_data['slug']
-        events = Event.objects.filter(organization=self.organization,
-                                      slug=slug)
-        if self.instance.pk is not None:
-            events = events.exclude(id=self.instance.pk)
+        events = Event.objects.filter(
+            organization=self.organization,
+            slug=slug
+        ).exclude(id=self.instance.pk)
 
         if events.exists():
             raise ValidationError('Slug already in use by another event, '
@@ -260,9 +353,6 @@ class EventForm(forms.ModelForm):
         return cleaned_data
 
     def save(self):
-        created = self.instance.pk is None
-        if self.instance.is_demo():
-            self.instance.api_type = Event.TEST
         instance = super(EventForm, self).save()
 
         if self.organization_editable_by and self.cleaned_data['editors']:

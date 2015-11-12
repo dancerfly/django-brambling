@@ -11,7 +11,6 @@ from brambling.forms.user import (
 from brambling.forms.organizer import (
     OrganizationPermissionForm,
     OrganizationProfileForm,
-    OrganizationEventDefaultsForm,
 )
 from brambling.models import Discount, Invite
 from brambling.views.orders import (
@@ -233,13 +232,6 @@ organization_urlpatterns = patterns('',
             template_name='brambling/organization/profile.html',
         ),
         name='brambling_organization_update'),
-    url(r'^edit/event_defaults/$',
-        OrganizationUpdateView.as_view(
-            form_class=OrganizationEventDefaultsForm,
-            template_name='brambling/organization/event_defaults.html',
-            success_view_name='brambling_organization_update_event_defaults',
-        ),
-        name='brambling_organization_update_event_defaults'),
     url(r'^edit/permissions/$',
         OrganizationUpdateView.as_view(
             form_class=OrganizationPermissionForm,
@@ -250,9 +242,6 @@ organization_urlpatterns = patterns('',
     url(r'^edit/payment/$',
         OrganizationPaymentView.as_view(),
         name='brambling_organization_update_payment'),
-    url(r'^create/$',
-        EventCreateView.as_view(),
-        name="brambling_event_create"),
     url(r'^remove_editor/(?P<pk>\d+)$',
         OrganizationRemoveEditorView.as_view(),
         name="brambling_organization_remove_editor"),
@@ -367,6 +356,10 @@ urlpatterns = patterns('',
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 
     url(r'^api/', include('brambling.api.urls')),
+
+    url(r'^create/$',
+        EventCreateView.as_view(),
+        name="brambling_event_create"),
 
     url(r'^(?P<organization_slug>[\w-]+)/', include(organization_urlpatterns)),
 )

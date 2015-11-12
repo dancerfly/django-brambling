@@ -71,8 +71,13 @@
 				</button>
 			</div>
 		{% endif %}
-		<a href="{{ event.get_absolute_url }}" class="btn btn-default btn-block">
-			View Event Shop
+		<div class='form-group'>
+			<a href="{{ event.get_absolute_url }}" class="btn btn-default btn-block">
+				View Event Shop
+			</a>
+		</div>
+		<a href="{% url 'brambling_event_create' %}?organization={{ event.organization_id }}&template_event={{ event.pk }}" class="btn btn-default btn-block">
+			<i class='fa fa-fw fa-copy'></i> Copy Event
 		</a>
 	</div>
 </div>
