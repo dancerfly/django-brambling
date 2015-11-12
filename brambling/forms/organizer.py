@@ -203,7 +203,6 @@ class EventCreateForm(forms.ModelForm):
             self.instance.api_type = Event.TEST
 
         self.instance.application_fee_percent = self.instance.organization.default_application_fee_percent
-        instance = super(EventCreateForm, self).save()
 
         template = self.cleaned_data.get('template_event')
         if template:
@@ -215,8 +214,11 @@ class EventCreateForm(forms.ModelForm):
                 'check_postmark_cutoff', 'transfers_allowed', 'facebook_url',
             )
             for field in fields:
-                setattr(instance, field, getattr(template, field))
+                setattr(self.instance, field, getattr(template, field))
 
+        instance = super(EventCreateForm, self).save()
+
+        if template:
             items = Item.objects.filter(event=template).prefetch_related('options', 'images')
             for item in items:
                 options = list(item.options.all())

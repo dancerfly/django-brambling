@@ -4,7 +4,7 @@ from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
 from brambling.forms.organizer import ManualPaymentForm, EventCreateForm
-from brambling.models import Transaction
+from brambling.models import Transaction, Event
 from brambling.tests.factories import (
     OrderFactory,
     PersonFactory,
@@ -91,6 +91,9 @@ class EventCreateFormTestCase(TestCase):
         form = EventCreateForm(request, data=request.POST)
         self.assertFalse(form.errors)
         event = form.save()
+
+        # Get a refreshed version from the db
+        event = Event.objects.get(pk=event.pk)
 
         fields = (
             'description', 'website_url', 'banner_image', 'city',
