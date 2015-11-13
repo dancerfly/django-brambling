@@ -121,28 +121,30 @@
 
 	{% include "brambling/event/organizer/_form_js.html" %}
 
-	<script>
-		(function() {
-			var template_event_default = {{ form|get_value:"template_event" }},
-				$field = $('#id_template_event'),
-				allEvents = $('#id_template_event').children(),
-				updateAvailableEvents = function() {
-					var orgId = $('#id_organization').val();
-					$field.children().remove();
-					allEvents.each(function (idx, ele) {
-						var $ele = $(ele);
-						if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
-							$field.append($ele);
-						}
-					});
-					$field.val(template_event_default);
-					template_event_default = null;
-					$field.trigger("chosen:updated");
-				};
-			updateAvailableEvents();
-			$('#id_organization').on('change', function() {
+	{% if form %}
+		<script>
+			(function() {
+				var template_event_default = {{ form|get_value:"template_event" }},
+					$field = $('#id_template_event'),
+					allEvents = $('#id_template_event').children(),
+					updateAvailableEvents = function() {
+						var orgId = $('#id_organization').val();
+						$field.children().remove();
+						allEvents.each(function (idx, ele) {
+							var $ele = $(ele);
+							if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
+								$field.append($ele);
+							}
+						});
+						$field.val(template_event_default);
+						template_event_default = null;
+						$field.trigger("chosen:updated");
+					};
 				updateAvailableEvents();
-			});
-		})();
-	</script>
+				$('#id_organization').on('change', function() {
+					updateAvailableEvents();
+				});
+			})();
+		</script>
+	{% endif %}
 {% endblock %}
