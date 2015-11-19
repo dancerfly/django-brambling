@@ -69,21 +69,8 @@
 		{% endfor %}
 	</div>
 	<div class="panel-footer">
-		{% if event.is_frozen %}
-			<div class='tipped form-group' data-placement="right" data-container="body" title="Event is frozen">
-				{% comment %}
-				Theoretically, only published events can be frozen. But we want to make bad behavior obvious.
-				{% endcomment %}
-				{% if event.is_published %}
-					<button class='btn btn-danger btn-block' disabled>
-						Unpublish Event
-					</button>
-				{% else %}
-					<button class='btn btn-success btn-block' disabled>
-						Publish Event
-					</button>
-				{% endif %}
-			</div>
+		{% if event.is_frozen and event.is_published %}
+			{# Don't display a button #}
 		{% elif event.is_published %}
 			<div class='form-group'>
 				<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}' class='btn btn-danger btn-block'>Unpublish Event</a>
