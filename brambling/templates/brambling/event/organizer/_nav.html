@@ -73,11 +73,11 @@
 			{# Don't display a button #}
 		{% elif event.is_published %}
 			<div class='form-group'>
-				<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}' class='btn btn-danger btn-block'>Unpublish Event</a>
+				<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-danger btn-block'>Unpublish Event</a>
 			</div>
 		{% elif event.can_be_published %}
 			<div class='form-group'>
-				<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}' class='btn btn-success btn-block'>Publish Event</a>
+				<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-success btn-block'>Publish Event</a>
 			</div>
 		{% else %}
 			<div class='tipped form-group' data-placement="right" data-container="body" title="This event needs to have at least one item before you can publish it. Go to the items section to set that up!">
