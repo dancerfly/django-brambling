@@ -23,6 +23,34 @@
 		</div>
 		<div class="media text-muted margin-leader-0 text-small">
 			<div class="media-left">
+				{% if event.privacy == event.PUBLIC %}
+					<i class='fa fa-fw fa-globe'></i>
+				{% elif event.privacy == event.LINK %}
+					<i class='fa fa-fw fa-eye-slash'></i>
+				{% elif event.privacy == event.HALF_PUBLIC %}
+					<i class='fa fa-fw fa-envelope-o'></i>
+				{% elif event.privacy == event.INVITED %}
+					<i class='fa fa-fw fa-lock'></i>
+				{% else %}
+					<i class='fa fa-fw fa-question'></i>
+				{% endif %}
+			</div>
+			<div class="media-body">
+				{% if event.privacy == event.PUBLIC %}
+					Public
+				{% elif event.privacy == event.LINK %}
+					Hidden
+				{% elif event.privacy == event.HALF_PUBLIC %}
+					Invite
+				{% elif event.privacy == event.INVITED %}
+					Secret
+				{% else %}
+					Unknown Privacy
+				{% endif %}
+			</div>
+		</div>
+		<div class="media text-muted margin-leader-0 text-small">
+			<div class="media-left">
 				<i class="fa fa-group fa-fw"></i>
 			</div>
 			<div class="media-body">

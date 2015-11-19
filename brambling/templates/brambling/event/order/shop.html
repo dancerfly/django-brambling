@@ -179,23 +179,32 @@
 					{% if event.description %}
 						<div class="row">
 							<div class="col-md-4">
-								<div class='margin-trailer-half'>
-									{% include "brambling/event/_privacy.html" %}
+								<div class="media text-large">
+									<div class="media-left">
+										<i class="fa fa-clock-o fa-fw"></i>
+									</div>
+									<div class="media-body">
+										{% include "brambling/event/_when.html" %}
+									</div>
 								</div>
-								<div class='margin-trailer-half'>
-									<i class="fa fa-clock-o fa-fw"></i>
-									{% include "brambling/event/_when.html" %}
-								</div>
-								<div class='margin-trailer-half'>
-									<i class="fa fa-map-marker fa-fw"></i>
-									{% include "brambling/event/_where.html" %}
+								<div class="media text-large">
+									<div class="media-left">
+										<i class="fa fa-map-marker fa-fw"></i>
+									</div>
+									<div class="media-body">
+										{% include "brambling/event/_where.html" %}
+									</div>
 								</div>
 								{% if dance_styles %}
-									<div class='margin-trailer-half'>
-										<i class="fa fa-fw"></i>
-										{% for style in dance_styles %}
-											<h4 class="text-muted">{{ style }}</h4>
-										{% endfor %}
+									<div class="media text-large">
+										<div class="media-left">
+											<i class="fa fa-fw"></i>
+										</div>
+										<div class="media-body">
+											{% for style in dance_styles %}
+												<h4 class="text-muted">{{ style }}</h4>
+											{% endfor %}
+										</div>
 									</div>
 								{% endif %}
 							</div>
