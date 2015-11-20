@@ -68,7 +68,7 @@
 						{% formfield form.new_organization_slug with placeholder='organization-url' %}
 					</span>
 					<strong>/</strong>
-					{% formfield form.slug %}
+					{% formfield form.slug with placeholder='event-url' %}
 				</div>
 				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
 			</div>
@@ -128,7 +128,6 @@
 	<script type="text/javascript">window.django = window.grp = {'jQuery': jQuery};</script>
 	<script type="text/javascript" src="{% static "admin/js/urlify.js" %}"></script>
 	<script type="text/javascript" src="{% static "admin/js/prepopulate.min.js" %}"></script>
-	<script type="text/javascript" src="{% static "brambling/brambling.slug.js" %}"></script>
 
 	{% include "brambling/event/organizer/_form_js.html" %}
 
@@ -173,6 +172,10 @@
 				};
 				toggleNewOrg();
 				$('#id_create_new_organization').on('change', toggleNewOrg);
+
+				// Prepopulate slug fields
+				$('#id_slug').prepopulate(['#id_name']);
+				$('#id_new_organization_slug').prepopulate(['#id_new_organization_name']);
 			})();
 		</script>
 	{% endif %}
