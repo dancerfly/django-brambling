@@ -117,7 +117,7 @@
 				</div>
 			</div>
 
-			{% with field=form.template_event %}{% if field.queryset %}
+			{% with field=form.template_event %}{% if field.field.queryset %}
 				<div class='form-group {% if field.errors %} has-error{% endif %} js-visible-template-events'>
 					<label class='control-label' for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
 					<div>
