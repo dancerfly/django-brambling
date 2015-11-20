@@ -4,7 +4,7 @@
 	{% adjust event.banner_image 'fill' width=940 height=300 as banner_image %}
 {% endif %}
 
-<div class="margin-trailer-dbl event-listing col-sm-6">
+<div class="margin-trailer-dbl event-listing">
 	<a href="{{ event.get_absolute_url }}" class="a-secret a-opacity">
 		<div class="event-listing-image relative"{% if banner_image %} style="background-image: url({{ banner_image }})"{% endif %}>
 			<div class="datecard">
@@ -13,7 +13,15 @@
 			</div>
 		</div>
 	</a>
-	<h3>{{ event.name }}</h3>
+	<h3>
+		{{ event.name }}
+		{% if is_admin and not event.is_published %}
+			<small class='text-danger tipped' title="You can see this event because you're are an admin for it">
+				<i class='fa fa-fw fa-warning'></i>
+				Not published
+			</small>
+		{% endif %}
+	</h3>
 	<p class="visible-inline-block margin-0">
 		<i class="fa fa-clock-o fa-fw"></i>
 		{% include "brambling/event/_when.html" %}
@@ -25,7 +33,7 @@
 	<h5 class="text-muted event-tags margin-0">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 
 	<div class='form-group margin-leader-half'>
-			{% if registered %}
+			{% if is_registered %}
 				{% if event.order and event.order.has_cart %}
 					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Complete your registration now!">
 						<i class="fa fa-exclamation-circle"></i> Almost Registered
@@ -40,7 +48,7 @@
 					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm hidden-md">for <strong>{{ event.name }}</strong>!</span>
 				</a>
 			{% endif %}
-		{% if event in admin_events %}
+		{% if is_admin %}
 			<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="margin-trailer-half btn btn-default">
 				<i class="fa fa-cog"></i>
 				Manage Event

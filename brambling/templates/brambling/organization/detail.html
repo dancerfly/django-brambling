@@ -1,12 +1,29 @@
-{% extends "brambling/layouts/8_4.html" %}
+{% extends "brambling/layouts/12_sm.html" %}
 
 {% load staticfiles hints %}
 
 {% block title %}{{ organization.name }} – {{ block.super }}{% endblock %}
 
 {% block main %}
-	<div class="page-header">
-		<h1>{{ organization.name }}</h1>
+	<div class='page-header'>
+		<h1>
+			{{ organization.name }}
+			{% if organization_editable_by %}
+				<ul class='list-inline pull-right'>
+					<li>
+						<a href="{% url "brambling_event_create" %}?organization={{ organization.id }}" class="btn btn-success pull-right">
+							<i class="fa fa-plus fa-fw"></i> Create a new event
+						</a>
+					</li>
+					<li>
+						<a href="{% url "brambling_organization_update" organization_slug=organization.slug %}" class="btn btn-primary pull-right">
+							<i class="fa fa-cog fa-fw"></i> Settings
+						</a>
+					</li>
+				</ul>
+			{% endif %}
+		</h1>
+
 		{% if organization.description %}
 			<div>{{ organization.description|linebreaks }}</div>
 		{% endif %}
@@ -32,30 +49,23 @@
 		{% endif %}
 	</div>
 
-	<h1>Upcoming Events</h1>
-
-	{% if registered_events %}
-		<p class="text-muted">Events you&#8217;re registered for are shown first.</p>
-		{% for event in registered_events %}
-			{% include "brambling/_event_list_item.html" with registered="true" %}
-		{% endfor %}
-	{% endif %}
-
-	{% if registered_events %}
-		<h4 class="header-divider hug"><span>More Events You May Be Interested In</span></h4>
-	{% endif %}
-
-	{% if upcoming_events %}
-		{% for event in upcoming_events|slice:"5" %}
-			{% include "brambling/_event_list_item.html" %}
-		{% endfor %}
-	{% else %}
-		<p>No upcoming events</p>
-	{% endif %}
-{% endblock %}
-
-{% block side %}
-	{% if organization_editable_by %}
-		{% include 'brambling/organization/_nav.html' %}
-	{% endif %}
+	{% for event in events %}
+		{% if event in registered_events and event in admin_events %}
+			{% include "brambling/_event_list_item.html" with is_registered="true" is_admin="true" %}
+		{% elif event in registered_events %}
+			{% if event.is_published %}
+				{% if event.privacy == event.PUBLIC or event.privacy == event.HALF_PUBLIC %}
+					{% include "brambling/_event_list_item.html" with is_registered="true" %}
+				{% endif %}
+			{% endif %}
+		{% elif event in admin_events %}
+			{% include "brambling/_event_list_item.html" with is_admin="true" %}
+		{% else %}
+			{% if event.is_published %}
+				{% if event.privacy == event.PUBLIC or event.privacy == event.HALF_PUBLIC %}
+					{% include "brambling/_event_list_item.html" %}
+				{% endif %}
+			{% endif %}
+		{% endif %}
+	{% endfor %}
 {% endblock %}

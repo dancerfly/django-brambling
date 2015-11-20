@@ -33,18 +33,6 @@
 					</div>
 				</div>
 			{% endif %}
-			{% if past_events %}
-				<div class="panel panel-default">
-					<header class="panel-heading">
-						<h4 class="panel-title">Past Events You Registered For</h4>
-					</header>
-					<div class="list-group">
-						{% for event in past_events %}
-							{% include "brambling/_event_list-group-item.html" %}
-						{% endfor %}
-					</div>
-				</div>
-			{% endif %}
 			{% if organizations %}
 				<div class="panel panel-default">
 					<div class="panel-heading">
@@ -120,7 +108,13 @@
 				{% for event in registered_events %}
 					{% cycle 'col1' 'col2' as col silent %}
 					{% if col = 'col1' %}<div class="row">{% endif %}
-					{% include "brambling/_event_list_item.html" with registered="true" %}
+					<div class='col-sm-6'>
+						{% if event in admin_events %}
+							{% include "brambling/_event_list_item.html" with is_registered="true" is_admin="true" %}
+						{% else %}
+							{% include "brambling/_event_list_item.html" with is_registered="true" %}
+						{% endif %}
+					</div>
 					{% if col = 'col2' or forloop.last %}</div>{% endif %}
 				{% endfor %}
 			{% endif %}
@@ -133,7 +127,13 @@
 				{% for event in upcoming_events %}
 					{% cycle 'col1' 'col2' as col silent %}
 					{% if col = 'col1' %}<div class="row">{% endif %}
-					{% include "brambling/_event_list_item.html" %}
+					<div class='col-sm-6'>
+						{% if event in admin_events %}
+							{% include "brambling/_event_list_item.html" with is_admin="true" %}
+						{% else %}
+							{% include "brambling/_event_list_item.html" %}
+						{% endif %}
+					</div>
 					{% if col = 'col2' or forloop.last %}</div>{% endif %}
 				{% endfor %}
 			{% else %}

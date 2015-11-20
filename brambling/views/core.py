@@ -57,17 +57,10 @@ class DashboardView(TemplateView):
             # Exclude registered events
             upcoming_events = upcoming_events.exclude(pk__in=registered_events_qs)
 
-            # Past events is things you at one point paid for.
-            # So you've paid for something, even if it was later refunded.
-            past_events = Event.objects.filter(
-                order__person=user,
-                order__bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.REFUNDED, BoughtItem.TRANSFERRED),
-            ).filter(start_date__lt=today).order_by('-start_date').distinct()
             context.update({
                 'upcoming_events': upcoming_events,
                 'admin_events': admin_events,
                 'registered_events': registered_events,
-                'past_events': past_events,
                 'organizations': user.get_organizations(),
             })
 

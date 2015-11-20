@@ -23,6 +23,34 @@
 		</div>
 		<div class="media text-muted margin-leader-0 text-small">
 			<div class="media-left">
+				{% if event.privacy == event.PUBLIC %}
+					<i class='fa fa-fw fa-globe'></i>
+				{% elif event.privacy == event.LINK %}
+					<i class='fa fa-fw fa-eye-slash'></i>
+				{% elif event.privacy == event.HALF_PUBLIC %}
+					<i class='fa fa-fw fa-envelope-o'></i>
+				{% elif event.privacy == event.INVITED %}
+					<i class='fa fa-fw fa-lock'></i>
+				{% else %}
+					<i class='fa fa-fw fa-question'></i>
+				{% endif %}
+			</div>
+			<div class="media-body">
+				{% if event.privacy == event.PUBLIC %}
+					Public
+				{% elif event.privacy == event.LINK %}
+					Hidden
+				{% elif event.privacy == event.HALF_PUBLIC %}
+					Invite
+				{% elif event.privacy == event.INVITED %}
+					Secret
+				{% else %}
+					Unknown Privacy
+				{% endif %}
+			</div>
+		</div>
+		<div class="media text-muted margin-leader-0 text-small">
+			<div class="media-left">
 				<i class="fa fa-group fa-fw"></i>
 			</div>
 			<div class="media-body">
@@ -41,28 +69,15 @@
 		{% endfor %}
 	</div>
 	<div class="panel-footer">
-		{% if event.is_frozen %}
-			<div class='tipped form-group' data-placement="right" data-container="body" title="Event is frozen">
-				{% comment %}
-				Theoretically, only published events can be frozen. But we want to make bad behavior obvious.
-				{% endcomment %}
-				{% if event.is_published %}
-					<button class='btn btn-danger btn-block' disabled>
-						Unpublish Event
-					</button>
-				{% else %}
-					<button class='btn btn-success btn-block' disabled>
-						Publish Event
-					</button>
-				{% endif %}
-			</div>
+		{% if event.is_frozen and event.is_published %}
+			{# Don't display a button #}
 		{% elif event.is_published %}
 			<div class='form-group'>
-				<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}' class='btn btn-danger btn-block'>Unpublish Event</a>
+				<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-danger btn-block'>Unpublish Event</a>
 			</div>
 		{% elif event.can_be_published %}
 			<div class='form-group'>
-				<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}' class='btn btn-success btn-block'>Publish Event</a>
+				<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-success btn-block'>Publish Event</a>
 			</div>
 		{% else %}
 			<div class='tipped form-group' data-placement="right" data-container="body" title="This event needs to have at least one item before you can publish it. Go to the items section to set that up!">
