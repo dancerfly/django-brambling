@@ -263,7 +263,7 @@ class Organization(AbstractDwollaModel):
                                      blank=True, null=True)
 
     # This is a secret value set by admins. It will be cached on the event model.
-    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=1.5,
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # These are obtained with Stripe Connect via Oauth.
