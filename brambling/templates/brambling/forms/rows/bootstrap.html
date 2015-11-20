@@ -18,7 +18,7 @@
 							{% if field|id %}<label class="control-label" for="{{ field|id }}">{% endif %}
 							{{ label }}
 							{% if field|id %}</label>{% endif %}
-							{% if not field.field.required %} <small class="text-muted">(Optional)</small>{% endif %}
+							{% if not field.field.required and not required %} <small class="text-muted">(Optional)</small>{% endif %}
 						{% endblock %}
 						{% block widget %}
 							{% if not is_checkbox %}

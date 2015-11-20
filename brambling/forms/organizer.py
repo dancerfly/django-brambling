@@ -154,6 +154,9 @@ class OrganizationPaymentForm(forms.ModelForm):
 
 class EventCreateForm(forms.ModelForm):
     template_event = forms.ModelChoiceField(queryset=Event.objects.all(), required=False)
+    new_organization_name = forms.CharField(required=False)
+    new_organization_slug = forms.SlugField(required=False)
+    create_new_organization = forms.BooleanField(required=False)
 
     class Meta:
         model = Event
@@ -173,6 +176,7 @@ class EventCreateForm(forms.ModelForm):
             Q(owner=request.user) |
             Q(editors=request.user)
         ).order_by('name').distinct()
+        self.initial['create_new_organization'] = not self.fields['organization'].queryset
 
     def clean(self):
         cd = super(EventCreateForm, self).clean()
@@ -188,6 +192,12 @@ class EventCreateForm(forms.ModelForm):
             if Event.objects.filter(organization=cd['organization'], slug=cd['slug']).exists():
                 self.add_error('slug', 'Slug is already in use by another event; please choose a different one.')
 
+        if cd.get('create_new_organization') and not cd.get('new_organization_slug'):
+            self.add_error('new_organization_slug', 'New organization requires a URL.')
+
+        if cd.get('create_new_organization') and not cd.get('new_organization_name'):
+            self.add_error('new_organization_name', 'New organization requires a URL.')
+
         return cd
 
     def _adjust_date(self, old_event, new_event, date):
@@ -201,6 +211,13 @@ class EventCreateForm(forms.ModelForm):
     def save(self):
         if self.instance.is_demo():
             self.instance.api_type = Event.TEST
+
+        if self.cleaned_data.get('create_new_organization'):
+            self.instance.organization = Organization.objects.create(
+                name=self.cleaned_data['new_organization_name'],
+                slug=self.cleaned_data['new_organization_slug'],
+                owner=self.request.user,
+            )
 
         self.instance.application_fee_percent = self.instance.organization.default_application_fee_percent
 
