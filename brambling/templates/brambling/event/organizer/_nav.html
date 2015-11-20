@@ -37,13 +37,13 @@
 			</div>
 			<div class="media-body">
 				{% if event.privacy == event.PUBLIC %}
-					Public
+					<span class='tipped' title='Anyone can find and view the event'>Public</span>
 				{% elif event.privacy == event.LINK %}
-					Hidden
+					<span class='tipped' title='Anyone with a direct link can view the event'>Hidden</span>
 				{% elif event.privacy == event.HALF_PUBLIC %}
-					Invite
+					<span class='tipped' title='Anyone can find and view the event, but only people who are invited can register'>Invite</span>
 				{% elif event.privacy == event.INVITED %}
-					Secret
+					<span class='tipped' title='Only people invited to the event can see the event and register'>Secret</span>
 				{% else %}
 					Unknown Privacy
 				{% endif %}
