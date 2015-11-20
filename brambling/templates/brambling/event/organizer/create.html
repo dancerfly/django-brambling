@@ -69,6 +69,17 @@
 					</span>
 					<strong>/</strong>
 					{% formfield form.slug with placeholder='event-url' %}
+
+					{% if form.fields.organization.queryset %}
+						<button class='btn btn-default js-visible-existing-organizations'>
+							<i class='fa fa-fw fa-plus'></i>
+							Add an organization
+						</button>
+						<button class='btn btn-default js-visible-new-organization'>
+							<i class='fa fa-fw fa-list'></i>
+							Use an existing organization
+						</button>
+					{% endif %}
 				</div>
 				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
 			</div>
@@ -176,6 +187,12 @@
 				// Prepopulate slug fields
 				$('#id_slug').prepopulate(['#id_name']);
 				$('#id_new_organization_slug').prepopulate(['#id_new_organization_name']);
+
+				// Allow toggling of creation vs. using an existing org.
+				$('button.js-visible-new-organization, button.js-visible-existing-organizations').on('click', function (e) {
+					e.preventDefault();
+					$('#id_create_new_organization').click();
+				});
 			})();
 		</script>
 	{% endif %}
