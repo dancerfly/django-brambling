@@ -157,11 +157,12 @@ class EventCreateForm(forms.ModelForm):
     new_organization_name = forms.CharField(required=False)
     new_organization_slug = forms.SlugField(required=False)
     create_new_organization = forms.BooleanField(required=False)
+    organization = forms.ModelChoiceField(queryset=Organization.objects.all(), required=False)
 
     class Meta:
         model = Event
         fields = ('name', 'slug', 'start_date', 'end_date', 'start_time',
-                  'end_time', 'organization', 'template_event')
+                  'end_time')
 
     def __init__(self, request, *args, **kwargs):
         super(EventCreateForm, self).__init__(*args, **kwargs)
@@ -188,15 +189,21 @@ class EventCreateForm(forms.ModelForm):
                 cd['template_event'].organization_id != cd['organization'].id):
             self.add_error('template_event', "Template event and new event must be from the same organization.")
 
-        if 'slug' in cd and cd.get('organization'):
-            if Event.objects.filter(organization=cd['organization'], slug=cd['slug']).exists():
-                self.add_error('slug', 'Slug is already in use by another event; please choose a different one.')
+        if cd.get('create_new_organization'):
+            if cd.get('new_organization_slug'):
+                if Organization.objects.filter(slug=cd['new_organization_slug']).exists():
+                    self.add_error('new_organization_slug', 'URL is already in use by another organization; please choose a different one.')
+            else:
+                self.add_error('new_organization_slug', 'New organization requires a URL.')
 
-        if cd.get('create_new_organization') and not cd.get('new_organization_slug'):
-            self.add_error('new_organization_slug', 'New organization requires a URL.')
-
-        if cd.get('create_new_organization') and not cd.get('new_organization_name'):
-            self.add_error('new_organization_name', 'New organization requires a URL.')
+            if not cd.get('new_organization_name'):
+                self.add_error('new_organization_name', 'New organization requires a URL.')
+        else:
+            if not cd.get('organization'):
+                self.add_error('organization', 'Organization is required.')
+            elif cd.get('slug'):
+                if Event.objects.filter(organization=cd['organization'], slug=cd['slug']).exists():
+                    self.add_error('slug', 'URL is already in use by another event; please choose a different one.')
 
         return cd
 
@@ -209,15 +216,17 @@ class EventCreateForm(forms.ModelForm):
         return date + (new_event.start_date - old_event.start_date)
 
     def save(self):
-        if self.instance.is_demo():
-            self.instance.api_type = Event.TEST
-
         if self.cleaned_data.get('create_new_organization'):
             self.instance.organization = Organization.objects.create(
                 name=self.cleaned_data['new_organization_name'],
                 slug=self.cleaned_data['new_organization_slug'],
                 owner=self.request.user,
             )
+        else:
+            self.instance.organization = self.cleaned_data['organization']
+
+        if self.instance.is_demo():
+            self.instance.api_type = Event.TEST
 
         self.instance.application_fee_percent = self.instance.organization.default_application_fee_percent
 

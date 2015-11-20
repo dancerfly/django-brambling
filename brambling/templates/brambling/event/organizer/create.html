@@ -64,11 +64,13 @@
 							{% endwith %}
 						</select>
 					</span>
-					<span class='js-visible-new-organization'>
+					<span class='js-visible-new-organization{% if form.new_organization_slug.errors %} has-error{% endif %}'>
 						{% formfield form.new_organization_slug with placeholder='organization-url' %}
 					</span>
 					<strong>/</strong>
-					{% formfield form.slug with placeholder='event-url' %}
+					<span{% if form.slug.errors %} class='has-error'{% endif %}>
+						{% formfield form.slug with placeholder='event-url' %}
+					</span>
 
 					{% if form.fields.organization.queryset %}
 						<button class='btn btn-default js-visible-existing-organizations'>
@@ -82,6 +84,16 @@
 					{% endif %}
 				</div>
 				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+				{% if form.slug.errors %}
+					<div class='has-error'>
+						{% include "floppyforms/errors.html" with errors=form.slug.errors %}
+					</div>
+				{% endif %}
+				{% if form.new_organization_slug.errors %}
+					<div class='has-error'>
+						{% include "floppyforms/errors.html" with errors=form.new_organization_slug.errors %}
+					</div>
+				{% endif %}
 			</div>
 
 			<div class='row'>
