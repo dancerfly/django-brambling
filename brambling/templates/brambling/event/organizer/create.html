@@ -7,21 +7,33 @@
 {% block title %}Create New Event – {{ block.super }}{% endblock %}
 
 {% block content %}
-	{% if not form %}
-		<div class='marketing text-center'>
+	{% if not request.user.is_authenticated %}
+		<div class='marketing'>
 			<div class="container-xl">
-				<div class='text-jumbo'>
-					<p>
-						<span class="dancerfly-brand">Dancerfly</span> is a great platform for workshops, exchanges, series classes, &amp; more.
-					</p>
+				<div class='row margin-trailer-dbl'>
+					<div class='col-sm-6'>
+						<div class='text-jumbo'>
+							<p>
+								<span class="dancerfly-brand">Dancerfly</span> is a great platform for workshops, exchanges, series classes, &amp; more.
+							</p>
+						</div>
+						<p class='margin-leader'>
+							Start creating events today!
+						</p>
+						<p class='margin-leader'>
+							<a href='/about/#section2' class='btn btn-lg btn-primary'>Learn more <i class='fa fa-chevron-right'></i></a>
+						</p>
+					</div>
+					<div class='col-sm-6'>
+						<form method='post' action='{% url "brambling_signup" %}?next={{ request.path }}'>
+							{% csrf_token %}
+							{% form signup_form using 'brambling/forms/signup.html' %}
+							<button class='btn btn-lg btn-primary' type='submit'>Sign up</button>
+							<a class='btn btn-lg btn-link' href='{% url "login" %}?next={{ request.path }}'>Log in</a>
+						</form>
+						</p>
+					</div>
 				</div>
-				<p class='margin-leader-dbl'>
-					Get set up and start creating events today!
-				</p>
-				<p class='margin-leader-dbl'>
-					<a href='mailto:support@dancerfly.com' class='btn btn-xl btn-primary'>Email us to get started!</a>
-					<a href='/about/#section2' class='btn btn-xl btn-primary'>Learn more</a>
-				</p>
 				<div class="max-width-md block-center hidden-xxs">
 					<img src='{% static "brambling/images/all-dancers.gif" %}' class="full-width marketing-dancers-img">
 				</div>
