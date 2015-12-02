@@ -7,21 +7,33 @@
 {% block title %}Create New Event – {{ block.super }}{% endblock %}
 
 {% block content %}
-	{% if not form or not form.fields.organization.queryset %}
-		<div class='marketing text-center'>
+	{% if not request.user.is_authenticated %}
+		<div class='marketing'>
 			<div class="container-xl">
-				<div class='text-jumbo'>
-					<p>
-						<span class="dancerfly-brand">Dancerfly</span> is a great platform for workshops, exchanges, series classes, &amp; more.
-					</p>
+				<div class='row margin-trailer-dbl'>
+					<div class='col-sm-6'>
+						<div class='text-jumbo'>
+							<p>
+								<span class="dancerfly-brand">Dancerfly</span> is a great platform for workshops, exchanges, series classes, &amp; more.
+							</p>
+						</div>
+						<p class='margin-leader'>
+							Start creating events today!
+						</p>
+						<p class='margin-leader'>
+							<a href='/about/#section2' class='btn btn-lg btn-primary'>Learn more <i class='fa fa-chevron-right'></i></a>
+						</p>
+					</div>
+					<div class='col-sm-6'>
+						<form method='post' action='{% url "brambling_signup" %}?next={{ request.path }}'>
+							{% csrf_token %}
+							{% form signup_form using 'brambling/forms/signup.html' %}
+							<button class='btn btn-lg btn-primary' type='submit'>Sign up</button>
+							<a class='btn btn-lg btn-link' href='{% url "login" %}?next={{ request.path }}'>Log in</a>
+						</form>
+						</p>
+					</div>
 				</div>
-				<p class='margin-leader-dbl'>
-					Get set up and start creating events today!
-				</p>
-				<p class='margin-leader-dbl'>
-					<a href='mailto:support@dancerfly.com' class='btn btn-xl btn-primary'>Email us to get started!</a>
-					<a href='/about/#section2' class='btn btn-xl btn-primary'>Learn more</a>
-				</p>
 				<div class="max-width-md block-center hidden-xxs">
 					<img src='{% static "brambling/images/all-dancers.gif" %}' class="full-width marketing-dancers-img">
 				</div>
@@ -42,24 +54,58 @@
 		{% form form using %}
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
-			{% formrow form.name %}
+			{% formrow form.name with label="Event name" %}
+			<div class='js-visible-new-organization'>
+				{% formrow form.new_organization_name with required=1 label="Organization name" %}
+			</div>
+			<div class='hidden'>
+				{% formfield form.create_new_organization %}
+			</div>
 			<div class="form-group">
 				<label class="control-label" for="id_slug">
 				URL
 				</label>
 				<div class='form-inline'>
 					<strong>dancerfly.com/</strong>
-					<select class='chosen-select chosen-width-auto' id="id_organization" name="organization">
-						{% with organization_value=form|get_value:"organization" %}
-							{% for organization in form.fields.organization.queryset %}
-								<option value="{{ organization.pk }}"{% if organization_value == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
-							{% endfor %}
-						{% endwith %}
-					</select>
+					<span class='js-visible-existing-organizations'>
+						<select class='chosen-select chosen-width-auto' id="id_organization" name="organization">
+							{% with organization_value=form|get_value:"organization" %}
+								{% for organization in form.fields.organization.queryset %}
+									<option value="{{ organization.pk }}"{% if organization_value == organization.pk|stringformat:"i" %} selected{% endif %}>{{ organization.slug }}</option>
+								{% endfor %}
+							{% endwith %}
+						</select>
+					</span>
+					<span class='js-visible-new-organization{% if form.new_organization_slug.errors %} has-error{% endif %}'>
+						{% formfield form.new_organization_slug with placeholder='organization-url' %}
+					</span>
 					<strong>/</strong>
-					{% formfield form.slug %}
+					<span{% if form.slug.errors %} class='has-error'{% endif %}>
+						{% formfield form.slug with placeholder='event-url' %}
+					</span>
+
+					{% if form.fields.organization.queryset %}
+						<button class='btn btn-default js-visible-existing-organizations'>
+							<i class='fa fa-fw fa-plus'></i>
+							Add an organization
+						</button>
+						<button class='btn btn-default js-visible-new-organization'>
+							<i class='fa fa-fw fa-list'></i>
+							Use an existing organization
+						</button>
+					{% endif %}
 				</div>
 				<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+				{% if form.slug.errors %}
+					<div class='has-error'>
+						{% include "floppyforms/errors.html" with errors=form.slug.errors %}
+					</div>
+				{% endif %}
+				{% if form.new_organization_slug.errors %}
+					<div class='has-error'>
+						{% include "floppyforms/errors.html" with errors=form.new_organization_slug.errors %}
+					</div>
+				{% endif %}
 			</div>
 
 			<div class='row'>
@@ -83,8 +129,8 @@
 				</div>
 			</div>
 
-			{% with field=form.template_event %}
-				<div class='form-group {% if field.errors %} has-error{% endif %}'>
+			{% with field=form.template_event %}{% if field.field.queryset %}
+				<div class='form-group {% if field.errors %} has-error{% endif %} js-visible-template-events'>
 					<label class='control-label' for="id_template_event">Template event <small class="text-muted">(Optional)</small></label>
 					<div>
 						<select class='chosen-select chosen-width-auto' id="id_template_event" name="template_event">
@@ -102,7 +148,7 @@
 						{% include "floppyforms/errors.html" with errors=field.errors %}
 					{% endif %}
 				</div>
-			{% endwith %}
+			{% endif %}{% endwith %}
 		{% endform %}
 
 		<button class="btn btn-primary" type="submit">
@@ -117,32 +163,59 @@
 	<script type="text/javascript">window.django = window.grp = {'jQuery': jQuery};</script>
 	<script type="text/javascript" src="{% static "admin/js/urlify.js" %}"></script>
 	<script type="text/javascript" src="{% static "admin/js/prepopulate.min.js" %}"></script>
-	<script type="text/javascript" src="{% static "brambling/brambling.slug.js" %}"></script>
 
 	{% include "brambling/event/organizer/_form_js.html" %}
 
 	{% if form %}
 		<script>
 			(function() {
-				var template_event_default = {{ form|get_value:"template_event" }},
-					$field = $('#id_template_event'),
-					allEvents = $('#id_template_event').children(),
-					updateAvailableEvents = function() {
-						var orgId = $('#id_organization').val();
-						$field.children().remove();
-						allEvents.each(function (idx, ele) {
-							var $ele = $(ele);
-							if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
-								$field.append($ele);
-							}
-						});
-						$field.val(template_event_default);
-						template_event_default = null;
-						$field.trigger("chosen:updated");
-					};
-				updateAvailableEvents();
-				$('#id_organization').on('change', function() {
-					updateAvailableEvents();
+				var template_event_default = {% with template_event_default=form|get_value:"template_event" %}{% if template_event_default %}{{ template_event_default }}{% else %}null{% endif %}{% endwith %},
+					hasOrganizations = {% if form.fields.organization.queryset %}true{% else %}false{% endif %},
+					hasTemplateEvents = {% if form.fields.template_event.queryset %}true{% else %}false{% endif %};
+
+				if (hasOrganizations && hasTemplateEvents) {
+					var $field = $('#id_template_event'),
+						allEvents = $('#id_template_event').children(),
+						updateTemplateEventChoices = function() {
+							var orgId = $('#id_organization').val();
+							$field.children().remove();
+							allEvents.each(function (idx, ele) {
+								var $ele = $(ele);
+								if ($ele.attr('value') == '' || $ele.data('org-id') == orgId) {
+									$field.append($ele);
+								}
+							});
+							$field.val(template_event_default);
+							template_event_default = null;
+							$field.trigger("chosen:updated");
+						};
+					updateTemplateEventChoices();
+					$('#id_organization').on('change', function() {
+						updateTemplateEventChoices();
+					});
+				}
+
+				// Handle creation of new orgs as well.
+				var toggleNewOrg = function() {
+					if ($('#id_create_new_organization').prop('checked')) {
+						$('.js-visible-new-organization').show();
+						$('.js-visible-existing-organizations').hide();
+					} else {
+						$('.js-visible-new-organization').hide();
+						$('.js-visible-existing-organizations').show();
+					}
+				};
+				toggleNewOrg();
+				$('#id_create_new_organization').on('change', toggleNewOrg);
+
+				// Prepopulate slug fields
+				$('#id_slug').prepopulate(['#id_name']);
+				$('#id_new_organization_slug').prepopulate(['#id_new_organization_name']);
+
+				// Allow toggling of creation vs. using an existing org.
+				$('button.js-visible-new-organization, button.js-visible-existing-organizations').on('click', function (e) {
+					e.preventDefault();
+					$('#id_create_new_organization').click();
 				});
 			})();
 		</script>

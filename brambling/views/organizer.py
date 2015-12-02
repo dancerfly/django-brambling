@@ -29,6 +29,7 @@ from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        CustomFormForm, CustomFormFieldFormSet,
                                        OrderNotesForm, OrganizationPaymentForm,
                                        AttendeeNotesForm, EventCreateForm)
+from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
@@ -218,6 +219,7 @@ class EventCreateView(CreateView):
         context = super(EventCreateView, self).get_context_data(**kwargs)
         context.update({
             'event': getattr(context['form'], 'instance', None),
+            'signup_form': SignUpForm(request=self.request)
         })
         return context
 

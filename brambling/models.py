@@ -263,7 +263,7 @@ class Organization(AbstractDwollaModel):
                                      blank=True, null=True)
 
     # This is a secret value set by admins. It will be cached on the event model.
-    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=2.5,
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=1.5,
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # These are obtained with Stripe Connect via Oauth.
@@ -358,9 +358,9 @@ class Event(models.Model):
     website_url = models.URLField(blank=True, verbose_name="website URL")
     facebook_url = models.URLField(blank=True, verbose_name="facebook event URL")
     banner_image = models.ImageField(blank=True)
-    city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
-    country = CountryField(default='US')
+    city = models.CharField(max_length=50, blank=True)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    country = CountryField(default='US', blank=True)
     timezone = models.CharField(max_length=40, default='America/New_York', choices=((tz, tz) for tz in pytz.common_timezones))
     currency = models.CharField(max_length=10, default='USD')
 
