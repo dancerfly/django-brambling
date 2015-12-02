@@ -20,7 +20,9 @@
 					</h1>
 					<p class="text-large margin-trailer-0">
 						<i class="fa fa-clock-o fa-fw"></i>{% include "brambling/event/_when.html" %}
-						<i class="fa fa-map-marker fa-fw"></i>{% include "brambling/event/_where.html" %}
+						{% if event.city and event.state_or_province and event.country %}
+							<i class="fa fa-map-marker fa-fw"></i>{% include "brambling/event/_where.html" %}
+						{% endif %}
 					</p>
 				{% endif %}
 			</div>{# /.relative-bottom.relative-left.relative-right #}

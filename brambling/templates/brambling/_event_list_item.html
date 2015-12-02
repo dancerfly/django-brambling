@@ -26,10 +26,12 @@
 		<i class="fa fa-clock-o fa-fw"></i>
 		{% include "brambling/event/_when.html" %}
 	</p>
-	<p class="visible-inline-block margin-leader-0 margin-trailer-half">
-		<i class="fa fa-map-marker fa-fw"></i>
-		{% include "brambling/event/_where.html" %}
-	</p>
+	{% if event.city and event.state_or_province and event.country %}
+		<p class="visible-inline-block margin-leader-0 margin-trailer-half">
+			<i class="fa fa-map-marker fa-fw"></i>
+			{% include "brambling/event/_where.html" %}
+		</p>
+	{% endif %}
 	<h5 class="text-muted event-tags margin-0">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 
 	<div class='form-group margin-leader-half'>

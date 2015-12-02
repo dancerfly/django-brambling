@@ -10,14 +10,16 @@
 					{% include "brambling/event/_when.html" %}
 				</div>
 			</div>
-			<div class="media text-muted margin-leader-0 text-small margin-trailer-tiny">
-				<div class="media-left">
-					<i class="fa fa-map-marker fa-fw"></i>
+			{% if event.city and event.state_or_province and event.country %}
+				<div class="media text-muted margin-leader-0 text-small margin-trailer-tiny">
+					<div class="media-left">
+						<i class="fa fa-map-marker fa-fw"></i>
+					</div>
+					<div class="media-body">
+						{% include "brambling/event/_where.html" %}
+					</div>
 				</div>
-				<div class="media-body">
-					{% include "brambling/event/_where.html" %}
-				</div>
-			</div>
+			{% endif %}
 		</div>{# /.col-sm-9 #}
 		<div class="col-sm-3 hidden-xs">
 			<div class="btn-group-vertical pull-right">

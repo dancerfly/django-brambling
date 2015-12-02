@@ -13,14 +13,16 @@
 				{% include "brambling/event/_when.html" %}
 			</div>
 		</div>
-		<div class="media text-muted margin-leader-0 text-small">
-			<div class="media-left">
-				<i class="fa fa-map-marker fa-fw"></i>
+		{% if event.city and event.state_or_province and event.country %}
+			<div class="media text-muted margin-leader-0 text-small">
+				<div class="media-left">
+					<i class="fa fa-map-marker fa-fw"></i>
+				</div>
+				<div class="media-body">
+					{% include "brambling/event/_where.html" %}
+				</div>
 			</div>
-			<div class="media-body">
-				{% include "brambling/event/_where.html" %}
-			</div>
-		</div>
+		{% endif %}
 		<div class="media text-muted margin-leader-0 text-small">
 			<div class="media-left">
 				{% if event.privacy == event.PUBLIC %}

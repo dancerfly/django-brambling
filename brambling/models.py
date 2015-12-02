@@ -358,9 +358,9 @@ class Event(models.Model):
     website_url = models.URLField(blank=True, verbose_name="website URL")
     facebook_url = models.URLField(blank=True, verbose_name="facebook event URL")
     banner_image = models.ImageField(blank=True)
-    city = models.CharField(max_length=50)
-    state_or_province = models.CharField(max_length=50, verbose_name='state / province')
-    country = CountryField(default='US')
+    city = models.CharField(max_length=50, blank=True)
+    state_or_province = models.CharField(max_length=50, verbose_name='state / province', blank=True)
+    country = CountryField(default='US', blank=True)
     timezone = models.CharField(max_length=40, default='America/New_York', choices=((tz, tz) for tz in pytz.common_timezones))
     currency = models.CharField(max_length=10, default='USD')
 
