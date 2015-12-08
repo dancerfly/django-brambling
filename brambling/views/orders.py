@@ -705,6 +705,10 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 order=self.order,
             )
             self.order.mark_cart_paid(payment)
+            if not self.event.is_frozen:
+                self.event.is_frozen = True
+                self.event.save()
+            self.send_email()
         else:
             self.get_forms()
             form = None
@@ -726,15 +730,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()
-                summary_data = self.order.get_summary_data()
-                email_kwargs = {
-                    'order': self.order,
-                    'summary_data': summary_data,
-                    'site': get_current_site(self.request),
-                    'secure': self.request.is_secure()
-                }
-                OrderReceiptMailer(**email_kwargs).send()
-                OrderAlertMailer(**email_kwargs).send()
+                self.send_email()
             elif form:
                 for error in form.non_field_errors():
                     messages.error(request, error)
@@ -749,6 +745,17 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             return HttpResponseRedirect('')
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
+
+    def send_email(self):
+        summary_data = self.order.get_summary_data()
+        email_kwargs = {
+            'order': self.order,
+            'summary_data': summary_data,
+            'site': get_current_site(self.request),
+            'secure': self.request.is_secure()
+        }
+        OrderReceiptMailer(**email_kwargs).send()
+        OrderAlertMailer(**email_kwargs).send()
 
     def get_forms(self):
         kwargs = {
