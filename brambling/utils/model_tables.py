@@ -399,9 +399,10 @@ class AttendeeTable(CustomDataTable):
         ('Contact',
          ('email', 'phone')),
         ('Housing',
-         ('housing_status', 'housing_nights', 'housing_preferences',
-          'environment_avoid', 'environment_cause', 'person_prefer',
-          'person_avoid', 'other_needs')),
+         ('housing_status', 'housing_nights_if_needed',
+          'housing_preferences_if_needed', 'environment_avoid_if_needed',
+          'environment_cause_if_needed', 'person_prefer_if_needed',
+          'person_avoid_if_needed', 'other_needs_if_needed')),
         ('Miscellaneous',
          ('liability_waiver', 'photo_consent', 'notes')),
     )
@@ -409,13 +410,13 @@ class AttendeeTable(CustomDataTable):
     label_overrides = {
         'pk': 'Id',
         'get_full_name': 'Name',
-        'housing_nights': 'Housing nights',
-        'housing_preferences': 'Housing environment preference',
-        'environment_avoid': 'Housing Environment Avoid',
-        'environment_cause': 'Attendee May Cause/Do',
-        'person_prefer': 'Housing People Preference',
-        'person_avoid': 'Housing People Avoid',
-        'other_needs': 'Other Housing Needs',
+        'housing_nights_if_needed': 'Housing nights',
+        'housing_preferences_if_needed': 'Housing environment preference',
+        'environment_avoid_if_needed': 'Housing Environment Avoid',
+        'environment_cause_if_needed': 'Attendee May Cause/Do',
+        'person_prefer_if_needed': 'Housing People Preference',
+        'person_avoid_if_needed': 'Housing People Avoid',
+        'other_needs_if_needed': 'Other Housing Needs',
         'order_code': 'Order Code',
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
@@ -505,6 +506,28 @@ class AttendeeTable(CustomDataTable):
     housing_preferences = related_objects_list("housing_prefer")
     environment_avoid = related_objects_list("ef_avoid")
     environment_cause = related_objects_list("ef_cause")
+
+    def housing_nights_if_needed(self, attendee):
+        return attendee.nights.all() if attendee.needs_housing() else ''
+
+    def housing_preferences_if_needed(self, attendee):
+        return (attendee.housing_prefer.all() if attendee.needs_housing()
+                else '')
+
+    def environment_avoid_if_needed(self, attendee):
+        return attendee.ef_avoid.all() if attendee.needs_housing() else ''
+
+    def environment_cause_if_needed(self, attendee):
+        return attendee.ef_cause.all() if attendee.needs_housing() else ''
+
+    def person_prefer_if_needed(self, attendee):
+        return attendee.person_prefer if attendee.needs_housing() else ''
+
+    def person_avoid_if_needed(self, attendee):
+        return attendee.person_avoid if attendee.needs_housing() else ''
+
+    def other_needs_if_needed(self, attendee):
+        return attendee.other_needs if attendee.needs_housing() else ''
 
     def items(self, obj):
         return ["{} ({})".format(x.item_option_name, x.item_name)
