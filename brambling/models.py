@@ -1475,6 +1475,9 @@ class Attendee(AbstractNamedModel):
     def get_groupable_items(self):
         return self.bought_items.order_by('item_name', 'item_option_name', '-added')
 
+    def needs_housing(self):
+        return self.housing_status == self.NEED
+
 
 class SavedAttendee(AbstractNamedModel):
     person = models.ForeignKey(Person)
