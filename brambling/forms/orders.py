@@ -493,7 +493,7 @@ class DwollaPaymentForm(BasePaymentForm):
                         pin=self.cleaned_data['dwolla_pin'],
                         source=self.cleaned_data['source']
                     )
-                except DwollaAPIException as e:
+                except (ValueError, DwollaAPIException) as e:
                     self.add_error(None, getattr(e, 'response', e.message))
 
     def save(self):
