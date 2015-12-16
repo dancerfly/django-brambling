@@ -638,7 +638,7 @@ class OrderTable(CustomDataTable):
             field = "spaces"
 
         if date_str:
-            if obj.get_eventhousing():
+            if obj.get_eventhousing() and obj.providing_housing:
                 hosting_date = datetime.datetime.strptime(date_str, "%Y%m%d").date()
                 try:
                     slot = HousingSlot.objects.get(eventhousing__order=obj, date=hosting_date)
@@ -714,7 +714,7 @@ class OrderTable(CustomDataTable):
 
     def hosting_full_address(self, obj):
         eventhousing = obj.get_eventhousing()
-        if eventhousing:
+        if eventhousing and obj.providing_housing:
             return u", ".join((
                 eventhousing.address,
                 eventhousing.address_2,
@@ -727,7 +727,7 @@ class OrderTable(CustomDataTable):
 
     def get_eventhousing_attr(self, obj, name):
         eventhousing = obj.get_eventhousing()
-        if eventhousing:
+        if eventhousing and obj.providing_housing:
             return getattr(eventhousing, name)
         return ''
 
@@ -757,7 +757,7 @@ class OrderTable(CustomDataTable):
 
     def get_eventhousing_csm(self, obj, name):
         eventhousing = obj.get_eventhousing()
-        if eventhousing:
+        if eventhousing and obj.providing_housing:
             return related_objects_list(name)(self, eventhousing)
         return ''
 
