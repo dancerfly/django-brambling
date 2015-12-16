@@ -1,7 +1,9 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.test import TestCase
-from mock import patch, call
+from django.utils import timezone
+from mock import patch
 import stripe
 
 from brambling.forms.orders import (OneTimePaymentForm,
@@ -190,7 +192,6 @@ class PaymentFormTestCase(TestCase):
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
-
     @patch('brambling.forms.orders.dwolla_get_sources')
     @patch('brambling.forms.orders.dwolla_charge')
     def test_dwolla_payment_form(self, dwolla_charge, dwolla_get_sources):
@@ -218,6 +219,24 @@ class PaymentFormTestCase(TestCase):
         self.assertEqual(Decimal(str(txn.amount)), Decimal('42.15'))
         self.assertEqual(Decimal(str(txn.application_fee)), Decimal('1.05'))
         self.assertEqual(Decimal(str(txn.processing_fee)), Decimal('0.25'))
+
+    @patch('brambling.forms.orders.dwolla_get_sources')
+    @patch('dwolla.oauth.refresh')
+    def test_dwolla_payment_form_handles_valueerror(self, oauth_refresh, dwolla_get_sources):
+        oauth_refresh.return_value = {
+            'error': 'access_denied',
+            'error_description': 'Arbitrary error code.'
+        }
+        dwolla_get_sources.return_value = DWOLLA_SOURCES
+        order = OrderFactory()
+        order.event.organization.dwolla_test_access_token_expires = timezone.now() - timedelta(1)
+        person = PersonFactory()
+        pin = '1234'
+        source = 'Balance'
+        form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin, 'source': source}, user=person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [oauth_refresh.return_value['error_description']])
 
     def test_check_payment_form(self):
         order = OrderFactory()
