@@ -39,20 +39,6 @@ class Echo(object):
         return value
 
 
-def related_objects_list(attr_name):
-    """
-    Returns a function which takes a M2M manager on an object and
-    returns it as a comma separated string.
-
-    """
-
-    def inner(self, obj):
-        manager = getattr(obj, attr_name)
-        return manager.all()
-    inner.short_description = pretty_name(attr_name)
-    return inner
-
-
 class Cell(object):
     def __init__(self, field, value):
         self.field = field
@@ -399,10 +385,10 @@ class AttendeeTable(CustomDataTable):
         ('Contact',
          ('email', 'phone')),
         ('Housing',
-         ('housing_status', 'housing_nights_if_needed',
-          'housing_preferences_if_needed', 'environment_avoid_if_needed',
-          'environment_cause_if_needed', 'person_prefer_if_needed',
-          'person_avoid_if_needed', 'other_needs_if_needed')),
+         ('housing_status', 'housing_nights',
+          'housing_preferences', 'environment_avoid',
+          'environment_cause', 'person_prefer',
+          'person_avoid', 'other_needs')),
         ('Miscellaneous',
          ('liability_waiver', 'photo_consent', 'notes')),
     )
@@ -410,13 +396,13 @@ class AttendeeTable(CustomDataTable):
     label_overrides = {
         'pk': 'Id',
         'get_full_name': 'Name',
-        'housing_nights_if_needed': 'Housing nights',
-        'housing_preferences_if_needed': 'Housing environment preference',
-        'environment_avoid_if_needed': 'Housing Environment Avoid',
-        'environment_cause_if_needed': 'Attendee May Cause/Do',
-        'person_prefer_if_needed': 'Housing People Preference',
-        'person_avoid_if_needed': 'Housing People Avoid',
-        'other_needs_if_needed': 'Other Housing Needs',
+        'housing_nights': 'Housing nights',
+        'housing_preferences': 'Housing environment preference',
+        'environment_avoid': 'Housing Environment Avoid',
+        'environment_cause': 'Attendee May Cause/Do',
+        'person_prefer': 'Housing People Preference',
+        'person_avoid': 'Housing People Avoid',
+        'other_needs': 'Other Housing Needs',
         'order_code': 'Order Code',
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
@@ -502,31 +488,26 @@ class AttendeeTable(CustomDataTable):
                     confirmed -= discount.savings()
         return format_money(confirmed, self.event.currency)
 
-    housing_nights = related_objects_list("nights")
-    housing_preferences = related_objects_list("housing_prefer")
-    environment_avoid = related_objects_list("ef_avoid")
-    environment_cause = related_objects_list("ef_cause")
-
-    def housing_nights_if_needed(self, attendee):
+    def housing_nights(self, attendee):
         return attendee.nights.all() if attendee.needs_housing() else ''
 
-    def housing_preferences_if_needed(self, attendee):
+    def housing_preferences(self, attendee):
         return (attendee.housing_prefer.all() if attendee.needs_housing()
                 else '')
 
-    def environment_avoid_if_needed(self, attendee):
+    def environment_avoid(self, attendee):
         return attendee.ef_avoid.all() if attendee.needs_housing() else ''
 
-    def environment_cause_if_needed(self, attendee):
+    def environment_cause(self, attendee):
         return attendee.ef_cause.all() if attendee.needs_housing() else ''
 
-    def person_prefer_if_needed(self, attendee):
+    def person_prefer(self, attendee):
         return attendee.person_prefer if attendee.needs_housing() else ''
 
-    def person_avoid_if_needed(self, attendee):
+    def person_avoid(self, attendee):
         return attendee.person_avoid if attendee.needs_housing() else ''
 
-    def other_needs_if_needed(self, attendee):
+    def other_needs(self, attendee):
         return attendee.other_needs if attendee.needs_housing() else ''
 
     def items(self, obj):
@@ -755,22 +736,16 @@ class OrderTable(CustomDataTable):
         return self.get_eventhousing_attr(obj, 'person_avoid')
     person_avoid.short_description = 'hosting people avoid'
 
-    def get_eventhousing_csm(self, obj, name):
-        eventhousing = obj.get_eventhousing()
-        if eventhousing and obj.providing_housing:
-            return related_objects_list(name)(self, eventhousing)
-        return ''
-
     def ef_present(self, obj):
-        return self.get_eventhousing_csm(obj, 'ef_present')
+        return (obj.providing_housing and obj.get_eventhousing()) and obj.get_eventhousing().ef_present.all() or ''
     ef_present.short_description = 'hosting environmental factors'
 
     def ef_avoid(self, obj):
-        return self.get_eventhousing_csm(obj, 'ef_avoid')
+        return (obj.providing_housing and obj.get_eventhousing()) and obj.get_eventhousing().ef_avoid.all() or ''
     ef_avoid.short_description = 'hosting environmental avoided'
 
     def housing_categories(self, obj):
-        return self.get_eventhousing_csm(obj, 'housing_categories')
+        return (obj.providing_housing and obj.get_eventhousing()) and obj.get_eventhousing().housing_categories.all() or ''
     housing_categories.short_description = 'hosting home categories'
 
     def pending(self, obj):
