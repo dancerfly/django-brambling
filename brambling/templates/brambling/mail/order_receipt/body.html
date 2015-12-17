@@ -16,7 +16,7 @@
 									<td>
 										<p class='center'><center><strong>{{ event.name }}</strong> by <strong>{{ event.organization.name }}</strong></center></p>
 										<p class='center'><center>{{ event.start_date|date:"F jS, Y" }}</center></p>
-										<h1 class='center'><center>{{ total_payments|format_money:event.currency }}</center></h1>
+										<h1 class='center'><center>{{ transaction.amount|format_money:event.currency }}</center></h1>
 										<p class='center'><center>Happy dancing! :-)</center></p>
 									</td>
 									<td class='expander'></td>
@@ -47,8 +47,7 @@
 					</table>
 				{% endif %}
 
-				{% for txn, txn_dict in transactions.iteritems %}
-					{% for item in txn_dict.items %}
+					{% for item in transaction.bought_items.all %}
 						{% if item.status == item.BOUGHT %}
 							<table class='row'>
 								<tr>
@@ -81,7 +80,6 @@
 							</table>
 						{% endif %}
 					{% endfor %}
-				{% endfor %}
 
 				<table class='row'>
 					<tr>
@@ -113,7 +111,7 @@
 							<table class='two columns'>
 								<tr>
 									<td class='right'>
-										{{ total_payments|format_money:event.currency }}
+										{{ transaction.amount|format_money:event.currency }}
 									</td>
 									<td class='expander'>
 								</tr>

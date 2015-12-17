@@ -2,7 +2,7 @@
 {{ event.organization.name }}
 {{ event.start_date|date:"F jS, Y" }}
 
-{{ total_payments|format_money:event.currency }}
+{{ transaction.amount|format_money:event.currency }}
 
 Happy dancing! :-)
 
@@ -13,14 +13,14 @@ Note: Your passes are reserved, but the organizer has not yet received your paym
 If you believe this is in error, please contact the event organizer directly.
 {% endif %}
 
-{% for txn, txn_dict in transactions.iteritems %}{% for item in txn_dict.items %}{% if item.status == item.BOUGHT %}{{ item.item_name }} ({{ item.item_option_name }})
+{% for item in transaction.bought_items.all %}{% if item.status == item.BOUGHT %}{{ item.item_name }} ({{ item.item_option_name }})
 {{ item.attendee.get_full_name }}
 {{ item.price|format_money:event.currency }}
 {% for discount in item.discounts.all %}({{ discount.savings|format_money:event.currency }})
 {% endfor %}
-{% endif %}{% endfor %}{% endfor %}----------------------
+{% endif %}{% endfor %}----------------------
 
-Total: {{ total_payments|format_money:event.currency }}
+Total: {{ transaction.amount|format_money:event.currency }}
 
 Order #{{ order.code }}{# Transaction date #}
 

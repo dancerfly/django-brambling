@@ -102,23 +102,22 @@ class ConfirmationMailer(FancyMailer):
 class OrderReceiptMailer(FancyMailer):
     key = "order_receipt"
 
-    def __init__(self, order, summary_data, *args, **kwargs):
-        self.order = order
-        self.summary_data = summary_data
+    def __init__(self, transaction, *args, **kwargs):
+        self.transaction = transaction
         super(OrderReceiptMailer, self).__init__(*args, **kwargs)
 
     def get_context_data(self):
         context = super(OrderReceiptMailer, self).get_context_data()
         context.update({
-            'order': self.order,
-            'person': self.order.person,
-            'event': self.order.event,
+            'transaction': self.transaction,
+            'order': self.transaction.order,
+            'person': self.transaction.order.person,
+            'event': self.transaction.order.event,
         })
-        context.update(self.summary_data)
         return context
 
     def get_recipients(self):
-        order = self.order
+        order = self.transaction.order
         return [order.person.email if order.person else order.email]
 
 
