@@ -77,7 +77,6 @@ from brambling.views.payment import (
 )
 from brambling.views.user import (
     AccountView,
-    ProfileView,
     BillingView,
     HomeView,
     SignUpView,
@@ -306,9 +305,6 @@ urlpatterns = patterns('',
     url(r'^account/$',
         AccountView.as_view(),
         name="brambling_user_account"),
-    url(r'^profile/$',
-        ProfileView.as_view(),
-        name="brambling_user_profile"),
     url(r'^billing/$',
         BillingView.as_view(),
         name="brambling_user_billing"),

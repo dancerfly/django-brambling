@@ -11,7 +11,7 @@ import floppyforms.__future__ as forms
 import stripe
 
 from brambling.forms.orders import AddCardForm
-from brambling.forms.user import AccountForm, ProfileForm, BillingForm, HomeForm, SignUpForm
+from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard, Order, SavedAttendee
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
@@ -101,24 +101,6 @@ class AccountView(UpdateView):
     def form_valid(self, form):
         messages.add_message(self.request, messages.SUCCESS, "Account settings saved.")
         return super(AccountView, self).form_valid(form)
-
-    def get_success_url(self):
-        return self.request.path
-
-
-class ProfileView(UpdateView):
-    model = Person
-    form_class = ProfileForm
-    template_name = 'brambling/user/profile.html'
-
-    def get_object(self):
-        if self.request.user.is_authenticated():
-            return self.request.user
-        raise Http404
-
-    def form_valid(self, form):
-        messages.add_message(self.request, messages.SUCCESS, "Profile settings saved.")
-        return super(ProfileView, self).form_valid(form)
 
     def get_success_url(self):
         return self.request.path

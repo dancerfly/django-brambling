@@ -40,7 +40,7 @@ class DwollaConnectView(View):
             return self.request.GET['next_url']
 
         if isinstance(self.object, Person):
-            return reverse('brambling_user_profile')
+            return reverse('brambling_user_billing')
 
         if isinstance(self.object, Order):
             return reverse('brambling_event_order_summary',

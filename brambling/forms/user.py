@@ -156,12 +156,6 @@ class AccountForm(forms.ModelForm):
         return person
 
 
-class ProfileForm(forms.ModelForm):
-    class Meta:
-        model = Person
-        fields = ('given_name', 'middle_name', 'surname', 'name_order')
-
-
 class BillingForm(forms.ModelForm):
     disconnect_dwolla = forms.BooleanField(required=False)
 
