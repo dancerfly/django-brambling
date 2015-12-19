@@ -14,7 +14,7 @@ from brambling.forms.user import AccountForm, ProfileForm, BillingForm, HomeForm
 from brambling.models import Person, Home, CreditCard, Order, SavedAttendee
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
-from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
+from brambling.utils.payment import (dwolla_oauth_url, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
@@ -171,7 +171,7 @@ class BillingView(UpdateView):
             'claimable_orders': self.request.user.get_claimable_orders(),
         })
         if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+            context['dwolla_oauth_url'] = dwolla_oauth_url(
                 self.request.user, LIVE, self.request)
         return context
 

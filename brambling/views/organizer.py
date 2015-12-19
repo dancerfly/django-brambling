@@ -42,7 +42,7 @@ from brambling.views.utils import (get_event_admin_nav,
                                    clear_expired_carts,
                                    ajax_required, FinanceTable)
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
-from brambling.utils.payment import (dwolla_organization_oauth_url,
+from brambling.utils.payment import (dwolla_oauth_url,
                                      stripe_organization_oauth_url,
                                      LIVE, TEST)
 
@@ -90,7 +90,7 @@ class OrganizationPaymentView(OrganizationUpdateView):
 
         if self.object.is_demo():
             if self.object.dwolla_test_can_connect():
-                context['dwolla_test_oauth_url'] = dwolla_organization_oauth_url(
+                context['dwolla_test_oauth_url'] = dwolla_oauth_url(
                     self.object, self.request, TEST)
 
             if self.object.stripe_test_can_connect():
@@ -98,7 +98,7 @@ class OrganizationPaymentView(OrganizationUpdateView):
                     self.object, self.request, TEST)
         else:
             if self.object.dwolla_live_can_connect():
-                context['dwolla_oauth_url'] = dwolla_organization_oauth_url(
+                context['dwolla_oauth_url'] = dwolla_oauth_url(
                     self.object, self.request, LIVE)
 
             if self.object.stripe_live_can_connect():

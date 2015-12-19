@@ -16,8 +16,7 @@ from brambling.utils.payment import (
     dwolla_prep,
     LIVE,
     dwolla_set_tokens,
-    dwolla_customer_redirect_url,
-    dwolla_organization_redirect_url,
+    dwolla_redirect_url,
 )
 
 
@@ -60,10 +59,7 @@ class DwollaConnectView(View):
             redirect_url = request.build_absolute_uri(reverse('brambling_dwolla_connect'))
             api_type = request.GET['api']
             dwolla_prep(api_type)
-            if isinstance(self.object, Organization):
-                redirect_url = dwolla_organization_redirect_url(self.object, request, api_type)
-            else:
-                redirect_url = dwolla_customer_redirect_url(self.object, api_type, request, next_url=request.GET.get('next_url'))
+            redirect_url = dwolla_redirect_url(self.object, api_type, request, next_url=request.GET.get('next_url'))
             oauth_tokens = oauth.get(request.GET['code'],
                                      redirect=redirect_url)
             if 'access_token' in oauth_tokens:

@@ -20,7 +20,7 @@ from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
                               Invite, Person, SavedAttendee)
-from brambling.utils.payment import dwolla_customer_oauth_url
+from brambling.utils.payment import dwolla_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
                                    WorkflowMixin)
@@ -813,7 +813,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 'organization_slug': self.event.organization.slug,
             }
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+            context['dwolla_oauth_url'] = dwolla_oauth_url(
                 dwolla_obj, self.event.api_type, self.request, next_url)
         if dwolla_connected:
             context.update({
