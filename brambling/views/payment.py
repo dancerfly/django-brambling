@@ -15,7 +15,6 @@ from brambling.models import Organization, Order, Transaction, Person
 from brambling.utils.payment import (
     dwolla_prep,
     LIVE,
-    dwolla_set_tokens,
     dwolla_redirect_url,
 )
 

@@ -23,6 +23,7 @@ from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
@@ -31,7 +32,8 @@ from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
-                                     dwolla_live_settings_valid)
+                                     dwolla_live_settings_valid,
+                                     dwolla_prep)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -134,6 +136,9 @@ class DwollaAccount(models.Model):
     refresh_token = models.CharField(max_length=50)
     refresh_token_expires = models.DateTimeField()
     scopes = models.CharField(max_length=100)
+    #: This should get marked False if there are ever any issues
+    #: (for example) using the api key or refreshing it.
+    is_valid = models.BooleanField(default=True)
 
     class Meta:
         unique_together = (('api_type', 'user_id'),)
@@ -147,6 +152,38 @@ class DwollaAccount(models.Model):
             dwolla_settings_valid and
             self.refresh_token_expires > timezone.now()
         )
+
+    def set_tokens(self, oauth_data):
+        if 'access_token' not in oauth_data:
+            if 'error_description' in oauth_data:
+                raise ValueError(oauth_data['error_description'])
+            else:
+                raise ValueError('Unknown error during token setting.')
+        expires = timezone.now() + timedelta(seconds=oauth_data['expires_in'])
+        refresh_expires = timezone.now() + timedelta(seconds=oauth_data['refresh_expires_in'])
+
+        self.access_token = oauth_data['access_token']
+        self.access_token_expires = expires
+        self.refresh_token = oauth_data['refresh_token']
+        self.refresh_token_expires = refresh_expires
+
+    def get_token(self):
+        if not self.is_valid:
+            raise ValueError("Something is wrong with your dwolla connection. Please disconnect / reconnect it and try again.")
+        expires = self.access_token_expires
+        refresh_expires = self.refresh_token_expires
+        now = timezone.now()
+        if expires < now:
+            if refresh_expires < now:
+                self.is_valid = False
+                self.save()
+                raise ValueError("Token is expired and can't be refreshed.")
+            refresh_token = self.refresh_token
+            dwolla_prep(self.api_type)
+            oauth_data = oauth.refresh(refresh_token)
+            self.set_tokens(self, oauth_data)
+            self.save()
+        return self.access_token
 
 
 class AbstractDwollaModel(models.Model):

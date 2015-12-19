@@ -33,99 +33,39 @@ def dwolla_prep(api_type):
         constants.client_secret = settings.DWOLLA_TEST_APPLICATION_SECRET
 
 
-def dwolla_set_tokens(dwolla_obj, api_type, data):
-    if 'access_token' not in data:
-        if 'error_description' in data:
-            raise ValueError(data['error_description'])
-        else:
-            raise ValueError('Unknown error during token setting.')
-    expires = timezone.now() + datetime.timedelta(seconds=data['expires_in'])
-    refresh_expires = timezone.now() + datetime.timedelta(seconds=data['refresh_expires_in'])
-
-    if api_type == LIVE:
-        dwolla_obj.dwolla_access_token = data['access_token']
-        dwolla_obj.dwolla_access_token_expires = expires
-        dwolla_obj.dwolla_refresh_token = data['refresh_token']
-        dwolla_obj.dwolla_refresh_token_expires = refresh_expires
-    else:
-        dwolla_obj.dwolla_test_access_token = data['access_token']
-        dwolla_obj.dwolla_test_access_token_expires = expires
-        dwolla_obj.dwolla_test_refresh_token = data['refresh_token']
-        dwolla_obj.dwolla_test_refresh_token_expires = refresh_expires
-
-
-def dwolla_get_token(dwolla_obj, api_type):
-    """
-    Gets a working dwolla access token for the correct api,
-    refreshing if necessary.
-    """
-    if api_type == LIVE:
-        expires = dwolla_obj.dwolla_access_token_expires
-        refresh_expires = dwolla_obj.dwolla_refresh_token_expires
-    else:
-        expires = dwolla_obj.dwolla_test_access_token_expires
-        refresh_expires = dwolla_obj.dwolla_test_refresh_token_expires
-    if expires is None or refresh_expires is None:
-        raise ValueError("Invalid dwolla object - unknown token expiration.")
-    now = timezone.now()
-    if expires < now:
-        if refresh_expires < now:
-            dwolla_obj.clear_dwolla_data(api_type)
-            dwolla_obj.save()
-            raise ValueError("Token is expired and can't be refreshed.")
-        if api_type == LIVE:
-            refresh_token = dwolla_obj.dwolla_refresh_token
-        else:
-            refresh_token = dwolla_obj.dwolla_test_refresh_token
-        oauth_data = oauth.refresh(refresh_token)
-        dwolla_set_tokens(dwolla_obj, api_type, oauth_data)
-        dwolla_obj.save()
-    if api_type == LIVE:
-        access_token = dwolla_obj.dwolla_access_token
-    else:
-        access_token = dwolla_obj.dwolla_test_access_token
-    return access_token
-
-
 def dwolla_update_tokens(days):
     """
     Refreshes or clears all tokens that will not be refreshable within the next <days> days.
     """
     end = timezone.now() + datetime.timedelta(days=days)
     count = 0
-    cleared_count = 0
+    invalid_count = 0
     test_count = 0
-    cleared_test_count = 0
-    from brambling.models import Organization, Person, Order
-    for api_type in (LIVE, TEST):
-        dwolla_prep(api_type)
-        if api_type == LIVE:
-            field = 'dwolla_refresh_token'
+    invalid_test_count = 0
+    from brambling.models import DwollaAccount
+    accounts = DwollaAccount.objects.filter(
+        refresh_token_expires__lt=end,
+        is_valid=True,
+    )
+    for account in accounts:
+        refresh_token = account.refresh_token
+        dwolla_prep(account.api_type)
+        oauth_data = oauth.refresh(refresh_token)
+        try:
+            account.set_tokens(oauth_data)
+        except ValueError:
+            account.is_valid = False
+            if account.api_type == LIVE:
+                invalid_count += 1
+            else:
+                invalid_test_count += 1
         else:
-            field = 'dwolla_test_refresh_token'
-        kwargs = {
-            field + '_expires__lt': end,
-        }
-        for model in (Organization, Person, Order):
-            qs = model.objects.filter(**kwargs)
-            for item in qs:
-                refresh_token = getattr(item, field)
-                oauth_data = oauth.refresh(refresh_token)
-                try:
-                    dwolla_set_tokens(item, api_type, oauth_data)
-                except ValueError:
-                    item.clear_dwolla_data(api_type)
-                    if api_type == LIVE:
-                        cleared_count += 1
-                    else:
-                        cleared_test_count += 1
-                else:
-                    if api_type == LIVE:
-                        count += 1
-                    else:
-                        test_count += 1
-                item.save()
-    return count, cleared_count, test_count, cleared_test_count
+            if account.api_type == LIVE:
+                count += 1
+            else:
+                test_count += 1
+        account.save()
+    return count, invalid_count, test_count, invalid_test_count
 
 
 def dwolla_get_sources(user_or_order, event):
