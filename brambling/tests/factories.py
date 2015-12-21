@@ -7,8 +7,9 @@ from brambling.models import (
     Event, Person, Order, CreditCard, Invite,
     Organization, Transaction, Item, ItemOption,
     Discount, Attendee, ItemImage, SavedReport,
-    CustomForm, CustomFormField,
+    CustomForm, CustomFormField, DwollaAccount,
 )
+from brambling.utils.payment import DWOLLA_SCOPE
 
 
 def lazy_setting(setting):
@@ -29,6 +30,32 @@ class CardFactory(factory.DjangoModelFactory):
     fingerprint = 'FAKE_FINGERPRINT'
     last4 = '4242'
     brand = 'Visa'
+
+
+class DwollaUserAccountFactory(factory.DjangoModelFactory):
+    class Meta:
+            model = DwollaAccount
+
+    api_type = DwollaAccount.TEST
+    user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
+    access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
+    refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_REFRESH_TOKEN'))
+    access_token_expires = now() + timedelta(days=1)
+    refresh_token_expires = now() + timedelta(days=2)
+    scopes = DWOLLA_SCOPE
+
+
+class DwollaOrganizationAccountFactory(factory.DjangoModelFactory):
+    class Meta:
+            model = DwollaAccount
+
+    api_type = DwollaAccount.TEST
+    user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_USER_ID'))
+    access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN'))
+    refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN'))
+    access_token_expires = now() + timedelta(days=1)
+    refresh_token_expires = now() + timedelta(days=2)
+    scopes = DWOLLA_SCOPE
 
 
 class PersonFactory(factory.DjangoModelFactory):
@@ -60,12 +87,6 @@ class OrganizationFactory(factory.DjangoModelFactory):
     stripe_test_publishable_key = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_PUBLISHABLE_KEY'))
     stripe_test_refresh_token = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_REFRESH_TOKEN'))
     stripe_test_user_id = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_USER_ID'))
-
-    dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_USER_ID'))
-    dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN'))
-    dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN'))
-    dwolla_test_access_token_expires = now() + timedelta(days=1)
-    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
 
 
 class EventFactory(factory.DjangoModelFactory):

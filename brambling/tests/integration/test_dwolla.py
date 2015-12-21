@@ -7,8 +7,8 @@ from dwolla import transactions
 import vcr
 
 from brambling.models import Event, Transaction
-from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
-from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund, dwolla_get_token
+from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory, DwollaUserAccountFactory, DwollaOrganizationAccountFactory
+from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
 
 
 CHARGE_DATA = {
@@ -44,10 +44,12 @@ class DwollaChargeTestCase(TestCase):
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
+        event.organization.dwolla_test_user_new = DwollaOrganizationAccountFactory()
         self.assertTrue(event.dwolla_connected())
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
         order = OrderFactory(person=person, event=event, code='dwoll1')
         charge = dwolla_charge(
             sender=person,
