@@ -805,8 +805,8 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        dwolla_connected = dwolla_obj.dwolla_live_connected() if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_connected()
-        dwolla_can_connect = dwolla_obj.dwolla_live_can_connect() if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_can_connect()
+        dwolla_connected = dwolla_obj.dwolla_connected(self.event.api_type)
+        dwolla_can_connect = dwolla_obj.dwolla_can_connect(self.event.api_type)
         if dwolla_can_connect:
             kwargs = {
                 'event_slug': self.event.slug,

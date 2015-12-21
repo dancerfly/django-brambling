@@ -89,7 +89,9 @@ class OrganizationPaymentView(OrganizationUpdateView):
         context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
 
         if self.object.is_demo():
-            if self.object.dwolla_test_can_connect():
+            if self.object.dwolla_connected(TEST):
+                context['dwolla_test_connected'] = True
+            elif self.object.dwolla_can_connect(TEST):
                 context['dwolla_test_oauth_url'] = dwolla_oauth_url(
                     self.object, self.request, TEST)
 
@@ -97,7 +99,9 @@ class OrganizationPaymentView(OrganizationUpdateView):
                 context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
                     self.object, self.request, TEST)
         else:
-            if self.object.dwolla_live_can_connect():
+            if self.object.dwolla_connected(LIVE):
+                context['dwolla_live_connected'] = True
+            elif self.object.dwolla_can_connect(LIVE):
                 context['dwolla_oauth_url'] = dwolla_oauth_url(
                     self.object, self.request, LIVE)
 

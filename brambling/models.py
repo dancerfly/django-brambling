@@ -206,29 +206,29 @@ class AbstractDwollaModel(models.Model):
     dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
     dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
-    def dwolla_live_connected(self):
-        return self.dwolla_account_id is not None and self.dwolla_account.is_connected()
+    def dwolla_connected(self, api_type):
+        if api_type == DwollaAccount.LIVE:
+            return self.dwolla_account_id is not None and self.dwolla_account.is_connected()
+        else:
+            return self.dwolla_test_account_id is not None and self.dwolla_test_account.is_connected()
 
-    def dwolla_test_connected(self):
-        return self.dwolla_test_account_id is not None and self.dwolla_test_account.is_connected()
-
-    def dwolla_live_can_connect(self):
-        return bool(
-            dwolla_live_settings_valid() and
-            (
-                not self.dwolla_account_id or
-                not self.dwolla_account.is_connected()
+    def dwolla_can_connect(self, api_type):
+        if api_type == DwollaAccount.LIVE:
+            return bool(
+                dwolla_live_settings_valid() and
+                (
+                    not self.dwolla_account_id or
+                    not self.dwolla_account.is_connected()
+                )
             )
-        )
-
-    def dwolla_test_can_connect(self):
-        return bool(
-            dwolla_test_settings_valid() and
-            (
-                not self.dwolla_test_account_id or
-                not self.dwolla_test_account.is_connected()
+        else:
+            return bool(
+                dwolla_test_settings_valid() and
+                (
+                    not self.dwolla_test_account_id or
+                    not self.dwolla_test_account.is_connected()
+                )
             )
-        )
 
     def clear_dwolla_data(self, api_type):
         if api_type == DwollaAccount.LIVE:
@@ -529,9 +529,7 @@ class Event(models.Model):
         return self.organization.stripe_test_can_connect()
 
     def dwolla_connected(self):
-        if self.api_type == Event.LIVE:
-            return self.organization.dwolla_live_connected()
-        return self.organization.dwolla_test_connected()
+        return self.organization.dwolla_connected(self.api_type)
 
     def dwolla_can_connect(self):
         if self.api_type == Event.LIVE:
@@ -918,16 +916,6 @@ class Order(AbstractDwollaModel):
 
     class Meta:
         unique_together = ('event', 'code')
-
-    def dwolla_connected(self):
-        if self.api_type == Event.LIVE:
-            return self.dwolla_live_connected()
-        return self.dwolla_test_connected()
-
-    def dwolla_can_connect(self):
-        if self.api_type == Event.LIVE:
-            return self.dwolla_live_can_connect()
-        return self.dwolla_test_can_connect()
 
     def add_discount(self, discount, force=False):
         if discount.event_id != self.event_id:
