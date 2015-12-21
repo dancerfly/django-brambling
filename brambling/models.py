@@ -182,7 +182,7 @@ class DwollaAccount(models.Model):
             refresh_token = self.refresh_token
             dwolla_prep(self.api_type)
             oauth_data = oauth.refresh(refresh_token)
-            self.set_tokens(self, oauth_data)
+            self.set_tokens(oauth_data)
             self.save()
         return self.access_token
 

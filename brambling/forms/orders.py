@@ -470,9 +470,9 @@ class DwollaPaymentForm(BasePaymentForm):
         super(DwollaPaymentForm, self).__init__(*args, **kwargs)
         event = self.order.event
         dwolla_obj = self.user if self.user.is_authenticated() else self.order
-        connected = dwolla_obj.dwolla_connected(event.api_type)
-        if connected:
-            self.sources = dwolla_get_sources(dwolla_obj, event)
+        self.dwolla_account = dwolla_obj.get_dwolla_account(event.api_type)
+        if self.dwolla_account and self.dwolla_account.is_connected():
+            self.sources = dwolla_get_sources(self.dwolla_account, event)
             source_choices = [(source['Id'], source['Name'])
                               for source in self.sources]
             self.fields['source'] = forms.ChoiceField(choices=source_choices, initial="Balance")
@@ -481,10 +481,9 @@ class DwollaPaymentForm(BasePaymentForm):
         if 'dwolla_pin' in self.cleaned_data and 'source' in self.cleaned_data:
             self._charge = None
             if self.amount > 0:
-                dwolla_obj = self.user if self.user.is_authenticated() else self.order
                 try:
                     self._charge = dwolla_charge(
-                        account=dwolla_obj.get_dwolla_account(self.order.event.api_type),
+                        account=self.dwolla_account,
                         amount=float(self.amount),
                         order=self.order,
                         event=self.order.event,
