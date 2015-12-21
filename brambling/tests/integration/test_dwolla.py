@@ -44,7 +44,7 @@ class DwollaChargeTestCase(TestCase):
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
-        event.organization.dwolla_test_user_new = DwollaOrganizationAccountFactory()
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
         self.assertTrue(event.dwolla_connected())
         dwolla_prep(Event.TEST)
 

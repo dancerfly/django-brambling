@@ -191,8 +191,8 @@ class AbstractDwollaModel(models.Model):
     class Meta:
         abstract = True
 
-    dwolla_user_new = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set")
-    dwolla_test_user_new = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set")
+    dwolla_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set")
+    dwolla_test_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set")
 
     # Token obtained via OAuth.
     dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
@@ -207,17 +207,17 @@ class AbstractDwollaModel(models.Model):
     dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
     def dwolla_live_connected(self):
-        return self.dwolla_user_new_id is not None and self.dwolla_user_new.is_connected()
+        return self.dwolla_account_id is not None and self.dwolla_account.is_connected()
 
     def dwolla_test_connected(self):
-        return self.dwolla_test_user_new_id is not None and self.dwolla_test_user_new.is_connected()
+        return self.dwolla_test_account_id is not None and self.dwolla_test_account.is_connected()
 
     def dwolla_live_can_connect(self):
         return bool(
             dwolla_live_settings_valid() and
             (
-                not self.dwolla_user_new_id or
-                not self.dwolla_user_new.is_connected()
+                not self.dwolla_account_id or
+                not self.dwolla_account.is_connected()
             )
         )
 
@@ -225,22 +225,22 @@ class AbstractDwollaModel(models.Model):
         return bool(
             dwolla_test_settings_valid() and
             (
-                not self.dwolla_test_user_new_id or
-                not self.dwolla_test_user_new.is_connected()
+                not self.dwolla_test_account_id or
+                not self.dwolla_test_account.is_connected()
             )
         )
 
     def clear_dwolla_data(self, api_type):
         if api_type == DwollaAccount.LIVE:
-            self.dwolla_user_new = None
+            self.dwolla_account = None
         else:
-            self.dwolla_test_user_new = None
+            self.dwolla_test_account = None
 
     def get_dwolla_account(self, api_type):
         if api_type == DwollaAccount.LIVE:
-            return self.dwolla_user_new
+            return self.dwolla_account
         else:
-            return self.dwolla_test_user_new
+            return self.dwolla_test_account
 
 
 class DanceStyle(models.Model):

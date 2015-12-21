@@ -77,9 +77,9 @@ class DwollaConnectView(View):
                 account.save()
                 if self.object.get_dwolla_account(api_type) != account:
                     if api_type == LIVE:
-                        self.object.dwolla_user_new = account
+                        self.object.dwolla_account = account
                     else:
-                        self.object.dwolla_test_user_new = account
+                        self.object.dwolla_test_account = account
                     self.object.save()
                 messages.success(request, "Dwolla account connected!")
             elif 'error_description' in oauth_tokens:
