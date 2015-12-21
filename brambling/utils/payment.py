@@ -68,13 +68,15 @@ def dwolla_update_tokens(days):
     return count, invalid_count, test_count, invalid_test_count
 
 
-def dwolla_get_sources(user_or_order, event):
-    dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(user_or_order, event.api_type)
-    if event.api_type == LIVE:
-        destination = event.organization.dwolla_user_id
-    else:
-        destination = event.organization.dwolla_test_user_id
+def dwolla_get_sources(account, event):
+    if account.api_type != event.api_type:
+        raise ValueError("Account and event API types do not match.")
+    org_account = event.organization.get_dwolla_account(event.api_type)
+    if not org_account or not org_account.is_connected():
+        raise ValueError("Event is not connected to dwolla.")
+    dwolla_prep(account.api_type)
+    access_token = account.get_token()
+    destination = org_account.user_id
     return fundingsources.get(
         alternate_token=access_token,
         params={
@@ -84,17 +86,19 @@ def dwolla_get_sources(user_or_order, event):
     )
 
 
-def dwolla_charge(sender, amount, order, event, pin, source):
+def dwolla_charge(account, amount, order, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
-    dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(sender, event.api_type)
-    organization_access_token = dwolla_get_token(event.organization, event.api_type)
-    if event.api_type == LIVE:
-        destination = event.organization.dwolla_user_id
-    else:
-        destination = event.organization.dwolla_test_user_id
+    if account.api_type != event.api_type:
+        raise ValueError("Account and event API types do not match.")
+    org_account = event.organization.get_dwolla_account(event.api_type)
+    if not org_account or not org_account.is_connected():
+        raise ValueError("Event is not connected to dwolla.")
+    dwolla_prep(account.api_type)
+    access_token = account.get_token()
+    organization_access_token = org_account.get_token()
+    destination = org_account.user_id
 
     user_charge_id = transactions.send(
         destinationid=destination,
@@ -123,8 +127,9 @@ def dwolla_refund(order, event, payment_id, amount, pin):
     """
     Returns id of refund transaction.
     """
+    org_account = event.organization.get_dwolla_account(event.api_type)
     dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(event.organization, event.api_type)
+    access_token = org_account.get_token()
     return transactions.refund(
         tid=int(payment_id),
         fundingsource="Balance",

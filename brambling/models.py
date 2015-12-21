@@ -166,6 +166,7 @@ class DwollaAccount(models.Model):
         self.access_token_expires = expires
         self.refresh_token = oauth_data['refresh_token']
         self.refresh_token_expires = refresh_expires
+        self.is_valid = True
 
     def get_token(self):
         if not self.is_valid:
@@ -234,6 +235,12 @@ class AbstractDwollaModel(models.Model):
             self.dwolla_user_new = None
         else:
             self.dwolla_test_user_new = None
+
+    def get_dwolla_account(self, api_type):
+        if api_type == DwollaAccount.LIVE:
+            return self.dwolla_user_new
+        else:
+            return self.dwolla_test_user_new
 
 
 class DanceStyle(models.Model):

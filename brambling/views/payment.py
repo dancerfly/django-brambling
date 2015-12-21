@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 
-from brambling.models import Organization, Order, Transaction, Person
+from brambling.models import Organization, Order, Transaction, Person, DwollaAccount
 from brambling.utils.payment import (
     dwolla_prep,
     LIVE,
@@ -67,14 +67,20 @@ class DwollaConnectView(View):
                 # Now get account info.
                 account_info = accounts.full(token)
 
-                if api_type == LIVE:
-                    self.object.dwolla_user_id = account_info['Id']
-                else:
-                    self.object.dwolla_test_user_id = account_info['Id']
+                try:
+                    account = DwollaAccount.objects.get(api_type=api_type, user_id=account_info['Id'])
+                except DwollaAccount.DoesNotExist:
+                    account = DwollaAccount(api_type=api_type, user_id=account_info['Id'])
 
-                dwolla_set_tokens(self.object, api_type, oauth_tokens)
+                account.set_tokens(oauth_tokens)
 
-                self.object.save()
+                account.save()
+                if self.object.get_dwolla_account(api_type) != account:
+                    if api_type == LIVE:
+                        self.object.dwolla_user_new = account
+                    else:
+                        self.object.dwolla_test_user_new = account
+                    self.object.save()
                 messages.success(request, "Dwolla account connected!")
             elif 'error_description' in oauth_tokens:
                 messages.error(request, oauth_tokens['error_description'])
