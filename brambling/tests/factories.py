@@ -7,7 +7,8 @@ from brambling.models import (
     Event, Person, Order, CreditCard, Invite,
     Organization, Transaction, Item, ItemOption,
     Discount, Attendee, ItemImage, SavedReport,
-    CustomForm, CustomFormField,
+    CustomForm, CustomFormField, EnvironmentalFactor, HousingRequestNight,
+    HousingCategory, EventHousing, Home, HousingSlot,
 )
 
 
@@ -206,3 +207,39 @@ class CustomFormFieldFactory(factory.DjangoModelFactory):
     field_type = CustomFormField.TEXT
     form = factory.SubFactory(CustomFormFactory)
     name = factory.Sequence(lambda n: "Custom Form Field {}".format(n))
+
+
+class EnvironmentalFactorFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = EnvironmentalFactor
+
+    name = factory.Sequence(lambda n: "Environmental Factor {}".format(n))
+
+
+class HousingRequestNightFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = HousingRequestNight
+
+    date = now().date()
+
+
+class HousingCategoryFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = HousingCategory
+
+    name = factory.Sequence(lambda n: "Housing Category {}".format(n))
+
+
+class EventHousingFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = EventHousing
+
+
+class HomeFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Home
+
+
+class HousingSlotFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = HousingSlot
