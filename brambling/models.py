@@ -33,7 +33,7 @@ from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
                                      dwolla_live_settings_valid,
-                                     dwolla_prep)
+                                     dwolla_prep, DWOLLA_SCOPES)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -156,6 +156,9 @@ class DwollaAccount(models.Model):
             self.refresh_token_expires > timezone.now()
         )
 
+    def has_correct_scopes(self):
+        return self.scopes == DWOLLA_SCOPES
+
     def set_tokens(self, oauth_data):
         if 'access_token' not in oauth_data:
             if 'error_description' in oauth_data:
@@ -221,7 +224,8 @@ class AbstractDwollaModel(models.Model):
                 dwolla_live_settings_valid() and
                 (
                     not self.dwolla_account_id or
-                    not self.dwolla_account.is_connected()
+                    not self.dwolla_account.is_connected() or
+                    not self.dwolla_account.has_correct_scopes()
                 )
             )
         else:
@@ -229,7 +233,8 @@ class AbstractDwollaModel(models.Model):
                 dwolla_test_settings_valid() and
                 (
                     not self.dwolla_test_account_id or
-                    not self.dwolla_test_account.is_connected()
+                    not self.dwolla_test_account.is_connected() or
+                    not self.dwolla_test_account.has_correct_scopes()
                 )
             )
 

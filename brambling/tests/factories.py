@@ -9,7 +9,7 @@ from brambling.models import (
     Discount, Attendee, ItemImage, SavedReport,
     CustomForm, CustomFormField, DwollaAccount,
 )
-from brambling.utils.payment import DWOLLA_SCOPE
+from brambling.utils.payment import DWOLLA_SCOPES
 
 
 def lazy_setting(setting):
@@ -42,7 +42,7 @@ class DwollaUserAccountFactory(factory.DjangoModelFactory):
     refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_REFRESH_TOKEN'))
     access_token_expires = now() + timedelta(days=1)
     refresh_token_expires = now() + timedelta(days=2)
-    scopes = DWOLLA_SCOPE
+    scopes = DWOLLA_SCOPES
 
 
 class DwollaOrganizationAccountFactory(factory.DjangoModelFactory):
@@ -55,7 +55,7 @@ class DwollaOrganizationAccountFactory(factory.DjangoModelFactory):
     refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN'))
     access_token_expires = now() + timedelta(days=1)
     refresh_token_expires = now() + timedelta(days=2)
-    scopes = DWOLLA_SCOPE
+    scopes = DWOLLA_SCOPES
 
 
 class PersonFactory(factory.DjangoModelFactory):

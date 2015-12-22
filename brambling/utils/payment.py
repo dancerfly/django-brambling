@@ -14,7 +14,7 @@ LIVE = 'live'
 stripe.api_version = '2015-01-11'
 constants.debug = settings.DEBUG
 
-DWOLLA_SCOPE = "Send|AccountInfoFull|Funding|Transactions"
+DWOLLA_SCOPES = "Send|AccountInfoFull|Funding|Transactions"
 
 
 def get_fee(event, amount):
@@ -171,7 +171,7 @@ def dwolla_redirect_url(dwolla_obj, api_type, request, next_url=""):
 def dwolla_oauth_url(dwolla_obj, api_type, request, next_url=""):
     dwolla_prep(api_type)
     redirect_url = dwolla_redirect_url(dwolla_obj, api_type, request, next_url)
-    return oauth.genauthurl(redirect_url, scope=DWOLLA_SCOPE)
+    return oauth.genauthurl(redirect_url, scope=DWOLLA_SCOPES)
 
 
 def stripe_prep(api_type):
