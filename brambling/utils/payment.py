@@ -258,7 +258,7 @@ def stripe_live_settings_valid():
     )
 
 
-def stripe_organization_oauth_url(organization, request, api_type):
+def stripe_organization_oauth_url(organization, api_type, request):
     stripe_prep(api_type)
     if api_type == LIVE:
         client_id = getattr(settings, 'STRIPE_APPLICATION_ID', None)
