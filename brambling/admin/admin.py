@@ -24,8 +24,8 @@ class PersonAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': (('email', 'confirmed_email',), 'password')}),
         ('Personal', {'fields': (
-            ('given_name', 'surname',), ('middle_name', 'name_order'),
-            ('phone',)
+            ('given_name', 'surname',),
+            ('middle_name', 'name_order'),
         )}),
         ('Permissions', {'fields': (
             ('is_active', 'is_superuser',), 'user_permissions', 'groups'
