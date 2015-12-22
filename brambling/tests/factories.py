@@ -68,12 +68,6 @@ class PersonFactory(factory.DjangoModelFactory):
     email = factory.Sequence(lambda n: "test{}@test.com".format(n))
     confirmed_email = factory.LazyAttribute(lambda obj: obj.email)
 
-    dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
-    dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
-    dwolla_test_refresh_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_REFRESH_TOKEN'))
-    dwolla_test_access_token_expires = now() + timedelta(days=1)
-    dwolla_test_refresh_token_expires = now() + timedelta(days=2)
-
 
 class OrganizationFactory(factory.DjangoModelFactory):
     class Meta:
@@ -109,8 +103,6 @@ class OrderFactory(factory.DjangoModelFactory):
 
     code = factory.Sequence(lambda n: str(n).zfill(6))
     event = factory.SubFactory(EventFactory)
-    dwolla_test_user_id = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_USER_ID'))
-    dwolla_test_access_token = factory.LazyAttribute(lazy_setting('DWOLLA_TEST_USER_ACCESS_TOKEN'))
 
 
 class AttendeeFactory(factory.DjangoModelFactory):
