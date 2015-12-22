@@ -54,16 +54,26 @@
 							{% endif %}
 						</tr>
 					{% endif %}
-					{% if dwolla_live_connected or dwolla_oauth_url %}
+					{% if dwolla_account or dwolla_oauth_url %}
 						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla
 								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if dwolla_live_connected %}
-								<td>Enabled ({{ dwolla_user_id }})</td>
-								<td>{% formrow form.disconnect_dwolla_live with label="Disconnect" %}</td>
+							{% if dwolla_account %}
+								<td>
+									Enabled ({{ dwolla_account.user_id }})
+								</td>
+								{% if dwolla_account.has_correct_scopes %}
+									<td>{% formrow form.disconnect_dwolla_live with label="Disconnect" %}</td>
+								{% else %}
+									<td>
+										<a href='{{ dwolla_oauth_url }}' class='btn btn-xs btn-warning tipped' title="We've had to make some changes to our Dwolla interaction. Users can still send you payments for now. Please reauthorize your account as soon as possible.">
+											<i class='fa fa-warning'></i> Reauthorize
+										</a>
+									</td>
+								{% endif %}
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
@@ -92,16 +102,26 @@
 							{% endif %}
 						</tr>
 					{% endif %}
-					{% if dwolla_test_connected or dwolla_test_oauth_url %}
+					{% if dwolla_test_account or dwolla_test_oauth_url %}
 						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla (Test)
 								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if dwolla_test_connected %}
-								<td>Enabled ({{ dwolla_test_user_id }})</td>
-								<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
+							{% if dwolla_test_account %}
+								<td>
+									Enabled ({{ dwolla_test_account.user_id }})
+								</td>
+								{% if dwolla_test_account.has_correct_scopes %}
+									<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
+								{% else %}
+									<td>
+										<a href='{{ dwolla_test_oauth_url }}' class='btn btn-xs btn-warning tipped' title="We've had to make some changes to our Dwolla interaction. Users can still send you payments for now. Please reauthorize your account as soon as possible.">
+											<i class='fa fa-warning'></i> Reauthorize
+										</a>
+									</td>
+								{% endif %}
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
