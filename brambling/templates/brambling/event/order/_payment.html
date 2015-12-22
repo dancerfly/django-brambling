@@ -53,7 +53,7 @@
 
 								<p>
 									<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-									<a class='btn btn-link' href="{% url 'brambling_user_profile' %}">Manage saved cards</a>
+									<a class='btn btn-link' href="{% url 'brambling_user_billing' %}">Manage saved cards</a>
 								</p>
 							</form>
 							{% include 'brambling/_stripe_note.html' %}

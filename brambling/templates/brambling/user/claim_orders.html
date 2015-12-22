@@ -1,4 +1,4 @@
-{% extends 'brambling/user/__base.html' %}
+{% extends 'brambling/user/__base_orders.html' %}
 
 {% load floppyforms humanize %}
 
@@ -68,6 +68,10 @@
 					</tbody>
 				</table>
 			</div>
+		{% endif %}
+
+		{% if not claimable_orders and not unclaimable_orders %}
+			<p>Thanks for stopping by! Doesn't look like there are any orders out there for you to claim at the moment.</p>
 		{% endif %}
 	{% endif %}
 
