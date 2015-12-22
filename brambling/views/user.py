@@ -170,7 +170,9 @@ class BillingView(UpdateView):
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
             'claimable_orders': self.request.user.get_claimable_orders(),
         })
-        if self.object.dwolla_live_can_connect():
+        if self.object.dwolla_connected(LIVE):
+            context['dwolla_user_id'] = self.request.user.get_dwolla_account(LIVE).user_id
+        elif self.object.dwolla_can_connect(LIVE):
             context['dwolla_oauth_url'] = dwolla_oauth_url(
                 self.request.user, LIVE, self.request)
         return context

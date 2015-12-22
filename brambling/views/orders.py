@@ -805,7 +805,8 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        dwolla_connected = dwolla_obj.dwolla_connected(self.event.api_type)
+        account = dwolla_obj.get_account(self.event.api_type)
+        dwolla_connected = account and account.is_connected()
         dwolla_can_connect = dwolla_obj.dwolla_can_connect(self.event.api_type)
         if dwolla_can_connect:
             kwargs = {
@@ -818,7 +819,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         if dwolla_connected:
             context.update({
                 'dwolla_is_connected': True,
-                'dwolla_user_id': dwolla_obj.dwolla_user_id if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_user_id
+                'dwolla_user_id': account.user_id
             })
         context.update(self.summary_data)
         return context

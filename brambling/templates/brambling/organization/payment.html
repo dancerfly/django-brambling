@@ -62,7 +62,7 @@
 								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
 							</th>
 							{% if dwolla_live_connected %}
-								<td>Enabled ({{ organization.dwolla_user_id }})</td>
+								<td>Enabled ({{ dwolla_user_id }})</td>
 								<td>{% formrow form.disconnect_dwolla_live with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>
@@ -100,7 +100,7 @@
 								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
 							</th>
 							{% if dwolla_test_connected %}
-								<td>Enabled ({{ organization.dwolla_test_user_id }})</td>
+								<td>Enabled ({{ dwolla_test_user_id }})</td>
 								<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>

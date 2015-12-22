@@ -91,6 +91,7 @@ class OrganizationPaymentView(OrganizationUpdateView):
         if self.object.is_demo():
             if self.object.dwolla_connected(TEST):
                 context['dwolla_test_connected'] = True
+                context['dwolla_test_user_id'] = self.object.get_dwolla_account(TEST).user_id
             elif self.object.dwolla_can_connect(TEST):
                 context['dwolla_test_oauth_url'] = dwolla_oauth_url(
                     self.object, self.request, TEST)
@@ -101,6 +102,7 @@ class OrganizationPaymentView(OrganizationUpdateView):
         else:
             if self.object.dwolla_connected(LIVE):
                 context['dwolla_live_connected'] = True
+                context['dwolla_user_id'] = self.object.get_dwolla_account(LIVE).user_id
             elif self.object.dwolla_can_connect(LIVE):
                 context['dwolla_oauth_url'] = dwolla_oauth_url(
                     self.object, self.request, LIVE)
