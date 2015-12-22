@@ -14,7 +14,7 @@ LIVE = 'live'
 stripe.api_version = '2015-01-11'
 constants.debug = settings.DEBUG
 
-DWOLLA_SCOPES = "Send|AccountInfoFull|Funding|Transactions"
+DWOLLA_SCOPES = "send|accountinfofull|funding|transactions"
 
 
 def get_fee(event, amount):

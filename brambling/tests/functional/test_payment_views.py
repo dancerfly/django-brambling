@@ -38,6 +38,7 @@ class DwollaConnectViewTestCase(TestCase):
             'expires_in': 1234,
             'refresh_token': 'REFRESH_TOKEN',
             'refresh_expires_in': 1234,
+            'scope': 'realscopereally',
         }
         account_info = {
             'Id': account.user_id
@@ -70,6 +71,7 @@ class DwollaConnectViewTestCase(TestCase):
             oauth_tokens['access_token'])
         org2 = Organization.objects.get(pk=org2.pk)
         self.assertEqual(org2.dwolla_test_account.access_token, oauth_tokens['access_token'])
+        self.assertEqual(org2.dwolla_test_account.scopes, oauth_tokens['scope'])
         self.assertEqual(org2.dwolla_test_account, org1.dwolla_test_account)
 
     @mock.patch('dwolla.oauth.get')
@@ -86,6 +88,7 @@ class DwollaConnectViewTestCase(TestCase):
             'expires_in': 1234,
             'refresh_token': 'REFRESH_TOKEN',
             'refresh_expires_in': 1234,
+            'scope': 'realscopereally',
         }
         account_info = {
             'Id': '123-345-567'
@@ -123,3 +126,4 @@ class DwollaConnectViewTestCase(TestCase):
         self.assertNotEqual(org2.dwolla_test_account.access_token, oauth_tokens['access_token'])
         self.assertNotEqual(org2.dwolla_test_account, org1.dwolla_test_account)
         self.assertEqual(org1.dwolla_test_account.access_token, oauth_tokens['access_token'])
+        self.assertEqual(org1.dwolla_test_account.scopes, oauth_tokens['scope'])

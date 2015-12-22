@@ -122,4 +122,4 @@ class Migration38TestCase(TestCase):
         self.assertEqual(account.access_token_expires, org.dwolla_access_token_expires)
         self.assertEqual(account.refresh_token, org.dwolla_refresh_token)
         self.assertEqual(account.refresh_token_expires, org.dwolla_refresh_token_expires)
-        self.assertEqual(account.scopes, "Send|AccountInfoFull|Transactions")
+        self.assertEqual(account.scopes, "send|accountinfofull|transactions")

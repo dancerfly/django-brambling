@@ -173,6 +173,7 @@ class DwollaAccount(models.Model):
         self.refresh_token = oauth_data['refresh_token']
         self.refresh_token_expires = refresh_expires
         self.is_valid = True
+        self.scopes = oauth_data['scope']
 
     def get_token(self):
         if not self.is_valid:

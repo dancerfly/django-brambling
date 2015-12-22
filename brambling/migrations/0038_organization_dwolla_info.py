@@ -15,7 +15,7 @@ def copy_dwolla_forward(Organization, DwollaAccount):
                 'access_token_expires': org.dwolla_access_token_expires,
                 'refresh_token': org.dwolla_refresh_token,
                 'refresh_token_expires': org.dwolla_refresh_token_expires,
-                'scopes': "Send|AccountInfoFull|Transactions",
+                'scopes': "send|accountinfofull|transactions",
             }
         )[0]
         org.dwolla_account = account
