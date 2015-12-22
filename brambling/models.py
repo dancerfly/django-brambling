@@ -143,6 +143,9 @@ class DwollaAccount(models.Model):
     class Meta:
         unique_together = (('api_type', 'user_id'),)
 
+    def __unicode__(self):
+        return unicode(self.user_id)
+
     def is_connected(self):
         if self.api_type == DwollaAccount.LIVE:
             dwolla_settings_valid = dwolla_live_settings_valid()
