@@ -805,7 +805,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        account = dwolla_obj.get_account(self.event.api_type)
+        account = dwolla_obj.get_dwolla_account(self.event.api_type)
         dwolla_connected = account and account.is_connected()
         dwolla_can_connect = dwolla_obj.dwolla_can_connect(self.event.api_type)
         if dwolla_can_connect:
