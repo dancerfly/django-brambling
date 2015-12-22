@@ -22,6 +22,12 @@ def copy_dwolla_forward(Organization, DwollaAccount):
         org.save()
 
 
+def do_forward_copy(apps, schema_editor):
+    Organization = apps.get_model('brambling', 'Organization')
+    DwollaAccount = apps.get_model('brambling', 'DwollaAccount')
+    copy_dwolla_forward(Organization, DwollaAccount)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -29,5 +35,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(copy_dwolla_forward, lambda *a, **k: None),
+        migrations.RunPython(do_forward_copy, lambda *a, **k: None),
     ]
