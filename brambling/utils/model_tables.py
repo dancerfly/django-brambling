@@ -357,24 +357,19 @@ class CustomDataTable(ModelTable):
                     self.label_overrides[field.key] = field.name
         return tuple(field.key for field in self.custom_fields)
 
+    def _get_custom_data(self, obj):
+        return {
+            entry.form_field_id: entry.get_value()
+            for entry in obj.custom_data.all()
+        }
+
     def _get_custom_fields(self):
         raise NotImplementedError
-
-    def _show_housing_data(self, attendee, form_entry):
-        if form_entry.form_field.form.form_type != 'housing':
-            return True
-        if attendee.needs_housing():
-            return True
-        else:
-            return False
 
     def get_field_val(self, obj, key):
         if key.startswith('custom_'):
             if not hasattr(obj, '_custom_data'):
-                raw_data = {
-                    entry.form_field_id: (entry.get_value() if self._show_housing_data(obj, entry) else '')
-                    for entry in obj.custom_data.all()
-                }
+                raw_data = self._get_custom_data(obj)
                 obj._custom_data = {
                     field.key: raw_data[field.pk]
                     for field in self.custom_fields
@@ -473,6 +468,20 @@ class AttendeeTable(CustomDataTable):
                     purchase_date=Min('order__transactions__timestamp')
                 )
         return queryset, use_distinct
+
+    def _show_housing_data(self, attendee, form_entry):
+        if form_entry.form_field.form.form_type != 'housing':
+            return True
+        if attendee.needs_housing():
+            return True
+        else:
+            return False
+
+    def _get_custom_data(self, attendee):
+        return {
+            entry.form_field_id: (entry.get_value() if self._show_housing_data(attendee, entry) else '')
+            for entry in attendee.custom_data.all()
+        }
 
     # Methods to be used as fields
     def order_code(self, obj):
