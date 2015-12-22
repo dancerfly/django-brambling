@@ -198,8 +198,8 @@ class AbstractDwollaModel(models.Model):
     class Meta:
         abstract = True
 
-    dwolla_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set")
-    dwolla_test_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set")
+    dwolla_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set", on_delete=models.SET_NULL)
+    dwolla_test_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set", on_delete=models.SET_NULL)
 
     # Token obtained via OAuth.
     dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
