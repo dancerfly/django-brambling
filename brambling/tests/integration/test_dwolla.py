@@ -96,30 +96,3 @@ class DwollaChargeTestCase(TestCase):
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
         self.assertEqual(refund_txn.application_fee, 0)
         self.assertEqual(refund_txn.processing_fee, 0)
-
-
-class Migration38TestCase(TestCase):
-
-    def test_copy_dwolla_forward(self):
-        """
-        Test the function which copies dwolla data from Organization to DwollaAccount.
-
-        """
-        copy_dwolla_forward = importlib.import_module('brambling.migrations.0038_organization_dwolla_info').copy_dwolla_forward
-        org = OrganizationFactory(
-            dwolla_user_id='1234-567-94',
-            dwolla_access_token='ACCESS_TOKEN',
-            dwolla_access_token_expires=timezone.now() + datetime.timedelta(days=1),
-            dwolla_refresh_token='REFRESH_TOKEN',
-            dwolla_refresh_token_expires=timezone.now() + datetime.timedelta(days=2),
-        )
-        copy_dwolla_forward(Organization, DwollaAccount)
-        org = Organization.objects.get()
-        account = org.dwolla_account
-        self.assertIsNotNone(account)
-        self.assertEqual(account.user_id, org.dwolla_user_id)
-        self.assertEqual(account.access_token, org.dwolla_access_token)
-        self.assertEqual(account.access_token_expires, org.dwolla_access_token_expires)
-        self.assertEqual(account.refresh_token, org.dwolla_refresh_token)
-        self.assertEqual(account.refresh_token_expires, org.dwolla_refresh_token_expires)
-        self.assertEqual(account.scopes, "send|accountinfofull|transactions")
