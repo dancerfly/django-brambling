@@ -124,20 +124,27 @@ class OrderReceiptMailer(FancyMailer):
 class OrderAlertMailer(FancyMailer):
     key = "order_alert"
 
-    def __init__(self, order, summary_data, *args, **kwargs):
-        self.order = order
-        self.summary_data = summary_data
+    def __init__(self, transaction, *args, **kwargs):
+        self.transaction = transaction
+        self.order = transaction.order
         super(OrderAlertMailer, self).__init__(*args, **kwargs)
 
     def get_context_data(self):
         context = super(OrderAlertMailer, self).get_context_data()
         context.update({
+            'transaction': self.transaction,
             'order': self.order,
             'person': self.order.person,
-            'event': self.order.event
+            'event': self.order.event,
+            'unconfirmed_check_payments': (
+                self.transaction.is_unconfirmed_check()
+            ),
         })
-        context.update(self.summary_data)
         return context
+
+    def _unconfirmed_check_payments(self):
+        return (self.transaction.method == Transaction.CHECK and
+                not self.transaction.is_confirmed)
 
     def get_recipients(self):
         from brambling.models import Person

@@ -37,7 +37,7 @@
 							<th>Items</th>
 						</tr>
 						<tr>
-							<th>{{ total_payments|format_money:event.currency }}</th>
+							<th>{{ transaction.amount|format_money:event.currency }}</th>
 							<td>
 								<p>
 									{% for attendee in order.attendees.all %}
@@ -48,13 +48,11 @@
 							</td>
 							<td>
 								<p>
-									{% for txn, txn_dict in transactions.iteritems %}
-										{% for item in txn_dict.items %}
+										{% for item in transaction.bought_items.all %}
 											{% if item.status == item.BOUGHT %}
 												{{ item.item_name }} ({{ item.item_option_name }})
 												{% if not forloop.last %}<br />{% endif %}
 											{% endif %}
-										{% endfor %}
 										{% if not forloop.last %}<br />{% endif %}
 									{% endfor %}
 								</p>

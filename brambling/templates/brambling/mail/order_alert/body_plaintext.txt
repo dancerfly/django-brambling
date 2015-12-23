@@ -4,7 +4,7 @@ Order {{ order.code }}
 
 
 Net payments{% load zenaida %}
-{{ total_payments|format_money:event.currency }}
+{{ transaction.amount|format_money:event.currency }}
 
 
 Attendees
@@ -13,8 +13,8 @@ Attendees
 
 
 Items
-{% for txn, txn_dict in transactions.iteritems %}{% for item in txn_dict.items %}{% if item.status == item.BOUGHT %}
-{{ item.item_name }} ({{ item.item_option_name }}){% endif %}{% endfor %}{% endfor %}
+{% for item in transaction.bought_items.all %}{% if item.status == item.BOUGHT %}
+{{ item.item_name }} ({{ item.item_option_name }}){% endif %}{% endfor %}
 {% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
 View more details at the following URL:
 {{ protocol }}://{{ site.domain }}{{ url }}

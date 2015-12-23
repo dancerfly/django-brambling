@@ -338,7 +338,7 @@ background: #970b0e !important;
           </tr></table><table style="width: 100%; border-spacing: 0; border-collapse: collapse; vertical-align: top; text-align: left; padding: 0;"><tbody><tr style="vertical-align: top; text-align: left; padding: 0;" align="left"><th>Net payments</th>
               <th>Attendees</th>
               <th>Items</th>
-            </tr><tr style="vertical-align: top; text-align: left; padding: 0;" align="left"><th>{{ total_payments|format_money:event.currency }}</th>
+            </tr><tr style="vertical-align: top; text-align: left; padding: 0;" align="left"><th>{{ transaction.amount|format_money:event.currency }}</th>
               <td style="word-break: break-word; -webkit-hyphens: auto; -moz-hyphens: auto; hyphens: auto; border-collapse: collapse !important; vertical-align: top; text-align: left; color: #222222; font-family: 'Helvetica', 'Arial', sans-serif; font-weight: normal; line-height: 19px; font-size: 14px; margin: 0; padding: 0;" align="left" valign="top">
                 <p style="color: #222222; font-family: 'Helvetica', 'Arial', sans-serif; font-weight: normal; text-align: left; line-height: 19px; font-size: 14px; margin: 0 0 10px; padding: 0;" align="left">
                   {% for attendee in order.attendees.all %}
@@ -349,13 +349,11 @@ background: #970b0e !important;
               </td>
               <td style="word-break: break-word; -webkit-hyphens: auto; -moz-hyphens: auto; hyphens: auto; border-collapse: collapse !important; vertical-align: top; text-align: left; color: #222222; font-family: 'Helvetica', 'Arial', sans-serif; font-weight: normal; line-height: 19px; font-size: 14px; margin: 0; padding: 0;" align="left" valign="top">
                 <p style="color: #222222; font-family: 'Helvetica', 'Arial', sans-serif; font-weight: normal; text-align: left; line-height: 19px; font-size: 14px; margin: 0 0 10px; padding: 0;" align="left">
-                  {% for txn, txn_dict in transactions.iteritems %}
-                    {% for item in txn_dict.items %}
+                    {% for item in transaction.bought_items.all %}
                       {% if item.status == item.BOUGHT %}
                         {{ item.item_name }} ({{ item.item_option_name }})
                         {% if not forloop.last %}<br />{% endif %}
                       {% endif %}
-                    {% endfor %}
                     {% if not forloop.last %}<br />{% endif %}
                   {% endfor %}
                 </p>
