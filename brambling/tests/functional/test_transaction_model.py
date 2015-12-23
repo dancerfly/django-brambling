@@ -75,3 +75,19 @@ class TransactionModelTestCase(TestCase):
         self.assertIsNone(refund)
         self.assertFalse(txn.can_refund())
         self.assertEqual(txn.related_transaction_set.count(), 1)
+
+    def test_unconfirmed_check(self):
+        t = Transaction(is_confirmed=False, method=Transaction.CHECK)
+        self.assertTrue(t.is_unconfirmed_check())
+
+    def test_confirmed_check(self):
+        t = Transaction(is_confirmed=True, method=Transaction.CHECK)
+        self.assertFalse(t.is_unconfirmed_check())
+
+    def test_confirmed_noncheck(self):
+        t = Transaction(is_confirmed=True, method=Transaction.OTHER)
+        self.assertFalse(t.is_unconfirmed_check())
+
+    def test_unconfirmed_noncheck(self):
+        t = Transaction(is_confirmed=False, method=Transaction.OTHER)
+        self.assertFalse(t.is_unconfirmed_check())
