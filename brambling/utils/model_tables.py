@@ -480,7 +480,7 @@ class AttendeeTable(CustomDataTable):
     def _get_custom_data(self, attendee):
         return {
             entry.form_field_id: (entry.get_value() if self._show_housing_data(attendee, entry) else '')
-            for entry in attendee.custom_data.all()
+            for entry in attendee.custom_data.select_related('form_field__form').all()
         }
 
     # Methods to be used as fields
