@@ -22,7 +22,8 @@ If you believe this is in error, please contact the event organizer directly.
 
 Total: {{ transaction.amount|format_money:event.currency }}
 
-Order #{{ order.code }}{# Transaction date #}
+Order #{{ order.code }}
+{{ transaction.timestamp }}
 
 {% url 'brambling_order_code_redirect' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
 View and edit your order at the following URL:
