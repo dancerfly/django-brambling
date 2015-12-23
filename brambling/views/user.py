@@ -15,7 +15,7 @@ from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard, Order, SavedAttendee
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
-from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
+from brambling.utils.payment import (dwolla_oauth_url, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
@@ -136,8 +136,10 @@ class BillingView(UpdateView):
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
         })
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+        if self.object.dwolla_connected(LIVE):
+            context['dwolla_user_id'] = self.request.user.get_dwolla_account(LIVE).user_id
+        elif self.object.dwolla_can_connect(LIVE):
+            context['dwolla_oauth_url'] = dwolla_oauth_url(
                 self.request.user, LIVE, self.request)
         return context
 

@@ -3,8 +3,14 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import Count
 from brambling.models import (Person, Event, DanceStyle,
                               EnvironmentalFactor, HousingCategory, CustomForm,
-                              CustomFormField, Organization, Order)
+                              CustomFormField, Organization, Order,
+                              DwollaAccount)
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
+
+
+class DwollaAccountAdmin(admin.ModelAdmin):
+    list_display = ('user_id', 'api_type', 'access_token_expires', 'refresh_token_expires')
+    list_filter = ('api_type',)
 
 
 class PersonAdmin(UserAdmin):
@@ -14,6 +20,7 @@ class PersonAdmin(UserAdmin):
     add_form = PersonCreationForm
     list_display = ('get_full_name', 'email', 'email_confirmed', 'is_active', 'created')
     list_filter = ('is_active',)
+    raw_id_fields = ('dwolla_account', 'dwolla_test_account')
 
     add_fieldsets = (
         (None, {
@@ -32,12 +39,7 @@ class PersonAdmin(UserAdmin):
         )}),
         ('Financial Transactions', {'fields': (
             ('stripe_customer_id', 'stripe_test_customer_id'),
-            "dwolla_user_id",
-            ("dwolla_access_token", "dwolla_access_token_expires"),
-            ("dwolla_refresh_token", "dwolla_refresh_token_expires"),
-            "dwolla_test_user_id",
-            ("dwolla_test_access_token", "dwolla_test_access_token_expires"),
-            ("dwolla_test_refresh_token", "dwolla_test_refresh_token_expires"),
+            ("dwolla_account", "dwolla_test_account"),
         )})
     )
 
@@ -82,12 +84,7 @@ class OrganizationAdmin(admin.ModelAdmin):
         ("Dwolla info", {
             'classes': ('grp-collapse grp-closed',),
             'fields': (
-                "dwolla_user_id",
-                ("dwolla_access_token", "dwolla_access_token_expires"),
-                ("dwolla_refresh_token", "dwolla_refresh_token_expires"),
-                "dwolla_test_user_id",
-                ("dwolla_test_access_token", "dwolla_test_access_token_expires"),
-                ("dwolla_test_refresh_token", "dwolla_test_refresh_token_expires"),
+                ("dwolla_account", "dwolla_test_account"),
             )
         }),
         ("Check info", {
@@ -106,7 +103,7 @@ class OrganizationAdmin(admin.ModelAdmin):
             'fields': ('default_application_fee_percent',)
         }),
     )
-    raw_id_fields = ('owner',)
+    raw_id_fields = ('owner', 'dwolla_account', 'dwolla_test_account')
     filter_horizontal = ("dance_styles", "editors")
     list_display = ('name', 'created', 'default_application_fee_percent', 'published_events', 'all_events')
     ordering = ('-created',)
@@ -200,6 +197,7 @@ class CustomFormAdmin(admin.ModelAdmin):
     }
 
 
+admin.site.register(DwollaAccount, DwollaAccountAdmin)
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Event, EventAdmin)

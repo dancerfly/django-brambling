@@ -118,14 +118,14 @@
 				</div>
 			</div>
 		{% endif %}
-		{% if form.instance.dwolla_user_id or dwolla_oauth_url %}
+		{% if dwolla_user_id or dwolla_oauth_url %}
 			<div class="panel panel-default">
 				<header class="panel-heading">
 					<h4 class="panel-title">Dwolla</h4>
 				</header>
 				<div class="panel-body">
-					{% if form.instance.dwolla_user_id %}
-						<p>Connected account: {{ form.instance.dwolla_user_id }}</p>
+					{% if dwolla_user_id %}
+						<p>Connected account: {{ dwolla_user_id }}</p>
 						{% formrow form.disconnect_dwolla with label="Disconnect" %}
 
 						<button class="btn btn-primary" type="submit">Save changes</button>

@@ -7,7 +7,8 @@ import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, Invite, CustomForm,
-                              CustomFormField, Order, Organization, SavedReport)
+                              CustomFormField, Order, Organization, SavedReport,
+                              DwollaAccount)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE, TEST
 
@@ -100,9 +101,9 @@ class OrganizationPaymentForm(forms.ModelForm):
             del self.fields['disconnect_stripe_live']
         if not self.instance.stripe_test_connected():
             del self.fields['disconnect_stripe_test']
-        if not self.instance.dwolla_live_connected():
+        if not self.instance.dwolla_connected(DwollaAccount.LIVE):
             del self.fields['disconnect_dwolla_live']
-        if not self.instance.dwolla_test_connected():
+        if not self.instance.dwolla_connected(DwollaAccount.TEST):
             del self.fields['disconnect_dwolla_test']
         self.request = request
         if self.instance.pk is None:

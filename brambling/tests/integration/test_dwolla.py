@@ -1,14 +1,16 @@
+import datetime
 from decimal import Decimal
-import os
 
 from django.conf import settings
 from django.test import TestCase
+from django.utils import importlib
+from django.utils import timezone
 from dwolla import transactions
 import vcr
 
-from brambling.models import Event, Transaction
-from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
-from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund, dwolla_get_token
+from brambling.models import Event, Transaction, Organization, DwollaAccount
+from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory, DwollaUserAccountFactory, DwollaOrganizationAccountFactory, OrganizationFactory
+from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
 
 
 CHARGE_DATA = {
@@ -44,13 +46,17 @@ class DwollaChargeTestCase(TestCase):
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
+        event.organization.save()
         self.assertTrue(event.dwolla_connected())
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
         order = OrderFactory(person=person, event=event, code='dwoll1')
         charge = dwolla_charge(
-            sender=person,
+            account=person.dwolla_test_account,
             amount=42.15,
             order=order,
             event=event,
@@ -82,7 +88,7 @@ class DwollaChargeTestCase(TestCase):
 
         refund_info = transactions.info(
             tid=str(refund['TransactionId']),
-            alternate_token=dwolla_get_token(event.organization, event.api_type)
+            alternate_token=event.organization.get_dwolla_account(event.api_type).get_token()
         )
         self.assertEqual(refund_info["Notes"], "Order {} for {}".format(order.code, event.name))
 
@@ -90,3 +96,30 @@ class DwollaChargeTestCase(TestCase):
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
         self.assertEqual(refund_txn.application_fee, 0)
         self.assertEqual(refund_txn.processing_fee, 0)
+
+
+class Migration38TestCase(TestCase):
+
+    def test_copy_dwolla_forward(self):
+        """
+        Test the function which copies dwolla data from Organization to DwollaAccount.
+
+        """
+        copy_dwolla_forward = importlib.import_module('brambling.migrations.0038_organization_dwolla_info').copy_dwolla_forward
+        org = OrganizationFactory(
+            dwolla_user_id='1234-567-94',
+            dwolla_access_token='ACCESS_TOKEN',
+            dwolla_access_token_expires=timezone.now() + datetime.timedelta(days=1),
+            dwolla_refresh_token='REFRESH_TOKEN',
+            dwolla_refresh_token_expires=timezone.now() + datetime.timedelta(days=2),
+        )
+        copy_dwolla_forward(Organization, DwollaAccount)
+        org = Organization.objects.get()
+        account = org.dwolla_account
+        self.assertIsNotNone(account)
+        self.assertEqual(account.user_id, org.dwolla_user_id)
+        self.assertEqual(account.access_token, org.dwolla_access_token)
+        self.assertEqual(account.access_token_expires, org.dwolla_access_token_expires)
+        self.assertEqual(account.refresh_token, org.dwolla_refresh_token)
+        self.assertEqual(account.refresh_token_expires, org.dwolla_refresh_token_expires)
+        self.assertEqual(account.scopes, "send|accountinfofull|transactions")

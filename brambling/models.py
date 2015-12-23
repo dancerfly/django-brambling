@@ -23,6 +23,7 @@ from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
+from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
@@ -31,7 +32,8 @@ from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
-                                     dwolla_live_settings_valid)
+                                     dwolla_live_settings_valid,
+                                     dwolla_prep, DWOLLA_SCOPES)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -120,9 +122,84 @@ class AbstractNamedModel(models.Model):
         abstract = True
 
 
+class DwollaAccount(models.Model):
+    LIVE = 'live'
+    TEST = 'test'
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
+    api_type = models.CharField(max_length=4, choices=API_CHOICES)
+    user_id = models.CharField(max_length=20)
+    access_token = models.CharField(max_length=50)
+    access_token_expires = models.DateTimeField()
+    refresh_token = models.CharField(max_length=50)
+    refresh_token_expires = models.DateTimeField()
+    scopes = models.CharField(max_length=100)
+    #: This should get marked False if there are ever any issues
+    #: (for example) using the api key or refreshing it.
+    is_valid = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = (('api_type', 'user_id'),)
+
+    def __unicode__(self):
+        return unicode(self.user_id)
+
+    def is_connected(self):
+        if self.api_type == DwollaAccount.LIVE:
+            dwolla_settings_valid = dwolla_live_settings_valid()
+        else:
+            dwolla_settings_valid = dwolla_test_settings_valid()
+        return bool(
+            dwolla_settings_valid and
+            self.refresh_token_expires > timezone.now()
+        )
+
+    def has_correct_scopes(self):
+        return self.scopes == DWOLLA_SCOPES
+
+    def set_tokens(self, oauth_data):
+        if 'access_token' not in oauth_data:
+            if 'error_description' in oauth_data:
+                raise ValueError(oauth_data['error_description'])
+            else:
+                raise ValueError('Unknown error during token setting.')
+        expires = timezone.now() + timedelta(seconds=oauth_data['expires_in'])
+        refresh_expires = timezone.now() + timedelta(seconds=oauth_data['refresh_expires_in'])
+
+        self.access_token = oauth_data['access_token']
+        self.access_token_expires = expires
+        self.refresh_token = oauth_data['refresh_token']
+        self.refresh_token_expires = refresh_expires
+        self.is_valid = True
+        self.scopes = oauth_data['scope']
+
+    def get_token(self):
+        if not self.is_valid:
+            raise ValueError("Something is wrong with your dwolla connection. Please disconnect / reconnect it and try again.")
+        expires = self.access_token_expires
+        refresh_expires = self.refresh_token_expires
+        now = timezone.now()
+        if expires < now:
+            if refresh_expires < now:
+                self.is_valid = False
+                self.save()
+                raise ValueError("Token is expired and can't be refreshed.")
+            refresh_token = self.refresh_token
+            dwolla_prep(self.api_type)
+            oauth_data = oauth.refresh(refresh_token)
+            self.set_tokens(oauth_data)
+            self.save()
+        return self.access_token
+
+
 class AbstractDwollaModel(models.Model):
     class Meta:
         abstract = True
+
+    dwolla_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set", on_delete=models.SET_NULL)
+    dwolla_test_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set", on_delete=models.SET_NULL)
 
     # Token obtained via OAuth.
     dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
@@ -136,49 +213,43 @@ class AbstractDwollaModel(models.Model):
     dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
     dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
 
-    def dwolla_live_connected(self):
-        return bool(
-            dwolla_live_settings_valid() and
-            self.dwolla_user_id and
-            self.dwolla_refresh_token_expires and
-            self.dwolla_refresh_token_expires > timezone.now()
-        )
+    def dwolla_connected(self, api_type):
+        if api_type == DwollaAccount.LIVE:
+            return self.dwolla_account_id is not None and self.dwolla_account.is_connected()
+        else:
+            return self.dwolla_test_account_id is not None and self.dwolla_test_account.is_connected()
 
-    def dwolla_test_connected(self):
-        return bool(
-            dwolla_test_settings_valid() and
-            self.dwolla_test_user_id and
-            self.dwolla_test_refresh_token_expires and
-            self.dwolla_test_refresh_token_expires > timezone.now()
-        )
-
-    def dwolla_live_can_connect(self):
-        return bool(
-            dwolla_live_settings_valid() and
-            (
-                not self.dwolla_user_id or
-                self.dwolla_refresh_token_expires <= timezone.now()
+    def dwolla_can_connect(self, api_type):
+        if api_type == DwollaAccount.LIVE:
+            return bool(
+                dwolla_live_settings_valid() and
+                (
+                    not self.dwolla_account_id or
+                    not self.dwolla_account.is_connected() or
+                    not self.dwolla_account.has_correct_scopes()
+                )
             )
-        )
-
-    def dwolla_test_can_connect(self):
-        return bool(
-            dwolla_live_settings_valid() and
-            (
-                not self.dwolla_test_user_id or
-                self.dwolla_test_refresh_token_expires <= timezone.now()
+        else:
+            return bool(
+                dwolla_test_settings_valid() and
+                (
+                    not self.dwolla_test_account_id or
+                    not self.dwolla_test_account.is_connected() or
+                    not self.dwolla_test_account.has_correct_scopes()
+                )
             )
-        )
-
-    def get_dwolla_connect_url(self):
-        raise NotImplementedError
 
     def clear_dwolla_data(self, api_type):
-        prefix = "dwolla_" if api_type == LIVE else "dwolla_test_"
-        for field in ('user_id', 'access_token', 'refresh_token'):
-            setattr(self, prefix + field, '')
-        for field in ('refresh_token_expires', 'access_token_expires'):
-            setattr(self, prefix + field, None)
+        if api_type == DwollaAccount.LIVE:
+            self.dwolla_account = None
+        else:
+            self.dwolla_test_account = None
+
+    def get_dwolla_account(self, api_type):
+        if api_type == DwollaAccount.LIVE:
+            return self.dwolla_account
+        else:
+            return self.dwolla_test_account
 
 
 class DanceStyle(models.Model):
@@ -304,10 +375,6 @@ class Organization(AbstractDwollaModel):
         return (user.is_authenticated() and user.is_active and
                 (user.is_superuser or user.pk == self.owner_id or
                  self.editors.filter(pk=user.pk).exists()))
-
-    def get_dwolla_connect_url(self):
-        return reverse('brambling_organization_dwolla_connect',
-                       kwargs={'organization_slug': self.slug})
 
     def stripe_live_connected(self):
         return bool(stripe_live_settings_valid() and self.stripe_user_id)
@@ -471,9 +538,7 @@ class Event(models.Model):
         return self.organization.stripe_test_can_connect()
 
     def dwolla_connected(self):
-        if self.api_type == Event.LIVE:
-            return self.organization.dwolla_live_connected()
-        return self.organization.dwolla_test_connected()
+        return self.organization.dwolla_connected(self.api_type)
 
     def dwolla_can_connect(self):
         if self.api_type == Event.LIVE:
@@ -625,9 +690,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     def __unicode__(self):
         return self.get_full_name()
-
-    def get_dwolla_connect_url(self):
-        return reverse('brambling_user_dwolla_connect')
 
     def get_organizations(self):
         return Organization.objects.filter(
@@ -863,21 +925,6 @@ class Order(AbstractDwollaModel):
 
     class Meta:
         unique_together = ('event', 'code')
-
-    def get_dwolla_connect_url(self):
-        return reverse('brambling_order_dwolla_connect',
-                       kwargs={'event_slug': self.event.slug,
-                               'organization_slug': self.event.organization.slug})
-
-    def dwolla_connected(self):
-        if self.api_type == Event.LIVE:
-            return self.dwolla_live_connected()
-        return self.dwolla_test_connected()
-
-    def dwolla_can_connect(self):
-        if self.api_type == Event.LIVE:
-            return self.dwolla_live_can_connect()
-        return self.dwolla_test_can_connect()
 
     def add_discount(self, discount, force=False):
         if discount.event_id != self.event_id:

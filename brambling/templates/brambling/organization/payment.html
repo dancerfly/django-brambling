@@ -54,15 +54,17 @@
 							{% endif %}
 						</tr>
 					{% endif %}
-					{% if organization.dwolla_live_connected or dwolla_oauth_url %}
+					{% if dwolla_account or dwolla_oauth_url %}
 						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla
 								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if organization.dwolla_live_connected %}
-								<td>Enabled ({{ organization.dwolla_user_id }})</td>
+							{% if dwolla_account %}
+								<td>
+									Enabled ({{ dwolla_account.user_id }})
+								</td>
 								<td>{% formrow form.disconnect_dwolla_live with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>
@@ -92,15 +94,17 @@
 							{% endif %}
 						</tr>
 					{% endif %}
-					{% if organization.dwolla_test_connected or dwolla_test_oauth_url %}
+					{% if dwolla_test_account or dwolla_test_oauth_url %}
 						<tr class="active">
 							<th>
 								<i class="fa fa-fw fa-money"></i>
 								Dwolla (Test)
 								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
 							</th>
-							{% if organization.dwolla_test_connected %}
-								<td>Enabled ({{ organization.dwolla_test_user_id }})</td>
+							{% if dwolla_test_account %}
+								<td>
+									Enabled ({{ dwolla_test_account.user_id }})
+								</td>
 								<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>
