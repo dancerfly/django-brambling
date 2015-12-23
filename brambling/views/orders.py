@@ -708,7 +708,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             if not self.event.is_frozen:
                 self.event.is_frozen = True
                 self.event.save()
-            self.send_email()
+            self.send_email(payment)
         else:
             self.get_forms()
             form = None
@@ -730,7 +730,7 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 if not self.event.is_frozen:
                     self.event.is_frozen = True
                     self.event.save()
-                self.send_email()
+                self.send_email(payment)
             elif form:
                 for error in form.non_field_errors():
                     messages.error(request, error)
@@ -746,11 +746,9 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
 
-    def send_email(self):
-        summary_data = self.order.get_summary_data()
+    def send_email(self, payment):
         email_kwargs = {
-            'order': self.order,
-            'summary_data': summary_data,
+            'transaction': payment,
             'site': get_current_site(self.request),
             'secure': self.request.is_secure()
         }
