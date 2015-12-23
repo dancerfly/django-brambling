@@ -11,7 +11,7 @@ from brambling.forms.orders import (OneTimePaymentForm,
                                     DwollaPaymentForm,
                                     CheckPaymentForm)
 from brambling.models import Transaction
-from brambling.tests.factories import OrderFactory, PersonFactory, CardFactory
+from brambling.tests.factories import OrderFactory, PersonFactory, CardFactory, DwollaUserAccountFactory, DwollaOrganizationAccountFactory
 
 
 STRIPE_CHARGE = stripe.Charge.construct_from({
@@ -199,14 +199,18 @@ class PaymentFormTestCase(TestCase):
         dwolla_get_sources.return_value = DWOLLA_SOURCES
         order = OrderFactory()
         event = order.event
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
+        event.organization.save()
         person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
         pin = '1234'
         source = 'Balance'
         form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin, 'source': source}, user=person)
         self.assertTrue(form.is_bound)
         self.assertFalse(form.errors)
         dwolla_charge.assert_called_once_with(
-            sender=person,
+            account=person.dwolla_test_account,
             amount=42.15,
             event=event,
             pin=pin,
@@ -229,8 +233,13 @@ class PaymentFormTestCase(TestCase):
         }
         dwolla_get_sources.return_value = DWOLLA_SOURCES
         order = OrderFactory()
-        order.event.organization.dwolla_test_access_token_expires = timezone.now() - timedelta(1)
+        order.event.organization.dwolla_test_account = DwollaOrganizationAccountFactory(
+            access_token_expires=timezone.now() - timedelta(1)
+        )
+        order.event.organization.save()
         person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
         pin = '1234'
         source = 'Balance'
         form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin, 'source': source}, user=person)

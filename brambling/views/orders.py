@@ -20,7 +20,7 @@ from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
                               Invite, Person, SavedAttendee)
-from brambling.utils.payment import dwolla_customer_oauth_url
+from brambling.utils.payment import dwolla_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
                                    WorkflowMixin)
@@ -805,20 +805,21 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         })
         user = self.request.user
         dwolla_obj = user if user.is_authenticated() else self.order
-        dwolla_connected = dwolla_obj.dwolla_live_connected() if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_connected()
-        dwolla_can_connect = dwolla_obj.dwolla_live_can_connect() if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_can_connect()
+        account = dwolla_obj.get_dwolla_account(self.event.api_type)
+        dwolla_connected = account and account.is_connected()
+        dwolla_can_connect = dwolla_obj.dwolla_can_connect(self.event.api_type)
         if dwolla_can_connect:
             kwargs = {
                 'event_slug': self.event.slug,
                 'organization_slug': self.event.organization.slug,
             }
             next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+            context['dwolla_oauth_url'] = dwolla_oauth_url(
                 dwolla_obj, self.event.api_type, self.request, next_url)
         if dwolla_connected:
             context.update({
                 'dwolla_is_connected': True,
-                'dwolla_user_id': dwolla_obj.dwolla_user_id if self.event.api_type == Event.LIVE else dwolla_obj.dwolla_test_user_id
+                'dwolla_user_id': account.user_id
             })
         context.update(self.summary_data)
         return context

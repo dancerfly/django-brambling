@@ -1,0 +1,55 @@
+{% extends 'brambling/user/__base_orders.html' %}
+
+{% load floppyforms humanize zenaida %}
+
+{% block title %}Order History – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	<h2 class="sr-only">Order history</h2>
+
+	{% url 'brambling_claim_orders' as brambling_claim_orders_url %}
+	{% if claimable_orders and request.path != brambling_claim_orders_url %}
+			<div class="alert alert-info">
+					<p>We found {{ claimable_orders|length|apnumber }} order{{ claimable_orders|pluralize }} associated with your email address.
+					<p>
+							<a href="{{ brambling_claim_orders_url }}" class="btn btn-sm btn-info">Claim order{{ claimable_orders|pluralize }}</a>
+							<a href="javascript://" class="btn btn-sm btn-default popped text-muted" data-toggle="popover" data-container=".container" data-content="
+									We found some orders that you made while not logged in.
+									Claim orders to make changes or keep them in your account records.
+							">What&#8217;s this?</a>
+					</p>
+			</div>
+	{% endif %}
+
+	<table class='table table-striped'>
+		<thead>
+			<tr>
+				<th>Event</th>
+				<th>Amount</th>
+				<th>Last transaction</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for order in orders %}
+				<tr>
+					<td>
+						<a href='{% url "brambling_event_order_summary" organization_slug=order.event.organization.slug event_slug=order.event.slug %}'>
+							<strong>{{ order.event.name }}</strong>
+						</a><br />
+						<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
+					</td>
+					<td>{{ order.total|format_money:order.event.currency }}</td>
+					<td>{{ order.last_transaction_date }}</td>
+				</tr>
+			{% empty %}
+				<tr>
+					<td colspan="3">
+						<em>It doesn't look like you have any orders right now; get dancing!</em>
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+{% endblock %}

@@ -1,14 +1,16 @@
+import datetime
 from decimal import Decimal
-import os
 
 from django.conf import settings
 from django.test import TestCase
+from django.utils import importlib
+from django.utils import timezone
 from dwolla import transactions
 import vcr
 
-from brambling.models import Event, Transaction
-from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
-from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund, dwolla_get_token
+from brambling.models import Event, Transaction, Organization, DwollaAccount
+from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory, DwollaUserAccountFactory, DwollaOrganizationAccountFactory, OrganizationFactory
+from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
 
 
 CHARGE_DATA = {
@@ -44,13 +46,17 @@ class DwollaChargeTestCase(TestCase):
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
+        event.organization.save()
         self.assertTrue(event.dwolla_connected())
         dwolla_prep(Event.TEST)
 
         person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
         order = OrderFactory(person=person, event=event, code='dwoll1')
         charge = dwolla_charge(
-            sender=person,
+            account=person.dwolla_test_account,
             amount=42.15,
             order=order,
             event=event,
@@ -82,7 +88,7 @@ class DwollaChargeTestCase(TestCase):
 
         refund_info = transactions.info(
             tid=str(refund['TransactionId']),
-            alternate_token=dwolla_get_token(event.organization, event.api_type)
+            alternate_token=event.organization.get_dwolla_account(event.api_type).get_token()
         )
         self.assertEqual(refund_info["Notes"], "Order {} for {}".format(order.code, event.name))
 

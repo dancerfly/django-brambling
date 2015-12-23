@@ -14,6 +14,8 @@ LIVE = 'live'
 stripe.api_version = '2015-01-11'
 constants.debug = settings.DEBUG
 
+DWOLLA_SCOPES = "send|accountinfofull|funding|transactions"
+
 
 def get_fee(event, amount):
     fee = event.application_fee_percent / 100 * Decimal(str(amount))
@@ -31,108 +33,50 @@ def dwolla_prep(api_type):
         constants.client_secret = settings.DWOLLA_TEST_APPLICATION_SECRET
 
 
-def dwolla_set_tokens(dwolla_obj, api_type, data):
-    if 'access_token' not in data:
-        if 'error_description' in data:
-            raise ValueError(data['error_description'])
-        else:
-            raise ValueError('Unknown error during token setting.')
-    expires = timezone.now() + datetime.timedelta(seconds=data['expires_in'])
-    refresh_expires = timezone.now() + datetime.timedelta(seconds=data['refresh_expires_in'])
-
-    if api_type == LIVE:
-        dwolla_obj.dwolla_access_token = data['access_token']
-        dwolla_obj.dwolla_access_token_expires = expires
-        dwolla_obj.dwolla_refresh_token = data['refresh_token']
-        dwolla_obj.dwolla_refresh_token_expires = refresh_expires
-    else:
-        dwolla_obj.dwolla_test_access_token = data['access_token']
-        dwolla_obj.dwolla_test_access_token_expires = expires
-        dwolla_obj.dwolla_test_refresh_token = data['refresh_token']
-        dwolla_obj.dwolla_test_refresh_token_expires = refresh_expires
-
-
-def dwolla_get_token(dwolla_obj, api_type):
-    """
-    Gets a working dwolla access token for the correct api,
-    refreshing if necessary.
-    """
-    if api_type == LIVE:
-        expires = dwolla_obj.dwolla_access_token_expires
-        refresh_expires = dwolla_obj.dwolla_refresh_token_expires
-    else:
-        expires = dwolla_obj.dwolla_test_access_token_expires
-        refresh_expires = dwolla_obj.dwolla_test_refresh_token_expires
-    if expires is None or refresh_expires is None:
-        raise ValueError("Invalid dwolla object - unknown token expiration.")
-    now = timezone.now()
-    if expires < now:
-        if refresh_expires < now:
-            dwolla_obj.clear_dwolla_data(api_type)
-            dwolla_obj.save()
-            raise ValueError("Token is expired and can't be refreshed.")
-        if api_type == LIVE:
-            refresh_token = dwolla_obj.dwolla_refresh_token
-        else:
-            refresh_token = dwolla_obj.dwolla_test_refresh_token
-        oauth_data = oauth.refresh(refresh_token)
-        dwolla_set_tokens(dwolla_obj, api_type, oauth_data)
-        dwolla_obj.save()
-    if api_type == LIVE:
-        access_token = dwolla_obj.dwolla_access_token
-    else:
-        access_token = dwolla_obj.dwolla_test_access_token
-    return access_token
-
-
 def dwolla_update_tokens(days):
     """
     Refreshes or clears all tokens that will not be refreshable within the next <days> days.
     """
     end = timezone.now() + datetime.timedelta(days=days)
     count = 0
-    cleared_count = 0
+    invalid_count = 0
     test_count = 0
-    cleared_test_count = 0
-    from brambling.models import Organization, Person, Order
-    for api_type in (LIVE, TEST):
-        dwolla_prep(api_type)
-        if api_type == LIVE:
-            field = 'dwolla_refresh_token'
+    invalid_test_count = 0
+    from brambling.models import DwollaAccount
+    accounts = DwollaAccount.objects.filter(
+        refresh_token_expires__lt=end,
+        is_valid=True,
+    )
+    for account in accounts:
+        refresh_token = account.refresh_token
+        dwolla_prep(account.api_type)
+        oauth_data = oauth.refresh(refresh_token)
+        try:
+            account.set_tokens(oauth_data)
+        except ValueError:
+            account.is_valid = False
+            if account.api_type == LIVE:
+                invalid_count += 1
+            else:
+                invalid_test_count += 1
         else:
-            field = 'dwolla_test_refresh_token'
-        kwargs = {
-            field + '_expires__lt': end,
-        }
-        for model in (Organization, Person, Order):
-            qs = model.objects.filter(**kwargs)
-            for item in qs:
-                refresh_token = getattr(item, field)
-                oauth_data = oauth.refresh(refresh_token)
-                try:
-                    dwolla_set_tokens(item, api_type, oauth_data)
-                except ValueError:
-                    item.clear_dwolla_data(api_type)
-                    if api_type == LIVE:
-                        cleared_count += 1
-                    else:
-                        cleared_test_count += 1
-                else:
-                    if api_type == LIVE:
-                        count += 1
-                    else:
-                        test_count += 1
-                item.save()
-    return count, cleared_count, test_count, cleared_test_count
+            if account.api_type == LIVE:
+                count += 1
+            else:
+                test_count += 1
+        account.save()
+    return count, invalid_count, test_count, invalid_test_count
 
 
-def dwolla_get_sources(user_or_order, event):
-    dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(user_or_order, event.api_type)
-    if event.api_type == LIVE:
-        destination = event.organization.dwolla_user_id
-    else:
-        destination = event.organization.dwolla_test_user_id
+def dwolla_get_sources(account, event):
+    if account.api_type != event.api_type:
+        raise ValueError("Account and event API types do not match.")
+    org_account = event.organization.get_dwolla_account(event.api_type)
+    if not org_account or not org_account.is_connected():
+        raise ValueError("Event is not connected to dwolla.")
+    dwolla_prep(account.api_type)
+    access_token = account.get_token()
+    destination = org_account.user_id
     return fundingsources.get(
         alternate_token=access_token,
         params={
@@ -142,17 +86,19 @@ def dwolla_get_sources(user_or_order, event):
     )
 
 
-def dwolla_charge(sender, amount, order, event, pin, source):
+def dwolla_charge(account, amount, order, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
-    dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(sender, event.api_type)
-    organization_access_token = dwolla_get_token(event.organization, event.api_type)
-    if event.api_type == LIVE:
-        destination = event.organization.dwolla_user_id
-    else:
-        destination = event.organization.dwolla_test_user_id
+    if account.api_type != event.api_type:
+        raise ValueError("Account and event API types do not match.")
+    org_account = event.organization.get_dwolla_account(event.api_type)
+    if not org_account or not org_account.is_connected():
+        raise ValueError("Event is not connected to dwolla.")
+    dwolla_prep(account.api_type)
+    access_token = account.get_token()
+    organization_access_token = org_account.get_token()
+    destination = org_account.user_id
 
     user_charge_id = transactions.send(
         destinationid=destination,
@@ -181,8 +127,9 @@ def dwolla_refund(order, event, payment_id, amount, pin):
     """
     Returns id of refund transaction.
     """
+    org_account = event.organization.get_dwolla_account(event.api_type)
     dwolla_prep(event.api_type)
-    access_token = dwolla_get_token(event.organization, event.api_type)
+    access_token = org_account.get_token()
     return transactions.refund(
         tid=int(payment_id),
         fundingsource="Balance",
@@ -209,53 +156,22 @@ def dwolla_live_settings_valid():
     )
 
 
-def dwolla_customer_redirect_url(user_or_order, api_type, request, next_url=""):
+def dwolla_redirect_url(dwolla_obj, api_type, request, next_url=""):
     redirect_url = "{}?api={}&type={}&id={}".format(
         reverse('brambling_dwolla_connect'),
         api_type,
-        user_or_order._meta.model_name,
-        user_or_order.pk,
+        dwolla_obj._meta.model_name,
+        dwolla_obj.pk,
     )
     if next_url:
         redirect_url += "&next_url=" + next_url
     return request.build_absolute_uri(redirect_url)
 
 
-def dwolla_customer_oauth_url(user_or_order, api_type, request, next_url=""):
+def dwolla_oauth_url(dwolla_obj, api_type, request, next_url=""):
     dwolla_prep(api_type)
-    scope = "Send|AccountInfoFull|Funding"
-    return oauth.genauthurl(
-        dwolla_customer_redirect_url(
-            user_or_order,
-            api_type,
-            request,
-            next_url,
-        ),
-        scope=scope,
-    )
-
-
-def dwolla_organization_redirect_url(organization, request, api_type):
-    redirect_url = "{}?api={}&type={}&id={}".format(
-        reverse('brambling_dwolla_connect'),
-        api_type,
-        organization._meta.model_name,
-        organization.pk,
-    )
-    return request.build_absolute_uri(redirect_url)
-
-
-def dwolla_organization_oauth_url(organization, request, api_type):
-    dwolla_prep(api_type)
-    scope = "Send|AccountInfoFull|Transactions"
-    return oauth.genauthurl(
-        dwolla_organization_redirect_url(
-            organization,
-            request,
-            api_type,
-        ),
-        scope=scope,
-    )
+    redirect_url = dwolla_redirect_url(dwolla_obj, api_type, request, next_url)
+    return oauth.genauthurl(redirect_url, scope=DWOLLA_SCOPES)
 
 
 def stripe_prep(api_type):
@@ -342,7 +258,7 @@ def stripe_live_settings_valid():
     )
 
 
-def stripe_organization_oauth_url(organization, request, api_type):
+def stripe_organization_oauth_url(organization, api_type, request):
     stripe_prep(api_type)
     if api_type == LIVE:
         client_id = getattr(settings, 'STRIPE_APPLICATION_ID', None)

@@ -11,13 +11,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 
-from brambling.models import Organization, Order, Transaction, Person
+from brambling.models import Organization, Order, Transaction, Person, DwollaAccount
 from brambling.utils.payment import (
     dwolla_prep,
     LIVE,
-    dwolla_set_tokens,
-    dwolla_customer_redirect_url,
-    dwolla_organization_redirect_url,
+    dwolla_redirect_url,
 )
 
 
@@ -40,7 +38,7 @@ class DwollaConnectView(View):
             return self.request.GET['next_url']
 
         if isinstance(self.object, Person):
-            return reverse('brambling_user_profile')
+            return reverse('brambling_user_billing')
 
         if isinstance(self.object, Order):
             return reverse('brambling_event_order_summary',
@@ -60,10 +58,7 @@ class DwollaConnectView(View):
             redirect_url = request.build_absolute_uri(reverse('brambling_dwolla_connect'))
             api_type = request.GET['api']
             dwolla_prep(api_type)
-            if isinstance(self.object, Organization):
-                redirect_url = dwolla_organization_redirect_url(self.object, request, api_type)
-            else:
-                redirect_url = dwolla_customer_redirect_url(self.object, api_type, request, next_url=request.GET.get('next_url'))
+            redirect_url = dwolla_redirect_url(self.object, api_type, request, next_url=request.GET.get('next_url'))
             oauth_tokens = oauth.get(request.GET['code'],
                                      redirect=redirect_url)
             if 'access_token' in oauth_tokens:
@@ -72,14 +67,20 @@ class DwollaConnectView(View):
                 # Now get account info.
                 account_info = accounts.full(token)
 
-                if api_type == LIVE:
-                    self.object.dwolla_user_id = account_info['Id']
-                else:
-                    self.object.dwolla_test_user_id = account_info['Id']
+                try:
+                    account = DwollaAccount.objects.get(api_type=api_type, user_id=account_info['Id'])
+                except DwollaAccount.DoesNotExist:
+                    account = DwollaAccount(api_type=api_type, user_id=account_info['Id'])
 
-                dwolla_set_tokens(self.object, api_type, oauth_tokens)
+                account.set_tokens(oauth_tokens)
 
-                self.object.save()
+                account.save()
+                if self.object.get_dwolla_account(api_type) != account:
+                    if api_type == LIVE:
+                        self.object.dwolla_account = account
+                    else:
+                        self.object.dwolla_test_account = account
+                    self.object.save()
                 messages.success(request, "Dwolla account connected!")
             elif 'error_description' in oauth_tokens:
                 messages.error(request, oauth_tokens['error_description'])

@@ -8,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 import floppyforms.__future__ as forms
 
 from brambling.mail import ConfirmationMailer
-from brambling.models import Person, Home, DanceStyle
+from brambling.models import Person, Home, DwollaAccount
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE
 
@@ -156,12 +156,6 @@ class AccountForm(forms.ModelForm):
         return person
 
 
-class ProfileForm(forms.ModelForm):
-    class Meta:
-        model = Person
-        fields = ('given_name', 'middle_name', 'surname', 'name_order')
-
-
 class BillingForm(forms.ModelForm):
     disconnect_dwolla = forms.BooleanField(required=False)
 
@@ -171,7 +165,7 @@ class BillingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BillingForm, self).__init__(*args, **kwargs)
-        if not self.instance.dwolla_user_id:
+        if not self.instance.dwolla_connected(DwollaAccount.LIVE):
             del self.fields['disconnect_dwolla']
 
     def save(self, commit=True):

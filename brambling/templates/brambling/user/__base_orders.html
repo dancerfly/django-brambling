@@ -1,0 +1,17 @@
+{% extends 'brambling/layouts/3_9.html' %}
+
+{% load humanize %}
+
+{% block side %}
+	{% url 'brambling_order_history' as brambling_order_history_url %}
+	{% url 'brambling_claim_orders' as brambling_claim_orders_url %}
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">Orders</h4>
+		</div>
+		<nav class="list-group">
+			<a class="list-group-item{% if request.path == brambling_order_history_url %} active{% endif %}" href="{{ brambling_order_history_url }}">History</a>
+			<a class="list-group-item{% if request.path == brambling_claim_orders_url %} active{% endif %}" href="{{ brambling_claim_orders_url }}">Claim orders{% if claimable_orders %} <span class='badge'>{{ claimable_orders|length }}</span>{% endif %}</a>
+		</nav>
+	</div>
+{% endblock %}

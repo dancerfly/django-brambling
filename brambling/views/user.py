@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
+from django.db.models import Max, Sum
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
@@ -10,11 +11,11 @@ import floppyforms.__future__ as forms
 import stripe
 
 from brambling.forms.orders import AddCardForm
-from brambling.forms.user import AccountForm, ProfileForm, BillingForm, HomeForm, SignUpForm
+from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import Person, Home, CreditCard, Order, SavedAttendee
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
-from brambling.utils.payment import (dwolla_customer_oauth_url, LIVE,
+from brambling.utils.payment import (dwolla_oauth_url, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
@@ -89,8 +90,6 @@ class AccountView(UpdateView):
 
     def get_object(self):
         if self.request.user.is_authenticated():
-            # Do this here because _post_clean could override user's email address.
-            self.claimable_orders = self.request.user.get_claimable_orders()
             return self.request.user
         raise Http404
 
@@ -105,38 +104,6 @@ class AccountView(UpdateView):
 
     def get_success_url(self):
         return self.request.path
-
-    def get_context_data(self, **kwargs):
-        context = super(AccountView, self).get_context_data(**kwargs)
-        context.update({
-            'claimable_orders': self.claimable_orders,
-        })
-        return context
-
-
-class ProfileView(UpdateView):
-    model = Person
-    form_class = ProfileForm
-    template_name = 'brambling/user/profile.html'
-
-    def get_object(self):
-        if self.request.user.is_authenticated():
-            return self.request.user
-        raise Http404
-
-    def form_valid(self, form):
-        messages.add_message(self.request, messages.SUCCESS, "Profile settings saved.")
-        return super(ProfileView, self).form_valid(form)
-
-    def get_success_url(self):
-        return self.request.path
-
-    def get_context_data(self, **kwargs):
-        context = super(ProfileView, self).get_context_data(**kwargs)
-        context.update({
-            'claimable_orders': self.request.user.get_claimable_orders(),
-        })
-        return context
 
 
 class BillingView(UpdateView):
@@ -168,10 +135,11 @@ class BillingView(UpdateView):
             'stripe_test_settings_valid': stripe_test_settings_valid(),
             'dwolla_live_settings_valid': dwolla_live_settings_valid(),
             'dwolla_test_settings_valid': dwolla_test_settings_valid(),
-            'claimable_orders': self.request.user.get_claimable_orders(),
         })
-        if self.object.dwolla_live_can_connect():
-            context['dwolla_oauth_url'] = dwolla_customer_oauth_url(
+        if self.object.dwolla_connected(LIVE):
+            context['dwolla_user_id'] = self.request.user.get_dwolla_account(LIVE).user_id
+        elif self.object.dwolla_can_connect(LIVE):
+            context['dwolla_oauth_url'] = dwolla_oauth_url(
                 self.request.user, LIVE, self.request)
         return context
 
@@ -207,7 +175,6 @@ class CreditCardAddView(TemplateView):
             'api_type': self.kwargs['api_type'],
             'LIVE': CreditCard.LIVE,
             'TEST': CreditCard.TEST,
-            'claimable_orders': self.request.user.get_claimable_orders(),
         })
         return context
 
@@ -258,13 +225,6 @@ class SavedAttendeesView(ListView):
             raise Http404
         return SavedAttendee.objects.filter(person=self.request.user)
 
-    def get_context_data(self, **kwargs):
-        context = super(SavedAttendeesView, self).get_context_data(**kwargs)
-        context.update({
-            'claimable_orders': self.request.user.get_claimable_orders(),
-        })
-        return context
-
 
 class SavedAttendeeManageView(UpdateView):
     template_name = 'brambling/user/attendee_manage.html'
@@ -289,13 +249,6 @@ class SavedAttendeeManageView(UpdateView):
 
     def get_success_url(self):
         return reverse('brambling_user_attendee_edit', kwargs={'pk': self.object.pk})
-
-    def get_context_data(self, **kwargs):
-        context = super(SavedAttendeeManageView, self).get_context_data(**kwargs)
-        context.update({
-            'claimable_orders': self.request.user.get_claimable_orders(),
-        })
-        return context
 
 
 class SavedAttendeeDeleteView(DeleteView):
@@ -327,13 +280,6 @@ class HomeView(UpdateView):
 
     def get_success_url(self):
         return reverse('brambling_home')
-
-    def get_context_data(self, **kwargs):
-        context = super(HomeView, self).get_context_data(**kwargs)
-        context.update({
-            'claimable_orders': self.request.user.get_claimable_orders(),
-        })
-        return context
 
 
 class ClaimOrdersView(TemplateView):
@@ -371,3 +317,28 @@ class ClaimOrderView(View):
         order.save()
         messages.add_message(request, messages.SUCCESS, "Order successfully claimed.")
         return HttpResponseRedirect(reverse('brambling_claim_orders'))
+
+
+class OrderHistoryView(TemplateView):
+    template_name = 'brambling/user/order_history.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        return super(OrderHistoryView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderHistoryView, self).get_context_data(**kwargs)
+        orders = Order.objects.annotate(
+            last_transaction_date=Max('transactions__timestamp'),
+            total=Sum('transactions__amount'),
+        ).filter(
+            person=self.request.user,
+            total__isnull=False,
+        ).select_related('event__organization').order_by('-last_transaction_date')
+        context.update({
+            'orders': orders,
+            'claimable_orders': self.request.user.get_claimable_orders(),
+        })
+        return context

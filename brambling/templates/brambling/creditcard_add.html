@@ -28,7 +28,7 @@
 
 	<p>
 		<button class="btn btn-primary" type="submit" id='card-submit'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>Add card</button>
-		<a href="{% url 'brambling_user_profile' %}" class="btn btn-link">Cancel</a>
+		<a href="{% url 'brambling_user_billing' %}" class="btn btn-link">Cancel</a>
 	</p>
 
 	<form id='card-form' action="{{ request.path }}?{{ request.GET.urlencode }}" method="post">
