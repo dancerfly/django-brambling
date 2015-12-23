@@ -201,18 +201,6 @@ class AbstractDwollaModel(models.Model):
     dwolla_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set", on_delete=models.SET_NULL)
     dwolla_test_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set", on_delete=models.SET_NULL)
 
-    # Token obtained via OAuth.
-    dwolla_user_id = models.CharField(max_length=20, blank=True, default='')
-    dwolla_access_token = models.CharField(max_length=50, blank=True, default='')
-    dwolla_access_token_expires = models.DateTimeField(blank=True, null=True)
-    dwolla_refresh_token = models.CharField(max_length=50, blank=True, default='')
-    dwolla_refresh_token_expires = models.DateTimeField(blank=True, null=True)
-    dwolla_test_user_id = models.CharField(max_length=20, blank=True, default='')
-    dwolla_test_access_token = models.CharField(max_length=50, blank=True, default='')
-    dwolla_test_access_token_expires = models.DateTimeField(blank=True, null=True)
-    dwolla_test_refresh_token = models.CharField(max_length=50, blank=True, default='')
-    dwolla_test_refresh_token_expires = models.DateTimeField(blank=True, null=True)
-
     def dwolla_connected(self, api_type):
         if api_type == DwollaAccount.LIVE:
             return self.dwolla_account_id is not None and self.dwolla_account.is_connected()
