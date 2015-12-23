@@ -39,20 +39,6 @@ class Echo(object):
         return value
 
 
-def related_objects_list(attr_name):
-    """
-    Returns a function which takes a M2M manager on an object and
-    returns it as a comma separated string.
-
-    """
-
-    def inner(self, obj):
-        manager = getattr(obj, attr_name)
-        return manager.all()
-    inner.short_description = pretty_name(attr_name)
-    return inner
-
-
 class Cell(object):
     def __init__(self, field, value):
         self.field = field
@@ -371,16 +357,19 @@ class CustomDataTable(ModelTable):
                     self.label_overrides[field.key] = field.name
         return tuple(field.key for field in self.custom_fields)
 
+    def _get_custom_data(self, obj):
+        return {
+            entry.form_field_id: entry.get_value()
+            for entry in obj.custom_data.all()
+        }
+
     def _get_custom_fields(self):
         raise NotImplementedError
 
     def get_field_val(self, obj, key):
         if key.startswith('custom_'):
             if not hasattr(obj, '_custom_data'):
-                raw_data = {
-                    entry.form_field_id: entry.get_value()
-                    for entry in obj.custom_data.all()
-                }
+                raw_data = self._get_custom_data(obj)
                 obj._custom_data = {
                     field.key: raw_data[field.pk]
                     for field in self.custom_fields
@@ -399,9 +388,10 @@ class AttendeeTable(CustomDataTable):
         ('Contact',
          ('email', 'phone')),
         ('Housing',
-         ('housing_status', 'housing_nights', 'housing_preferences',
-          'environment_avoid', 'environment_cause', 'person_prefer',
-          'person_avoid', 'other_needs')),
+         ('housing_status', 'housing_nights',
+          'housing_preferences', 'environment_avoid',
+          'environment_cause', 'person_prefer_if_needed',
+          'person_avoid_if_needed', 'other_needs_if_needed')),
         ('Miscellaneous',
          ('liability_waiver', 'photo_consent', 'notes')),
     )
@@ -413,9 +403,9 @@ class AttendeeTable(CustomDataTable):
         'housing_preferences': 'Housing environment preference',
         'environment_avoid': 'Housing Environment Avoid',
         'environment_cause': 'Attendee May Cause/Do',
-        'person_prefer': 'Housing People Preference',
-        'person_avoid': 'Housing People Avoid',
-        'other_needs': 'Other Housing Needs',
+        'person_prefer_if_needed': 'Housing People Preference',
+        'person_avoid_if_needed': 'Housing People Avoid',
+        'other_needs_if_needed': 'Other Housing Needs',
         'order_code': 'Order Code',
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
@@ -479,6 +469,20 @@ class AttendeeTable(CustomDataTable):
                 )
         return queryset, use_distinct
 
+    def _show_housing_data(self, attendee, form_entry):
+        if form_entry.form_field.form.form_type != 'housing':
+            return True
+        if attendee.needs_housing():
+            return True
+        else:
+            return False
+
+    def _get_custom_data(self, attendee):
+        return {
+            entry.form_field_id: (entry.get_value() if self._show_housing_data(attendee, entry) else '')
+            for entry in attendee.custom_data.select_related('form_field__form').all()
+        }
+
     # Methods to be used as fields
     def order_code(self, obj):
         return obj.order.code
@@ -501,10 +505,27 @@ class AttendeeTable(CustomDataTable):
                     confirmed -= discount.savings()
         return format_money(confirmed, self.event.currency)
 
-    housing_nights = related_objects_list("nights")
-    housing_preferences = related_objects_list("housing_prefer")
-    environment_avoid = related_objects_list("ef_avoid")
-    environment_cause = related_objects_list("ef_cause")
+    def housing_nights(self, attendee):
+        return attendee.nights.all() if attendee.needs_housing() else ''
+
+    def housing_preferences(self, attendee):
+        return (attendee.housing_prefer.all() if attendee.needs_housing()
+                else '')
+
+    def environment_avoid(self, attendee):
+        return attendee.ef_avoid.all() if attendee.needs_housing() else ''
+
+    def environment_cause(self, attendee):
+        return attendee.ef_cause.all() if attendee.needs_housing() else ''
+
+    def person_prefer_if_needed(self, attendee):
+        return attendee.person_prefer if attendee.needs_housing() else ''
+
+    def person_avoid_if_needed(self, attendee):
+        return attendee.person_avoid if attendee.needs_housing() else ''
+
+    def other_needs_if_needed(self, attendee):
+        return attendee.other_needs if attendee.needs_housing() else ''
 
     def items(self, obj):
         return ["{} ({})".format(x.item_option_name, x.item_name)
@@ -615,7 +636,7 @@ class OrderTable(CustomDataTable):
             field = "spaces"
 
         if date_str:
-            if obj.get_eventhousing():
+            if obj.get_eventhousing() and obj.providing_housing:
                 hosting_date = datetime.datetime.strptime(date_str, "%Y%m%d").date()
                 try:
                     slot = HousingSlot.objects.get(eventhousing__order=obj, date=hosting_date)
@@ -625,7 +646,7 @@ class OrderTable(CustomDataTable):
                     return getattr(slot, field, '')
             return ''
 
-        if key.startswith('custom_') and self.event.collect_housing_data:
+        if key.startswith('custom_') and self.event.collect_housing_data and obj.providing_housing:
             if not hasattr(obj, '_custom_data'):
                 super(OrderTable, self).get_field_val(obj, key)
                 # Also include event_housing data.
@@ -691,7 +712,7 @@ class OrderTable(CustomDataTable):
 
     def hosting_full_address(self, obj):
         eventhousing = obj.get_eventhousing()
-        if eventhousing:
+        if eventhousing and obj.providing_housing:
             return u", ".join((
                 eventhousing.address,
                 eventhousing.address_2,
@@ -704,7 +725,7 @@ class OrderTable(CustomDataTable):
 
     def get_eventhousing_attr(self, obj, name):
         eventhousing = obj.get_eventhousing()
-        if eventhousing:
+        if eventhousing and obj.providing_housing:
             return getattr(eventhousing, name)
         return ''
 
@@ -732,22 +753,16 @@ class OrderTable(CustomDataTable):
         return self.get_eventhousing_attr(obj, 'person_avoid')
     person_avoid.short_description = 'hosting people avoid'
 
-    def get_eventhousing_csm(self, obj, name):
-        eventhousing = obj.get_eventhousing()
-        if eventhousing:
-            return related_objects_list(name)(self, eventhousing)
-        return ''
-
     def ef_present(self, obj):
-        return self.get_eventhousing_csm(obj, 'ef_present')
+        return (obj.providing_housing and obj.get_eventhousing()) and obj.get_eventhousing().ef_present.all() or ''
     ef_present.short_description = 'hosting environmental factors'
 
     def ef_avoid(self, obj):
-        return self.get_eventhousing_csm(obj, 'ef_avoid')
+        return (obj.providing_housing and obj.get_eventhousing()) and obj.get_eventhousing().ef_avoid.all() or ''
     ef_avoid.short_description = 'hosting environmental avoided'
 
     def housing_categories(self, obj):
-        return self.get_eventhousing_csm(obj, 'housing_categories')
+        return (obj.providing_housing and obj.get_eventhousing()) and obj.get_eventhousing().housing_categories.all() or ''
     housing_categories.short_description = 'hosting home categories'
 
     def pending(self, obj):
