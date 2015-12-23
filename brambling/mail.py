@@ -142,10 +142,6 @@ class OrderAlertMailer(FancyMailer):
         })
         return context
 
-    def _unconfirmed_check_payments(self):
-        return (self.transaction.method == Transaction.CHECK and
-                not self.transaction.is_confirmed)
-
     def get_recipients(self):
         from brambling.models import Person
         return Person.objects.filter(
