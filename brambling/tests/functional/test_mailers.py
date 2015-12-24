@@ -59,7 +59,7 @@ class OrderReceiptMailerTestCase(TestCase):
 
     def test_subject(self):
         subject = self.mailer.render_subject(self.mailer.get_context_data())
-        expected_subject = ('[{event_name}] New order from {person_name}'
+        expected_subject = ('[{event_name}] New purchase by {person_name}'
                             .format(event_name=self.event_name,
                                     person_name=self.person.get_full_name()))
         self.assertEqual(subject, expected_subject)
@@ -97,7 +97,7 @@ class OrderAlertMailerForNonUserOrderTestCase(TestCase):
 
     def test_subject(self):
         subject = self.mailer.render_subject(self.mailer.get_context_data())
-        expected_subject = ('[{event_name}] New order from {order_email}'
+        expected_subject = ('[{event_name}] New purchase by {order_email}'
                             .format(event_name=self.event_name,
                                     order_email=self.order.email))
         self.assertEqual(subject, expected_subject)
@@ -130,4 +130,4 @@ class OrderAlertMailerWithUnconfirmedCheckPayments(TestCase):
     def test_body_plaintext(self):
         body = self.mailer.render_body(self.mailer.get_context_data(),
                                        plaintext=True)
-        self.assertIn("outstanding check payments", body)
+        self.assertIn("keep an eye on your mail", body)
