@@ -48,7 +48,7 @@ class OrderReceiptPreviewView(PreviewView):
 
     def get_mailer_kwargs(self):
         kwargs = super(OrderReceiptPreviewView, self).get_mailer_kwargs()
-        kwargs['transaction'] = Transaction.objects.order_by('?')[0]
+        kwargs['transaction'] = Transaction.objects.filter(transaction_type=Transaction.PURCHASE).order_by('?')[0]
         return kwargs
 
 
@@ -57,7 +57,7 @@ class OrderAlertPreviewView(PreviewView):
 
     def get_mailer_kwargs(self):
         kwargs = super(OrderAlertPreviewView, self).get_mailer_kwargs()
-        kwargs['transaction'] = Transaction.objects.order_by('?')[0]
+        kwargs['transaction'] = Transaction.objects.filter(transaction_type=Transaction.PURCHASE).order_by('?')[0]
         return kwargs
 
 
