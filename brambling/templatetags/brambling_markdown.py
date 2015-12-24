@@ -18,6 +18,6 @@ md = markdown.Markdown(extensions=['markdown.extensions.nl2br',
 
 @register.filter(name='markdown')
 def markdown_filter(text):
-    text = bleach.linkify(bleach.clean(text, strip=True),
-                          [nofollow, target_blank])
-    return mark_safe(md.reset().convert(text))
+    text = bleach.clean(text, strip=True)
+    text = md.reset().convert(text)
+    return mark_safe(bleach.linkify(text, [nofollow, target_blank]))
