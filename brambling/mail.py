@@ -134,6 +134,7 @@ class OrderAlertMailer(FancyMailer):
         context.update({
             'transaction': self.transaction,
             'order': self.order,
+            'bought_items': self.transaction.bought_items.select_related('attendee').order_by('attendee_id', 'added'),
             'person': self.order.person,
             'event': self.order.event,
             'unconfirmed_check_payments': (

@@ -1,30 +1,22 @@
-{% autoescape off %}You've gotten a new order! Here's the summary.
+{% autoescape off %}You got a new purchase! Congrats! Here's the summary.
 
-Order {{ order.code }}
+{{ event.name }} by {{ event.organization.name }}
+Order #{{ order.code }}
+{{ transaction.timestamp }}
 
+Paid{% load zenaida %}
+{{ transaction.amount|format_money:event.currency }}{% if unconfirmed_check_payments %}
 
-Net payments{% load zenaida %}
-{{ transaction.amount|format_money:event.currency }}
+This was a check payment, so keep an eye on your mail!{% endif %}
 
+Attendees{% regroup bought_items by attendee as item_list %}{% for item in item_list %}
+{{ item.grouper.get_full_name }}{% endfor %}
 
-Attendees
-{% for attendee in order.attendees.all %}
-{{ attendee.get_full_name }}{% endfor %}
-
-
-Items
-{% for item in transaction.bought_items.all %}{% if item.status == item.BOUGHT %}
-{{ item.item_name }} ({{ item.item_option_name }}){% endif %}{% endfor %}
+Items{% for item in bought_items %}
+{{ item.item_name }} ({{ item.item_option_name }}){% endfor %}
 {% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
 View more details at the following URL:
 {{ protocol }}://{{ site.domain }}{{ url }}
-
-Congrats!
-The Dancerfly Team
-
-{% if unconfirmed_check_payments %}
-P.S. This order has outstanding check payments, so keep an eye on your mail!
-{% endif %}{% endautoescape %}
-
+{% endautoescape %}
 
 Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
