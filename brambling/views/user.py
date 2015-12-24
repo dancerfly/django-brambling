@@ -106,6 +106,24 @@ class AccountView(UpdateView):
         return self.request.path
 
 
+class NotificationsView(UpdateView):
+    model = Person
+    fields = ('notify_new_purchases', 'notify_product_updates')
+    template_name = 'brambling/user/notifications.html'
+
+    def get_object(self):
+        if self.request.user.is_authenticated():
+            return self.request.user
+        raise Http404
+
+    def form_valid(self, form):
+        messages.add_message(self.request, messages.SUCCESS, "Notification settings saved.")
+        return super(NotificationsView, self).form_valid(form)
+
+    def get_success_url(self):
+        return self.request.path
+
+
 class BillingView(UpdateView):
     model = Person
     form_class = BillingForm

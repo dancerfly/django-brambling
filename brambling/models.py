@@ -655,6 +655,10 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
+    # Notification settings
+    notify_new_purchases = models.BooleanField(default=True)
+    notify_product_updates = models.BooleanField(default=True)
+
     ### Start custom user requirements
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['given_name', 'surname']
