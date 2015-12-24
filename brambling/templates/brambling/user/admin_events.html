@@ -1,0 +1,48 @@
+{% extends 'brambling/user/__base_organize.html' %}
+
+{% load floppyforms humanize zenaida %}
+
+{% block title %}Events – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	<h2 class="sr-only">Events</h2>
+
+	<table class='table table-striped'>
+		<thead>
+			<tr>
+				<th>Event</th>
+				<th>Organization</th>
+				<th>Last activity</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for event in admin_events %}
+				<tr>
+					<td>
+						<a href='{% url "brambling_event_shop" organization_slug=event.organization.slug event_slug=event.slug %}'>
+							<strong>{{ event.name }}</strong>
+						</a><br />
+						<span class="text-muted">{% include "brambling/event/_when.html" with event=event only %}</span>
+					</td>
+					<td>{{ event.organization.name }}</td>
+					<td>{{ event.last_modified }}</td>
+					<td>
+						<a class='btn btn-default' href='{% url "brambling_event_summary" organization_slug=event.organization.slug event_slug=event.slug %}'>
+							<i class='fa fa-fw fa-gear'></i>
+							<span class='sr-only'>Settings</span>
+						</a>
+					</td>
+				</tr>
+			{% empty %}
+				<tr>
+					<td colspan="4">
+						<em>It doesn't look like you have any events right now; <a href='{% url "brambling_event_create" %}'>go get started</a>!</em>
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+{% endblock %}

@@ -90,6 +90,8 @@ from brambling.views.user import (
     SavedAttendeesView,
     SavedAttendeeManageView,
     SavedAttendeeDeleteView,
+    OrganizeEventsView,
+    OrganizeOrganizationsView,
 )
 
 
@@ -338,6 +340,12 @@ urlpatterns = patterns('',
     url(r'^claim-orders/(?P<pk>\d+)/$',
         ClaimOrderView.as_view(),
         name="brambling_claim_order"),
+    url(r'^events/$',
+        OrganizeEventsView.as_view(),
+        name="brambling_organize_events"),
+    url(r'^organizations/$',
+        OrganizeOrganizationsView.as_view(),
+        name="brambling_organize_organizations"),
 
     url(r'^daguerre/', include('daguerre.urls')),
     url(r'^404/$', 'django.views.defaults.page_not_found'),
