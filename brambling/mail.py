@@ -142,12 +142,12 @@ class OrderAlertMailer(FancyMailer):
 
     def get_recipients(self):
         from brambling.models import Person
-        people = Person.objects.filter(
+        return Person.objects.filter(
             Q(owner_orgs=self.order.event.organization) |
             Q(editor_orgs=self.order.event.organization) |
-            Q(editor_events=self.order.event)
+            Q(editor_events=self.order.event),
+            notify_new_purchases=True,
         ).values_list('email', flat=True).distinct()
-        return [person for person in people if person.notify_new_purchases]
 
 
 class InviteMailer(FancyMailer):
