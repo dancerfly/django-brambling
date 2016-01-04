@@ -82,29 +82,29 @@ class AbstractNamedModel(models.Model):
     "A base model for any model which needs a human name."
 
     NAME_ORDER_CHOICES = (
-        ('GMS', "Given Middle Surname"),
-        ('SGM', "Surname Given Middle"),
-        ('GS', "Given Surname"),
-        ('SG', "Surname Given"),
+        ('GMS', "First Middle Last"),
+        ('SGM', "Last First Middle"),
+        ('GS', "First Last"),
+        ('SG', "Last First"),
     )
 
     NAME_ORDER_PATTERNS = {
-        'GMS': "{given} {middle} {surname}",
-        'SGM': "{surname} {given} {middle}",
-        'GS': "{given} {surname}",
-        'SG': "{surname} {given}",
+        'GMS': "{first} {middle} {last}",
+        'SGM': "{last} {first} {middle}",
+        'GS': "{first} {last}",
+        'SG': "{last} {first}",
     }
 
-    given_name = models.CharField(max_length=50)
+    first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True)
-    surname = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
     name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="GMS")
 
     def get_full_name(self):
         name_dict = {
-            'given': self.given_name,
+            'first': self.first_name,
             'middle': self.middle_name,
-            'surname': self.surname,
+            'last': self.last_name,
         }
         name_order = self.name_order
         if not self.middle_name:
@@ -116,7 +116,7 @@ class AbstractNamedModel(models.Model):
     get_full_name.short_description = 'Name'
 
     def get_short_name(self):
-        return self.given_name
+        return self.first_name
 
     class Meta:
         abstract = True
@@ -657,7 +657,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     ### Start custom user requirements
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['given_name', 'surname']
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     @property
     def is_staff(self):
