@@ -9,6 +9,7 @@ from brambling.tests.factories import (EventFactory, OrderFactory,
                                        ItemOptionFactory, AttendeeFactory,
                                        DiscountFactory, PersonFactory)
 
+
 class OrderReceiptMailerTestCase(TestCase):
 
     def setUp(self):
@@ -56,6 +57,20 @@ class OrderReceiptMailerTestCase(TestCase):
     def test_recipients(self):
         self.assertSequenceEqual(self.mailer.get_recipients(),
                                  [self.order.event.organization.owner.email])
+
+    def test_recipients__notify_never(self):
+        person = self.order.event.organization.owner
+        person.notify_new_purchases = 'never'
+        person.save()
+        self.assertSequenceEqual(self.mailer.get_recipients(),
+                                 [])
+
+    def test_recipients__notify_daily(self):
+        person = self.order.event.organization.owner
+        person.notify_new_purchases = 'daily'
+        person.save()
+        self.assertSequenceEqual(self.mailer.get_recipients(),
+                                 [])
 
     def test_subject(self):
         subject = self.mailer.render_subject(self.mailer.get_context_data())

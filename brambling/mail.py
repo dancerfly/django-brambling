@@ -152,7 +152,7 @@ class OrderAlertMailer(FancyMailer):
             Q(owner_orgs=self.order.event.organization) |
             Q(editor_orgs=self.order.event.organization) |
             Q(editor_events=self.order.event),
-            notify_new_purchases=True,
+            notify_new_purchases=Person.NOTIFY_EACH,
         ).values_list('email', flat=True).distinct()
 
 

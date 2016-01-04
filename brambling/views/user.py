@@ -111,6 +111,9 @@ class NotificationsView(UpdateView):
     fields = ('notify_new_purchases', 'notify_product_updates')
     template_name = 'brambling/user/notifications.html'
 
+    def get_form_class(self):
+        return forms.models.modelform_factory(Person, fields=self.fields)
+
     def get_object(self):
         if self.request.user.is_authenticated():
             return self.request.user

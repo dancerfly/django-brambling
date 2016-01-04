@@ -20,7 +20,7 @@
 			<div class="panel-body">
 				{% form form using %}
 					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
-					{% formrow form.notify_new_purchases with label="Email me about all new purchases related to my events." %}
+					{% formrow form.notify_new_purchases with label="Notification frequency for events you own or manage" %}
 					{% formrow form.notify_product_updates with label="Email me occasionally about Dancerfly updates that are relevant to my events." %}
 				{% endform %}
 			</div>
