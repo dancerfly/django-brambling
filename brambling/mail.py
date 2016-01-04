@@ -113,6 +113,9 @@ class OrderReceiptMailer(FancyMailer):
             'order': self.transaction.order,
             'person': self.transaction.order.person,
             'event': self.transaction.order.event,
+            'unconfirmed_check_payments': (
+                self.transaction.is_unconfirmed_check()
+            ),
         })
         return context
 
