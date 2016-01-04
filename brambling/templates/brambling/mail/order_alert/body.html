@@ -9,16 +9,14 @@
 
 				<table class='row'>
 					<tr>
-						<td class='wrapper last'>
+						<td class='wrapper offset-by-three'>
 
-							<table class="twelve columns">
+							<table class="six columns">
 								<tr>
 									<td>
-										<p class='lede'>
-											You've gotten a new order! Here's the summary.
-										</p>
-
-										<h4>Order {{ order.code }}</h4>
+										<p class='lede center'><center>
+											You got a new purchase! Congrats! Here's the summary.
+										</center></p>
 									</td>
 									<td class='expander'></td>
 								</tr>
@@ -28,56 +26,52 @@
 					</tr>
 				</table>
 
-
-				<table style="width:100%;">
-					<tbody>
+				{% regroup bought_items by attendee as item_list %}
+				{% for item in item_list %}
+					<table class='row'>
 						<tr>
-							<th>Net payments</th>
-							<th>Attendees</th>
-							<th>Items</th>
-						</tr>
-						<tr>
-							<th>{{ total_payments|format_money:event.currency }}</th>
-							<td>
-								<p>
-									{% for attendee in order.attendees.all %}
-										{{ attendee.get_full_name }}
-										{% if not forloop.last %}<br />{% endif %}
-									{% endfor %}
-								</p>
+							<td class='wrapper offset-by-two'>
+								<table class='six columns'>
+									<tr>
+										<td>
+											<strong>{{ item.grouper.get_full_name }}</strong><br />
+											{% for bought_item in item.list %}
+												{{ bought_item.item_name }} ({{ bought_item.item_option_name }})
+												{% for discount in bought_item.discounts.all %}<br />{% endfor %}
+											{% endfor %}
+										</td>
+										<td class='expander'>
+									</tr>
+								</table>
 							</td>
-							<td>
-								<p>
-									{% for txn, txn_dict in transactions.iteritems %}
-										{% for item in txn_dict.items %}
-											{% if item.status == item.BOUGHT %}
-												{{ item.item_name }} ({{ item.item_option_name }})
-												{% if not forloop.last %}<br />{% endif %}
-											{% endif %}
-										{% endfor %}
-										{% if not forloop.last %}<br />{% endif %}
-									{% endfor %}
-								</p>
+							<td class='wrapper last'>
+								<table class='two columns'>
+									<tr>
+										<td class='right'>
+											<br />
+											{% for bought_item in item.list %}
+												{{ bought_item.price|format_money:event.currency }}
+												{% for discount in bought_item.discounts.all %}
+													<br />
+													({{ discount.savings|format_money:event.currency }})
+												{% endfor %}
+											{% endfor %}
+										</td>
+										<td class='expander'>
+									</tr>
+								</table>
 							</td>
 						</tr>
-					</tbody>
-				</table>
+					</table>
+				{% endfor %}
 
 				<table class='row'>
 					<tr>
-						<td class='wrapper last'>
-							<table class='six columns'>
+						<td class='wrapper offset-by-two'>
+							<table class='eight columns'>
 								<tr>
 									<td>
-										<table class='button success radius'>
-											<tr>
-												<td>
-													<a href="{{ protocol }}://{{ site.domain }}{{ url }}">
-														View more details on Dancerfly
-													</a>
-												</td>
-											</tr>
-										</table>
+										<hr />
 									</td>
 								</tr>
 							</table>
@@ -87,22 +81,124 @@
 
 				<table class='row'>
 					<tr>
+						<td class='wrapper offset-by-two'>
+							<table class='six columns'>
+								<tr>
+									<td>
+										<strong>Total</strong>
+									</td>
+									<td class='expander'>
+								</tr>
+							</table>
+						</td>
 						<td class='wrapper last'>
+							<table class='two columns'>
+								<tr>
+									<td class='right'>
+										{{ transaction.amount|format_money:event.currency }}
+									</td>
+									<td class='expander'>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper offset-by-two'>
+							<table class='four columns'>
+								<tr>
+									<td class='muted'>
+										{{ event.name }}<br />
+										{{ event.organization.name }}
+									</td>
+									<td class='expander'>
+								</tr>
+							</table>
+						</td>
+						<td class='wrapper last'>
+							<table class='four columns'>
+								<tr>
+									<td class='right muted'>
+										Order #{{ order.code }}<br />
+										{{ transaction.timestamp }}
+									</td>
+									<td class='expander'>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+				{% if unconfirmed_check_payments %}
+					<table class='row'>
+						<tr>
+							<td class='wrapper offset-by-two'>
+
+								<table class="eight columns">
+									<tr>
+										<td class='panel'>
+											<p><strong>Note:</strong> This was a check payment, so keep an eye on your mail!</p>
+										</td>
+										<td class='expander'></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				{% endif %}
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper center'>
+							<center>
+								<table class='six columns'>
+									<tr>
+										<td>
+											<table class='button success radius'>
+												<tr>
+													<td>
+														<a href="{{ protocol }}://{{ site.domain }}{{ url }}">
+															View more details on Dancerfly
+														</a>
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+								</table>
+							</center>
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper offset-by-one'>
+
+							<table class="ten columns">
+								<tr>
+									<td>
+										<p>If the button doesn't work for you, you can also copy-paste the following link directly into your browser's URL bar:</p>
+									</td>
+									<td class='expander'></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+
+				<table class='row'>
+					<tr>
+						<td class='wrapper'>
 
 							<table class="twelve columns">
 								<tr>
-									<td>
-										<p>You can also copy-paste the link directly into your browser's URL bar:</p>
-
-										<p>{{ protocol }}://{{ site.domain }}{{ url }}</p>
-
-										<p>Congrats!</p>
-
-										<p class='lede'>The Dancerfly Team</p>
-
-										{% if unconfirmed_check_payments %}
-											<p>P.S. This order has outstanding check payments, so keep an eye on your mail!</p>
-										{% endif %}
+									<td class='center'>
+										<center>
+											{{ protocol }}://{{ site.domain }}{{ url }}
+										</center>
 									</td>
 									<td class='expander'></td>
 								</tr>

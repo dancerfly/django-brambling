@@ -1253,6 +1253,9 @@ class Transaction(models.Model):
             **kwargs
         )
 
+    def is_unconfirmed_check(self):
+        return self.method == Transaction.CHECK and not self.is_confirmed
+
     def can_refund(self):
         refunded = self.related_transaction_set.filter(
             transaction_type=Transaction.REFUND
