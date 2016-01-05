@@ -164,11 +164,12 @@ class DailyDigestMailer(FancyMailer):
 
     def __init__(self, recipient, cutoff, *args, **kwargs):
         self.recipient = recipient
+        self.cutoff = cutoff
         from brambling.models import Transaction
         self.transactions = Transaction.objects.filter(
-            Q(event__additional_editors=self.recipient) |
-            Q(event__organization__editors=self.recipient) |
-            Q(event__organization__owner=self.recipient),
+            Q(event__additional_editors=recipient) |
+            Q(event__organization__editors=recipient) |
+            Q(event__organization__owner=recipient),
             timestamp__gte=cutoff,
             transaction_type=Transaction.PURCHASE,
         ).distinct().select_related('event').prefetch_related('bought_items').order_by('event__name', 'timestamp')
@@ -179,6 +180,7 @@ class DailyDigestMailer(FancyMailer):
         context.update({
             'recipient': self.recipient,
             'transactions': self.transactions,
+            'cutoff': self.cutoff,
         })
         return context
 
