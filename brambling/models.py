@@ -82,23 +82,23 @@ class AbstractNamedModel(models.Model):
     "A base model for any model which needs a human name."
 
     NAME_ORDER_CHOICES = (
-        ('GMS', "First Middle Last"),
-        ('SGM', "Last First Middle"),
-        ('GS', "First Last"),
-        ('SG', "Last First"),
+        ('FML', "First Middle Last"),
+        ('LFM', "Last First Middle"),
+        ('FL', "First Last"),
+        ('LF', "Last First"),
     )
 
     NAME_ORDER_PATTERNS = {
-        'GMS': "{first} {middle} {last}",
-        'SGM': "{last} {first} {middle}",
-        'GS': "{first} {last}",
-        'SG': "{last} {first}",
+        'FML': "{first} {middle} {last}",
+        'LFM': "{last} {first} {middle}",
+        'FL': "{first} {last}",
+        'LF': "{last} {first}",
     }
 
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50)
-    name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="GMS")
+    name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="FML")
 
     def get_full_name(self):
         name_dict = {
@@ -108,10 +108,10 @@ class AbstractNamedModel(models.Model):
         }
         name_order = self.name_order
         if not self.middle_name:
-            if name_order == 'GMS':
-                name_order = 'GS'
-            elif name_order == 'SGM':
-                name_order = 'SG'
+            if name_order == 'FML':
+                name_order = 'FL'
+            elif name_order == 'LFM':
+                name_order = 'LF'
         return self.NAME_ORDER_PATTERNS[name_order].format(**name_dict)
     get_full_name.short_description = 'Name'
 
