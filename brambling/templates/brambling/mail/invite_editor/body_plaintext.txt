@@ -1,6 +1,6 @@
 You've been invited to help edit an event on Dancerfly!
 
-{{ invite.user.given_name }} is running their event, {{ content.name }}, on dancerfly.com,
+{{ invite.user.first_name }} is running their event, {{ content.name }}, on dancerfly.com,
 and added you as an editor! That means you have access to all the
 information and tools you need to give them a hand setting up
 and running this event. The power... THE POWER!  ...ahem.
