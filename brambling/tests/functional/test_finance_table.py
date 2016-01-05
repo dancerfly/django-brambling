@@ -27,7 +27,7 @@ class FinanceTableTestCase(TestCase):
         self.assertEqual('', name)
 
     def test_transaction_created_by_name(self):
-        creator = PersonFactory(given_name='Leia', surname='Organa')
+        creator = PersonFactory(first_name='Leia', last_name='Organa')
         created_transaction = TransactionFactory(created_by=creator)
         name = self.table.created_by_name(created_transaction)
         self.assertEqual('Leia Organa', name)
