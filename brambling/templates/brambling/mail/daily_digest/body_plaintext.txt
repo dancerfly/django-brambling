@@ -1,22 +1,16 @@
-{% autoescape off %}You got a new purchase! Congrats! Here's the summary.
+{% load brambling_plaintext zenaida %}{% regroup transactions by event as event_list %}{% autoescape off %}Congratulations! Your events have made the following sales since {{ cutoff }}
+{% for event in event_list %}
 
-{{ event.name }} by {{ event.organization.name }}
-Order #{{ order.code }}
-{{ transaction.timestamp }}
+{{ event.grouper.name }}
+{{ protocol }}://{{ site.domain }}{% url "brambling_event_summary" event_slug=event.grouper.slug organization_slug=event.grouper.organization.slug %}
 
-Paid{% load zenaida %}
-{{ transaction.amount|format_money:event.currency }}{% if unconfirmed_check_payments %}
-
-This was a check payment, so keep an eye on your mail!{% endif %}
-
-Attendees{% regroup bought_items by attendee as item_list %}{% for item in item_list %}
-{{ item.grouper.get_full_name }}{% endfor %}
-
-Items{% for item in bought_items %}
-{{ item.item_name }} ({{ item.item_option_name }}){% endfor %}
-{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=order.code as url %}
-View more details at the following URL:
-{{ protocol }}://{{ site.domain }}{{ url }}
-{% endautoescape %}
+{{ "Code"|ljust:15 }} | {{ "Amount"|ljust:13 }} | {{ "Items"|ljust:12 }}
+{% for transaction in event.list %}{% with items=transaction.bought_items.all %}================+===============+===============================
+{{ transaction.order.code|ljust:15 }} | {{ transaction.amount|format_money:transaction.event.currency|ljust:13 }} | {% if items.0 %}{% filter truncatechars:30 %}{{ items.0.item_name }} ({{ items.0.item_option_name }}){% endfilter %}{% endif %}
+{{ transaction.timestamp|date:"DATE_FORMAT"|ljust:15 }} | {% if transaction.is_unconfirmed_check %}{{ "Check pending"|ljust:13 }}{% else %}{{ ""|ljust:13 }}{% endif %} | {% if items.1 %}{% filter truncatechars:30 %}{{ items.1.item_name }} ({{ items.1.item_option_name }}){% endfilter %}{% endif %}
+{{ transaction.timestamp|date:"TIME_FORMAT"|ljust:15 }} | {{ ""|ljust:13 }} | {% if items.2 %}{% filter truncatechars:30 %}{{ items.2.item_name }} ({{ items.2.item_option_name }}){% endfilter %}{% endif %}
+{% for item in items|slice:"3:" %}
+{{ ""|ljust:15 }} | {{ ""|ljust:13 }} | {{ item.item_name }} ({{ item.item_option_name }})
+{% endfor %}{% endwith %}{% endfor %}{% endfor %}{% endautoescape %}
 
 Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
