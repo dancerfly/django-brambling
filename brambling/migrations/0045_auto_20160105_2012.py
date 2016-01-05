@@ -25,7 +25,7 @@ def reverse_func(apps, schema_editor):
     Attendee.objects.filter(name_order='FL').update(name_order='GS')
     Attendee.objects.filter(name_order='LFM').update(name_order='SGM')
     Attendee.objects.filter(name_order='LF').update(name_order='SG')
-    Person = apps.get_model('brambling', 'Person'),
+    Person = apps.get_model('brambling', 'Person')
     Person.objects.filter(name_order='FML').update(name_order='GMS')
     Person.objects.filter(name_order='FL').update(name_order='GS')
     Person.objects.filter(name_order='LFM').update(name_order='SGM')
