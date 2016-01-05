@@ -47,7 +47,8 @@ class DashboardView(TemplateView):
             re_dict = dict((e.pk, e) for e in registered_events)
             orders = Order.objects.filter(
                 person=user,
-                bought_items__status=BoughtItem.RESERVED,
+                bought_items__status__in=(BoughtItem.BOUGHT,
+                                          BoughtItem.RESERVED),
                 event__in=registered_events
             )
             for order in orders:

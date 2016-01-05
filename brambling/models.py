@@ -1112,6 +1112,10 @@ class Order(AbstractDwollaModel):
     def has_dwolla_payments(self):
         return self.transactions.filter(method=Transaction.DWOLLA).exists()
 
+    def awaiting_check_confirmation(self):
+        return self.transactions.filter(
+            method=Transaction.CHECK, is_confirmed=False).exists()
+
 
 class Transaction(models.Model):
     STRIPE = 'stripe'

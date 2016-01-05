@@ -40,6 +40,10 @@
 					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Complete your registration now!">
 						<i class="fa fa-exclamation-circle"></i> Almost Registered
 					</a>
+				{% elif event.order and event.order.awaiting_check_confirmation %}
+					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="zokn okn">
+						<i class="fa fa-exclamation-circle"></i> Almost Registered
+					</a>
 				{% else %}
 					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-success tipped" title="Modify your registration">
 						<i class="fa fa-check"></i> Registered
@@ -70,6 +74,13 @@
 		{% endif %}
 
 	</div>
+
+	{% if event.order and event.order.awaiting_check_confirmation %}
+		<div class='alert margin-trailer-md-0 alert-info'>
+			Note: Your passes are reserved, but the organizer has not yet received your payment by mail.
+			<br>If you believe this is in error, please contact the event organizer directly.
+		</div>
+	{% endif %}
 
 	{% if event.order and event.order.has_cart %}
 		{% include "brambling/event/order/_expiry_countdown.html" with expiry_time=event.order.cart_expire_time %}
