@@ -1,8 +1,11 @@
+import datetime
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
@@ -154,6 +157,35 @@ class OrderAlertMailer(FancyMailer):
             Q(editor_events=self.order.event),
             notify_new_purchases=Person.NOTIFY_EACH,
         ).values_list('email', flat=True).distinct()
+
+
+class DailyDigestMailer(FancyMailer):
+    key = "daily_digest"
+
+    def __init__(self, recipient, cutoff, *args, **kwargs):
+        self.recipient = recipient
+        from brambling.models import Transaction
+        self.transactions = Transaction.objects.filter(
+            Q(event__additional_editors=self.recipient) |
+            Q(event__organization__editors=self.recipient) |
+            Q(event__organization__owner=self.recipient),
+            timestamp__gte=cutoff,
+            transaction_type=Transaction.PURCHASE,
+        ).distinct().select_related('event').prefetch_related('bought_items').order_by('event__name', 'timestamp')
+        super(DailyDigestMailer, self).__init__(*args, **kwargs)
+
+    def get_context_data(self):
+        context = super(DailyDigestMailer, self).get_context_data()
+        context.update({
+            'recipient': self.recipient,
+            'transactions': self.transactions,
+        })
+        return context
+
+    def get_recipients(self):
+        if not self.transactions:
+            return []
+        return [self.recipient.email]
 
 
 class InviteMailer(FancyMailer):

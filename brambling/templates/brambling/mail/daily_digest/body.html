@@ -1,0 +1,89 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+	{% load zenaida %}
+	{% regroup transactions by event as event_list %}
+
+	<table class='container'>
+		<tr>
+			<td>
+				{% for event in event_list %}
+					<h3>{{ event.grouper.name }}</h3>
+
+					<table class='row'>
+						<tr>
+							<td class='wrapper'>
+								<table class='five columns'>
+									<tr>
+										<th>Code</th>
+										<td class='expander'></td>
+									</tr>
+								</table>
+							</td>
+							<td class='wrapper'>
+								<table class='two columns'>
+									<tr>
+										<th>Amount</th>
+										<td class='expander'></td>
+									</tr>
+								</table>
+							</td>
+							<td class='wrapper last'>
+								<table class='five columns'>
+									<tr>
+										<th>Items</th>
+										<td class='expander'></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+					{% for transaction in event.list %}
+						<table class='row'>
+							<tr>
+								<td class='wrapper'>
+									{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=transaction.order.code as url %}
+									<table class='five columns'>
+										<tr>
+											<td>
+												<a href="{{ url }}" target='_blank'>{{ transaction.order.code }}</a><br />
+												{{ transaction.timestamp }}
+											</td>
+											<td class='expander'></td>
+										</tr>
+									</table>
+								</td>
+								<td class='wrapper'>
+									<table class='two columns'>
+										<tr>
+											<td>
+												{{ transaction.amount|format_money:transaction.event.currency }}
+												{% if transaction.is_unconfirmed_check %}<br />
+												Check pending{% endif %}
+											</td>
+											<td class='expander'></td>
+										</tr>
+									</table>
+								</td>
+								<td class='wrapper last'>
+									<table class='five columns'>
+										<tr>
+											<td>
+												{% for item in transaction.bought_items.all %}
+													{{ item.item_name }} ({{ item.item_option_name }})
+													{% if not forloop.last %}<br />{% endif %}
+												{% endfor %}
+											</td>
+											<td class='expander'></td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					{% endfor %}
+				{% endfor %}
+
+			</td>
+		</tr>
+	</table>
+{% endblock %}
