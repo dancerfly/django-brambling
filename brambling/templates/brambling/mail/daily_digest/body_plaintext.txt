@@ -13,4 +13,6 @@
 {{ ""|ljust:15 }} | {{ ""|ljust:13 }} | {{ item.item_name }} ({{ item.item_option_name }})
 {% endfor %}{% endwith %}{% endfor %}{% endfor %}{% endautoescape %}
 
+You can update your notification settings here: {{ protocol }}://{{ site.domain }}{% url "brambling_user_notifications" %}
+
 Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
