@@ -63,14 +63,26 @@ class OrderReceiptMailerTestCase(TestCase):
                             .format(event_name=self.event_name,
                                     person_name=self.person.get_full_name()))
         self.assertEqual(subject, expected_subject)
-
     def test_body_non_inlined_non_plaintext(self):
         body = self.mailer.render_body(self.mailer.get_context_data(),
                                        inlined=False, plaintext=False)
         self.assertIn(self.option1, body)
         self.assertIn(self.option2, body)
         self.assertIn(self.total_amount, body)
-
+    def test_subject_apostrophe(self):
+	event=EventFactory(name="Han & Leia's Wedding!")
+	self.event_name=event.name
+	self.order = OrderFactory(event=event, person=self.person)
+        transaction = TransactionFactory(event=event, order=self.order,
+                                         amount=130)
+        self.mailer = OrderAlertMailer(transaction, site='dancerfly.com',
+                                         secure=True)
+	subject = self.mailer.render_subject(self.mailer.get_context_data())
+	expected_subject = ('[{event_name}] New purchase by {person_name}'
+                            .format(event_name=self.event_name,
+                                    person_name=self.person.get_full_name()))
+	self.assertEqual(subject, expected_subject)
+	
 
 class OrderAlertMailerForNonUserOrderTestCase(TestCase):
 

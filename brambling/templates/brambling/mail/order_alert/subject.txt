@@ -1,1 +1,1 @@
-[{{ event.name }}] New purchase by {% if order.person %}{{ order.person.get_full_name }}{% else %}{{ order.email }}{% endif %}
+[{{ event.name|safe }}] New purchase by {% if order.person %}{{ order.person.get_full_name }}{% else %}{{ order.email }}{% endif %}
