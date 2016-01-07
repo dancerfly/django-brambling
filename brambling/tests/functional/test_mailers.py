@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from zenaida.templatetags.zenaida import format_money
 
-from brambling.mail import (OrderAlertMailer, OrderReceiptMailer)
+from brambling.mail import (OrderAlertMailer)
 from brambling.models import Transaction
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
@@ -78,18 +78,11 @@ class OrderReceiptMailerTestCase(TestCase):
                                          amount=130)
         self.mailer = OrderAlertMailer(transaction, site='dancerfly.com',
                                          secure=True)
-	self.receipt= OrderReceiptMailer(transaction, site='dancerfly.com', 
-					 secure=True)
 	subject = self.mailer.render_subject(self.mailer.get_context_data())
-	subject2=self.receipt.render_subject(self.receipt.get_context_data())
 	expected_subject = ('[{event_name}] New purchase by {person_name}'
                             .format(event_name=self.event_name,
                                     person_name=self.person.get_full_name()))
-	expected_subject2 = ('[{event_name}] Receipt for order {order_code}'
-			     .format(event_name=self.event_name,
-				    order_code=self.order.code))
 	self.assertEqual(subject, expected_subject)
-	self.assertEqual(subject2, expected_subject2)
 	
 
 class OrderAlertMailerForNonUserOrderTestCase(TestCase):

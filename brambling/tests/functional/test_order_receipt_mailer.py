@@ -75,8 +75,20 @@ class OrderReceiptMailerTestCase(TestCase):
         self.assertIn(self.item_price, body)
         self.assertIn(self.discount_amount, body)
         self.assertIn(self.total_amount, body)
-
-
+    def test_subject_apostrophe(self):
+	event=EventFactory(name="Han & Leia's Wedding")
+	self.event_name=event.name
+	self.order = OrderFactory(event=event, person=self.person)
+        transaction = TransactionFactory(event=event, order=self.order,
+                                         amount=130)
+	self.mailer = OrderReceiptMailer(transaction, site='dancerfly.com',
+                                         secure=True)
+	subject = self.mailer.render_subject(self.mailer.get_context_data())
+        expected_subject = ('[{event_name}] Receipt for order {order_code}'
+                            .format(event_name=self.event_name,
+                                    order_code=self.order.code))
+        self.assertEqual(subject, expected_subject)
+	
 class OrderReceiptMailerForNonUserTestCase(TestCase):
 
     def setUp(self):
