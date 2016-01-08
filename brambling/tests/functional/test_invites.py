@@ -24,7 +24,7 @@ class InviteTestCase(TestCase):
 
     def test_subject__event_editor_apostrophe(self):
         event = EventFactory(name="James's Test Event")
-        invite = InviteFactory(content_id=event.pk, user=PersonFactory(given_name="Conan",surname="O'Brien"))
+        invite = InviteFactory(content_id=event.pk, user=PersonFactory(first_name="Conan",last_name="O'Brien"))
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
@@ -41,8 +41,8 @@ class InviteTestCase(TestCase):
 
     def test_subject__organization_editor_apostrophe(self):
         event = EventFactory(organization=OrganizationFactory(name="Conan's Show"))
-        invite = InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(given_name="Conan",
-                                                                                                                     surname="O'Brien"))
+        invite = InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(first_name="Conan",
+                                                                                                                     last_name="O'Brien"))
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
@@ -68,8 +68,8 @@ class InviteTestCase(TestCase):
         item_option1 = ItemOptionFactory(price=100, item=item, name='Gold')
         self.order.add_to_cart(item_option1)
         boughtitem = self.order.bought_items.all()[0]
-        invite = InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(given_name="Conan",
-                                                                                                  surname="O'Brien"))
+        invite = InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(first_name="Conan",
+                                                                                                  last_name="O'Brien"))
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} wants to transfer an item to you".format(invite.user.get_full_name()))

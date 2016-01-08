@@ -73,7 +73,7 @@ class OrderReceiptMailerTestCase(TestCase):
 
     def test_subject_apostrophe(self):
         event = EventFactory(name="Han & Leia's Wedding!")
-        self.person = PersonFactory(given_name="Ma'ayan", surname="Plaut")
+        self.person = PersonFactory(first_name="Ma'ayan", last_name="Plaut")
         self.event_name = event.name
         self.order = OrderFactory(event=event, person=self.person)
         transaction = TransactionFactory(event=event, order=self.order,amount=130)
