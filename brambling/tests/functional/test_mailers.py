@@ -30,7 +30,7 @@ class OrderReceiptMailerTestCase(TestCase):
         self.order.mark_cart_paid(transaction)
 
         self.mailer = OrderAlertMailer(transaction, site='dancerfly.com',
-                                         secure=True)
+                                       secure=True)
         self.event_name = event.name
         self.discount_amount = format_money(discount.amount, event.currency)
         self.total_amount = format_money(transaction.amount, event.currency)
@@ -70,6 +70,20 @@ class OrderReceiptMailerTestCase(TestCase):
         self.assertIn(self.option1, body)
         self.assertIn(self.option2, body)
         self.assertIn(self.total_amount, body)
+
+    def test_subject_apostrophe(self):
+        event = EventFactory(name="Han & Leia's Wedding!")
+        self.person = PersonFactory(first_name="Ma'ayan", last_name="Plaut")
+        self.event_name = event.name
+        self.order = OrderFactory(event=event, person=self.person)
+        transaction = TransactionFactory(event=event, order=self.order,amount=130)
+        self.mailer = OrderAlertMailer(transaction, site='dancerfly.com',
+                                       secure=True)
+        subject = self.mailer.render_subject(self.mailer.get_context_data())
+        expected_subject = ('[{event_name}] New purchase by {person_name}'
+                            .format(event_name=self.event_name,
+                                    person_name=self.person.get_full_name()))
+        self.assertEqual(subject, expected_subject)
 
 
 class OrderAlertMailerForNonUserOrderTestCase(TestCase):

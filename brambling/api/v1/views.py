@@ -164,9 +164,9 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = OrderSerializer
     filter_backends = (filters.SearchFilter,)
     permission_classes = [OrderSearchPermission]
-    search_fields = ("code", "person__given_name", "person__middle_name",
-        "person__surname", "attendees__given_name",
-        "attendees__middle_name", "attendees__surname")
+    search_fields = ("code", "person__first_name", "person__middle_name",
+        "person__last_name", "attendees__first_name",
+        "attendees__middle_name", "attendees__last_name")
 
     def get_event(self):
         event_id = self.request.query_params.get('event', None)
