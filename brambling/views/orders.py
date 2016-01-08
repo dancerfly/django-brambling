@@ -568,7 +568,7 @@ class AttendeeBasicDataView(OrderMixin, WorkflowMixin, TemplateView):
         raise Http404
 
     def get_basic_data_form(self, initial=None):
-        fields = ('given_name', 'middle_name', 'surname', 'name_order', 'email',
+        fields = ('first_name', 'middle_name', 'last_name', 'name_order', 'email',
                   'phone', 'liability_waiver', 'photo_consent')
         if self.event.collect_housing_data:
             fields += ('housing_status',)

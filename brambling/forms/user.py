@@ -45,9 +45,9 @@ class SignUpForm(forms.ModelForm):
         model = Person
         fields = (
             'email',
-            'given_name',
+            'first_name',
             'middle_name',
-            'surname',
+            'last_name',
             'name_order'
         )
 
@@ -111,7 +111,7 @@ class AccountForm(forms.ModelForm):
 
     class Meta:
         model = Person
-        fields = ('email', 'given_name', 'middle_name', 'surname', 'name_order')
+        fields = ('email', 'first_name', 'middle_name', 'last_name', 'name_order')
 
     def __init__(self, request, *args, **kwargs):
         self.request = request
