@@ -38,7 +38,7 @@ def reverse_func(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0044_auto_20160105_2012'),
+        ('brambling', '0042_auto_20160105_2012'),
     ]
 
     operations = [
