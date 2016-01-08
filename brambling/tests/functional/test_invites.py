@@ -20,9 +20,9 @@ class InviteTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} has invited you to edit {}".format(invite.user.get_full_name(), event.name))
     def test_subject__event_editor_apostrophe(self):
-	event= EventFactory(name="James's Test Event")
-	invite=InviteFactory(content_id=event.pk, user=PersonFactory(given_name="Conan",surname="O'Brien"))
-	self.assertEqual(len(mail.outbox), 0)
+        event= EventFactory(name="James's Test Event")
+        invite=InviteFactory(content_id=event.pk, user=PersonFactory(given_name="Conan",surname="O'Brien"))
+        self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} has invited you to edit {}".format(invite.user.get_full_name(),event.name))
@@ -34,36 +34,34 @@ class InviteTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} has invited you to help manage {}".format(invite.user.get_full_name(), event.organization.name))
     def test_subject__organization_editor_apostrophe(self):
-	event= EventFactory(organization=OrganizationFactory(name="Conan's Show"))
-	invite=InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(given_name="Conan",surname="O'Brien"))
-	self.assertEqual(len(mail.outbox), 0)
+        event= EventFactory(organization=OrganizationFactory(name="Conan's Show"))
+        invite=InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(given_name="Conan",surname="O'Brien")) 
+        self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} has invited you to help manage {}".format(invite.user.get_full_name(), event.organization.name))
     def test_subject__event(self):
-	event=EventFactory(name="Conan's Show")
-	invite=InviteFactory(content_id=event.pk, kind=Invite.EVENT)
-	content=invite.get_content()
-	self.assertEqual(len(mail.outbox), 0)
+        event=EventFactory(name="Conan's Show")
+        invite=InviteFactory(content_id=event.pk, kind=Invite.EVENT)
+        content=invite.get_content()
+        self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "You've been invited to attend {}!".format(content.name))
     def test_subject__transfer(self):
-	event=EventFactory()
-	self.person = PersonFactory()
+        event=EventFactory()
+        self.person = PersonFactory()
         event = EventFactory()
         self.order = OrderFactory(event=event, person=self.person)
-        transaction = TransactionFactory(event=event, order=self.order,
-                                         amount=130)
+        transaction = TransactionFactory(event=event, order=self.order, amount=130)
         item = ItemFactory(event=event, name='Multipass')
         item_option1 = ItemOptionFactory(price=100, item=item, name='Gold')
-	self.order.add_to_cart(item_option1)
-	boughtitem = self.order.bought_items.all()[0]
-	invite=InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(given_name="Conan",surname="O'Brien"))
-	invite.send(Site('test.com', 'test.com'), content=invite.get_content())
+        self.order.add_to_cart(item_option1)
+        boughtitem = self.order.bought_items.all()[0]
+        invite=InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(given_name="Conan",surname="O'Brien"))
+        invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} wants to transfer an item to you".format(invite.user.get_full_name()))
-	
 
 class EventFormTestCase(TestCase):
     def test_clean_invite_attendees__valid(self):

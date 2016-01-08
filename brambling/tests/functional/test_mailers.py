@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from zenaida.templatetags.zenaida import format_money
 
-from brambling.mail import (OrderAlertMailer)
+from brambling.mail import OrderAlertMailer
 from brambling.models import Transaction
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
@@ -70,12 +70,11 @@ class OrderReceiptMailerTestCase(TestCase):
         self.assertIn(self.option2, body)
         self.assertIn(self.total_amount, body)
     def test_subject_apostrophe(self):
-	event=EventFactory(name="Han & Leia's Wedding!")
-	self.person=PersonFactory(given_name="Ma'ayan", surname="Plaut")
-	self.event_name=event.name
-	self.order = OrderFactory(event=event, person=self.person)
-        transaction = TransactionFactory(event=event, order=self.order,
-                                         amount=130)
+        event=EventFactory(name="Han & Leia's Wedding!")
+        self.person=PersonFactory(given_name="Ma'ayan", surname="Plaut")
+        self.event_name=event.name
+        self.order = OrderFactory(event=event, person=self.person)
+        transaction = TransactionFactory(event=event, order=self.order,amount=130)
         self.mailer = OrderAlertMailer(transaction, site='dancerfly.com',
                                          secure=True)
 	subject = self.mailer.render_subject(self.mailer.get_context_data())
