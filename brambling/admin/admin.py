@@ -31,7 +31,7 @@ class PersonAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': (('email', 'confirmed_email',), 'password')}),
         ('Personal', {'fields': (
-            ('given_name', 'surname',),
+            ('first_name', 'last_name',),
             ('middle_name', 'name_order'),
         )}),
         ('Permissions', {'fields': (
@@ -43,7 +43,7 @@ class PersonAdmin(UserAdmin):
         )})
     )
 
-    search_fields = ('email', 'given_name', 'middle_name', 'surname')
+    search_fields = ('email', 'first_name', 'middle_name', 'last_name')
     ordering = ('-created',)
 
     def email_confirmed(self, obj):
