@@ -544,10 +544,10 @@ CustomFormFieldFormSet = forms.inlineformset_factory(
 
 class AttendeeFilterSetForm(forms.Form):
     ORDERING_CHOICES = (
-        ("surname", "Surname"),
-        ("-surname", "Surname (descending)"),
-        ("given_name", "Given Name"),
-        ("-given_name", "Given Name (descending)"),
+        ("last_name", "Last Name"),
+        ("-last_name", "Last Name (descending)"),
+        ("first_name", "First Name"),
+        ("-first_name", "First Name (descending)"),
         ("-purchase_date", "Purchase Date (newest first)"),
     )
     HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES

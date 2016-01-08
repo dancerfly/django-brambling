@@ -330,7 +330,7 @@ background: #970b0e !important;
                     </p>
 
                     <p style="color: #222222; font-family: 'Helvetica', 'Arial', sans-serif; font-weight: normal; text-align: left; line-height: 19px; font-size: 14px; margin: 0 0 10px; padding: 0;" align="left">{% with event=content.order.event %}
-                      {% if invite.user %}{{ invite.user.given_name }}{% else %}{{ content.order.email }}{% endif %}
+                      {% if invite.user %}{{ invite.user.first_name }}{% else %}{{ content.order.email }}{% endif %}
                       wants to transfer the folowing item to you for <a href="{{ protocol }}://{{ site.domain }}{% url 'brambling_event_root' organization_slug=event.organization.slug event_slug=event.slug %}" style="color: #2ba6cb; text-decoration: none;">{{ event.name }}</a>: <strong>{{ content.item_option_name }} ({{ content.item_name }})</strong>!
                     {% endwith %}</p>
                   </td>

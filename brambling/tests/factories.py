@@ -63,8 +63,8 @@ class PersonFactory(factory.DjangoModelFactory):
     class Meta:
         model = Person
 
-    given_name = factory.Sequence(lambda n: "User{}".format(n))
-    surname = "Test"
+    first_name = factory.Sequence(lambda n: "User{}".format(n))
+    last_name = "Test"
 
     email = factory.Sequence(lambda n: "test{}@test.com".format(n))
     confirmed_email = factory.LazyAttribute(lambda obj: obj.email)
@@ -110,8 +110,8 @@ class AttendeeFactory(factory.DjangoModelFactory):
     class Meta:
         model = Attendee
 
-    given_name = factory.Sequence(lambda n: "Attendee{}".format(n))
-    surname = "Test"
+    first_name = factory.Sequence(lambda n: "Attendee{}".format(n))
+    last_name = "Test"
 
     email = factory.Sequence(lambda n: "test{}@test.com".format(n))
     order = factory.SubFactory(OrderFactory)

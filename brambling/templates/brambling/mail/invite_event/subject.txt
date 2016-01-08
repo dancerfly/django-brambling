@@ -1,1 +1,1 @@
-You've been invited to attend {{ content.name }}!
+You've been invited to attend {{ content.name|safe }}!

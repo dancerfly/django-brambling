@@ -91,7 +91,7 @@ class AttendeeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Attendee
         fields = (
-            'id', 'link', 'order', 'given_name', 'middle_name', 'surname',
+            'id', 'link', 'order', 'first_name', 'middle_name', 'last_name',
             'name_order', 'basic_completed', 'email', 'phone',
             'liability_waiver', 'photo_consent', 'housing_status',
             'housing_completed', 'ef_cause', 'ef_avoid',
