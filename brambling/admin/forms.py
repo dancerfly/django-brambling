@@ -42,7 +42,7 @@ class PersonChangeForm(forms.ModelForm):
 
     class Meta:
         model = Person
-        fields = ('first_name','last_name','email', 'password', 'is_active',)
+        fields = ('email', 'password', 'is_active',)
 
     def clean_password(self):
         # Regardless of what the user provides, return the initial value.
