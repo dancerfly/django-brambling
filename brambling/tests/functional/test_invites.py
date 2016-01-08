@@ -6,8 +6,10 @@ from django.test import TestCase, RequestFactory
 
 from brambling.forms.organizer import EventForm
 from brambling.models import Invite
-from brambling.tests.factories import (InviteFactory, EventFactory, OrderFactory, TransactionFactory, ItemFactory,
-                                       OrganizationFactory, PersonFactory, ItemOptionFactory)
+from brambling.tests.factories import (InviteFactory, EventFactory,
+                                       OrderFactory, TransactionFactory,
+                                       ItemFactory, OrganizationFactory,
+                                       PersonFactory, ItemOptionFactory)
 from brambling.views.core import InviteAcceptView
 
 
@@ -19,37 +21,45 @@ class InviteTestCase(TestCase):
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} has invited you to edit {}".format(invite.user.get_full_name(), event.name))
+
     def test_subject__event_editor_apostrophe(self):
-        event= EventFactory(name="James's Test Event")
-        invite=InviteFactory(content_id=event.pk, user=PersonFactory(given_name="Conan",surname="O'Brien"))
+        event = EventFactory(name="James's Test Event")
+        invite = InviteFactory(content_id=event.pk, user=PersonFactory(given_name="Conan",surname="O'Brien"))
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, "{} has invited you to edit {}".format(invite.user.get_full_name(),event.name))
+        self.assertEqual(mail.outbox[0].subject, "{} has invited you to edit {}".format(invite.user.get_full_name(), event.name))
+
     def test_subject__organization_editor(self):
         event = EventFactory()
         invite = InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR)
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, "{} has invited you to help manage {}".format(invite.user.get_full_name(), event.organization.name))
+        self.assertEqual(mail.outbox[0].subject, "{} has invited you to help manage {}".format(invite.user.get_full_name(),
+                                                                                               event.organization.name))
+
     def test_subject__organization_editor_apostrophe(self):
-        event= EventFactory(organization=OrganizationFactory(name="Conan's Show"))
-        invite=InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(given_name="Conan",surname="O'Brien")) 
+        event = EventFactory(organization=OrganizationFactory(name="Conan's Show"))
+        invite = InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(given_name="Conan",
+                                                                                                                     surname="O'Brien"))
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, "{} has invited you to help manage {}".format(invite.user.get_full_name(), event.organization.name))
+        self.assertEqual(mail.outbox[0].subject, "{} has invited you to help manage {}".format(invite.user.get_full_name(),
+                                                                                               event.organization.name))
+
     def test_subject__event(self):
-        event=EventFactory(name="Conan's Show")
-        invite=InviteFactory(content_id=event.pk, kind=Invite.EVENT)
-        content=invite.get_content()
+        event = EventFactory(name="Conan's Show")
+        invite = InviteFactory(content_id=event.pk, kind=Invite.EVENT)
+        content = invite.get_content()
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "You've been invited to attend {}!".format(content.name))
+
     def test_subject__transfer(self):
-        event=EventFactory()
+        event = EventFactory()
         self.person = PersonFactory()
         event = EventFactory()
         self.order = OrderFactory(event=event, person=self.person)
@@ -58,7 +68,8 @@ class InviteTestCase(TestCase):
         item_option1 = ItemOptionFactory(price=100, item=item, name='Gold')
         self.order.add_to_cart(item_option1)
         boughtitem = self.order.bought_items.all()[0]
-        invite=InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(given_name="Conan",surname="O'Brien"))
+        invite = InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(given_name="Conan",
+                                                                                                  surname="O'Brien"))
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} wants to transfer an item to you".format(invite.user.get_full_name()))
