@@ -902,32 +902,6 @@ class RefundView(View):
                               'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
 
-
-class OrganizerApplyDiscountView(ApplyDiscountView):
-    def get_order(self):
-        return Order.objects.get(event=self.event, code=self.kwargs['code'])
-
-
-class RemoveDiscountView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if not self.event.editable_by(self.request.user):
-            raise Http404
-        try:
-            boughtitemdiscount = BoughtItemDiscount.objects.get(
-                bought_item__order=self.order,
-                pk=kwargs['discount_pk']
-            )
-        except BoughtItemDiscount.DoesNotExist:
-            pass
-        else:
-            boughtitemdiscount.delete()
-        return JsonResponse({'success': True})
-
-    def get_order(self):
-        return Order.objects.get(event=self.event, code=self.kwargs['code'])
-
-
 class OrderDetailView(DetailView):
     template_name = 'brambling/event/organizer/order_detail.html'
 
