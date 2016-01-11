@@ -917,7 +917,6 @@ class OrderDetailView(DetailView):
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
-        self.discount_form = ManualDiscountForm(order=self.order)
         self.notes_form = OrderNotesForm(instance=self.order)
         self.attendee_forms = [AttendeeNotesForm(instance=attendee)
                                for attendee in self.order.attendees.prefetch_related('bought_items')]
@@ -926,9 +925,6 @@ class OrderDetailView(DetailView):
                 self.payment_form = ManualPaymentForm(order=self.order,
                                                       user=self.request.user,
                                                       data=self.request.POST)
-            elif 'is_discount_form' in self.request.POST:
-                self.discount_form = ManualDiscountForm(order=self.order,
-                                                        data=self.request.POST)
             elif 'is_notes_form' in self.request.POST:
                 self.notes_form = OrderNotesForm(instance=self.order,
                                                  data=self.request.POST)
@@ -938,21 +934,18 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
-        return [self.payment_form, self.discount_form, self.notes_form] + self.attendee_forms
+        return [self.payment_form, self.notes_form] + self.attendee_forms
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
         if self.payment_form.is_bound:
             active = 'payment'
-        elif self.discount_form.is_bound:
-            active = 'discount'
         elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
             active = 'notes'
         else:
             active = 'summary'
         context.update({
             'payment_form': self.payment_form,
-            'discount_form': self.discount_form,
             'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,
