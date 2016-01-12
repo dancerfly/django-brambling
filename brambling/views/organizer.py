@@ -25,10 +25,10 @@ import unicodecsv as csv
 
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
-                                       ManualPaymentForm, ManualDiscountForm,
-                                       CustomFormForm, CustomFormFieldFormSet,
-                                       OrderNotesForm, OrganizationPaymentForm,
-                                       AttendeeNotesForm, EventCreateForm)
+                                       ManualPaymentForm, CustomFormForm,
+                                       CustomFormFieldFormSet, OrderNotesForm,
+                                       OrganizationPaymentForm, AttendeeNotesForm,
+                                       EventCreateForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
