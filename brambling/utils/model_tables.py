@@ -382,7 +382,7 @@ class CustomDataTable(ModelTable):
 class AttendeeTable(CustomDataTable):
     fieldsets = (
         ('Identification',
-         ('pk', 'get_full_name', 'given_name', 'surname', 'middle_name')),
+         ('pk', 'get_full_name', 'first_name', 'last_name', 'middle_name')),
         ('Status',
          ('items', 'purchase_date', 'pending', 'confirmed', 'order_code')),
         ('Contact',
@@ -410,7 +410,7 @@ class AttendeeTable(CustomDataTable):
         'liability_waiver': 'Liability Waiver Signed',
         'photo_consent': 'Consent to be Photographed',
     }
-    search_fields = ('given_name', 'middle_name', 'surname', 'order__code',
+    search_fields = ('first_name', 'middle_name', 'last_name', 'order__code',
                      'email', 'order__email', 'order__person__email')
     filterset_class = AttendeeFilterSet
     model = Attendee
@@ -562,9 +562,9 @@ class OrderTable(CustomDataTable):
         'send_flyers_full_address': 'flyers address',
     }
     search_fields = (
-        'code', 'email', 'person__given_name', 'person__middle_name',
-        'person__surname', 'person__email', 'attendees__given_name',
-        'attendees__middle_name', 'attendees__surname',
+        'code', 'email', 'person__first_name', 'person__middle_name',
+        'person__last_name', 'person__email', 'attendees__first_name',
+        'attendees__middle_name', 'attendees__last_name',
     )
     filterset_class = OrderFilterSet
     model = Order

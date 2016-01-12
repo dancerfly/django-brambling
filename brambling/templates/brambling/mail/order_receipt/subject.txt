@@ -1,1 +1,1 @@
-[{{ event.name }}] Receipt for order {{ order.code }}
+[{{ event.name|safe }}] Receipt for order {{ order.code }}

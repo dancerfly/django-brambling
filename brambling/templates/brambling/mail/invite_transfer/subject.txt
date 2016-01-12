@@ -1,1 +1,1 @@
-{% if invite.user %}{{ invite.user.get_full_name }}{% else %}{{ content.order.email }}{% endif %} wants to transfer an item to you
+{% if invite.user %}{{ invite.user.get_full_name|safe }}{% else %}{{ content.order.email }}{% endif %} wants to transfer an item to you

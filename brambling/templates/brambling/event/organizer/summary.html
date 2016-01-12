@@ -85,7 +85,7 @@
 			<strong class='pull-right'>{{ item.grouper.boughtitem__count }}</strong>
 		</span>
 		{% for option in item.list %}
-			<a class='list-group-item' href='{{ attendees_url }}?bought_items__item_option={{ option.pk }}'>
+			<a class='list-group-item' href='{{ attendees_url }}?column-bought_items__item_option={{ option.pk }}'>
 				&nbsp; {{ option.name }} &nbsp; <em>{{ option.price|format_money:event.currency }}</em>
 				<span class='pull-right'>{{ option.boughtitem__count }}</span>
 			</a>
@@ -114,7 +114,7 @@
 				</div>
 				<ul class='list-group'>
 					{% for discount in discounts %}
-						<a class='list-group-item' href='{{ attendees_url }}?bought_items__discounts__discount={{ discount.pk }}'>
+						<a class='list-group-item' href='{{ attendees_url }}?column-bought_items__discounts__discount={{ discount.pk }}'>
 							{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							<strong class='pull-right'>{{ discount.used_count }}</strong>
 						</a>
@@ -139,15 +139,15 @@
 				</div>
 				<div class='list-group'>
 					{% if event.collect_housing_data %}
-						<a class='list-group-item' href='{{ attendees_url }}?housing_status=need'>
+						<a class='list-group-item' href='{{ attendees_url }}?column-housing_status=need'>
 							Requesting housing
 							<strong class='pull-right'>{{ attendee_requesting_count }}</strong>
 						</a>
-						<a class='list-group-item' href='{{ attendees_url }}?housing_status=have'>
+						<a class='list-group-item' href='{{ attendees_url }}?column-housing_status=have'>
 							Arranged housing
 							<strong class='pull-right'>{{ attendee_arranged_count }}</strong>
 						</a>
-						<a class='list-group-item' href='{{ attendees_url }}?housing_status=home'>
+						<a class='list-group-item' href='{{ attendees_url }}?column-housing_status=home'>
 							At own home
 							<strong class='pull-right'>{{ attendee_home_count }}</strong>
 						</a>
