@@ -1,8 +1,8 @@
 {% load floppyforms tz %}
-{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
-<form action="{{ request.path }}" method="post" novalidate>
+<form action="{{ action }}" method="post" novalidate>
 	{% csrf_token %}
 	{% form discount_form using %}
+		{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 		<div class="row margin-trailer">
 			<div class="col-md-6">{% formrow form.name %}</div>
 			<div class="col-md-6">{% formrow form.code %}</div>
