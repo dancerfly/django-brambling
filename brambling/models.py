@@ -322,7 +322,7 @@ class Organization(AbstractDwollaModel):
                                      blank=True, null=True)
 
     # This is a secret value set by admins. It will be cached on the event model.
-    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(1.5),
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(2.5),
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # These are obtained with Stripe Connect via Oauth.
@@ -458,7 +458,7 @@ class Event(models.Model):
                                                     help_text="Minutes before a user's cart expires.")
 
     # This is a secret value set by admins
-    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('1.5'),
+    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('2.5'),
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # Internal tracking fields
