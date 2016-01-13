@@ -10,10 +10,5 @@
 	<h2>{% if discount.pk %}Edit discount: {{ discount.name }}{% else %}Add a discount{% endif %}</h2>
 
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
-	<form action="{{ request.path }}" method="post" novalidate>
-		{% csrf_token %}
-		{% form discount_form using "brambling/forms/discount.html" %}
-		<button class='btn btn-primary' type="submit">Save</button>
-		{% if discount.pk %}<a href="../">Cancel</a>{% endif %}
-	</form>
+	{% include "brambling/event/organizer/_discount_form.html" with action=request.path %}
 {% endblock %}

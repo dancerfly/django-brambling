@@ -645,6 +645,7 @@ class DiscountListView(ListView):
             'event': self.event,
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'discount_form': DiscountForm(event, instance=None),
         })
         return context
 
