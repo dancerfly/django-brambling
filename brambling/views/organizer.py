@@ -12,7 +12,6 @@ from django.http import (Http404, HttpResponseRedirect, JsonResponse,
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.http import is_safe_url
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View, DeleteView)
@@ -25,10 +24,10 @@ import unicodecsv as csv
 
 from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
-                                       ManualPaymentForm, ManualDiscountForm,
-                                       CustomFormForm, CustomFormFieldFormSet,
-                                       OrderNotesForm, OrganizationPaymentForm,
-                                       AttendeeNotesForm, EventCreateForm)
+                                       ManualPaymentForm, CustomFormForm,
+                                       CustomFormFieldFormSet, OrderNotesForm,
+                                       OrganizationPaymentForm, AttendeeNotesForm,
+                                       EventCreateForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
@@ -36,7 +35,6 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               BoughtItemDiscount, BoughtItem,
                               Person, CustomForm, Organization,
                               SavedReport)
-from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
@@ -903,31 +901,6 @@ class RefundView(View):
         return HttpResponseRedirect(url)
 
 
-class OrganizerApplyDiscountView(ApplyDiscountView):
-    def get_order(self):
-        return Order.objects.get(event=self.event, code=self.kwargs['code'])
-
-
-class RemoveDiscountView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if not self.event.editable_by(self.request.user):
-            raise Http404
-        try:
-            boughtitemdiscount = BoughtItemDiscount.objects.get(
-                bought_item__order=self.order,
-                pk=kwargs['discount_pk']
-            )
-        except BoughtItemDiscount.DoesNotExist:
-            pass
-        else:
-            boughtitemdiscount.delete()
-        return JsonResponse({'success': True})
-
-    def get_order(self):
-        return Order.objects.get(event=self.event, code=self.kwargs['code'])
-
-
 class OrderDetailView(DetailView):
     template_name = 'brambling/event/organizer/order_detail.html'
 
@@ -943,7 +916,6 @@ class OrderDetailView(DetailView):
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
-        self.discount_form = ManualDiscountForm(order=self.order)
         self.notes_form = OrderNotesForm(instance=self.order)
         self.attendee_forms = [AttendeeNotesForm(instance=attendee)
                                for attendee in self.order.attendees.prefetch_related('bought_items')]
@@ -952,9 +924,6 @@ class OrderDetailView(DetailView):
                 self.payment_form = ManualPaymentForm(order=self.order,
                                                       user=self.request.user,
                                                       data=self.request.POST)
-            elif 'is_discount_form' in self.request.POST:
-                self.discount_form = ManualDiscountForm(order=self.order,
-                                                        data=self.request.POST)
             elif 'is_notes_form' in self.request.POST:
                 self.notes_form = OrderNotesForm(instance=self.order,
                                                  data=self.request.POST)
@@ -964,21 +933,18 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
-        return [self.payment_form, self.discount_form, self.notes_form] + self.attendee_forms
+        return [self.payment_form, self.notes_form] + self.attendee_forms
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
         if self.payment_form.is_bound:
             active = 'payment'
-        elif self.discount_form.is_bound:
-            active = 'discount'
         elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
             active = 'notes'
         else:
             active = 'summary'
         context.update({
             'payment_form': self.payment_form,
-            'discount_form': self.discount_form,
             'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,
