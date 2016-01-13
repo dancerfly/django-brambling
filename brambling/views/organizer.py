@@ -12,7 +12,6 @@ from django.http import (Http404, HttpResponseRedirect, JsonResponse,
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.http import is_safe_url
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View, DeleteView)
@@ -36,7 +35,6 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               BoughtItemDiscount, BoughtItem,
                               Person, CustomForm, Organization,
                               SavedReport)
-from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
@@ -901,6 +899,7 @@ class RefundView(View):
                               'organization_slug': self.event.organization.slug,
                               'code': self.kwargs['code']})
         return HttpResponseRedirect(url)
+
 
 class OrderDetailView(DetailView):
     template_name = 'brambling/event/organizer/order_detail.html'
