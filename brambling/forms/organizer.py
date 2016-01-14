@@ -598,18 +598,6 @@ class ManualPaymentForm(forms.ModelForm):
         txn.api_type = txn.event.api_type
 
 
-class ManualDiscountForm(forms.Form):
-    discount = forms.ModelChoiceField(Discount)
-
-    def __init__(self, order, *args, **kwargs):
-        super(ManualDiscountForm, self).__init__(*args, **kwargs)
-        self.fields['discount'].queryset = Discount.objects.filter(event=order.event)
-        self.order = order
-
-    def save(self):
-        self.order.add_discount(self.cleaned_data['discount'], force=True)
-
-
 class OrderNotesForm(forms.ModelForm):
     class Meta:
         model = Order
