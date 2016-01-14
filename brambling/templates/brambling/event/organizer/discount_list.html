@@ -6,30 +6,31 @@
 
 {% block main %}
 	{{ block.super }}
-
-	{% include "brambling/event/_empty_shop_alert.html" %}
-
-	<p><a class="btn btn-primary" href="{% url 'brambling_discount_create' event_slug=event.slug organization_slug=event.organization.slug %}">Create discount</a></p>
-	{% if discounts %}
-		<table class='table table-striped'>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Code</th>
-					<th>Item</th>
-					<th>Amount</th>
-				</tr>
-			</thead>
-			<tbody>
-			{% for discount in discounts %}
-				<tr>
-					<td><a href="{% url 'brambling_discount_update' event_slug=event.slug organization_slug=event.organization.slug pk=discount.pk %}">{{ discount.name }}</a></td>
-					<td>{{ discount.code }}</td>
-					<td>{{ discount.item_option }}</td>
-					<td>{% if discount.discount_type == discount.PERCENT %}{{ discount.amount }}%{% else %} {{ discount.amount|format_money:event.currency }}{% endif %}</td>
-				</tr>
-			{% endfor %}
-			</tbody>
-		</table>
-	{% endif %}
+	<div class="row">
+		{% include "brambling/event/_empty_shop_alert.html" %}
+		{% if discounts %}
+			<div class="col-lg-4">
+					<div class="panel panel-default">
+						<header class="panel-heading">
+							<h4 class="panel-title">Discounts</h4>
+						</header>
+						<div class="list-group">
+							{% for discount in discounts %}
+								<a class="list-group-item" href="{% url 'brambling_discount_update' event_slug=event.slug organization_slug=event.organization.slug pk=discount.pk %}">{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em></a>
+							{% endfor %}
+						</div>
+					</div>
+			</div>
+		{% endif %}
+		<div class="col-lg-8">
+			<div class="panel panel-default">
+				<header class="panel-heading">
+					<h4 class="panel-title">Create Discount</h4>
+				</header>
+				<div class="panel-body">
+					{% url 'brambling_discount_create' event_slug=event.slug organization_slug=event.organization.slug  as action %}
+					{% include "brambling/event/organizer/_discount_form.html" with action=action %}
+				</div>
+			</div>
+		</div>
 {% endblock %}
