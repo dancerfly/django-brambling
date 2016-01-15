@@ -183,6 +183,7 @@ class HostingForm(MemoModelForm, CustomDataForm):
             'providing_housing': self.instance.order.providing_housing
         })
         person = self.instance.order.person
+        event = self.instance.event
         if person is None:
             del self.fields['save_as_defaults']
 
@@ -211,6 +212,12 @@ class HostingForm(MemoModelForm, CustomDataForm):
                     'housing_categories': self.filter(HousingCategory.objects.only('id'),
                                                       homes=home),
                 })
+            else:
+                self.initial.update({
+                    'city': event.city,
+                    'state_or_province': event.state_or_province,
+                    'country': event.country,
+                    })
         self.set_choices('ef_present',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
@@ -218,7 +225,6 @@ class HostingForm(MemoModelForm, CustomDataForm):
         self.set_choices('housing_categories',
                          HousingCategory.objects.only('id', 'name'))
 
-        event = self.instance.event
         self.nights = self.filter(HousingRequestNight, date__gte=event.start_date - datetime.timedelta(1), date__lte=event.end_date)
         slot_map = {}
         if self.instance.pk is not None:
