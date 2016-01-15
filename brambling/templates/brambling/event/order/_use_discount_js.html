@@ -1,6 +1,6 @@
 <script>
     $(function(){
-        $('#discountCodeButton').on('click', function(e){
+        $('#discountForm').on('submit', function(e){
             e.preventDefault();
             var discountCodeButton = $(this),
                 discountCode = $('#discountCode'),
