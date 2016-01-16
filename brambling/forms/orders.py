@@ -217,7 +217,7 @@ class HostingForm(MemoModelForm, CustomDataForm):
                     'city': event.city,
                     'state_or_province': event.state_or_province,
                     'country': event.country,
-                    })
+                })
         self.set_choices('ef_present',
                          EnvironmentalFactor.objects.only('id', 'name'))
         self.set_choices('ef_avoid',
