@@ -1,9 +1,10 @@
 {% extends 'brambling/event/organizer/__narrow.html' %}
 
-{% load floppyforms %}
+{% load floppyforms staticfiles %}
 
 {% block main %}
 	{{ block.super }}
+	{% include "brambling/forms/markdown/_modal.html" %}
 
 	{% include "brambling/forms/_top_error_list.html" %}
 
@@ -35,7 +36,7 @@
 					{% endif %}
 					{% formrow form.website_url with help_text="If your event has its own website, enter the URL here and we'll link to it." %}
 					{% formrow form.facebook_url with help_text="If your event is on Facebook, enter that URL here and we'll link to it." %}
-					{% formrow form.description %}
+					{% formrow form.description with using='brambling/forms/markdown/field.html' %}
 					{% formrow form.banner_image with help_text="Images will be scaled and cropped to 940 x 300 pixels.<br />Supported formats: .jpg, .png, .gif" %}
 					{% formrow form.dance_styles %}
 					{% formrow form.has_dances %}
@@ -295,6 +296,6 @@
 
 {% block javascripts %}
 	{{ block.super }}
-
 	{% include "brambling/event/organizer/_form_js.html" %}
+	{% include "brambling/forms/markdown/_js.html" %}
 {% endblock %}
