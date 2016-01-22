@@ -1,0 +1,23 @@
+{% extends 'brambling/layouts/3_9.html' %}
+
+{% load humanize %}
+
+{% block side %}
+	{% url 'brambling_organize_events' as brambling_organize_events_url %}
+	{% url 'brambling_organize_organizations' as brambling_organize_organizations_url %}
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">Organize</h4>
+		</div>
+		<nav class="list-group">
+			<a class="list-group-item{% if request.path == brambling_organize_events_url %} active{% endif %}" href="{{ brambling_organize_events_url }}">Events</a>
+			<a class="list-group-item{% if request.path == brambling_organize_organizations_url %} active{% endif %}" href="{{ brambling_organize_organizations_url }}">Organizations</a>
+		</nav>
+		<div class='panel-footer'>
+			<a href='{% url "brambling_event_create" %}' class='btn btn-default btn-block'>
+				<i class='fa fa-fw fa-plus'></i>
+				Create an event
+			</a>
+		</div>
+	</div>
+{% endblock %}
