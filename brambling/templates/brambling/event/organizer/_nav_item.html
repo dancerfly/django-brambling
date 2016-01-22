@@ -1,5 +1,5 @@
 {% url url_name event_slug=event.slug organization_slug=event.organization.slug as item_url %}
-{% with url_len=item_url|length %}
+{% with url_len=item_url|length|stringformat:"i" %}
 	<a class='list-group-item{% if request.path|slice:url_len == item_url %} active{% endif %}' href="{{ item_url }}">
 		{% if icon %}
 			<i class='fa fa-fw fa-{{ icon }}'></i>
