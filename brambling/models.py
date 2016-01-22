@@ -82,41 +82,41 @@ class AbstractNamedModel(models.Model):
     "A base model for any model which needs a human name."
 
     NAME_ORDER_CHOICES = (
-        ('GMS', "Given Middle Surname"),
-        ('SGM', "Surname Given Middle"),
-        ('GS', "Given Surname"),
-        ('SG', "Surname Given"),
+        ('FML', "First Middle Last"),
+        ('LFM', "Last First Middle"),
+        ('FL', "First Last"),
+        ('LF', "Last First"),
     )
 
     NAME_ORDER_PATTERNS = {
-        'GMS': "{given} {middle} {surname}",
-        'SGM': "{surname} {given} {middle}",
-        'GS': "{given} {surname}",
-        'SG': "{surname} {given}",
+        'FML': "{first} {middle} {last}",
+        'LFM': "{last} {first} {middle}",
+        'FL': "{first} {last}",
+        'LF': "{last} {first}",
     }
 
-    given_name = models.CharField(max_length=50)
+    first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True)
-    surname = models.CharField(max_length=50)
-    name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="GMS")
+    last_name = models.CharField(max_length=50)
+    name_order = models.CharField(max_length=3, choices=NAME_ORDER_CHOICES, default="FML")
 
     def get_full_name(self):
         name_dict = {
-            'given': self.given_name,
+            'first': self.first_name,
             'middle': self.middle_name,
-            'surname': self.surname,
+            'last': self.last_name,
         }
         name_order = self.name_order
         if not self.middle_name:
-            if name_order == 'GMS':
-                name_order = 'GS'
-            elif name_order == 'SGM':
-                name_order = 'SG'
+            if name_order == 'FML':
+                name_order = 'FL'
+            elif name_order == 'LFM':
+                name_order = 'LF'
         return self.NAME_ORDER_PATTERNS[name_order].format(**name_dict)
     get_full_name.short_description = 'Name'
 
     def get_short_name(self):
-        return self.given_name
+        return self.first_name
 
     class Meta:
         abstract = True
@@ -322,7 +322,7 @@ class Organization(AbstractDwollaModel):
                                      blank=True, null=True)
 
     # This is a secret value set by admins. It will be cached on the event model.
-    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(1.5),
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(2.5),
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # These are obtained with Stripe Connect via Oauth.
@@ -458,7 +458,7 @@ class Event(models.Model):
                                                     help_text="Minutes before a user's cart expires.")
 
     # This is a secret value set by admins
-    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('1.5'),
+    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('2.5'),
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # Internal tracking fields
@@ -657,7 +657,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     ### Start custom user requirements
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['given_name', 'surname']
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     @property
     def is_staff(self):
@@ -1248,6 +1248,9 @@ class Transaction(models.Model):
             remote_id=refund['TransactionId'],
             **kwargs
         )
+
+    def is_unconfirmed_check(self):
+        return self.method == Transaction.CHECK and not self.is_confirmed
 
     def can_refund(self):
         refunded = self.related_transaction_set.filter(

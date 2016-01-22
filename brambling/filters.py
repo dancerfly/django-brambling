@@ -107,7 +107,7 @@ class AttendeeFilterSet(django_filters.FilterSet):
         form = AttendeeFilterSetForm
         fields = ['bought_items__item_option', 'housing_status',
                   'bought_items__discounts__discount']
-        order_by = ['surname', '-surname', 'given_name', '-given_name',
+        order_by = ['last_name', '-last_name', 'first_name', '-first_name',
                     '-purchase_date']
 
 

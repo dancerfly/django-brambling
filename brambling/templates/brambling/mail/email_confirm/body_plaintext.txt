@@ -1,4 +1,4 @@
-Thanks for signing up for Dancerfly, {{ person.given_name }}!
+Thanks for signing up for Dancerfly, {{ person.first_name }}!
 {% url 'brambling_email_confirm' pkb64=pkb64 token=token as url %}
 Please use the following URL to verify your email address!
 {{ protocol }}://{{ site.domain }}{{ url }}

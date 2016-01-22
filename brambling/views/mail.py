@@ -6,7 +6,7 @@ from django.views.generic import View
 
 from brambling.mail import (ConfirmationMailer, OrderReceiptMailer,
                             OrderAlertMailer, InviteMailer)
-from brambling.models import Order, Invite
+from brambling.models import Transaction, Invite
 
 
 class PreviewView(View):
@@ -48,8 +48,7 @@ class OrderReceiptPreviewView(PreviewView):
 
     def get_mailer_kwargs(self):
         kwargs = super(OrderReceiptPreviewView, self).get_mailer_kwargs()
-        kwargs['order'] = Order.objects.order_by('?')[0]
-        kwargs['summary_data'] = kwargs['order'].get_summary_data()
+        kwargs['transaction'] = Transaction.objects.filter(transaction_type=Transaction.PURCHASE).order_by('?')[0]
         return kwargs
 
 
@@ -58,8 +57,7 @@ class OrderAlertPreviewView(PreviewView):
 
     def get_mailer_kwargs(self):
         kwargs = super(OrderAlertPreviewView, self).get_mailer_kwargs()
-        kwargs['order'] = Order.objects.order_by('?')[0]
-        kwargs['summary_data'] = kwargs['order'].get_summary_data()
+        kwargs['transaction'] = Transaction.objects.filter(transaction_type=Transaction.PURCHASE).order_by('?')[0]
         return kwargs
 
 

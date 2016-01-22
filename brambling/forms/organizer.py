@@ -544,10 +544,10 @@ CustomFormFieldFormSet = forms.inlineformset_factory(
 
 class AttendeeFilterSetForm(forms.Form):
     ORDERING_CHOICES = (
-        ("surname", "Surname"),
-        ("-surname", "Surname (descending)"),
-        ("given_name", "Given Name"),
-        ("-given_name", "Given Name (descending)"),
+        ("last_name", "Last Name"),
+        ("-last_name", "Last Name (descending)"),
+        ("first_name", "First Name"),
+        ("-first_name", "First Name (descending)"),
         ("-purchase_date", "Purchase Date (newest first)"),
     )
     HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES
@@ -596,18 +596,6 @@ class ManualPaymentForm(forms.ModelForm):
         txn.created_by = user
         txn.is_confirmed = True
         txn.api_type = txn.event.api_type
-
-
-class ManualDiscountForm(forms.Form):
-    discount = forms.ModelChoiceField(Discount)
-
-    def __init__(self, order, *args, **kwargs):
-        super(ManualDiscountForm, self).__init__(*args, **kwargs)
-        self.fields['discount'].queryset = Discount.objects.filter(event=order.event)
-        self.order = order
-
-    def save(self):
-        self.order.add_discount(self.cleaned_data['discount'], force=True)
 
 
 class OrderNotesForm(forms.ModelForm):
