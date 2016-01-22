@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
 from django.test import TestCase, RequestFactory
 
-from brambling.forms.organizer import EventForm
+from brambling.forms.organizer import EventRegistrationForm
 from brambling.models import Invite
 from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrderFactory, TransactionFactory,
@@ -74,12 +74,13 @@ class InviteTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} wants to transfer an item to you".format(invite.user.get_full_name()))
 
-class EventFormTestCase(TestCase):
+
+class EventRegistrationFormTestCase(TestCase):
     def test_clean_invite_attendees__valid(self):
         expected = ['test@test.te', 'test@demo.com']
         data = ','.join(expected)
         org = OrganizationFactory()
-        form = EventForm(None, org, False)
+        form = EventRegistrationForm(None, org)
         form.cleaned_data = {'invite_attendees': data}
         cleaned = form.clean_invite_attendees()
         self.assertEqual(cleaned, expected)
@@ -88,7 +89,7 @@ class EventFormTestCase(TestCase):
         expected = ['test@test.te', 'test@demo.com']
         data = ', '.join(expected)
         org = OrganizationFactory()
-        form = EventForm(None, org, False)
+        form = EventRegistrationForm(None, org)
         form.cleaned_data = {'invite_attendees': data}
         cleaned = form.clean_invite_attendees()
         self.assertEqual(cleaned, expected)
@@ -97,7 +98,7 @@ class EventFormTestCase(TestCase):
         expected = ['test@test.te', 'test@democom']
         data = ','.join(expected)
         org = OrganizationFactory()
-        form = EventForm(None, org, False)
+        form = EventRegistrationForm(None, org)
         form.cleaned_data = {'invite_attendees': data}
         with self.assertRaises(ValidationError):
             form.clean_invite_attendees()
@@ -109,10 +110,9 @@ class EventFormTestCase(TestCase):
         data['invite_attendees'] = ','.join(emails)
         request = RequestFactory().get('/')
         request.user = PersonFactory()
-        form = EventForm(
+        form = EventRegistrationForm(
             request,
             event.organization,
-            False,
             instance=event,
             data=data
         )
