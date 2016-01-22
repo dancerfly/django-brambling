@@ -294,10 +294,10 @@ class EventCreateForm(forms.ModelForm):
 class EventBasicForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ('name', 'slug', 'description', 'website_url',
-                  'city', 'state_or_province', 'country', 'timezone',
-                  'start_time', 'end_time', 'dance_styles', 'has_dances',
-                  'has_classes', 'start_date', 'end_date', 'facebook_url')
+        fields = ('name', 'slug', 'start_date', 'end_date',
+                  'start_time', 'end_time', 'city', 'state_or_province',
+                  'country', 'timezone', 'website_url', 'facebook_url',
+                  'description', 'dance_styles', 'has_dances', 'has_classes')
         widgets = {
             'country': forms.Select,
         }

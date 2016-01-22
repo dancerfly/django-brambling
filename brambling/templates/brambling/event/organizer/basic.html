@@ -14,76 +14,69 @@
 		{% form form using %}
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
-			<div class="panel panel-default">
-				<header class="panel-heading">
-					<h4 class="panel-title">Information</h4>
-				</header>
-				<div class="panel-body">
-					{% formrow form.name %}
-					{% if form.slug %}
-						{% formrow form.slug with prepend="https://dancerfly.com/"|add:organization.slug|add:"/" label="URL" %}
-					{% else %}
-						<div class="form-group">
-							<label class="control-label" for="id_slug">
-							URL
-							</label>
-							<div class='input-group'>
-								<div class='input-group-addon'>https://dancerfly.com/{{ organization.slug }}/</div>
-								<input class="form-control" type="text" value="{{ event.slug }}" disabled>
-							</div>
-							<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
-						</div>
-					{% endif %}
-					{% formrow form.website_url with help_text="If your event has its own website, enter the URL here and we'll link to it." %}
-					{% formrow form.facebook_url with help_text="If your event is on Facebook, enter that URL here and we'll link to it." %}
-					{% formrow form.description with using='brambling/forms/markdown/field.html' %}
-					{% formrow form.dance_styles %}
-					{% formrow form.has_dances %}
-					{% formrow form.has_classes %}
-				</div>{# /.panel-body #}
-			</div>{# /.panel #}
-
-			<div class="panel panel-default">
-				<header class="panel-heading">
-					<h4 class="panel-title">Details</h4>
-				</header>
-				<div class="panel-body">
-					<div class='row'>
-						<div class='col-sm-4'>
-							{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
-						</div>
-						<div class='col-sm-4'>
-							{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
-						</div>
-						<div class='col-sm-4'>
-							<label for='startEnd'>Add start / end times</label><br />
-							<input type='checkbox' id='startEnd'{% if event.start_time or event.end_time %} checked{% endif %}>
-						</div>
+			{% formrow form.name %}
+			{% if form.slug %}
+				{% formrow form.slug with prepend="https://dancerfly.com/"|add:organization.slug|add:"/" label="URL" %}
+			{% else %}
+				<div class="form-group">
+					<label class="control-label" for="id_slug">
+					URL
+					</label>
+					<div class='input-group'>
+						<div class='input-group-addon'>https://dancerfly.com/{{ organization.slug }}/</div>
+						<input class="form-control" type="text" value="{{ event.slug }}" disabled>
 					</div>
-					<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
-						<div class='col-sm-4'>
-							{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
-						</div>
-						<div class='col-sm-4'>
-							{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
-						</div>
-					</div>
+					<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+				</div>
+			{% endif %}
 
-					<div class="row">
-						<div class="col-sm-5">
-							{% formrow form.city %}
-						</div>
-						<div class="col-sm-3">
-							{% formrow form.state_or_province %}
-						</div>
-						<div class="col-sm-4">
-							{% formrow form.country %}
-						</div>
-					</div>{# /.row #}
+			<div class='row'>
+				<div class='col-sm-4'>
+					{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					<label for='startEnd'>Add start / end times</label><br />
+					<input type='checkbox' id='startEnd'{% if event.start_time or event.end_time %} checked{% endif %}>
+				</div>
+			</div>
+			<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
+				<div class='col-sm-4'>
+					{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+			</div>
 
-					{% formrow form.timezone %}
-				</div>{# /.panel-body #}
-			</div>{# /.panel #}
+			<div class="row">
+				<div class="col-sm-5">
+					{% formrow form.city %}
+				</div>
+				<div class="col-sm-3">
+					{% formrow form.state_or_province %}
+				</div>
+				<div class="col-sm-4">
+					{% formrow form.country %}
+				</div>
+			</div>{# /.row #}
+
+			{% formrow form.timezone %}
+
+			<hr />
+
+			{% formrow form.website_url with help_text="If your event has its own website, enter the URL here and we'll link to it." %}
+			{% formrow form.facebook_url with help_text="If your event is on Facebook, enter that URL here and we'll link to it." %}
+			{% formrow form.description with using='brambling/forms/markdown/field.html' %}
+
+			<hr />
+
+			{# Search-related metadata #}
+			{% formrow form.dance_styles %}
+			{% formrow form.has_dances %}
+			{% formrow form.has_classes %}
 		{% endform %}
 
 		<button class="btn btn-primary" type="submit">
