@@ -38,13 +38,19 @@
 	<div class='panel panel-default'>
 		<div class='panel-heading'>
 			<h4 class='panel-title'>
-				<i class='fa fa-fw fa-{{ group.icon }}'></i> {{ group.name }}
+				<a class='collapsed' role='button' data-toggle='collapse' href='#navbarCollapse{{ forloop.counter }}' aria-expanded='true' aria-controls='navbarCollapse{{ forloop.counter }}'>
+					<i class='fa fa-fw fa-{{ group.icon }}'></i>
+					{{ group.name }}
+					<i class='fa fa-fw fa-chevron-down pull-right'></i>
+				</a>
 			</h4>
 		</div>
-		<div class='list-group'>
-		{% for item in group.items %}
-			{% include 'brambling/event/organizer/_nav_item.html' with event=event url_name=item.0 name=item.1 only %}
-		{% endfor %}
+		<div id='navbarCollapse{{ forloop.counter }}' class='panel-collapse collapse in' role='tabpanel' aria-labelledby='headingOne'>
+			<div class='list-group'>
+				{% for item in group.items %}
+					{% include 'brambling/event/organizer/_nav_item.html' with event=event url_name=item.0 name=item.1 only %}
+				{% endfor %}
+			</div>
 		</div>
 	</div>
 {% endfor %}
