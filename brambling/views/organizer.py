@@ -489,6 +489,26 @@ class UnpublishEventView(View):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class DangerZoneView(TemplateView):
+    template_name = 'brambling/event/organizer/danger_zone.html'
+
+    def get(self, request, *args, **kwargs):
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
+        if not self.event.editable_by(request.user):
+            raise Http404
+        return super(DangerZoneView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(DangerZoneView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        return context
+
+
 def item_form(request, *args, **kwargs):
     event = get_object_or_404(Event.objects.select_related('organization'),
                               slug=kwargs['event_slug'],

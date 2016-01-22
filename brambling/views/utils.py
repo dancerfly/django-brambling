@@ -45,22 +45,35 @@ class NavItem(object):
 def get_event_admin_nav(event, request):
     if not event.editable_by(request.user):
         return []
-    kwargs = {
-        'event_slug': event.slug,
-        'organization_slug': event.organization.slug,
-    }
-    items = (
-        ('brambling_event_summary', 'Summary', 'fa-dashboard'),
-        ('brambling_event_update', 'Settings', 'fa-cog'),
-        ('brambling_item_list', 'Items', 'fa-list'),
-        ('brambling_form_list', 'Forms', 'fa-question'),
-        ('brambling_discount_list', 'Discounts', 'fa-gift'),
-        ('brambling_event_attendees', 'Attendees', 'fa-users'),
-        ('brambling_event_orders', 'Orders', 'fa-ticket'),
-        ('brambling_event_finances', 'Finances', 'fa-money'),
+    return (
+        {
+            'name': 'Settings',
+            'icon': 'cog',
+            'items': (
+                ('brambling_event_update', 'Basic information'),
+                ('brambling_event_update', 'Design'),
+                ('brambling_event_danger_zone', 'Danger zone'),
+            ),
+        },
+        {
+            'name': 'Content',
+            'icon': 'list',
+            'items': (
+                ('brambling_item_list', 'Items'),
+                ('brambling_form_list', 'Forms'),
+                ('brambling_discount_list', 'Discounts'),
+            ),
+        },
+        {
+            'name': 'Reports',
+            'icon': 'bar-chart',
+            'items': (
+                ('brambling_event_attendees', 'Attendees'),
+                ('brambling_event_orders', 'Orders'),
+                ('brambling_event_finances', 'Finances'),
+            )
+        },
     )
-    return [NavItem(request, reverse(view_name, kwargs=kwargs), label, icon)
-            for view_name, label, icon in items]
 
 
 def get_organization_admin_nav(organization, request):

@@ -54,6 +54,7 @@ from brambling.views.organizer import (
     EventRemoveEditorView,
     PublishEventView,
     UnpublishEventView,
+    DangerZoneView,
     ItemListView,
     item_form,
     ItemDeleteView,
@@ -213,6 +214,10 @@ event_urlpatterns = patterns('',
     url(r'^forms/(?P<pk>\d+)/$',
         custom_form_form,
         name="brambling_form_update"),
+
+    url(r'^danger-zone/$',
+        DangerZoneView.as_view(),
+        name="brambling_event_danger_zone"),
 )
 
 

@@ -1,0 +1,25 @@
+{% extends 'brambling/event/organizer/__base.html' %}
+
+{% load zenaida static %}
+
+{% block title %}Danger Zone – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	{% url "brambling_event_attendees" event_slug=event.slug organization_slug=event.organization.slug as attendees_url%}
+
+	<h2>Danger Zone</h2>
+
+	<h3>Copy event</h3>
+	<p>Make a copy of this event with the same settings and items in any organization
+	you control.</p>
+	<div class='row'>
+		<div class='col-xs-3'>
+			<a href="{% url 'brambling_event_create' %}?organization={{ event.organization_id }}&template_event={{ event.pk }}" class="btn btn-default btn-block btn-lg">
+				<i class='fa fa-fw fa-copy'></i> Copy Event
+			</a>
+		</div>
+	</div>
+
+{% endblock %}
