@@ -30,15 +30,14 @@
 						{% for event in admin_events|slice:":3" %}
 							{% include "brambling/_event_list-group-item.html" %}
 						{% endfor %}
-					</div>
-					{% if admin_events|length > 3 %}
-						<div class='panel-footer'>
-							<a class='btn btn-default btn-block' href='{% url "brambling_organize_events" %}'>
-								<i class='fa fa-fw fa-sitemap'></i>
+
+						{% if admin_events|length > 3 %}
+							<a class='list-group-item' href='{% url "brambling_organize_events" %}'>
+								<i class='fa fa-fw fa-list'></i>
 								See all {{ admin_events|length }} events
 							</a>
-						</div>
-					{% endif %}
+						{% endif %}
+					</div>
 				</div>
 			{% endif %}
 			{% if organizations %}
@@ -56,15 +55,13 @@
 								<a href="{{ organization.get_absolute_url }}">{{ organization.name }}</a>
 							</div>
 						{% endfor %}
-					</div>
-					{% if organizations|length > 4 %}
-						<div class='panel-footer'>
-							<a class='btn btn-default btn-block' href='{% url "brambling_organize_organizations" %}'>
-								<i class='fa fa-fw fa-sitemap'></i>
-								See all {{ organizations|length }} organizations
+						{% if organizations|length > 4 %}
+							<a class='list-group-item' href='{% url "brambling_organize_organizations" %}'>
+									<i class='fa fa-fw fa-sitemap'></i>
+									See all {{ organizations|length }} organizations
 							</a>
-						</div>
-					{% endif %}
+						{% endif %}
+					</div>
 				</div>
 			{% endif %}
 			<img src="{% static 'brambling/images/watcher-cropped.jpg' %}" width="202" class="img-responsive hidden-xs">
