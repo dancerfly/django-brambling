@@ -10,10 +10,20 @@ from markdown.extensions.smarty import SmartyExtension
 
 
 register = template.Library()
+
+
+class SkipImagesExtension(markdown.extensions.Extension):
+    def extendMarkdown(self, md, md_globals):
+        del md.inlinePatterns['image_link']
+        del md.inlinePatterns['image_reference']
+
+
 md = markdown.Markdown(extensions=['markdown.extensions.nl2br',
                                    'markdown.extensions.sane_lists',
-                                   SmartyExtension(smart_angled_quotes=True)],
+                                   SmartyExtension(smart_angled_quotes=True),
+                                   SkipImagesExtension()],
                        output_format='html5')
+
 
 
 @register.filter(name='markdown')
