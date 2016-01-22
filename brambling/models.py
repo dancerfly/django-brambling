@@ -1902,3 +1902,22 @@ class SavedReport(models.Model):
     event = models.ForeignKey(Event)
     name = models.CharField(max_length=40)
     querystring = models.TextField()
+
+
+# Update event / org last-modified stats on various changes
+@receiver(signals.post_save, sender=Transaction)
+@receiver(signals.post_save, sender=Item)
+@receiver(signals.post_save, sender=Discount)
+@receiver(signals.post_save, sender=CustomForm)
+def update_event_and_org_last_modified(sender, instance, **kwargs):
+    now = timezone.now()
+    event_id = instance.event_id
+    Event.objects.filter(pk=event_id).update(last_modified=now)
+    Organization.objects.filter(event=event_id).update(last_modified=now)
+
+
+@receiver(signals.post_save, sender=Event)
+def update_org_last_modified(sender, instance, **kwargs):
+    now = timezone.now()
+    org_id = instance.organization_id
+    Organization.objects.filter(pk=org_id).update(last_modified=now)
