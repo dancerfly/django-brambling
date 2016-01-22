@@ -1,0 +1,26 @@
+{% extends 'brambling/event/organizer/__narrow.html' %}
+
+{% load floppyforms staticfiles %}
+
+{% block main %}
+	{{ block.super }}
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			{% formrow form.banner_image with help_text="Images will be scaled and cropped to 940 x 300 pixels.<br />Supported formats: .jpg, .png, .gif" %}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+		<a class="btn btn-link" href="{{ request.path }}">
+			Cancel
+		</a>
+
+	</form>
+{% endblock %}

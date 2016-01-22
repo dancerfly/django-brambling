@@ -203,7 +203,7 @@ class InviteAcceptView(TemplateView):
                 'organization_slug': content.organization.slug
             })
         elif invite.kind == Invite.EVENT_EDITOR:
-            return reverse('brambling_event_update', kwargs={
+            return reverse('brambling_event_summary', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
             })
@@ -264,12 +264,12 @@ class InviteManageView(View):
         invite = self.invite
         content = self.content
         if invite.kind == Invite.EVENT:
-            return reverse('brambling_event_update', kwargs={
+            return reverse('brambling_event_registration', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
             })
         elif invite.kind == Invite.EVENT_EDITOR:
-            return reverse('brambling_event_update', kwargs={
+            return reverse('brambling_event_permissions', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
             })

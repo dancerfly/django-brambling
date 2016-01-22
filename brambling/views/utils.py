@@ -50,15 +50,17 @@ def get_event_admin_nav(event, request):
             'name': 'Settings',
             'icon': 'cog',
             'items': (
-                ('brambling_event_update', 'Basic information'),
-                ('brambling_event_update', 'Design'),
+                ('brambling_event_basic', 'Basic'),
+                ('brambling_event_design', 'Design'),
+                ('brambling_event_permissions', 'Permissions'),
                 ('brambling_event_danger_zone', 'Danger zone'),
             ),
         },
         {
-            'name': 'Content',
+            'name': 'Registration',
             'icon': 'list',
             'items': (
+                ('brambling_event_registration', 'Basic & payment'),
                 ('brambling_item_list', 'Items'),
                 ('brambling_form_list', 'Forms'),
                 ('brambling_discount_list', 'Discounts'),
