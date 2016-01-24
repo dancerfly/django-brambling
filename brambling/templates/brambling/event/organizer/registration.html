@@ -53,8 +53,17 @@
 				{% endif %}
 			</div>
 			{% formrow form.cart_timeout %}
-			{% formrow form.transfers_allowed %}
 			<div class='form-group'>
+				{% with field=form.transfers_allowed %}
+					<div class='checkbox'>
+						<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
+						<small><a class="popped" data-container="body" data-toggle="popover" data-placement="top" data-html="true" data-content="
+							{% filter force_escape %}
+								<p>If checked, attendees will be able to transfer items directly and securely to other people.</p>
+							{% endfilter %}
+						" tabindex="-1">What is this?</a></small>
+					</div>
+				{% endwith %}
 				{% with field=form.collect_housing_data %}
 					<div class='checkbox'>
 						<label for="{{ field|id }}">{% formfield field %} {{ field.label }}</label>
@@ -62,7 +71,7 @@
 							{% filter force_escape %}
 								<p>If checked, attendees will be asked whether they would like to request or offer housing and presented with additional housing-related forms based on their selection.</p>
 							{% endfilter %}
-						" tabindex="-1">What is housing data?</a></small>
+						" tabindex="-1">What is this?</a></small>
 					</div>
 				{% endwith %}
 				{% with field=form.collect_survey_data %}
@@ -76,7 +85,7 @@
 									<li>Would you like to distribute promotional materials?</li>
 								</ul>
 							{% endfilter %}
-						" tabindex="-1">What is the survey?</a></small>
+						" tabindex="-1">What is this?</a></small>
 					</div>
 				{% endwith %}
 			</div>
