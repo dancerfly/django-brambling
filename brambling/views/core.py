@@ -115,7 +115,7 @@ class InviteAcceptView(TemplateView):
         invite = self.invite
         content = self.content
         if invite.kind == Invite.EVENT:
-            content.create_order(self.request.user)
+            return Order.objects.for_request(event=content.order.event, request=self.request, create=True)
         elif invite.kind == Invite.EVENT_EDITOR:
             content.additional_editors.add(self.request.user)
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
