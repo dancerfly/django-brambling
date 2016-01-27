@@ -1,0 +1,111 @@
+{% extends 'brambling/event/organizer/__narrow.html' %}
+
+{% load floppyforms staticfiles %}
+
+{% block title %}Basic Information - {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	{% include "brambling/forms/markdown/_modal.html" %}
+
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			{% formrow form.name %}
+			{% if form.slug %}
+				{% formrow form.slug with prepend="https://dancerfly.com/"|add:organization.slug|add:"/" label="URL" %}
+			{% else %}
+				<div class="form-group">
+					<label class="control-label" for="id_slug">
+					URL
+					</label>
+					<div class='input-group'>
+						<div class='input-group-addon'>https://dancerfly.com/{{ organization.slug }}/</div>
+						<input class="form-control" type="text" value="{{ event.slug }}" disabled>
+					</div>
+					<p class="help-block">{{ form.base_fields.slug.help_text }}</p>
+				</div>
+			{% endif %}
+
+			<div class='row'>
+				<div class='col-sm-4'>
+					{% formrow form.start_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_date with prepend="<i class='fa fa-fw fa-calendar'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					<label for='startEnd'>Add start / end times</label><br />
+					<input type='checkbox' id='startEnd'{% if event.start_time or event.end_time %} checked{% endif %}>
+				</div>
+			</div>
+			<div class='row' id='startEndRow'{% if not event.start_time and not event.end_time %} style="display:none;"{% endif %}>
+				<div class='col-sm-4'>
+					{% formrow form.start_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+				<div class='col-sm-4'>
+					{% formrow form.end_time with prepend="<i class='fa fa-fw fa-clock-o'></i>" %}
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm-5">
+					{% formrow form.city %}
+				</div>
+				<div class="col-sm-3">
+					{% formrow form.state_or_province %}
+				</div>
+				<div class="col-sm-4">
+					{% formrow form.country %}
+				</div>
+			</div>{# /.row #}
+
+			{% formrow form.timezone %}
+
+			<hr />
+
+			{% formrow form.website_url with help_text="If your event has its own website, enter the URL here and we'll link to it." %}
+			{% formrow form.facebook_url with help_text="If your event is on Facebook, enter that URL here and we'll link to it." %}
+			{% formrow form.description with using='brambling/forms/markdown/field.html' %}
+
+			<hr />
+
+			{# Search-related metadata #}
+			{% formrow form.dance_styles %}
+			{% formrow form.has_dances %}
+			{% formrow form.has_classes %}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+		<a class="btn btn-link" href="{{ request.path }}">
+			Cancel
+		</a>
+
+	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script>
+		$(function() {
+			$('#startEnd').on('change', function() {
+				if (this.checked) {
+					$('#startEndRow').slideDown();
+				} else {
+					$('#startEndRow').slideUp();
+					$('#startEndRow input').val(function(){
+						return this.defaultValue;
+					});
+				}
+			});
+		});
+	</script>
+	{% include "brambling/forms/markdown/_js.html" %}
+{% endblock %}

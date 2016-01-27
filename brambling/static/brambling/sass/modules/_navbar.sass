@@ -3,10 +3,30 @@
 .navbar-fixed-top:hover
     top: 0
 
-.navbar-default
+.navbar-dancerfly
     border: 0
     border-bottom: 1px solid $btn-primary-border
     font-family: $headings-font-family
+    background-color: $navbar-dancerfly-bg
+    .navbar-nav > li > a
+        color: $navbar-dancerfly-link-color
+        &:hover
+            color: $navbar-dancerfly-link-hover-color
+            background-color: $navbar-dancerfly-link-hover-bg
+        &:active, &:focus
+            color: $navbar-dancerfly-link-active-color
+            background-color: $navbar-dancerfly-link-active-bg
+    .navbar-brand
+        color: $navbar-dancerfly-brand-color
+        &:hover
+            color: $navbar-dancerfly-brand-hover-color
+            background-color: $navbar-dancerfly-brand-hover-bg
+    .navbar-toggle
+        border-color: $navbar-dancerfly-toggle-border-color
+        > .icon-bar
+            background-color: $navbar-dancerfly-toggle-icon-bar-bg
+        &:hover
+            background-color: $navbar-dancerfly-toggle-hover-bg
     .navbar-nav > .open > a
         &, &:hover, &:focus
             background: rgba(0, 0, 0, .25)
@@ -25,4 +45,3 @@
         border-bottom-width: 1
         > .container
             border-bottom-width: 0
-        

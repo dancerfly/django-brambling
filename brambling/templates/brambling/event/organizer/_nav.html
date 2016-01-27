@@ -1,100 +1,25 @@
 <div class="panel panel-default">
-	<div class="panel-heading">
-		<h4 class="panel-title">
-			<a href="{{ event.get_absolute_url }}">
-				{{ event.name }}
-			</a>
-		</h4>
-		<div class="media text-muted margin-leader-0 text-small">
-			<div class="media-left">
-				<i class="fa fa-clock-o fa-fw"></i>
-			</div>
-			<div class="media-body">
-				{% include "brambling/event/_when.html" %}
-			</div>
-		</div>
-		{% if event.city and event.state_or_province and event.country %}
-			<div class="media text-muted margin-leader-0 text-small">
-				<div class="media-left">
-					<i class="fa fa-map-marker fa-fw"></i>
-				</div>
-				<div class="media-body">
-					{% include "brambling/event/_where.html" %}
-				</div>
-			</div>
-		{% endif %}
-		<div class="media text-muted margin-leader-0 text-small">
-			<div class="media-left">
-				{% if event.privacy == event.PUBLIC %}
-					<i class='fa fa-fw fa-globe'></i>
-				{% elif event.privacy == event.LINK %}
-					<i class='fa fa-fw fa-eye-slash'></i>
-				{% elif event.privacy == event.HALF_PUBLIC %}
-					<i class='fa fa-fw fa-envelope-o'></i>
-				{% elif event.privacy == event.INVITED %}
-					<i class='fa fa-fw fa-lock'></i>
-				{% else %}
-					<i class='fa fa-fw fa-question'></i>
-				{% endif %}
-			</div>
-			<div class="media-body">
-				{% if event.privacy == event.PUBLIC %}
-					<span class='tipped' title='Anyone can find and view the event'>Public</span>
-				{% elif event.privacy == event.LINK %}
-					<span class='tipped' title='Anyone with a direct link can view the event'>Hidden</span>
-				{% elif event.privacy == event.HALF_PUBLIC %}
-					<span class='tipped' title='Anyone can find and view the event, but only people who are invited can register'>Invite</span>
-				{% elif event.privacy == event.INVITED %}
-					<span class='tipped' title='Only people invited to the event can see the event and register'>Secret</span>
-				{% else %}
-					Unknown Privacy
-				{% endif %}
-			</div>
-		</div>
-		<div class="media text-muted margin-leader-0 text-small">
-			<div class="media-left">
-				<i class="fa fa-group fa-fw"></i>
-			</div>
-			<div class="media-body">
-				<a href="{{ event.organization.get_absolute_url }}">{{ event.organization.name }}</a>
-			</div>
-		</div>
-	</div>
-	<div class="list-group">
-		{% for item in event_admin_nav %}
-			<a class='list-group-item{% if item.is_active %} active{% endif %}' href="{{ item.url }}">
-				{% if item.icon %}
-					<i class="fa fa-fw {{ item.icon }}"></i>
-				{% endif %}
-				{{ item.label }}
-			</a>
-		{% endfor %}
-	</div>
-	<div class="panel-footer">
-		{% if event.is_frozen and event.is_published %}
-			{# Don't display a button #}
-		{% elif event.is_published %}
-			<div class='form-group'>
-				<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-danger btn-block'>Unpublish Event</a>
-			</div>
-		{% elif event.can_be_published %}
-			<div class='form-group'>
-				<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-success btn-block'>Publish Event</a>
-			</div>
-		{% else %}
-			<div class='tipped form-group' data-placement="right" data-container="body" title="This event needs to have at least one item before you can publish it. Go to the items section to set that up!">
-				<button class='btn btn-success btn-block' disabled>
-					Publish Event
-				</button>
-			</div>
-		{% endif %}
-		<div class='form-group'>
-			<a href="{{ event.get_absolute_url }}" class="btn btn-default btn-block">
-				View Event Shop
-			</a>
-		</div>
-		<a href="{% url 'brambling_event_create' %}?organization={{ event.organization_id }}&template_event={{ event.pk }}" class="btn btn-default btn-block">
-			<i class='fa fa-fw fa-copy'></i> Copy Event
-		</a>
+	<div class='list-group'>
+		{% include 'brambling/event/organizer/_nav_item.html' with event=event url_name='brambling_event_summary' name='Summary' icon='dashboard' request=request only %}
 	</div>
 </div>
+
+{% for group in event_admin_nav %}
+	<div class='panel panel-default js-nav-group'>
+		<div class='panel-heading' id='navbarHeading{{ forloop.counter }}'>
+			<h4 class='panel-title'>
+				<a class='collapsed' role='button' data-toggle='collapse' href='#navbarCollapse{{ forloop.counter }}' aria-expanded='true' aria-controls='navbarCollapse{{ forloop.counter }}'>
+					{{ group.name }}
+					<i class='fa fa-fw fa-chevron-down pull-right'></i>
+				</a>
+			</h4>
+		</div>
+		<div id='navbarCollapse{{ forloop.counter }}' class='panel-collapse collapse in' role='tabpanel' aria-labelledby='navbarHeading{{ forloop.counter }}'>
+			<div class='list-group'>
+				{% for item in group.items %}
+					{% include 'brambling/event/organizer/_nav_item.html' with event=event url_name=item.0 name=item.1 request=request only %}
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+{% endfor %}

@@ -1,0 +1,109 @@
+{% extends 'brambling/event/organizer/__narrow.html' %}
+
+{% load floppyforms staticfiles %}
+
+{% block title %}Team &amp; Permissions - {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			<h2>Permissions</h2>
+			<p>
+				The following people can edit <em>all</em> events run by <strong>{{ event.organization }}</strong>.
+				{% if request.user == organization.owner %}
+					This list can be updated in the <a href="{% url 'brambling_organization_update_permissions' organization_slug=organization.slug %}">organization settings</a>.
+				{% else %}
+					Only the organization owner can change this list.
+				{% endif %}
+			</p>
+
+			<div class="table-responsive">
+				<table class='table table-striped'>
+					<tbody>
+						<tr>
+							<th>{{ organization.owner.get_full_name }}</th>
+							<td>{{ organization.owner.email }}</td>
+							<td><i class='fa fa-fw fa-lock'></i> Owner</td>
+							{% if organization_editable_by %}<td></td>{% endif %}
+						</tr>
+						{% for editor in organization.editors.all %}
+							<tr>
+								<th>{{ editor.get_full_name }}</th>
+								<td>{{ editor.email }}</td>
+								<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
+								{% if organization_editable_by %}<td></td>{% endif %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+
+			<hr />
+
+			<p>The following people can edit this event. Only organization owners and editors (listed above) can change this list.</p>
+
+			<div class="table-responsive">
+				<table class='table table-striped'>
+					<tbody>
+						{% if event.pk %}
+							{% for editor in event.additional_editors.all %}
+								<tr>
+									<th>{{ editor.get_full_name }}</th>
+									<td>{{ editor.email }}</td>
+									<td><i class='fa fa-fw fa-pencil'></i> Editor (Event)</td>
+									{% if organization_editable_by %}
+										<td>
+											<a href="{% url 'brambling_event_remove_editor' event_slug=event.slug organization_slug=event.organization.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+										</td>
+									{% endif %}
+								</tr>
+							{% endfor %}
+						{% endif %}
+						{% for invite in event.get_editor_invites %}
+							<tr>
+								<th>{{ invite.email }}</th>
+								<td>{{ invite.email }}</td>
+								<td>
+									{% if invite.is_sent %}
+										<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
+									{% else %}
+										<i class='fa fa-fw fa-envelope'></i> Not sent
+									{% endif %}
+								</td>
+								{% if organization_editable_by %}
+									<td>
+										<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+										<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+									</td>
+								{% endif %}
+							</tr>
+						{% empty %}
+							{% if not event.pk or not event.additional_editors.exists %}
+								<tr>
+									<td><em>This event does not have additional editors.</em></td>
+								</tr>
+							{% endif %}
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+
+			{% formrow form.editors with label="Invite more editors" %}
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+		<a class="btn btn-link" href="{{ request.path }}">
+			Cancel
+		</a>
+
+	</form>
+{% endblock %}
