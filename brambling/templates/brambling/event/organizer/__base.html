@@ -2,9 +2,12 @@
 
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
-{% block content %}
+{% block top %}
+	{{ block.super }}
 	{% include "brambling/event/organizer/_header.html" %}
+{% endblock %}
 
+{% block content %}
 	<div class="row">
 		<div class="col-lg-2 col-md-3 col-sm-3">
 			{% include "brambling/event/organizer/_nav.html" %}

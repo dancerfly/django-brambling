@@ -47,28 +47,25 @@ def get_event_admin_nav(event, request):
         return []
     return (
         {
-            'name': 'Settings',
-            'icon': 'cog',
+            'name': 'General',
             'items': (
-                ('brambling_event_basic', 'Basic'),
+                ('brambling_event_basic', 'Basic Information'),
+                ('brambling_event_permissions', 'Team & Permissions'),
                 ('brambling_event_design', 'Design'),
-                ('brambling_event_permissions', 'Permissions'),
                 ('brambling_event_danger_zone', 'Danger zone'),
             ),
         },
         {
             'name': 'Registration',
-            'icon': 'list',
             'items': (
-                ('brambling_event_registration', 'Basic & payment'),
+                ('brambling_event_registration', 'Settings & Payment'),
                 ('brambling_item_list', 'Items'),
                 ('brambling_form_list', 'Forms'),
                 ('brambling_discount_list', 'Discounts'),
             ),
         },
         {
-            'name': 'Reports',
-            'icon': 'bar-chart',
+            'name': 'Data',
             'items': (
                 ('brambling_event_attendees', 'Attendees'),
                 ('brambling_event_orders', 'Orders'),
