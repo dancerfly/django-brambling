@@ -2,16 +2,14 @@
 
 {% load zenaida static %}
 
-{% block title %}Danger Zone – {{ block.super }}{% endblock %}
+{% block title %}Copy Event – {{ block.super }}{% endblock %}
 
 {% block main %}
 	{{ block.super }}
 
 	{% url "brambling_event_attendees" event_slug=event.slug organization_slug=event.organization.slug as attendees_url%}
 
-	<h2>Danger Zone</h2>
-
-	<h3>Copy event</h3>
+	<h2>Copy event</h2>
 	<p>Make a copy of this event with the same settings and items in any organization
 	you control.</p>
 	<div class='row'>
