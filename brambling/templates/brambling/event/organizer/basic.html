@@ -2,6 +2,8 @@
 
 {% load floppyforms staticfiles %}
 
+{% block title %}Basic Information - {{ block.super }}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 	{% include "brambling/forms/markdown/_modal.html" %}

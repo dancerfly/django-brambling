@@ -2,6 +2,8 @@
 
 {% load floppyforms staticfiles %}
 
+{% block title %}Settings &amp; Payment - {{ block.super }}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 	{% include "brambling/forms/_top_error_list.html" %}

@@ -2,6 +2,8 @@
 
 {% load floppyforms staticfiles daguerre %}
 
+{% block title %}Design - {{ block.super }}{% endblock %}
+
 {% block main %}
 	{{ block.super }}
 	{% include "brambling/forms/_top_error_list.html" %}
