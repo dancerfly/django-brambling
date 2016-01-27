@@ -52,7 +52,7 @@ def get_event_admin_nav(event, request):
                 ('brambling_event_basic', 'Basic Information'),
                 ('brambling_event_permissions', 'Team & Permissions'),
                 ('brambling_event_design', 'Design'),
-                ('brambling_event_danger_zone', 'Danger zone'),
+                ('brambling_event_danger_zone', 'Copy Event'),
             ),
         },
         {

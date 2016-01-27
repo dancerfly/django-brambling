@@ -12,7 +12,7 @@
 		{% form form using %}
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
-			<h2>Registration</h2>
+			<h2 class="margin-leader-0">Settings</h2>
 			{% if form.instance.is_published %}
 				{% formrow form.privacy %}
 			{% else %}
@@ -91,13 +91,16 @@
 			</div>
 			{% formrow form.liability_waiver %}
 
-			<h2>Payment</h2>
+			<h2 class="margin-leader-dbl">Payment Processors</h2>
+
+			<p>To change the cost of your event, <a href="{% url 'brambling_item_list' event.organization.slug event.slug %}">{% if event.items.count != 0 %}edit{% else %}set up{% endif %} items</a> for your shop.</p>
+
 			{% formrow form.currency %}
 
 			{% if organization_editable_by %}
 				<p>Payment methods can be managed in the <a href="{% url 'brambling_organization_update_payment' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
 			{% else %}
-				Payment methods can only be updated by people with permission to edit the organization.
+				<p>Payment methods can only be updated by people with permission to edit the organization.</p>
 			{% endif %}
 
 			<div class="row">

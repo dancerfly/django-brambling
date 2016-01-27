@@ -48,7 +48,11 @@
 		</div>
 		<div class="pull-right margin-leader-half margin-trailer-half">
 			<a href="{{ event.get_absolute_url }}" class="btn btn-sm btn-default navbar-btn">
-				View Live
+				{% if event.is_published %}
+					View Live
+				{% else %}
+					Preview
+				{% endif %}
 			</a>
 			{% if event.is_frozen and event.is_published %}
 				{# Don't display a button #}
