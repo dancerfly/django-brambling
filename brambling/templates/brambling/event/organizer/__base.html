@@ -20,3 +20,45 @@
 		</div>
 	</div>
 {% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script>
+		(function () {
+			var key = "collapsed-{{ event.pk }}",
+				collapsed = {
+					{% for group in event_admin_nav %}
+						"{{ group.name }}": false,
+					{% endfor %}
+				},
+				nameFromCollapse = function (ele) {
+					return $.trim($(ele).prev().text());
+				};
+
+			var stored = JSON.parse(sessionStorage.getItem(key));
+			if (stored) {
+				$.each(collapsed, function (group, _) {
+					if (stored[group] !== undefined) {
+						collapsed[group] = stored[group];
+					}
+				});
+				$('.js-nav-group .collapse').each(function (idx, ele) {
+					var value = collapsed[nameFromCollapse(ele)];
+					if (value) {
+						$(ele).collapse('hide');
+					}
+				});
+			};
+
+			$('.js-nav-group .collapse').on('show.bs.collapse', function () {
+				collapsed[nameFromCollapse(this)] = false;
+				sessionStorage.setItem(key, JSON.stringify(collapsed));
+			});
+
+			$('.js-nav-group .collapse').on('hide.bs.collapse', function () {
+				collapsed[nameFromCollapse(this)] = true;
+				sessionStorage.setItem(key, JSON.stringify(collapsed));
+			});
+		})();
+	</script>
+{% endblock %}

@@ -5,8 +5,8 @@
 </div>
 
 {% for group in event_admin_nav %}
-	<div class='panel panel-default'>
-		<div class='panel-heading'>
+	<div class='panel panel-default js-nav-group'>
+		<div class='panel-heading' id='navbarHeading{{ forloop.counter }}'>
 			<h4 class='panel-title'>
 				<a class='collapsed' role='button' data-toggle='collapse' href='#navbarCollapse{{ forloop.counter }}' aria-expanded='true' aria-controls='navbarCollapse{{ forloop.counter }}'>
 					{{ group.name }}
@@ -14,7 +14,7 @@
 				</a>
 			</h4>
 		</div>
-		<div id='navbarCollapse{{ forloop.counter }}' class='panel-collapse collapse in' role='tabpanel' aria-labelledby='headingOne'>
+		<div id='navbarCollapse{{ forloop.counter }}' class='panel-collapse collapse in' role='tabpanel' aria-labelledby='navbarHeading{{ forloop.counter }}'>
 			<div class='list-group'>
 				{% for item in group.items %}
 					{% include 'brambling/event/organizer/_nav_item.html' with event=event url_name=item.0 name=item.1 request=request only %}
