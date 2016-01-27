@@ -3,72 +3,7 @@
 {% block title %}{{ event.name }} – {{ block.super }}{% endblock %}
 
 {% block content %}
-	<div class="navbar navbar-default">
-		<div class="navbar-left navbar-text">
-			<h4 class="margin-leader-0 margin-trailer-tiny">
-				<a class="color-black" href="{{ event.get_absolute_url }}">{{ event.name }}</a>
-			</h4>
-			<div class="muted">
-
-				{# When Display: #}
-				<i class="fa fa-clock-o fa-fw"></i>
-				{% include "brambling/event/_when.html" %}
-
-				{# Where Display: #}
-				{% if event.city and event.state_or_province and event.country %}
-					<i class="fa fa-map-marker fa-fw"></i>
-					{% include "brambling/event/_where.html" %}
-				{% endif %}
-
-				{# Org Display: #}
-				<i class="fa fa-group fa-fw"></i>
-				<a href="{{ event.organization.get_absolute_url }}">{{ event.organization.name }}</a>
-
-				{# Privacy Display: #}
-				{% if event.privacy == event.PUBLIC %}
-					<i class='fa fa-fw fa-globe'></i>
-				{% elif event.privacy == event.LINK %}
-					<i class='fa fa-fw fa-eye-slash'></i>
-				{% elif event.privacy == event.HALF_PUBLIC %}
-					<i class='fa fa-fw fa-envelope-o'></i>
-				{% elif event.privacy == event.INVITED %}
-					<i class='fa fa-fw fa-lock'></i>
-				{% else %}
-					<i class='fa fa-fw fa-question'></i>
-				{% endif %}
-				{% if event.privacy == event.PUBLIC %}
-					<span class='tipped' title='Anyone can find and view the event'>Public</span>
-				{% elif event.privacy == event.LINK %}
-					<span class='tipped' title='Anyone with a direct link can view the event'>Hidden</span>
-				{% elif event.privacy == event.HALF_PUBLIC %}
-					<span class='tipped' title='Anyone can find and view the event, but only people who are invited can register'>Invite</span>
-				{% elif event.privacy == event.INVITED %}
-					<span class='tipped' title='Only people invited to the event can see the event and register'>Secret</span>
-				{% else %}
-					Unknown Privacy
-				{% endif %}
-
-			</div>
-		</div>
-		<div class="container-fluid">
-			<div class="pull-right">
-				<a href="{{ event.get_absolute_url }}" class="btn btn-sm btn-default navbar-btn">
-					View Live
-				</a>
-				{% if event.is_frozen and event.is_published %}
-					{# Don't display a button #}
-				{% elif event.is_published %}
-					<a href='{% url "brambling_event_unpublish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-sm btn-danger navbar-btn'>Unpublish Event</a>
-				{% elif event.can_be_published %}
-					<a href='{% url "brambling_event_publish" event_slug=event.slug organization_slug=event.organization.slug %}?next={{ request.path }}' class='btn btn-sm btn-success navbar-btn'>Publish Event</a>
-				{% else %}
-					<button class='btn btn-sm btn-success navbar-btn' disabled>
-						Publish Event
-					</button>
-				{% endif %}
-			</div>
-		</div>{# /.container-fluid #}
-	</div>{# /.navbar #}
+	{% include "brambling/event/organizer/_header.html" %}
 
 	<div class="row">
 		<div class="col-lg-2 col-md-3 col-sm-3">
