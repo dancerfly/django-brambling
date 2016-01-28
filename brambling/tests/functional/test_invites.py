@@ -157,3 +157,6 @@ class InviteAcceptViewTestCase(TestCase):
         with mock.patch.object(wraps=Order.objects.for_request, target=Order.objects, attribute = 'for_request') as for_request:
             view.handle_invite()
         for_request.assert_called_once_with(create=True, request=view.request, event=view.content)
+        orders = Order.objects.all()
+        self.assertEqual(len(orders), 1)
+        self.assertEqual(orders[0].person, view.request.user)
