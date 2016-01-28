@@ -1,3 +1,4 @@
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.exceptions import ValidationError
@@ -5,12 +6,13 @@ from django.forms.models import model_to_dict
 from django.test import TestCase, RequestFactory
 
 from brambling.forms.organizer import EventRegistrationForm
-from brambling.models import Invite
+from brambling.models import Invite, Order
 from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrderFactory, TransactionFactory,
                                        ItemFactory, OrganizationFactory,
                                        PersonFactory, ItemOptionFactory)
 from brambling.views.core import InviteAcceptView
+import mock
 
 
 class InviteTestCase(TestCase):
@@ -59,7 +61,6 @@ class InviteTestCase(TestCase):
         self.assertEqual(mail.outbox[0].subject, "You've been invited to attend {}!".format(content.name))
 
     def test_subject__transfer(self):
-        event = EventFactory()
         self.person = PersonFactory()
         event = EventFactory()
         self.order = OrderFactory(event=event, person=self.person)
@@ -126,6 +127,13 @@ class EventRegistrationFormTestCase(TestCase):
 
 
 class InviteAcceptViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.session_middleware = SessionMiddleware()
+
+    def _add_session(self, request):
+        self.session_middleware.process_request(request)
+
     def test_context_data__no_invite(self):
         view = InviteAcceptView()
         view.invite = None
@@ -137,3 +145,15 @@ class InviteAcceptViewTestCase(TestCase):
         self.assertFalse(context['invited_person_exists'])
         self.assertFalse(context['sender_display'])
         self.assertFalse(context['invited_person_exists'])
+
+    def test_invite(self):
+        view = InviteAcceptView()
+        event = EventFactory()
+        view.invite = InviteFactory(content_id=event.pk, kind=Invite.EVENT, user=PersonFactory(first_name="Conan",last_name="O'Brien"))
+        view.content = view.invite.get_content()
+        view.request = RequestFactory().get('/')
+        view.request.user=PersonFactory()
+        self._add_session(view.request)
+        with mock.patch.object(wraps=Order.objects.for_request, target=Order.objects, attribute = 'for_request') as for_request:
+            view.handle_invite()
+        for_request.assert_called_once_with(create=True, request=view.request, event=view.content)
