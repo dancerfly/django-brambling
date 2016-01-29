@@ -133,7 +133,7 @@ class InviteFactory(factory.DjangoModelFactory):
     code = factory.Sequence(lambda n: "invite{}".format(n))
     email = "test@test.com"
     user = factory.SubFactory(PersonFactory)
-    kind = Invite.EVENT_EDITOR
+    kind = Invite.EVENT_EDIT
 
 
 class TransactionFactory(factory.DjangoModelFactory):

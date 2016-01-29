@@ -9,7 +9,8 @@ from django.utils import timezone
 from django.views.generic import TemplateView, View
 
 from brambling.models import (Event, BoughtItem, Invite, Order, Person,
-                              Organization, Transaction)
+                              Organization, Transaction, EventMember,
+                              OrganizationMember)
 from brambling.forms.user import SignUpForm, FloppyAuthenticationForm
 
 
@@ -116,10 +117,38 @@ class InviteAcceptView(TemplateView):
         content = self.content
         if invite.kind == Invite.EVENT:
             Order.objects.for_request(event=content, request=self.request, create=True)
-        elif invite.kind == Invite.EVENT_EDITOR:
-            content.additional_editors.add(self.request.user)
-        elif invite.kind == Invite.ORGANIZATION_EDITOR:
-            content.editors.add(self.request.user)
+        elif invite.kind == Invite.EVENT_EDIT:
+            member = EventMember.objects.get_or_create(
+                person=self.request.user,
+                event=content,
+                defaults={'role': EventMember.EDIT},
+            )[0]
+            # If they're at VIEW, upgrade them to EDIT.
+            if member.role != EventMember.EDIT:
+                member.role = EventMember.EDIT
+                member.save()
+        elif invite.kind == Invite.EVENT_VIEW:
+            EventMember.objects.get_or_create(
+                person=self.request.user,
+                event=content,
+                defaults={'role': EventMember.VIEW},
+            )
+        elif invite.kind == Invite.ORGANIZATION_EDIT:
+            member = OrganizationMember.objects.get_or_create(
+                person=self.request.user,
+                organization=content,
+                defaults={'role': OrganizationMember.EDIT},
+            )[0]
+            # If they're at VIEW, upgrade them to EDIT.
+            if member.role != OrganizationMember.EDIT:
+                member.role = OrganizationMember.EDIT
+                member.save()
+        elif invite.kind == Invite.ORGANIZATION_VIEW:
+            OrganizationMember.objects.get_or_create(
+                person=self.request.user,
+                organization=content,
+                defaults={'role': OrganizationMember.VIEW},
+            )
         elif invite.kind == Invite.TRANSFER:
             if content.status != BoughtItem.BOUGHT:
                 invite.delete()

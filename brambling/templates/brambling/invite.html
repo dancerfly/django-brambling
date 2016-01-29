@@ -11,10 +11,10 @@
 		<h2>
 			{% if invite.kind == invite.EVENT %}
 				You've been invited to an event!
-			{% elif invite.kind == invite.EVENT_EDITOR %}
-				You've been invited to edit an event!
-			{% elif invite.kind == invite.ORGANIZATION_EDITOR %}
-				You've been invited to edit an organization!
+			{% elif invite.kind == invite.EVENT_EDIT or invite.kind == invite.EVENT_VIEW %}
+				You've been invited to collaborate on an event!
+			{% elif invite.kind == invite.ORGANIZATION_EDIT or invite.kind == invite.ORGANIZATION_VIEW %}
+				You've been invited to join an organization!
 			{% elif invite.kind == invite.TRANSFER %}
 				You've been offered an item transfer!
 			{% else %}

@@ -381,7 +381,7 @@ class EventPermissionsForm(forms.ModelForm):
                 invite, created = Invite.objects.get_or_create_invite(
                     email=editor,
                     user=self.request.user,
-                    kind=Invite.EVENT_EDITOR,
+                    kind=Invite.EVENT_EDIT,
                     content_id=instance.pk
                 )
                 if created:

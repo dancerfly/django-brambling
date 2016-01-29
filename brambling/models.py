@@ -297,6 +297,25 @@ def create_defaults(app_config, **kwargs):
             ])
 
 
+class OrganizationMember(models.Model):
+    EDIT = 'edit'
+    VIEW = 'view'
+    ROLE_CHOICES = (
+        (EDIT, 'Can edit'),
+        (VIEW, 'Can view'),
+    )
+    organization = models.ForeignKey('Organization')
+    person = models.ForeignKey('Person')
+    role = models.CharField(max_length=8, choices=ROLE_CHOICES)
+
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('organization', 'person')
+
+
 class Organization(AbstractDwollaModel):
     DEMO_SLUG = 'demo'
 
@@ -317,6 +336,13 @@ class Organization(AbstractDwollaModel):
 
     owner = models.ForeignKey('Person',
                               related_name='owner_orgs')
+    members = models.ManyToManyField(
+        'Person',
+        through=OrganizationMember,
+        related_name='organizations',
+        blank=True,
+        null=True,
+    )
     editors = models.ManyToManyField('Person',
                                      related_name='editor_orgs',
                                      blank=True, null=True)
@@ -384,6 +410,25 @@ class Organization(AbstractDwollaModel):
         return self.slug == Organization.DEMO_SLUG
 
 
+class EventMember(models.Model):
+    EDIT = 'edit'
+    VIEW = 'view'
+    ROLE_CHOICES = (
+        (EDIT, 'Can edit'),
+        (VIEW, 'Can view'),
+    )
+    event = models.ForeignKey('Event')
+    person = models.ForeignKey('Person')
+    role = models.CharField(max_length=8, choices=ROLE_CHOICES)
+
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('event', 'person')
+
+
 class Event(models.Model):
     PUBLIC = 'public'
     LINK = 'link'
@@ -445,6 +490,13 @@ class Event(models.Model):
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
     organization = models.ForeignKey(Organization)
+    members = models.ManyToManyField(
+        'Person',
+        through=EventMember,
+        related_name='events',
+        blank=True,
+        null=True,
+    )
     additional_editors = models.ManyToManyField('Person',
                                                 related_name='editor_events',
                                                 blank=True, null=True)
@@ -512,7 +564,7 @@ class Event(models.Model):
                                      content_id=self.pk)
 
     def get_editor_invites(self):
-        return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
+        return Invite.objects.filter(kind=Invite.EVENT_EDIT,
                                      content_id=self.pk)
 
     def stripe_connected(self):
@@ -1684,13 +1736,17 @@ class InviteManager(models.Manager):
 
 class Invite(models.Model):
     EVENT = 'event'
-    EVENT_EDITOR = 'editor'
-    ORGANIZATION_EDITOR = 'org_editor'
+    EVENT_EDIT = 'event_edit'
+    EVENT_VIEW = 'event_view'
+    ORGANIZATION_EDIT = 'org_edit'
+    ORGANIZATION_VIEW = 'org_view'
     TRANSFER = 'transfer'
     KIND_CHOICES = (
         (EVENT, _('Event')),
-        (EVENT_EDITOR, _("Event Editor")),
-        (ORGANIZATION_EDITOR, _("Organization Editor")),
+        (EVENT_EDIT, _("Edit event")),
+        (EVENT_VIEW, _("View event")),
+        (ORGANIZATION_EDIT, _("Edit organization")),
+        (ORGANIZATION_VIEW, _("View organization")),
         (TRANSFER, _("Transfer")),
     )
 
@@ -1722,9 +1778,13 @@ class Invite(models.Model):
     def get_content(self):
         if self.kind == Invite.EVENT:
             model = Event
-        elif self.kind == Invite.EVENT_EDITOR:
+        elif self.kind == Invite.EVENT_EDIT:
             model = Event
-        elif self.kind == Invite.ORGANIZATION_EDITOR:
+        elif self.kind == Invite.EVENT_VIEW:
+            model = Event
+        elif self.kind == Invite.ORGANIZATION_EDIT:
+            model = Organization
+        elif self.kind == Invite.ORGANIZATION_VIEW:
             model = Organization
         elif self.kind == Invite.TRANSFER:
             model = BoughtItem
