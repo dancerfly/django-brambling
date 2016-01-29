@@ -33,13 +33,13 @@
 					<i class='fa fa-fw fa-question'></i>
 				{% endif %}
 				{% if event.privacy == event.PUBLIC %}
-					<span class='tipped' title='Anyone can find and view the event'>Public</span>
+					<span class='tipped' data-placement='bottom' title='Anyone can find and view the event'>Public</span>
 				{% elif event.privacy == event.LINK %}
-					<span class='tipped' title='Anyone with a direct link can view the event'>Hidden</span>
+					<span class='tipped' data-placement='bottom' title='Anyone with a direct link can view the event'>Hidden</span>
 				{% elif event.privacy == event.HALF_PUBLIC %}
-					<span class='tipped' title='Anyone can find and view the event, but only people who are invited can register'>Invite</span>
+					<span class='tipped' data-placement='bottom' title='Anyone can find and view the event, but only people who are invited can register'>Invite</span>
 				{% elif event.privacy == event.INVITED %}
-					<span class='tipped' title='Only people invited to the event can see the event and register'>Secret</span>
+					<span class='tipped' data-placement='bottom' title='Only people invited to the event can see the event and register'>Secret</span>
 				{% else %}
 					Unknown Privacy
 				{% endif %}
