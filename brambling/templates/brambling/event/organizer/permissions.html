@@ -25,28 +25,34 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<th>{{ organization.owner.get_full_name }}</th>
-						<td>{{ organization.owner.email }}</td>
-						<td>Is organization owner</td>
-						{% if organization_editable_by %}<td></td>{% endif %}
-					</tr>
-					{% with members=organization.members.all %}
-						{% for member in members %}
-							<tr>
-								<th>{{ member.get_full_name }}</th>
-								<td>{{ member.email }}</td>
-								<td>Can edit organization</td>
-								{% if organization_editable_by %}<td></td>{% endif %}
-							</tr>
-						{% endfor %}
-					{% endwith %}
+					{% for form in organizationmember_forms %}
+						<tr>
+							<th>{{ form.instance.person.get_full_name }}</th>
+							<td>{{ form.instance.person.email }}</td>
+							<td>
+								{% if organization_editable_by %}
+									{% formfield form.role %}
+								{% else %}
+									{{ form.instance.get_role_display }}
+								{% endif %}
+							</td>
+							<td>
+								{% if organization_editable_by %}
+									<a href="{% url 'brambling_event_remove_member' event_slug=event.slug organization_slug=event.organization.slug pk=form.instance.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
 					{% for form in eventmember_forms %}
 						<tr>
 							<th>{{ form.instance.person.get_full_name }}</th>
 							<td>{{ form.instance.person.email }}</td>
 							<td>
-								{% formfield form.role %}
+								{% if organization_editable_by %}
+									{% formfield form.role %}
+								{% else %}
+									{{ form.instance.get_role_display }}
+								{% endif %}
 							</td>
 							<td>
 								{% if organization_editable_by %}
@@ -56,7 +62,7 @@
 						</tr>
 					{% endfor %}
 
-					{% for invite in event.get_editor_invites %}
+					{% for invite in invites %}
 						<tr>
 							<th>{{ invite.email }}</th>
 							<td><em>

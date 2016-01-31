@@ -36,7 +36,8 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
                               Person, CustomForm, Organization,
-                              SavedReport, EventMember)
+                              SavedReport, EventMember, OrganizationMember,
+                              Invite)
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
@@ -390,25 +391,38 @@ class EventPermissionsView(TemplateView):
     context_object_name = 'event'
 
     def get(self, request, *args, **kwargs):
-        self.event = self.get_event()
-        self.eventmember_forms = self.get_eventmember_forms()
+        self.init(request)
         context = self.get_context_data()
         return self.render_to_response(context)
 
-    def get_event(self):
+    def init(self, request):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
-        event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
-        user = self.request.user
-        if not event.editable_by(user):
-            raise Http404
-        self.organization_editable_by = self.organization.editable_by(user)
-        return event
+        self.event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
+        self.organizationmember = OrganizationMember.objects.filter(
+            organization=self.organization,
+            person=request.user
+        ).first()
+        self.eventmember = EventMember.objects.filter(
+            event=self.event,
+            person=request.user
+        ).first()
 
-    def get_eventmember_forms(self):
+        if not self.eventmember and not self.organizationmember and not request.user.is_superuser:
+            raise Http404
+
+        OrganizationMemberForm = modelform_factory(OrganizationMember, fields=('role',))
+        data = self.request.POST if self.request.method == 'POST' else None
+        self.organizationmember_forms = [
+            OrganizationMemberForm(instance=member, prefix='organization-{}'.format(member.pk), data=data)
+            for member in OrganizationMember.objects.filter(organization=self.organization).order_by('role').select_related('person')
+        ]
+
         EventMemberForm = modelform_factory(EventMember, fields=('role',))
         data = self.request.POST if self.request.method == 'POST' else None
-        return [EventMemberForm(instance=member, prefix='member-{}'.format(member.pk), data=data)
-                for member in EventMember.objects.filter(event=self.event).order_by('role').select_related('person')]
+        self.eventmember_forms = [
+            EventMemberForm(instance=member, prefix='event-{}'.format(member.pk), data=data)
+            for member in EventMember.objects.filter(event=self.event).order_by('role').select_related('person')
+        ]
 
     def get_success_url(self):
         return reverse('brambling_event_permissions',
@@ -422,8 +436,19 @@ class EventPermissionsView(TemplateView):
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'organization': self.organization,
-            'organization_editable_by': self.organization_editable_by,
+            'organization_editable_by': (
+                self.request.user.is_superuser or
+                (self.organizationmember and
+                 self.organizationmember.role == OrganizationMember.EDIT)
+            ),
+            'organizationmember': self.organizationmember,
+            'eventmember': self.eventmember,
+            'organizationmember_forms': self.organizationmember_forms,
             'eventmember_forms': self.eventmember_forms,
+            'invites': Invite.objects.filter(
+                kind__in=(Invite.EVENT_EDIT, Invite.EVENT_VIEW),
+                content_id=self.event.pk
+            ),
         })
         return context
 

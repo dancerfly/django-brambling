@@ -572,10 +572,6 @@ class Event(models.Model):
         return Invite.objects.filter(kind=Invite.EVENT,
                                      content_id=self.pk)
 
-    def get_editor_invites(self):
-        return Invite.objects.filter(kind=Invite.EVENT_EDIT,
-                                     content_id=self.pk)
-
     def stripe_connected(self):
         if self.api_type == Event.LIVE:
             return self.organization.stripe_live_connected()
