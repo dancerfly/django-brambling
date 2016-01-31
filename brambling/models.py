@@ -298,15 +298,17 @@ def create_defaults(app_config, **kwargs):
 
 
 class OrganizationMember(models.Model):
-    EDIT = 'edit'
-    VIEW = 'view'
+    EDIT = '1-edit'
+    VIEW = '2-view'
+    OWNER = '0-owner'
     ROLE_CHOICES = (
-        (EDIT, 'Can edit'),
-        (VIEW, 'Can view'),
+        (OWNER, 'Is organization owner'),
+        (EDIT, 'Can edit organization'),
+        (VIEW, 'Can view organization'),
     )
     organization = models.ForeignKey('Organization')
     person = models.ForeignKey('Person')
-    role = models.CharField(max_length=8, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=7, choices=ROLE_CHOICES)
 
     # Internal tracking fields.
     created = models.DateTimeField(auto_now_add=True)
@@ -335,7 +337,8 @@ class Organization(AbstractDwollaModel):
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
 
     owner = models.ForeignKey('Person',
-                              related_name='owner_orgs')
+                              related_name='owner_orgs',
+                              blank=True, null=True)
     members = models.ManyToManyField(
         'Person',
         through=OrganizationMember,
@@ -411,15 +414,15 @@ class Organization(AbstractDwollaModel):
 
 
 class EventMember(models.Model):
-    EDIT = 'edit'
-    VIEW = 'view'
+    EDIT = '1-edit'
+    VIEW = '2-view'
     ROLE_CHOICES = (
         (EDIT, 'Can edit event'),
         (VIEW, 'Can view event'),
     )
     event = models.ForeignKey('Event')
     person = models.ForeignKey('Person')
-    role = models.CharField(max_length=8, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=6, choices=ROLE_CHOICES)
 
     # Internal tracking fields.
     created = models.DateTimeField(auto_now_add=True)
@@ -1738,6 +1741,7 @@ class Invite(models.Model):
     EVENT = 'event'
     EVENT_EDIT = 'event_edit'
     EVENT_VIEW = 'event_view'
+    ORGANIZATION_OWNER = 'org_owner'
     ORGANIZATION_EDIT = 'org_edit'
     ORGANIZATION_VIEW = 'org_view'
     TRANSFER = 'transfer'

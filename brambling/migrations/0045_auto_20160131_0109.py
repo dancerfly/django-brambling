@@ -16,7 +16,9 @@ class Migration(migrations.Migration):
             name='EventMember',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('role', models.CharField(max_length=8, choices=[('edit', 'Can edit event'), ('view', 'Can view event')])),
+                ('role', models.CharField(max_length=6, choices=[('1-edit', 'Can edit event'), ('2-view', 'Can view event')])),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
                 ('event', models.ForeignKey(to='brambling.Event')),
                 ('person', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
@@ -28,7 +30,9 @@ class Migration(migrations.Migration):
             name='OrganizationMember',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('role', models.CharField(max_length=8, choices=[('edit', 'Can edit'), ('view', 'Can view')])),
+                ('role', models.CharField(max_length=7, choices=[('0-owner', 'Is organization owner'), ('1-edit', 'Can edit organization'), ('2-view', 'Can view organization')])),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
                 ('organization', models.ForeignKey(to='brambling.Organization')),
                 ('person', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
@@ -60,6 +64,12 @@ class Migration(migrations.Migration):
             model_name='invite',
             name='kind',
             field=models.CharField(max_length=10, choices=[('event', 'Event'), ('event_edit', 'Edit event'), ('event_view', 'View event'), ('org_edit', 'Edit organization'), ('org_view', 'View organization'), ('transfer', 'Transfer')]),
+            preserve_default=True,
+        ),
+        migrations.AlterField(
+            model_name='organization',
+            name='owner',
+            field=models.ForeignKey(related_name='owner_orgs', blank=True, to=settings.AUTH_USER_MODEL, null=True),
             preserve_default=True,
         ),
     ]
