@@ -317,6 +317,9 @@ class OrganizationMember(models.Model):
     class Meta:
         unique_together = ('organization', 'person')
 
+    def __unicode__(self):
+        return u"{}: {}".format(self.organization, self.person)
+
 
 class Organization(AbstractDwollaModel):
     DEMO_SLUG = 'demo'
@@ -430,6 +433,9 @@ class EventMember(models.Model):
 
     class Meta:
         unique_together = ('event', 'person')
+
+    def __unicode__(self):
+        return u"{}: {}: {}".format(self.event.organization, self.event, self.person)
 
 
 class Event(models.Model):
