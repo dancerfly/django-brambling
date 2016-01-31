@@ -36,7 +36,7 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItemDiscount, BoughtItem,
                               Person, CustomForm, Organization,
-                              SavedReport)
+                              SavedReport, EventMember)
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
@@ -384,13 +384,18 @@ class EventDesignView(UpdateView):
         return context
 
 
-class EventPermissionsView(UpdateView):
+class EventPermissionsView(TemplateView):
     model = Event
     template_name = 'brambling/event/organizer/permissions.html'
     context_object_name = 'event'
-    form_class = EventPermissionsForm
 
-    def get_object(self):
+    def get(self, request, *args, **kwargs):
+        self.event = self.get_event()
+        self.eventmember_forms = self.get_eventmember_forms()
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def get_event(self):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
         user = self.request.user
@@ -399,25 +404,26 @@ class EventPermissionsView(UpdateView):
         self.organization_editable_by = self.organization.editable_by(user)
         return event
 
-    def get_form_kwargs(self):
-        kwargs = super(EventPermissionsView, self).get_form_kwargs()
-        kwargs['request'] = self.request
-        kwargs['organization'] = self.organization
-        kwargs['organization_editable_by'] = self.organization_editable_by
-        return kwargs
+    def get_eventmember_forms(self):
+        EventMemberForm = modelform_factory(EventMember, fields=('role',))
+        data = self.request.POST if self.request.method == 'POST' else None
+        return [EventMemberForm(instance=member, prefix='member-{}'.format(member.pk), data=data)
+                for member in EventMember.objects.filter(event=self.event).order_by('role').select_related('person')]
 
     def get_success_url(self):
         return reverse('brambling_event_permissions',
-                       kwargs={'event_slug': self.object.slug,
-                               'organization_slug': self.object.organization.slug})
+                       kwargs={'event_slug': self.event.slug,
+                               'organization_slug': self.event.organization.slug})
 
     def get_context_data(self, **kwargs):
         context = super(EventPermissionsView, self).get_context_data(**kwargs)
         context.update({
+            'event': self.event,
             'cart': None,
-            'event_admin_nav': get_event_admin_nav(self.object, self.request),
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'organization': self.organization,
             'organization_editable_by': self.organization_editable_by,
+            'eventmember_forms': self.eventmember_forms,
         })
         return context
 
@@ -509,7 +515,7 @@ class StripeConnectView(View):
                                             kwargs={'organization_slug': organization.slug}))
 
 
-class EventRemoveEditorView(View):
+class EventRemoveMemberView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
@@ -519,11 +525,14 @@ class EventRemoveEditorView(View):
         if not organization.editable_by(request.user):
             raise Http404
         try:
-            person = Person.objects.get(pk=kwargs['pk'])
-        except Person.DoesNotExist:
+            member = EventMember.objects.get(
+                pk=kwargs['pk'],
+                event=event,
+            )
+        except EventMember.DoesNotExist:
             pass
         else:
-            event.additional_editors.remove(person)
+            member.delete()
         messages.success(request, 'Removed editor successfully.')
         return HttpResponseRedirect(reverse('brambling_event_permissions',
                                     kwargs={'event_slug': event.slug, 'organization_slug': organization.slug}))

@@ -8,7 +8,8 @@ import floppyforms.__future__ as forms
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, Invite, CustomForm,
                               CustomFormField, Order, Organization, SavedReport,
-                              DwollaAccount)
+                              DwollaAccount, EventMember,
+                              OrganizationMember)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.payment import LIVE, TEST
 

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='EventMember',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('role', models.CharField(max_length=8, choices=[('edit', 'Can edit'), ('view', 'Can view')])),
+                ('role', models.CharField(max_length=8, choices=[('edit', 'Can edit event'), ('view', 'Can view event')])),
                 ('event', models.ForeignKey(to='brambling.Event')),
                 ('person', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],

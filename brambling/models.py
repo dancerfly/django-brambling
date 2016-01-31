@@ -414,8 +414,8 @@ class EventMember(models.Model):
     EDIT = 'edit'
     VIEW = 'view'
     ROLE_CHOICES = (
-        (EDIT, 'Can edit'),
-        (VIEW, 'Can view'),
+        (EDIT, 'Can edit event'),
+        (VIEW, 'Can view event'),
     )
     event = models.ForeignKey('Event')
     person = models.ForeignKey('Person')
