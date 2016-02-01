@@ -27,7 +27,6 @@ from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
-from brambling.mail import InviteMailer
 from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
@@ -391,10 +390,31 @@ class Organization(AbstractDwollaModel):
             'organization_slug': self.slug,
         })
 
-    def editable_by(self, user):
-        return (user.is_authenticated() and user.is_active and
-                (user.is_superuser or user.pk == self.owner_id or
-                 self.editors.filter(pk=user.pk).exists()))
+    def has_admin_permission(self, person):
+        if not person.is_authenticated() or not person.is_active:
+            return False
+
+        if person.is_superuser:
+            return True
+
+        return OrganizationMember.objects.filter(
+            organization=self,
+            person=person,
+            role=OrganizationMember.OWNER
+        ).exists()
+
+    def has_edit_permission(self, person):
+        if not person.is_authenticated() or not person.is_active:
+            return False
+
+        if person.is_superuser:
+            return True
+
+        return OrganizationMember.objects.filter(
+            organization=self,
+            person=person,
+            role__in=(OrganizationMember.OWNER, OrganizationMember.EDIT)
+        ).exists()
 
     def stripe_live_connected(self):
         return bool(stripe_live_settings_valid() and self.stripe_user_id)
@@ -541,14 +561,27 @@ class Event(models.Model):
     def get_liability_waiver(self):
         return self.liability_waiver.format(event=self.name, organization=self.organization.name)
 
-    def editable_by(self, user):
-        return (
-            self.organization.editable_by(user) or (
-                user.is_authenticated() and
-                user.is_active and
-                self.additional_editors.filter(pk=user.pk).exists()
-            )
-        )
+    def has_edit_permission(self, person):
+        if not person.is_authenticated() or not person.is_active:
+            return False
+
+        if person.is_superuser:
+            return True
+
+        has_org_edit = OrganizationMember.objects.filter(
+            organization__event=self,
+            person=person,
+            role__in=(OrganizationMember.OWNER,
+                      OrganizationMember.EDIT)
+        ).exists()
+        if has_org_edit:
+            return True
+
+        return EventMember.objects.filter(
+            event=self,
+            person=person,
+            role=EventMember.EDIT
+        ).exists()
 
     def viewable_by(self, user):
         if self.editable_by(user):
@@ -1769,34 +1802,6 @@ class Invite(models.Model):
 
     class Meta:
         unique_together = (('email', 'content_id', 'kind'),)
-
-    def send(self, site, content=None, secure=False):
-        InviteMailer(
-            site=site,
-            secure=secure,
-            invite=self,
-            content=content,
-            key="invite_{}".format(self.kind),
-        ).send()
-        self.is_sent = True
-        self.save()
-
-    def get_content(self):
-        if self.kind == Invite.EVENT:
-            model = Event
-        elif self.kind == Invite.EVENT_EDIT:
-            model = Event
-        elif self.kind == Invite.EVENT_VIEW:
-            model = Event
-        elif self.kind == Invite.ORGANIZATION_EDIT:
-            model = Organization
-        elif self.kind == Invite.ORGANIZATION_VIEW:
-            model = Organization
-        elif self.kind == Invite.TRANSFER:
-            model = BoughtItem
-        else:
-            raise ValueError('Unknown kind.')
-        return model.objects.get(pk=self.content_id)
 
 
 class CustomForm(models.Model):
