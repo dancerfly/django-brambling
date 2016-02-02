@@ -31,6 +31,8 @@ from brambling.views.orders import (
 from brambling.views.core import (
     ExceptionView,
     DashboardView,
+)
+from brambling.views.invites import (
     InviteAcceptView,
     InviteSendView,
     InviteDeleteView,
