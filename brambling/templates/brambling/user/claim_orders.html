@@ -20,8 +20,8 @@
 	{% else %}
 		{% if claimable_orders %}
 			<p>
-				{% with claimable_count=claimable_orders|length unclaimable_count=unclaimable_orders|length %}
-				{% with order_count=claimable_count|add:unclaimable_count %}
+				{% with claimable_count=claimable_orders|length mergeable_count=mergeable_orders|length %}
+				{% with order_count=claimable_count|add:mergeable_count %}
 				{{ order_count|apnumber|capfirst }} order{{ order_count|pluralize }} {% if order_count == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
 				Claim order{{ claimable_orders|pluralize }} below to make changes or keep {% if claimable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
 				{% endwith %}{% endwith %}
@@ -50,13 +50,13 @@
 			</div>
 		{% endif %}
 
-		{% if unclaimable_orders %}
+		{% if mergeable_orders %}
 			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders already associated with this account.</p>
 
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
-						{% for order in unclaimable_orders %}
+						{% for order in mergeable_orders %}
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
@@ -70,7 +70,7 @@
 			</div>
 		{% endif %}
 
-		{% if not claimable_orders and not unclaimable_orders %}
+		{% if not claimable_orders and not mergeable_orders %}
 			<p>Thanks for stopping by! Doesn't look like there are any orders out there for you to claim at the moment.</p>
 		{% endif %}
 	{% endif %}

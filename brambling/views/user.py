@@ -296,7 +296,7 @@ class ClaimOrdersView(TemplateView):
         context = super(ClaimOrdersView, self).get_context_data(**kwargs)
         context.update({
             'claimable_orders': self.request.user.get_claimable_orders().select_related('event__organization'),
-            'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
+            'mergeable_orders': self.request.user.get_mergeable_orders().select_related('event__organization'),
         })
         return context
 
