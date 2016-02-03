@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.http import Http404
 from django.test import TestCase, RequestFactory
 
@@ -98,6 +99,10 @@ class MergeUnclaimableOrderTest(TestCase):
 
         self.view.request = self.factory.post('/', {'pk': self.order2.pk})
         self.view.request.user = self.person
+
+        setattr(self.view.request, 'session', 'session')
+        messages = FallbackStorage(self.view.request)
+        setattr(self.view.request, '_messages', messages)
 
     def test_should_redirect(self):
         response = self.view.post(self.view.request)

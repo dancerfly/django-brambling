@@ -325,8 +325,15 @@ class MergeOrderView(View):
                                                           attendee=None)
         old_order.delete()
 
-        return HttpResponseRedirect(reverse('brambling_claim_orders'))
-
+        messages.add_message(request, messages.SUCCESS,
+                             "Orders successfully merged.")
+        url = reverse(
+            'brambling_event_attendee_list',
+            kwargs={
+                'event_slug': new_order.event.slug,
+                'organization_slug': new_order.event.organization.slug,
+            })
+        return HttpResponseRedirect(url)
 
 
 class ClaimOrderView(View):
