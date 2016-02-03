@@ -70,10 +70,12 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title" id="myModalLabel">Confirm Merge: {{ order.event.name }}</h4>
+													<h4 class="modal-title" id="myModalLabel">Confirm Merge</h4>
 												</div>
 												<div class="modal-body">
-													<p>You are about to merge two orders.</p>
+													<p>You are about to merge two orders.  Order <strong>{{ order.code }}</strong>, which was created using your email address but is not associated with your Dancerfly account, will be merged with your order for <strong>{{ order.event.name }}</strong>.</p>
+													<p>After the merge, all purchases from both orders will be part of the same order, however you must reassign attendees for them.</p>
+													<p>Order {{ order.code }} will be deleted from the system.</p>
 													<p>This procedure cannot be undone. Do you want to proceed?</p>
 												</div>
 												<div class="modal-footer">
@@ -81,7 +83,7 @@
 													<form action="{{ merge_url }}" method='post' class='inline-block'>
 														{% csrf_token %}
 														<input type="hidden" name="pk" value="{{ order.pk }}">
-														<button class='btn btn-danger' type='submit'>Yes, merge it</button>
+														<button class='btn btn-danger' type='submit'>Yes, merge the orders</button>
 													</form>
 												</div>
 											</div>
