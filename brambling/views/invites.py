@@ -8,7 +8,7 @@ from brambling.utils.invites import get_invite_or_404, get_invite
 
 
 class InviteAcceptView(TemplateView):
-    template_name = 'brambling/invite.html'
+    template_name = 'brambling/invites/__base.html'
 
     def get(self, request, *args, **kwargs):
         try:
@@ -28,7 +28,7 @@ class InviteAcceptView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(InviteAcceptView, self).get_context_data(**kwargs)
         if self.invite:
-            invited_person_exists = Person.objects.filter(email=self.invite.email).exists()
+            invited_person_exists = Person.objects.filter(email=self.invite.invite.email).exists()
             sender_display = self.invite.get_sender_display()
             invite = self.invite.invite
             content = self.invite.get_content()
@@ -49,6 +49,11 @@ class InviteAcceptView(TemplateView):
             context['signup_form'].initial['email'] = self.invite.invite.email
             context['login_form'].initial['username'] = self.invite.invite.email
         return context
+
+    def get_template_names(self):
+        if self.invite and self.invite.accept_template:
+            return [self.invite.accept_template]
+        return super(InviteAcceptView, self).get_template_names()
 
     def get_success_url(self):
         return self.invite.post_accept_url()

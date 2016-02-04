@@ -54,6 +54,9 @@ def register_invite(cls):
 
 class BaseInvite(object):
     model = None
+    slug = None
+    verbose_name = None
+    accept_template = None
 
     def __init__(self, request, invite, content=NOT_PROVIDED):
         self.request = request
@@ -109,6 +112,7 @@ class EventInvite(BaseInvite):
     model = Event
     slug = 'event'
     verbose_name = 'Can attend event'
+    accept_template = 'brambling/invites/event.html'
 
     def accept(self):
         # Create an order if one doesn't exist already.
@@ -146,6 +150,7 @@ class EventEditInvite(BaseInvite):
     model = Event
     slug = 'event_edit'
     verbose_name = 'Can edit event'
+    accept_template = 'brambling/invites/event_edit.html'
 
     def accept(self):
         member = EventMember.objects.get_or_create(
@@ -184,6 +189,7 @@ class EventViewInvite(BaseInvite):
     model = Event
     slug = 'event_view'
     verbose_name = 'Can view event'
+    accept_template = 'brambling/invites/event_view.html'
 
     def accept(self):
         # If they already have a better permission, this invite
@@ -220,6 +226,7 @@ class OrganizationOwnerInvite(BaseInvite):
     model = Organization
     slug = 'org_owner'
     verbose_name = 'Is organization owner'
+    accept_template = 'brambling/invites/org_owner.html'
 
     def accept(self):
         member = OrganizationMember.objects.get_or_create(
@@ -256,6 +263,7 @@ class OrganizationEditInvite(BaseInvite):
     model = Organization
     slug = 'org_edit'
     verbose_name = 'Can edit organization'
+    accept_template = 'brambling/invites/org_edit.html'
 
     def accept(self):
         member = OrganizationMember.objects.get_or_create(
@@ -292,6 +300,7 @@ class OrganizationViewInvite(BaseInvite):
     model = Organization
     slug = 'org_view'
     verbose_name = 'Can view organization'
+    accept_template = 'brambling/invites/org_view.html'
 
     def accept(self):
         OrganizationMember.objects.get_or_create(
@@ -324,6 +333,7 @@ class TransferInvite(BaseInvite):
     model = BoughtItem
     slug = 'transfer'
     verbose_name = 'Transfer'
+    accept_template = 'brambling/invites/transfer.html'
 
     def get_sender_display(self):
         if self.invite.user:
