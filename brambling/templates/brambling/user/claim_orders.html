@@ -61,8 +61,6 @@
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
 									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
-									<br>
-									<a href="javascript://" data-toggle="modal" data-target="#confirm-merge{{ forloop.counter }}" class="btn btn-danger">Merge</a>
 
 									{% url 'brambling_merge_order' as merge_url %}
 									<div class="modal fade" id="confirm-merge{{ forloop.counter }}" tabindex="-1" role="dialog" aria-hidden="true">
@@ -83,16 +81,17 @@
 													<form action="{{ merge_url }}" method='post' class='inline-block'>
 														{% csrf_token %}
 														<input type="hidden" name="pk" value="{{ order.pk }}">
-														<button class='btn btn-danger' type='submit'>Yes, merge the orders</button>
+														<button class='btn btn-primary' type='submit'>Yes, merge the orders</button>
 													</form>
 												</div>
 											</div>
 										</div>
 									</div>
-
+								</td>
+								<td class='text-right'>
+									<a href="javascript://" data-toggle="modal" data-target="#confirm-merge{{ forloop.counter }}" class="btn btn-default">Merge</a>
 								</td>
 							</tr>
-
 						{% endfor %}
 					</tbody>
 				</table>
