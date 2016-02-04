@@ -16,6 +16,8 @@
 			The following people have access to this event.
 		</p>
 
+		{{ invite_formset.management_form }}
+
 		<div class="table-responsive">
 			<table class='table table-striped'>
 				<thead>
@@ -83,9 +85,33 @@
 							</td>
 						</tr>
 					{% endfor %}
+
+					{% for form in invite_formset %}
+						{% form form using %}
+							<tr>
+								<td>{% formfield form.email with placeholder="Email" %}</td>
+								<td></td>
+								<td>{% formfield form.kind %}</td>
+								<td></td>
+							</tr>
+						{% endform %}
+					{% endfor %}
 				</tbody>
 			</table>
 		</div>
+
+		<script type="text/html" class='invite-form-template'>
+			{% with form=invite_formset.empty_form %}
+				{% form form using %}
+					<tr>
+						<td>{% formfield form.email with placeholder="Email" %}</td>
+						<td></td>
+						<td>{% formfield form.kind %}</td>
+						<td></td>
+					</tr>
+				{% endform %}
+			{% endwith %}
+		</script>
 
 		<button class="btn btn-primary" type="submit">
 			Save Changes

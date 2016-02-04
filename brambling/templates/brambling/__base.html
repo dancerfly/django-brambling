@@ -65,7 +65,8 @@
 						allow_single_deselect: (typeof $this.attr('required')) === "undefined" && first_child.val() === "",
 						placeholder_text_multiple: "Select all that apply",
 						placeholder_text_single: "Select one",
-						inherit_select_classes: true
+						inherit_select_classes: true,
+						disable_search_threshold: 5
 					};
 				// If the first child has no value, blank its label.
 				if (first_child.val() === "") first_child.html("");

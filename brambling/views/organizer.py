@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Sum, Q
+from django.forms import formset_factory
 from django.http import (Http404, HttpResponseRedirect, JsonResponse,
                          StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, render_to_response
@@ -22,14 +23,18 @@ from openpyxl.writer.excel import save_virtual_workbook
 import requests
 import unicodecsv as csv
 
+from brambling.forms.invites import (
+    BaseInviteFormSet,
+    EventAdminInviteForm,
+    OrganizationAdminInviteForm,
+)
 from brambling.forms.organizer import (ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
                                        ManualPaymentForm, CustomFormForm,
                                        CustomFormFieldFormSet, OrderNotesForm,
                                        OrganizationPaymentForm, AttendeeNotesForm,
                                        EventCreateForm, EventBasicForm,
-                                       EventDesignForm, EventPermissionsForm,
-                                       EventRegistrationForm, OrganizationPermissionsForm)
+                                       EventDesignForm, EventRegistrationForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
@@ -93,12 +98,28 @@ class OrganizationUpdateView(UpdateView):
 
 
 class OrganizationPermissionsView(OrganizationUpdateView):
-    form_class = OrganizationPermissionsForm
     template_name = 'brambling/organization/permissions.html'
     success_view_name = 'brambling_organization_update_permissions'
 
+    def get_form_kwargs(self):
+        kwargs = {
+            'request': self.request,
+            'content': self.object,
+        }
+        if self.request.method == 'POST':
+            kwargs['data'] = self.request.POST
+        return kwargs
+
+    def get_form_class(self):
+        return formset_factory(
+            OrganizationAdminInviteForm,
+            formset=BaseInviteFormSet,
+            extra=1,
+        )
+
     def get_context_data(self, **kwargs):
         context = super(OrganizationPermissionsView, self).get_context_data(**kwargs)
+        context['invite_formset'] = context['form']
         context['invites'] = [
             get_invite_class(invite.kind)(invite=invite, request=self.request, content=self.object)
             for invite in (
@@ -421,31 +442,64 @@ class EventPermissionsView(TemplateView):
     context_object_name = 'event'
 
     def get(self, request, *args, **kwargs):
-        self.init(request)
+        self.get_objects()
+        self.get_forms()
         context = self.get_context_data()
         return self.render_to_response(context)
 
-    def init(self, request):
+    def post(self, request, *args, **kwargs):
+        self.get_objects()
+        self.get_forms()
+
+        all_valid = True
+        for form in self.organizationmember_forms:
+            all_valid = all_valid and form.is_valid()
+        for form in self.eventmember_forms:
+            all_valid = all_valid and form.is_valid()
+        all_valid = all_valid and self.invite_formset.is_valid()
+
+        if all_valid:
+            for form in self.organizationmember_forms:
+                form.save()
+            for form in self.eventmember_forms:
+                form.save()
+            self.invite_formset.save()
+            return HttpResponseRedirect(self.get_success_url())
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def get_objects(self):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         self.event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
 
-        if (not self.organization.has_view_permission(request.user) and
-                not self.event.has_view_permission(request.user)):
+        if not self.event.has_view_permission(self.request.user):
             raise Http404
 
-        OrganizationMemberForm = modelform_factory(OrganizationMember, fields=('role',))
+    def get_forms(self):
         data = self.request.POST if self.request.method == 'POST' else None
+
+        OrganizationMemberForm = modelform_factory(OrganizationMember, fields=('role',))
         self.organizationmember_forms = [
             OrganizationMemberForm(instance=member, prefix='organization-{}'.format(member.pk), data=data)
             for member in OrganizationMember.objects.filter(organization=self.organization).order_by('role').select_related('person')
         ]
 
         EventMemberForm = modelform_factory(EventMember, fields=('role',))
-        data = self.request.POST if self.request.method == 'POST' else None
         self.eventmember_forms = [
             EventMemberForm(instance=member, prefix='event-{}'.format(member.pk), data=data)
             for member in EventMember.objects.filter(event=self.event).order_by('role').select_related('person')
         ]
+
+        invite_formset_class = formset_factory(
+            EventAdminInviteForm,
+            formset=BaseInviteFormSet,
+            extra=1,
+        )
+        self.invite_formset = invite_formset_class(
+            request=self.request,
+            content=self.event,
+            data=data,
+        )
 
     def get_success_url(self):
         return reverse('brambling_event_permissions',
@@ -463,6 +517,7 @@ class EventPermissionsView(TemplateView):
             'event_editable_by': self.event.has_edit_permission(self.request.user),
             'organizationmember_forms': self.organizationmember_forms,
             'eventmember_forms': self.eventmember_forms,
+            'invite_formset': self.invite_formset,
             'invites': [
                 get_invite_class(invite.kind)(invite=invite, request=self.request, content=self.event)
                 for invite in (

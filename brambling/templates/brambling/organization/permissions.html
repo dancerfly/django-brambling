@@ -11,6 +11,8 @@
 	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
 		{% csrf_token %}
 
+		{{ invite_formset.management_form }}
+
 		{% form form using %}
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
@@ -56,12 +58,36 @@
 								{% endif %}
 							</tr>
 						{% endfor %}
+
+						{% for form in invite_formset %}
+							{% form form using %}
+								<tr>
+									<td>{% formfield form.email with placeholder="Email" %}</td>
+									<td></td>
+									<td>{% formfield form.kind %}</td>
+									<td></td>
+								</tr>
+							{% endform %}
+						{% endfor %}
 					</tbody>
 				</table>
 			</div>
 
 			{% formrow form.editors with label="Invite more editors" %}
 		{% endform %}
+
+		<script type="text/html" class='invite-form-template'>
+			{% with form=invite_formset.empty_form %}
+				{% form form using %}
+					<tr>
+						<td>{% formfield form.email with placeholder="Email" %}</td>
+						<td></td>
+						<td>{% formfield form.kind %}</td>
+						<td></td>
+					</tr>
+				{% endform %}
+			{% endwith %}
+		</script>
 
 		<button class="btn btn-primary" type="submit">
 			Save Changes

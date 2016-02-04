@@ -3,7 +3,6 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.db.models import NOT_PROVIDED
 from django.core.urlresolvers import reverse
 from django.http import Http404
-from django.utils.text import slugify
 
 from brambling.mail import InviteMailer
 from brambling.models import (
@@ -105,6 +104,17 @@ class BaseInvite(object):
         if content is not None:
             kwargs['content_id'] = content.pk
         return Invite.objects.filter(**kwargs)
+
+    @classmethod
+    def get_or_create(cls, request, email, content):
+        instance, created = Invite.objects.get_or_create_invite(
+            email=email,
+            user=request.user,
+            kind=cls.slug,
+            content_id=content.pk,
+        )
+        invite = cls(request, instance, content)
+        return invite, created
 
 
 @register_invite
