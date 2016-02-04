@@ -708,7 +708,7 @@ class Event(models.Model):
         return False
 
     def viewable_by(self, user):
-        if self.editable_by(user):
+        if self.has_view_permission(user):
             return True
 
         if not self.is_published:

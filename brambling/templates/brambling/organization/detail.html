@@ -8,13 +8,15 @@
 	<div class='page-header'>
 		<h1>
 			{{ organization.name }}
-			{% if organization_editable_by %}
+			{% if organization_editable_by or organization_viewable_by %}
 				<ul class='list-inline pull-right'>
-					<li>
-						<a href="{% url "brambling_event_create" %}?organization={{ organization.id }}" class="btn btn-success pull-right">
-							<i class="fa fa-plus fa-fw"></i> Create a new event
-						</a>
-					</li>
+					{% if organization_editable_by %}
+						<li>
+							<a href="{% url "brambling_event_create" %}?organization={{ organization.id }}" class="btn btn-success pull-right">
+								<i class="fa fa-plus fa-fw"></i> Create a new event
+							</a>
+						</li>
+					{% endif %}
 					<li>
 						<a href="{% url "brambling_organization_update" organization_slug=organization.slug %}" class="btn btn-primary pull-right">
 							<i class="fa fa-cog fa-fw"></i> Settings

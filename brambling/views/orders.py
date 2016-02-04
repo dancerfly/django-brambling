@@ -36,7 +36,7 @@ class RactiveShopView(TemplateView):
                                   slug=kwargs['event_slug'],
                                   organization__slug=kwargs['organization_slug'])
 
-        editable_by_user = event.editable_by(self.request.user)
+        editable_by_user = event.has_edit_permission(self.request.user)
 
         if not event.is_published and not editable_by_user:
             raise Http404
