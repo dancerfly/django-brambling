@@ -398,16 +398,9 @@ class EventPermissionsView(TemplateView):
     def init(self, request):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         self.event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
-        self.organizationmember = OrganizationMember.objects.filter(
-            organization=self.organization,
-            person=request.user
-        ).first()
-        self.eventmember = EventMember.objects.filter(
-            event=self.event,
-            person=request.user
-        ).first()
 
-        if not self.eventmember and not self.organizationmember and not request.user.is_superuser:
+        if (not self.organization.has_view_permission(request.user) and
+                not self.event.has_view_permission(request.user)):
             raise Http404
 
         OrganizationMemberForm = modelform_factory(OrganizationMember, fields=('role',))
@@ -432,17 +425,12 @@ class EventPermissionsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(EventPermissionsView, self).get_context_data(**kwargs)
         context.update({
-            'event': self.event,
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event': self.event,
             'organization': self.organization,
-            'organization_editable_by': (
-                self.request.user.is_superuser or
-                (self.organizationmember and
-                 self.organizationmember.role == OrganizationMember.EDIT)
-            ),
-            'organizationmember': self.organizationmember,
-            'eventmember': self.eventmember,
+            'organization_editable_by': self.organization.has_edit_permission(self.request.user),
+            'event_editable_by': self.event.has_edit_permission(self.request.user),
             'organizationmember_forms': self.organizationmember_forms,
             'eventmember_forms': self.eventmember_forms,
             'invites': Invite.objects.filter(

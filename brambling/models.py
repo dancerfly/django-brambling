@@ -77,6 +77,10 @@ DEFAULT_HOUSING_CATEGORIES = (
 )
 
 
+class CACHED_DOES_NOT_EXIST:
+    pass
+
+
 class AbstractNamedModel(models.Model):
     "A base model for any model which needs a human name."
 
@@ -296,6 +300,26 @@ def create_defaults(app_config, **kwargs):
             ])
 
 
+class OrganizationMemberManager(models.Model):
+    def __init__(self):
+        self._cache = {}
+        super(OrganizationMemberManager, self).__init__()
+
+    def _get_cache_key(self, organization, person):
+        return '{}__{}'.format(organization.pk, person.pk)
+
+    def get_cached(self, organization, person):
+        key = self._get_cache_key(organization, person)
+        if key not in self._cache:
+            try:
+                self._cache[key] = self.get(organization=organization, person=person)
+            except OrganizationMember.DoesNotExist:
+                self._cache[key] = CACHED_DOES_NOT_EXIST
+        if self._cache[key] is CACHED_DOES_NOT_EXIST:
+            raise OrganizationMember.DoesNotExist
+        return self._cache[key]
+
+
 class OrganizationMember(models.Model):
     EDIT = '1-edit'
     VIEW = '2-view'
@@ -382,6 +406,8 @@ class Organization(AbstractDwollaModel):
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
+    objects = OrganizationMemberManager()
+
     def __unicode__(self):
         return smart_text(self.name)
 
@@ -397,11 +423,19 @@ class Organization(AbstractDwollaModel):
         if person.is_superuser:
             return True
 
-        return OrganizationMember.objects.filter(
-            organization=self,
-            person=person,
-            role=OrganizationMember.OWNER
-        ).exists()
+        try:
+            member = OrganizationMember.objects.get_cached(
+                organization=self.organization,
+                person=person,
+
+            )
+        except OrganizationMember.DoesNotExist:
+            pass
+        else:
+            if member.role == member.OWNER:
+                return True
+
+        return False
 
     def has_edit_permission(self, person):
         if not person.is_authenticated() or not person.is_active:
@@ -410,11 +444,39 @@ class Organization(AbstractDwollaModel):
         if person.is_superuser:
             return True
 
-        return OrganizationMember.objects.filter(
-            organization=self,
-            person=person,
-            role__in=(OrganizationMember.OWNER, OrganizationMember.EDIT)
-        ).exists()
+        try:
+            member = OrganizationMember.objects.get_cached(
+                organization=self.organization,
+                person=person,
+
+            )
+        except OrganizationMember.DoesNotExist:
+            pass
+        else:
+            if member.role in (member.OWNER, member.EDIT):
+                return True
+
+        return False
+
+    def has_view_permission(self, person):
+        if not person.is_authenticated() or not person.is_active:
+            return False
+
+        if person.is_superuser:
+            return True
+
+        try:
+            OrganizationMember.objects.get_cached(
+                organization=self.organization,
+                person=person,
+
+            )
+        except OrganizationMember.DoesNotExist:
+            pass
+        else:
+            return True
+
+        return False
 
     def stripe_live_connected(self):
         return bool(stripe_live_settings_valid() and self.stripe_user_id)
@@ -436,6 +498,26 @@ class Organization(AbstractDwollaModel):
         return self.slug == Organization.DEMO_SLUG
 
 
+class EventMemberManager(models.Model):
+    def __init__(self):
+        self._cache = {}
+        super(EventMemberManager, self).__init__()
+
+    def _get_cache_key(self, event, person):
+        return '{}__{}'.format(event.pk, person.pk)
+
+    def get_cached(self, event, person):
+        key = self._get_cache_key(event, person)
+        if key not in self._cache:
+            try:
+                self._cache[key] = self.get(event=event, person=person)
+            except EventMember.DoesNotExist:
+                self._cache[key] = CACHED_DOES_NOT_EXIST
+        if self._cache[key] is CACHED_DOES_NOT_EXIST:
+            raise EventMember.DoesNotExist
+        return self._cache[key]
+
+
 class EventMember(models.Model):
     EDIT = '1-edit'
     VIEW = '2-view'
@@ -450,6 +532,8 @@ class EventMember(models.Model):
     # Internal tracking fields.
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+
+    objects = EventMemberManager()
 
     class Meta:
         unique_together = ('event', 'person')
@@ -568,20 +652,60 @@ class Event(models.Model):
         if person.is_superuser:
             return True
 
-        has_org_edit = OrganizationMember.objects.filter(
-            organization__event=self,
-            person=person,
-            role__in=(OrganizationMember.OWNER,
-                      OrganizationMember.EDIT)
-        ).exists()
-        if has_org_edit:
+        try:
+            member = OrganizationMember.objects.get_cached(
+                organization=self.organization,
+                person=person,
+
+            )
+        except OrganizationMember.DoesNotExist:
+            pass
+        else:
+            if member.role in (member.OWNER, member.EDIT):
+                return True
+
+        try:
+            member = EventMember.objects.get_cached(
+                event=self,
+                person=person,
+            )
+        except EventMember.DoesNotExist:
+            pass
+        else:
+            if member.role == member.EDIT:
+                return True
+
+        return False
+
+    def has_view_permission(self, person):
+        if not person.is_authenticated() or not person.is_active:
+            return False
+
+        if person.is_superuser:
             return True
 
-        return EventMember.objects.filter(
-            event=self,
-            person=person,
-            role=EventMember.EDIT
-        ).exists()
+        try:
+            OrganizationMember.objects.get_cached(
+                organization=self.organization,
+                person=person,
+
+            )
+        except OrganizationMember.DoesNotExist:
+            pass
+        else:
+            return True
+
+        try:
+            EventMember.objects.get_cached(
+                event=self,
+                person=person,
+            )
+        except EventMember.DoesNotExist:
+            pass
+        else:
+            return True
+
+        return False
 
     def viewable_by(self, user):
         if self.editable_by(user):

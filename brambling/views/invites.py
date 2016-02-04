@@ -1,7 +1,5 @@
 from django.contrib import messages
-from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpResponseRedirect, Http404
-from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, View
 
 from brambling.models import Invite, Person
