@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.db.models import NOT_PROVIDED
 from django.core.urlresolvers import reverse
+from django.http import Http404
 from django.utils.text import slugify
 
 from brambling.mail import InviteMailer
@@ -26,18 +27,45 @@ def get_invite_class(slug):
     return registry[slug]
 
 
-class InviteMetaclass(object):
+def get_invite(request, code, content=NOT_PROVIDED):
+    """
+    Returns an invite utility class instance wrapping the invite
+    with the given code.
+
+    """
+    invite = Invite.objects.get(code=code)
+    cls = get_invite_class(invite.kind)
+    return cls(invite=invite, request=request, content=content)
+
+
+def get_invite_or_404(*args, **kwargs):
+    try:
+        return get_invite(*args, **kwargs)
+    except Invite.DoesNotExist:
+        raise Http404
+
+
+class InviteMetaclass(type):
     def __new__(cls, name, bases, attrs):
+        super_new = super(InviteMetaclass, cls).__new__
+
+        # Don't register BaseInvite.
+        parents = [b for b in bases if isinstance(b, InviteMetaclass)]
+        if not parents:
+            return super_new(cls, name, bases, attrs)
+
         slug = attrs.get('slug')
         if slug is None:
-            slug = slugify(name)
+            slug = slugify(unicode(name))
             if slug.endswith('invite'):
                 slug = slug[:-6]
             attrs['slug'] = slug
 
         if slug in registry:
             raise Exception('Invite type with slug {} already registered'.format(slug))
-        return super(InviteMetaclass, cls).__new__(cls, name, bases, attrs)
+        new_cls = super_new(cls, name, bases, attrs)
+        registry[slug] = new_cls
+        return new_cls
 
 
 class BaseInvite(object):
@@ -55,6 +83,12 @@ class BaseInvite(object):
                 raise NotImplementedError("Invite model must be provided.")
             self._content = self.model.objects.get(pk=self.invite.content_id)
         return self._content
+
+    def get_sender_display(self):
+        if self.invite.user:
+            return self.invite.user.get_full_name()
+        else:
+            raise NotImplementedError
 
     def accept(self):
         raise NotImplementedError
@@ -291,6 +325,12 @@ class OrganizationViewInvite(BaseInvite):
 
 class TransferInvite(BaseInvite):
     model = BoughtItem
+
+    def get_sender_display(self):
+        if self.invite.user:
+            return self.invite.user.get_full_name()
+        else:
+            return self.get_content().order.email
 
     def accept(self):
         content = self.get_content()
