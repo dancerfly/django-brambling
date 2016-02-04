@@ -9,10 +9,9 @@ from brambling.forms.user import (
     FloppySetPasswordForm,
 )
 from brambling.forms.organizer import (
-    OrganizationPermissionForm,
     OrganizationProfileForm,
 )
-from brambling.models import Discount, Invite
+from brambling.models import Discount
 from brambling.views.orders import (
     AddToOrderView,
     RemoveFromOrderView,
@@ -45,6 +44,7 @@ from brambling.views.mail import (
 )
 from brambling.views.organizer import (
     OrganizationUpdateView,
+    OrganizationPermissionsView,
     OrganizationPaymentView,
     OrganizationDetailView,
     OrganizationRemoveEditorView,
@@ -246,11 +246,7 @@ organization_urlpatterns = patterns('',
         ),
         name='brambling_organization_update'),
     url(r'^edit/permissions/$',
-        OrganizationUpdateView.as_view(
-            form_class=OrganizationPermissionForm,
-            template_name='brambling/organization/permissions.html',
-            success_view_name='brambling_organization_update_permissions',
-        ),
+        OrganizationPermissionsView.as_view(),
         name='brambling_organization_update_permissions'),
     url(r'^edit/payment/$',
         OrganizationPaymentView.as_view(),

@@ -29,7 +29,7 @@ from brambling.forms.organizer import (ItemForm, ItemOptionFormSet,
                                        OrganizationPaymentForm, AttendeeNotesForm,
                                        EventCreateForm, EventBasicForm,
                                        EventDesignForm, EventPermissionsForm,
-                                       EventRegistrationForm)
+                                       EventRegistrationForm, OrganizationPermissionsForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
@@ -42,7 +42,15 @@ from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
                                    ajax_required, FinanceTable)
-from brambling.utils.invites import get_invite_class, EventEditInvite, EventViewInvite
+from brambling.utils.invites import (
+    get_invite_class,
+    EventInvite,
+    EventEditInvite,
+    EventViewInvite,
+    OrganizationOwnerInvite,
+    OrganizationEditInvite,
+    OrganizationViewInvite,
+)
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.utils.payment import (dwolla_oauth_url,
                                      stripe_organization_oauth_url,
@@ -81,6 +89,24 @@ class OrganizationUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
         context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
+        return context
+
+
+class OrganizationPermissionsView(OrganizationUpdateView):
+    form_class = OrganizationPermissionsForm
+    template_name = 'brambling/organization/permissions.html'
+    success_view_name = 'brambling_organization_update_permissions'
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizationPermissionsView, self).get_context_data(**kwargs)
+        context['invites'] = [
+            get_invite_class(invite.kind)(invite=invite, request=self.request, content=self.object)
+            for invite in (
+                OrganizationOwnerInvite.get_invites(content=self.object) |
+                OrganizationEditInvite.get_invites(content=self.object) |
+                OrganizationViewInvite.get_invites(content=self.object)
+            )
+        ]
         return context
 
 
@@ -480,6 +506,7 @@ class EventRegistrationView(UpdateView):
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'organization': self.organization,
             'organization_editable_by': self.organization_editable_by,
+            'registration_invites': EventInvite.get_invites(content=self.object),
         })
         return context
 

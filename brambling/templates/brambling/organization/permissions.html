@@ -14,7 +14,7 @@
 		{% form form using %}
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
-			<p>The following people have access to edit this organization and all its events. Only the organization owner can add or remove editors.</p>
+			<p>The following people have access to edit this organization and all its events. Only the organization owners can add or remove editors.</p>
 
 			<div class="table-responsive">
 				<table class='table table-striped'>
@@ -37,21 +37,21 @@
 								{% endif %}
 							</tr>
 						{% endfor %}
-						{% for invite in organization.get_invites %}
+						{% for invite in invites %}
 							<tr>
-								<th>{{ invite.email }}</th>
-								<td>{{ invite.email }}</td>
+								<th>{{ invite.invite.email }}</th>
 								<td>
-									{% if invite.is_sent %}
+									{% if invite.invite.is_sent %}
 										<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
 									{% else %}
 										<i class='fa fa-fw fa-envelope'></i> Not sent
 									{% endif %}
 								</td>
+								<td>{{ invite.verbose_name }}</td>
 								{% if organization.owner == request.user %}
 									<td>
-										<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
-										<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+										<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+										<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
 									</td>
 								{% endif %}
 							</tr>

@@ -490,10 +490,6 @@ class Organization(AbstractDwollaModel):
     def stripe_test_can_connect(self):
         return bool(stripe_test_settings_valid() and not self.stripe_test_user_id)
 
-    def get_invites(self):
-        return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
-                                     content_id=self.pk)
-
     def is_demo(self):
         return self.slug == Organization.DEMO_SLUG
 

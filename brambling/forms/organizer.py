@@ -35,13 +35,13 @@ class OrganizationProfileForm(forms.ModelForm):
         )
 
 
-class OrganizationPermissionForm(forms.Form):
+class OrganizationPermissionsForm(forms.Form):
     editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
                               widget=forms.Textarea,
                               required=False)
 
     def __init__(self, request, instance, *args, **kwargs):
-        super(OrganizationPermissionForm, self).__init__(*args, **kwargs)
+        super(OrganizationPermissionsForm, self).__init__(*args, **kwargs)
         self.instance = instance
         self.request = request
         if self.instance.pk is None:
