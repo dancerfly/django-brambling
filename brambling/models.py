@@ -725,10 +725,6 @@ class Event(models.Model):
     def can_be_published(self):
         return ItemOption.objects.filter(item__event=self).exists()
 
-    def get_invites(self):
-        return Invite.objects.filter(kind=Invite.EVENT,
-                                     content_id=self.pk)
-
     def stripe_connected(self):
         if self.api_type == Event.LIVE:
             return self.organization.stripe_live_connected()
