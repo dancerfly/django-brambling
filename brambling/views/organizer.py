@@ -42,6 +42,7 @@ from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
                                    ajax_required, FinanceTable)
+from brambling.utils.invites import get_invite_class, EventEditInvite, EventViewInvite
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.utils.payment import (dwolla_oauth_url,
                                      stripe_organization_oauth_url,
@@ -433,10 +434,13 @@ class EventPermissionsView(TemplateView):
             'event_editable_by': self.event.has_edit_permission(self.request.user),
             'organizationmember_forms': self.organizationmember_forms,
             'eventmember_forms': self.eventmember_forms,
-            'invites': Invite.objects.filter(
-                kind__in=(Invite.EVENT_EDIT, Invite.EVENT_VIEW),
-                content_id=self.event.pk
-            ),
+            'invites': [
+                get_invite_class(invite.kind)(invite=invite, request=self.request, content=self.event)
+                for invite in (
+                    EventEditInvite.get_invites(content=self.event) |
+                    EventViewInvite.get_invites(content=self.event)
+                )
+            ],
         })
         return context
 

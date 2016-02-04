@@ -64,25 +64,21 @@
 
 					{% for invite in invites %}
 						<tr>
-							<th>{{ invite.email }}</th>
+							<th>{{ invite.invite.email }}</th>
 							<td><em>
-								{% if invite.is_sent %}
+								{% if invite.invite.is_sent %}
 									Invitation sent
 								{% else %}
 									Invitation not sent
 								{% endif %}
 							</em></td>
 							<td>
-								{% if invite.kind == invite.EVENT_EDIT %}
-									Can edit event
-								{% elif invite.kind == invite.EVENT_VIEW %}
-									Can view event
-								{% endif %}
+								{{ invite.verbose_name }}
 							</td>
 							<td>
 								{% if organization_editable_by %}
-									<a href='{% url "brambling_invite_delete" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
-									<a href='{% url "brambling_invite_send" code=invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+									<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+									<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
 								{% endif %}
 							</td>
 						</tr>

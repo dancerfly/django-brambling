@@ -45,31 +45,14 @@ def get_invite_or_404(*args, **kwargs):
         raise Http404
 
 
-class InviteMetaclass(type):
-    def __new__(cls, name, bases, attrs):
-        super_new = super(InviteMetaclass, cls).__new__
-
-        # Don't register BaseInvite.
-        parents = [b for b in bases if isinstance(b, InviteMetaclass)]
-        if not parents:
-            return super_new(cls, name, bases, attrs)
-
-        slug = attrs.get('slug')
-        if slug is None:
-            slug = slugify(unicode(name))
-            if slug.endswith('invite'):
-                slug = slug[:-6]
-            attrs['slug'] = slug
-
-        if slug in registry:
-            raise Exception('Invite type with slug {} already registered'.format(slug))
-        new_cls = super_new(cls, name, bases, attrs)
-        registry[slug] = new_cls
-        return new_cls
+def register_invite(cls):
+    if cls.slug in registry:
+        raise ValueError('Invite type with slug {} already registered'.format(cls.slug))
+    registry[cls.slug] = cls
+    return cls
 
 
 class BaseInvite(object):
-    __metaclass__ = InviteMetaclass
     model = None
 
     def __init__(self, request, invite, content=NOT_PROVIDED):
@@ -121,8 +104,11 @@ class BaseInvite(object):
         return Invite.objects.filter(**kwargs)
 
 
+@register_invite
 class EventInvite(BaseInvite):
     model = Event
+    slug = 'event'
+    verbose_name = 'Can attend event'
 
     def accept(self):
         # Create an order if one doesn't exist already.
@@ -155,9 +141,11 @@ class EventInvite(BaseInvite):
         })
 
 
+@register_invite
 class EventEditInvite(BaseInvite):
     model = Event
     slug = 'event_edit'
+    verbose_name = 'Can edit event'
 
     def accept(self):
         member = EventMember.objects.get_or_create(
@@ -191,9 +179,11 @@ class EventEditInvite(BaseInvite):
         })
 
 
+@register_invite
 class EventViewInvite(BaseInvite):
     model = Event
     slug = 'event_view'
+    verbose_name = 'Can view event'
 
     def accept(self):
         # If they already have a better permission, this invite
@@ -225,9 +215,11 @@ class EventViewInvite(BaseInvite):
         })
 
 
+@register_invite
 class OrganizationOwnerInvite(BaseInvite):
     model = Organization
     slug = 'org_owner'
+    verbose_name = 'Is organization owner'
 
     def accept(self):
         member = OrganizationMember.objects.get_or_create(
@@ -259,9 +251,11 @@ class OrganizationOwnerInvite(BaseInvite):
         })
 
 
+@register_invite
 class OrganizationEditInvite(BaseInvite):
     model = Organization
     slug = 'org_edit'
+    verbose_name = 'Can edit organization'
 
     def accept(self):
         member = OrganizationMember.objects.get_or_create(
@@ -293,9 +287,11 @@ class OrganizationEditInvite(BaseInvite):
         })
 
 
+@register_invite
 class OrganizationViewInvite(BaseInvite):
     model = Organization
     slug = 'org_view'
+    verbose_name = 'Can view organization'
 
     def accept(self):
         OrganizationMember.objects.get_or_create(
@@ -323,8 +319,11 @@ class OrganizationViewInvite(BaseInvite):
         })
 
 
+@register_invite
 class TransferInvite(BaseInvite):
     model = BoughtItem
+    slug = 'transfer'
+    verbose_name = 'Transfer'
 
     def get_sender_display(self):
         if self.invite.user:
