@@ -3,7 +3,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.http import Http404
 from django.test import TestCase, RequestFactory
 
-from brambling.models import Transaction, EventHousing, Order
+from brambling.models import Transaction, EventHousing, Order, Attendee
 from brambling.tests.factories import (
     TransactionFactory,
     EventHousingFactory,
@@ -80,7 +80,7 @@ class MergeUnclaimableOrderTest(TestCase):
             email='attendee1@example.com')
         self.att2 = AttendeeFactory(
             order=self.order2, bought_items=self.order2.bought_items.all(),
-            email='attendee1@example.com')
+            email='attendee2@example.com')
 
         self.housing1 = EventHousingFactory(
             event=event, order=self.order1, contact_name='Riker',
@@ -120,8 +120,13 @@ class MergeUnclaimableOrderTest(TestCase):
 
         self.assertEqual(self.order1.bought_items.count(), 3)
         for item in self.tr2.bought_items.all():
-            self.assertEqual(item.attendee, None)
             self.assertEqual(item.order, self.order1)
+
+    def test_should_transfer_attendees_to_new_order(self):
+        response = self.view.post(self.view.request)
+
+        self.att2 = Attendee.objects.get(pk=self.att2.pk)
+        self.assertEqual(self.att2.order, self.order1)
 
     def test_should_delete_old_order(self):
         response = self.view.post(self.view.request)

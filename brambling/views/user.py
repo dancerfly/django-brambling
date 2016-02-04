@@ -14,7 +14,7 @@ from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
                               Event, Organization, Transaction, BoughtItem,
-                              EventHousing)
+                              EventHousing, Attendee)
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_oauth_url, LIVE,
@@ -320,9 +320,9 @@ class MergeOrderView(View):
         new_order = Order.objects.get(event=old_order.event,
                                       person=request.user)
 
+        Attendee.objects.filter(order=old_order).update(order=new_order)
         Transaction.objects.filter(order=old_order).update(order=new_order)
-        BoughtItem.objects.filter(order=old_order).update(order=new_order,
-                                                          attendee=None)
+        BoughtItem.objects.filter(order=old_order).update(order=new_order)
         old_order.delete()
 
         messages.add_message(request, messages.SUCCESS,
