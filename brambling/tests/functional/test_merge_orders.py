@@ -82,12 +82,6 @@ class MergeUnclaimableOrderTest(TestCase):
             order=self.order2, bought_items=self.order2.bought_items.all(),
             email='attendee2@example.com')
 
-        self.housing1 = EventHousingFactory(
-            event=event, order=self.order1, contact_name='Riker',
-            contact_email='riker@example.com', contact_phone='111-111-1111',
-            public_transit_access=True, person_prefer='Troi',
-            person_avoid='Worf')
-
         self.housing2 = EventHousingFactory(
             event=event, order=self.order2, contact_name='Picard',
             contact_email='jeanluc@example.com', contact_phone='111-111-1111',
@@ -133,3 +127,21 @@ class MergeUnclaimableOrderTest(TestCase):
 
         with self.assertRaises(Order.DoesNotExist):
             Order.objects.get(pk=self.order2.pk)
+
+    def test_should_transfer_eventhousing_if_none_present(self):
+        response = self.view.post(self.view.request)
+
+        self.order1 = Order.objects.get(pk=self.order1.pk)
+
+        self.assertEqual(self.order1.get_eventhousing(), self.housing2)
+
+    def test_should_not_transfer_eventhousing_if_present(self):
+        housing1 = EventHousingFactory(
+            event=self.order1.event, order=self.order1, contact_name='Riker',
+            contact_email='riker@example.com', contact_phone='111-111-1111',
+            public_transit_access=True, person_prefer='Troi',
+            person_avoid='Worf')
+        response = self.view.post(self.view.request)
+
+        self.order1 = Order.objects.get(pk=self.order1.pk)
+        self.assertEqual(self.order1.get_eventhousing(), housing1)

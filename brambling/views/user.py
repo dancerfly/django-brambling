@@ -320,6 +320,8 @@ class MergeOrderView(View):
         new_order = Order.objects.get(event=old_order.event,
                                       person=request.user)
 
+        if not new_order.get_eventhousing():
+            EventHousing.objects.filter(order=old_order).update(order=new_order)
         Attendee.objects.filter(order=old_order).update(order=new_order)
         Transaction.objects.filter(order=old_order).update(order=new_order)
         BoughtItem.objects.filter(order=old_order).update(order=new_order)
