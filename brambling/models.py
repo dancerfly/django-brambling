@@ -1773,29 +1773,13 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
-    EVENT = 'event'
-    EVENT_EDIT = 'event_edit'
-    EVENT_VIEW = 'event_view'
-    ORGANIZATION_OWNER = 'org_owner'
-    ORGANIZATION_EDIT = 'org_edit'
-    ORGANIZATION_VIEW = 'org_view'
-    TRANSFER = 'transfer'
-    KIND_CHOICES = (
-        (EVENT, _('Event')),
-        (EVENT_EDIT, _("Edit event")),
-        (EVENT_VIEW, _("View event")),
-        (ORGANIZATION_EDIT, _("Edit organization")),
-        (ORGANIZATION_VIEW, _("View organization")),
-        (TRANSFER, _("Transfer")),
-    )
-
     objects = InviteManager()
     code = models.CharField(max_length=20, unique=True)
     email = models.EmailField()
     #: User who sent the invitation.
     user = models.ForeignKey(Person, blank=True, null=True)
     is_sent = models.BooleanField(default=False)
-    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
+    kind = models.CharField(max_length=10)
     content_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
