@@ -8,18 +8,11 @@
 	{{ block.super }}
 
 	<script type="text/javascript" src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
-	<script type="text/javascript" src="{% static 'zenaida/js/bootstrap/modal.js' %}"></script>
 	<script>
 		$(function() {
 			$('[data-toggle=tab]').click(function (e) {
 				e.preventDefault();
 				$(this).tab('show');
-			});
-			$('.removeDiscountLink').on('click', function(e){
-				e.preventDefault();
-				$.post($(this).attr('href'), function(){
-					location.reload();
-				});
 			});
 			$('.payment-confirmation-toggle').on('click', function(e) {
 				e.preventDefault();
@@ -56,7 +49,6 @@
 	<ul class="nav nav-tabs" role="tablist">
 	  <li{% if active == 'summary' %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
 	  <li{% if active == 'payment' %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
-	  <li{% if active == 'discount' %} class="active"{% endif %}><a href="#discount" role="tab" data-toggle="tab">Apply discount</a></li>
 	</ul>
 
 	<!-- Tab panes -->
@@ -130,18 +122,6 @@
 							{% formrow payment_form.amount with append=event.currency %}
 						{% endform %}
 						<button type='submit' class='btn btn-primary'>Record payment</button>
-					</form>
-				</div>
-			</div>
-		</div>
-		<div class="tab-pane{% if active == 'discount' %} active{% endif %}" id="discount">
-			<div class='row'>
-				<div class='col-sm-6 col-sm-offset-3'>
-					<form method='post' action=''>
-						<input type='hidden' name='is_discount_form' value='1'>
-						{% csrf_token %}
-						{% form discount_form %}
-						<button type='submit' class='btn btn-primary'>Apply discount</button>
 					</form>
 				</div>
 			</div>

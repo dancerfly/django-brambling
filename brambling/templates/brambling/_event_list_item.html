@@ -5,7 +5,7 @@
 {% endif %}
 
 <div class="margin-trailer-dbl event-listing">
-	<a href="{{ event.get_absolute_url }}" class="a-secret a-opacity">
+	<a href="{% url 'brambling_event_shop' event_slug=event.slug organization_slug=event.organization.slug %}" class="a-secret a-opacity">
 		<div class="event-listing-image relative"{% if banner_image %} style="background-image: url({{ banner_image }})"{% endif %}>
 			<div class="datecard">
 				<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>

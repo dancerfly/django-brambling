@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Max, Sum
+from django.db.models import Max, Sum, Q
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
@@ -12,7 +12,9 @@ import stripe
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
-from brambling.models import Person, Home, CreditCard, Order, SavedAttendee
+from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
+                              Event, Organization, Transaction, BoughtItem,
+                              EventHousing, Attendee)
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_oauth_url, LIVE,
@@ -316,9 +318,45 @@ class ClaimOrdersView(TemplateView):
         context = super(ClaimOrdersView, self).get_context_data(**kwargs)
         context.update({
             'claimable_orders': self.request.user.get_claimable_orders().select_related('event__organization'),
-            'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
+            'mergeable_orders': self.request.user.get_mergeable_orders().select_related('event__organization'),
         })
         return context
+
+
+class MergeOrderView(View):
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        if request.user.email != request.user.confirmed_email:
+            raise Http404
+
+        pk = request.POST['pk']
+        try:
+            old_order = request.user.get_mergeable_orders().get(pk=pk)
+        except Order.DoesNotExist:
+            raise Http404
+
+        new_order = Order.objects.get(event=old_order.event,
+                                      person=request.user)
+
+        if not new_order.get_eventhousing():
+            EventHousing.objects.filter(order=old_order).update(order=new_order)
+        Attendee.objects.filter(order=old_order).update(order=new_order)
+        Transaction.objects.filter(order=old_order).update(order=new_order)
+        BoughtItem.objects.filter(order=old_order).update(order=new_order)
+        old_order.delete()
+
+        messages.add_message(request, messages.SUCCESS,
+                             "Orders successfully merged.")
+        url = reverse(
+            'brambling_event_attendee_list',
+            kwargs={
+                'event_slug': new_order.event.slug,
+                'organization_slug': new_order.event.organization.slug,
+            })
+        return HttpResponseRedirect(url)
 
 
 class ClaimOrderView(View):
@@ -362,4 +400,39 @@ class OrderHistoryView(TemplateView):
             'orders': orders,
             'claimable_orders': self.request.user.get_claimable_orders(),
         })
+        return context
+
+
+class OrganizeEventsView(TemplateView):
+    template_name = 'brambling/user/admin_events.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        return super(OrganizeEventsView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizeEventsView, self).get_context_data(**kwargs)
+        admin_events = Event.objects.filter(
+            Q(organization__owner=self.request.user) |
+            Q(organization__editors=self.request.user) |
+            Q(additional_editors=self.request.user)
+        ).order_by('-last_modified').select_related('organization').distinct()
+        context['admin_events'] = admin_events
+        return context
+
+
+class OrganizeOrganizationsView(TemplateView):
+    template_name = 'brambling/user/organizations.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        return super(OrganizeOrganizationsView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganizeOrganizationsView, self).get_context_data(**kwargs)
+        context['organizations'] = self.request.user.get_organizations().order_by('-last_modified')
         return context

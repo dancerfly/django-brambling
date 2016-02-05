@@ -1,0 +1,58 @@
+{% extends 'brambling/event/organizer/__base.html' %}
+
+{% load floppyforms staticfiles daguerre %}
+
+{% block title %}Design - {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+		{% csrf_token %}
+
+		{% form form using %}
+			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+
+			<label class='control-label' for='id_banner_image'>Banner image</label>
+			<div class='margin-trailer'>
+				{% if event.banner_image %}
+					<img src="{% adjust event.banner_image 'fill' width=940 height=300 %}" />
+				{% else %}
+					<img width="960" height="300" src="{% static 'brambling/images/banner.jpg' %}" />
+				{% endif %}
+			</div>
+			<div class='row'>
+				<div class='col-xs-3'>
+					<div class='form-group'>
+						<label class='control-label' for='id_banner_image'>Upload new image</label>
+						<input type="file" name="banner_image">
+					</div>
+					{% if event.banner_image %}
+						<div class='checkbox'>
+							<label>
+								<input type="checkbox" name="banner_image-clear" id="id_banner_image-clear">
+								Return to default
+							</label>
+						</div>
+					{% endif %}
+				</div>
+				<div class='col-xs-9'>
+					<p class='help-block'>
+						Images will be scaled and cropped to 940 x 300 pixels.
+						<br />
+						Supported formats: .jpg, .png, .gif
+					</p>
+				</div>
+			</div>
+		{% endform %}
+
+		<button class="btn btn-primary" type="submit">
+			Save Changes
+		</button>
+		<a class="btn btn-link" href="{{ request.path }}">
+			Cancel
+		</a>
+
+	</form>
+{% endblock %}

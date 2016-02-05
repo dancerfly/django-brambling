@@ -1,16 +1,18 @@
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
 from django.test import TestCase, RequestFactory
 
-from brambling.forms.organizer import EventForm
-from brambling.models import Invite
+from brambling.forms.organizer import EventRegistrationForm
+from brambling.models import Invite, Order
 from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrderFactory, TransactionFactory,
                                        ItemFactory, OrganizationFactory,
                                        PersonFactory, ItemOptionFactory)
 from brambling.views.core import InviteAcceptView
+import mock
 
 
 class InviteTestCase(TestCase):
@@ -59,7 +61,6 @@ class InviteTestCase(TestCase):
         self.assertEqual(mail.outbox[0].subject, "You've been invited to attend {}!".format(content.name))
 
     def test_subject__transfer(self):
-        event = EventFactory()
         self.person = PersonFactory()
         event = EventFactory()
         self.order = OrderFactory(event=event, person=self.person)
@@ -74,12 +75,13 @@ class InviteTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "{} wants to transfer an item to you".format(invite.user.get_full_name()))
 
-class EventFormTestCase(TestCase):
+
+class EventRegistrationFormTestCase(TestCase):
     def test_clean_invite_attendees__valid(self):
         expected = ['test@test.te', 'test@demo.com']
         data = ','.join(expected)
         org = OrganizationFactory()
-        form = EventForm(None, org, False)
+        form = EventRegistrationForm(None, org)
         form.cleaned_data = {'invite_attendees': data}
         cleaned = form.clean_invite_attendees()
         self.assertEqual(cleaned, expected)
@@ -88,7 +90,7 @@ class EventFormTestCase(TestCase):
         expected = ['test@test.te', 'test@demo.com']
         data = ', '.join(expected)
         org = OrganizationFactory()
-        form = EventForm(None, org, False)
+        form = EventRegistrationForm(None, org)
         form.cleaned_data = {'invite_attendees': data}
         cleaned = form.clean_invite_attendees()
         self.assertEqual(cleaned, expected)
@@ -97,7 +99,7 @@ class EventFormTestCase(TestCase):
         expected = ['test@test.te', 'test@democom']
         data = ','.join(expected)
         org = OrganizationFactory()
-        form = EventForm(None, org, False)
+        form = EventRegistrationForm(None, org)
         form.cleaned_data = {'invite_attendees': data}
         with self.assertRaises(ValidationError):
             form.clean_invite_attendees()
@@ -109,10 +111,9 @@ class EventFormTestCase(TestCase):
         data['invite_attendees'] = ','.join(emails)
         request = RequestFactory().get('/')
         request.user = PersonFactory()
-        form = EventForm(
+        form = EventRegistrationForm(
             request,
             event.organization,
-            False,
             instance=event,
             data=data
         )
@@ -126,6 +127,13 @@ class EventFormTestCase(TestCase):
 
 
 class InviteAcceptViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.session_middleware = SessionMiddleware()
+
+    def _add_session(self, request):
+        self.session_middleware.process_request(request)
+
     def test_context_data__no_invite(self):
         view = InviteAcceptView()
         view.invite = None
@@ -137,3 +145,18 @@ class InviteAcceptViewTestCase(TestCase):
         self.assertFalse(context['invited_person_exists'])
         self.assertFalse(context['sender_display'])
         self.assertFalse(context['invited_person_exists'])
+
+    def test_invite(self):
+        view = InviteAcceptView()
+        event = EventFactory()
+        view.invite = InviteFactory(content_id=event.pk, kind=Invite.EVENT, user=PersonFactory(first_name="Conan",last_name="O'Brien"))
+        view.content = view.invite.get_content()
+        view.request = RequestFactory().get('/')
+        view.request.user=PersonFactory()
+        self._add_session(view.request)
+        with mock.patch.object(wraps=Order.objects.for_request, target=Order.objects, attribute = 'for_request') as for_request:
+            view.handle_invite()
+        for_request.assert_called_once_with(create=True, request=view.request, event=view.content)
+        orders = Order.objects.all()
+        self.assertEqual(len(orders), 1)
+        self.assertEqual(orders[0].person, view.request.user)

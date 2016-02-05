@@ -1,0 +1,47 @@
+{% extends 'brambling/user/__base_organize.html' %}
+
+{% load floppyforms humanize zenaida %}
+
+{% block title %}Organizations – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+	<h2 class="sr-only">Organizations</h2>
+
+	<table class='table table-striped'>
+		<thead>
+			<tr>
+				<th>Organization</th>
+				<th>Owner</th>
+				<th>Last activity (UTC)</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for organization in organizations %}
+				<tr>
+					<td>
+						<a href='{% url "brambling_organization_detail" organization_slug=organization.slug %}'>
+							<strong>{{ organization.name }}</strong>
+						</a>
+					</td>
+					<td>{{ organization.owner.get_full_name }}</td>
+					<td>{{ organization.last_modified }}</td>
+					<td>
+						<a class='btn btn-default' href='{% url "brambling_organization_update" organization_slug=organization.slug %}'>
+							<i class='fa fa-fw fa-gear'></i>
+							<span class='sr-only'>Settings</span>
+						</a>
+					</td>
+				</tr>
+			{% empty %}
+				<tr>
+					<td colspan="4">
+						<em>It doesn't look like you have any events right now; <a href='{% url "brambling_event_create" %}'>go get started</a>!</em>
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+{% endblock %}

@@ -61,7 +61,7 @@ class DashboardView(TemplateView):
                 'upcoming_events': upcoming_events,
                 'admin_events': admin_events,
                 'registered_events': registered_events,
-                'organizations': user.get_organizations(),
+                'organizations': user.get_organizations().order_by('-last_modified'),
             })
 
         return context
@@ -115,7 +115,7 @@ class InviteAcceptView(TemplateView):
         invite = self.invite
         content = self.content
         if invite.kind == Invite.EVENT:
-            content.create_order(self.request.user)
+            Order.objects.for_request(event=content, request=self.request, create=True)
         elif invite.kind == Invite.EVENT_EDITOR:
             content.additional_editors.add(self.request.user)
         elif invite.kind == Invite.ORGANIZATION_EDITOR:
@@ -203,7 +203,7 @@ class InviteAcceptView(TemplateView):
                 'organization_slug': content.organization.slug
             })
         elif invite.kind == Invite.EVENT_EDITOR:
-            return reverse('brambling_event_update', kwargs={
+            return reverse('brambling_event_summary', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
             })
@@ -264,12 +264,12 @@ class InviteManageView(View):
         invite = self.invite
         content = self.content
         if invite.kind == Invite.EVENT:
-            return reverse('brambling_event_update', kwargs={
+            return reverse('brambling_event_registration', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
             })
         elif invite.kind == Invite.EVENT_EDITOR:
-            return reverse('brambling_event_update', kwargs={
+            return reverse('brambling_event_permissions', kwargs={
                 'event_slug': content.slug,
                 'organization_slug': content.organization.slug
             })

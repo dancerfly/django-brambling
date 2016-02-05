@@ -164,9 +164,21 @@
 	<script type="text/javascript" src="{% static "admin/js/urlify.js" %}"></script>
 	<script type="text/javascript" src="{% static "admin/js/prepopulate.min.js" %}"></script>
 
-	{% include "brambling/event/organizer/_form_js.html" %}
-
 	{% if form %}
+		<script>
+			$(function() {
+				$('#startEnd').on('change', function() {
+					if (this.checked) {
+						$('#startEndRow').slideDown();
+					} else {
+						$('#startEndRow').slideUp();
+						$('#startEndRow input').val(function(){
+							return this.defaultValue;
+						});
+					}
+				});
+			});
+		</script>
 		<script>
 			(function() {
 				var template_event_default = {% with template_event_default=form|get_value:"template_event" %}{% if template_event_default %}{{ template_event_default }}{% else %}null{% endif %}{% endwith %},

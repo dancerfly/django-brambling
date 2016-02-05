@@ -322,7 +322,7 @@ class Organization(AbstractDwollaModel):
                                      blank=True, null=True)
 
     # This is a secret value set by admins. It will be cached on the event model.
-    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(1.5),
+    default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(2.5),
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # These are obtained with Stripe Connect via Oauth.
@@ -458,7 +458,7 @@ class Event(models.Model):
                                                     help_text="Minutes before a user's cart expires.")
 
     # This is a secret value set by admins
-    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('1.5'),
+    application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('2.5'),
                                                   validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # Internal tracking fields
@@ -710,7 +710,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
             event__in=event_pks,
         )
 
-    def get_unclaimable_orders(self):
+    def get_mergeable_orders(self):
         if self.email != self.confirmed_email:
             return Order.objects.none()
         event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()
@@ -1916,3 +1916,22 @@ class SavedReport(models.Model):
     event = models.ForeignKey(Event)
     name = models.CharField(max_length=40)
     querystring = models.TextField()
+
+
+# Update event / org last-modified stats on various changes
+@receiver(signals.post_save, sender=Transaction)
+@receiver(signals.post_save, sender=Item)
+@receiver(signals.post_save, sender=Discount)
+@receiver(signals.post_save, sender=CustomForm)
+def update_event_and_org_last_modified(sender, instance, **kwargs):
+    now = timezone.now()
+    event_id = instance.event_id
+    Event.objects.filter(pk=event_id).update(last_modified=now)
+    Organization.objects.filter(event=event_id).update(last_modified=now)
+
+
+@receiver(signals.post_save, sender=Event)
+def update_org_last_modified(sender, instance, **kwargs):
+    now = timezone.now()
+    org_id = instance.organization_id
+    Organization.objects.filter(pk=org_id).update(last_modified=now)

@@ -27,9 +27,16 @@
 						<h4 class="panel-title">Events You Manage</h4>
 					</header>
 					<div class="list-group">
-						{% for event in admin_events %}
+						{% for event in admin_events|slice:":3" %}
 							{% include "brambling/_event_list-group-item.html" %}
 						{% endfor %}
+
+						{% if admin_events|length > 3 %}
+							<a class='list-group-item' href='{% url "brambling_organize_events" %}'>
+								<i class='fa fa-fw fa-list'></i>
+								See all {{ admin_events|length }} events
+							</a>
+						{% endif %}
 					</div>
 				</div>
 			{% endif %}
@@ -39,7 +46,7 @@
 						<h4 class="panel-title">Your Organizations</h4>
 					</div>
 					<div class="list-group">
-						{% for organization in organizations %}
+						{% for organization in organizations|slice:":4" %}
 							<div class="list-group-item clearfix">
 								<a class="pull-right btn btn-xs btn-default tipped" data-placement="left" data-container="body" title="Organization Settings" href="{% url 'brambling_organization_update' organization_slug=organization.slug %}">
 									<i class="fa fa-fw fa-cog"></i>
@@ -48,6 +55,12 @@
 								<a href="{{ organization.get_absolute_url }}">{{ organization.name }}</a>
 							</div>
 						{% endfor %}
+						{% if organizations|length > 4 %}
+							<a class='list-group-item' href='{% url "brambling_organize_organizations" %}'>
+									<i class='fa fa-fw fa-sitemap'></i>
+									See all {{ organizations|length }} organizations
+							</a>
+						{% endif %}
 					</div>
 				</div>
 			{% endif %}

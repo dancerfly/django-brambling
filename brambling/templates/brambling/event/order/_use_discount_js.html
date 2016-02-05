@@ -1,8 +1,8 @@
 <script>
     $(function(){
-        $('#discountCodeButton').on('click', function(e){
+        $('#discountForm').on('submit', function(e){
             e.preventDefault();
-            var discountCodeButton = $(this),
+            var discountCodeButton = $(this).find('button'),
                 discountCode = $('#discountCode'),
                 code = discountCode.val(),
                 url = '/{{ event.organization.slug }}/{{ event.slug }}/order/use-discount/' + code + '/';

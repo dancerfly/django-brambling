@@ -12,7 +12,6 @@ from django.http import (Http404, HttpResponseRedirect, JsonResponse,
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.http import is_safe_url
 from django.views.generic import (ListView, CreateView, UpdateView,
                                   TemplateView, DetailView, View, DeleteView)
@@ -23,12 +22,14 @@ from openpyxl.writer.excel import save_virtual_workbook
 import requests
 import unicodecsv as csv
 
-from brambling.forms.organizer import (EventForm, ItemForm, ItemOptionFormSet,
+from brambling.forms.organizer import (ItemForm, ItemOptionFormSet,
                                        DiscountForm, ItemImageFormSet,
-                                       ManualPaymentForm, ManualDiscountForm,
-                                       CustomFormForm, CustomFormFieldFormSet,
-                                       OrderNotesForm, OrganizationPaymentForm,
-                                       AttendeeNotesForm, EventCreateForm)
+                                       ManualPaymentForm, CustomFormForm,
+                                       CustomFormFieldFormSet, OrderNotesForm,
+                                       OrganizationPaymentForm, AttendeeNotesForm,
+                                       EventCreateForm, EventBasicForm,
+                                       EventDesignForm, EventPermissionsForm,
+                                       EventRegistrationForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
@@ -36,7 +37,6 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               BoughtItemDiscount, BoughtItem,
                               Person, CustomForm, Organization,
                               SavedReport)
-from brambling.views.orders import OrderMixin, ApplyDiscountView
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
@@ -213,7 +213,7 @@ class EventCreateView(CreateView):
         return super(EventCreateView, self).get_form(form_class)
 
     def get_success_url(self):
-        return reverse('brambling_event_update',
+        return reverse('brambling_event_summary',
                        kwargs={'event_slug': self.object.slug,
                                'organization_slug': self.object.organization.slug})
 
@@ -321,11 +321,74 @@ class EventSummaryView(TemplateView):
         return context
 
 
-class EventUpdateView(UpdateView):
+class EventBasicSettingsView(UpdateView):
     model = Event
-    template_name = 'brambling/event/organizer/update.html'
+    template_name = 'brambling/event/organizer/basic.html'
     context_object_name = 'event'
-    form_class = EventForm
+    form_class = EventBasicForm
+
+    def get_object(self):
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
+        user = self.request.user
+        if not event.editable_by(user):
+            raise Http404
+        return event
+
+    def get_form_kwargs(self):
+        kwargs = super(EventBasicSettingsView, self).get_form_kwargs()
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def get_success_url(self):
+        return reverse('brambling_event_basic',
+                       kwargs={'event_slug': self.object.slug,
+                               'organization_slug': self.object.organization.slug})
+
+    def get_context_data(self, **kwargs):
+        context = super(EventBasicSettingsView, self).get_context_data(**kwargs)
+        context.update({
+            'cart': None,
+            'event_admin_nav': get_event_admin_nav(self.object, self.request),
+            'organization': self.organization,
+        })
+        return context
+
+
+class EventDesignView(UpdateView):
+    model = Event
+    template_name = 'brambling/event/organizer/design.html'
+    context_object_name = 'event'
+    form_class = EventDesignForm
+
+    def get_object(self):
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
+        user = self.request.user
+        if not event.editable_by(user):
+            raise Http404
+        return event
+
+    def get_success_url(self):
+        return reverse('brambling_event_design',
+                       kwargs={'event_slug': self.object.slug,
+                               'organization_slug': self.object.organization.slug})
+
+    def get_context_data(self, **kwargs):
+        context = super(EventDesignView, self).get_context_data(**kwargs)
+        context.update({
+            'cart': None,
+            'event_admin_nav': get_event_admin_nav(self.object, self.request),
+            'organization': self.organization,
+        })
+        return context
+
+
+class EventPermissionsView(UpdateView):
+    model = Event
+    template_name = 'brambling/event/organizer/permissions.html'
+    context_object_name = 'event'
+    form_class = EventPermissionsForm
 
     def get_object(self):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
@@ -337,21 +400,57 @@ class EventUpdateView(UpdateView):
         return event
 
     def get_form_kwargs(self):
-        kwargs = super(EventUpdateView, self).get_form_kwargs()
+        kwargs = super(EventPermissionsView, self).get_form_kwargs()
         kwargs['request'] = self.request
         kwargs['organization'] = self.organization
         kwargs['organization_editable_by'] = self.organization_editable_by
         return kwargs
 
     def get_success_url(self):
-        return reverse('brambling_event_update',
+        return reverse('brambling_event_permissions',
                        kwargs={'event_slug': self.object.slug,
                                'organization_slug': self.object.organization.slug})
 
     def get_context_data(self, **kwargs):
-        context = super(EventUpdateView, self).get_context_data(**kwargs)
+        context = super(EventPermissionsView, self).get_context_data(**kwargs)
         context.update({
             'cart': None,
+            'event_admin_nav': get_event_admin_nav(self.object, self.request),
+            'organization': self.organization,
+            'organization_editable_by': self.organization_editable_by,
+        })
+        return context
+
+
+class EventRegistrationView(UpdateView):
+    model = Event
+    template_name = 'brambling/event/organizer/registration.html'
+    context_object_name = 'event'
+    form_class = EventRegistrationForm
+
+    def get_object(self):
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
+        user = self.request.user
+        if not event.editable_by(user):
+            raise Http404
+        self.organization_editable_by = self.organization.editable_by(user)
+        return event
+
+    def get_form_kwargs(self):
+        kwargs = super(EventRegistrationView, self).get_form_kwargs()
+        kwargs['request'] = self.request
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def get_success_url(self):
+        return reverse('brambling_event_registration',
+                       kwargs={'event_slug': self.object.slug,
+                               'organization_slug': self.object.organization.slug})
+
+    def get_context_data(self, **kwargs):
+        context = super(EventRegistrationView, self).get_context_data(**kwargs)
+        context.update({
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'organization': self.organization,
             'organization_editable_by': self.organization_editable_by,
@@ -426,7 +525,7 @@ class EventRemoveEditorView(View):
         else:
             event.additional_editors.remove(person)
         messages.success(request, 'Removed editor successfully.')
-        return HttpResponseRedirect(reverse('brambling_event_update',
+        return HttpResponseRedirect(reverse('brambling_event_permissions',
                                     kwargs={'event_slug': event.slug, 'organization_slug': organization.slug}))
 
 
@@ -437,7 +536,7 @@ class PublishEventView(View):
                             host=self.request.get_host())):
             return self.request.GET['next']
         return reverse(
-            'brambling_event_update',
+            'brambling_event_summary',
             kwargs={
                 'event_slug': self.event.slug,
                 'organization_slug': self.organization.slug
@@ -468,12 +567,13 @@ class UnpublishEventView(View):
                             host=self.request.get_host())):
             return self.request.GET['next']
         return reverse(
-            'brambling_event_update',
+            'brambling_event_summary',
             kwargs={
                 'event_slug': self.event.slug,
                 'organization_slug': self.organization.slug
             }
         )
+
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
@@ -489,6 +589,26 @@ class UnpublishEventView(View):
             self.event.is_published = False
             self.event.save()
         return HttpResponseRedirect(self.get_success_url())
+
+
+class DangerZoneView(TemplateView):
+    template_name = 'brambling/event/organizer/danger_zone.html'
+
+    def get(self, request, *args, **kwargs):
+        self.event = get_object_or_404(Event.objects.select_related('organization'),
+                                       slug=self.kwargs['event_slug'],
+                                       organization__slug=self.kwargs['organization_slug'])
+        if not self.event.editable_by(request.user):
+            raise Http404
+        return super(DangerZoneView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(DangerZoneView, self).get_context_data(**kwargs)
+        context.update({
+            'event': self.event,
+            'event_admin_nav': get_event_admin_nav(self.event, self.request),
+        })
+        return context
 
 
 def item_form(request, *args, **kwargs):
@@ -645,6 +765,7 @@ class DiscountListView(ListView):
             'event': self.event,
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'discount_form': DiscountForm(self.event, instance=None),
         })
         return context
 
@@ -903,31 +1024,6 @@ class RefundView(View):
         return HttpResponseRedirect(url)
 
 
-class OrganizerApplyDiscountView(ApplyDiscountView):
-    def get_order(self):
-        return Order.objects.get(event=self.event, code=self.kwargs['code'])
-
-
-class RemoveDiscountView(OrderMixin, View):
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-        if not self.event.editable_by(self.request.user):
-            raise Http404
-        try:
-            boughtitemdiscount = BoughtItemDiscount.objects.get(
-                bought_item__order=self.order,
-                pk=kwargs['discount_pk']
-            )
-        except BoughtItemDiscount.DoesNotExist:
-            pass
-        else:
-            boughtitemdiscount.delete()
-        return JsonResponse({'success': True})
-
-    def get_order(self):
-        return Order.objects.get(event=self.event, code=self.kwargs['code'])
-
-
 class OrderDetailView(DetailView):
     template_name = 'brambling/event/organizer/order_detail.html'
 
@@ -943,7 +1039,6 @@ class OrderDetailView(DetailView):
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
         self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
-        self.discount_form = ManualDiscountForm(order=self.order)
         self.notes_form = OrderNotesForm(instance=self.order)
         self.attendee_forms = [AttendeeNotesForm(instance=attendee)
                                for attendee in self.order.attendees.prefetch_related('bought_items')]
@@ -952,9 +1047,6 @@ class OrderDetailView(DetailView):
                 self.payment_form = ManualPaymentForm(order=self.order,
                                                       user=self.request.user,
                                                       data=self.request.POST)
-            elif 'is_discount_form' in self.request.POST:
-                self.discount_form = ManualDiscountForm(order=self.order,
-                                                        data=self.request.POST)
             elif 'is_notes_form' in self.request.POST:
                 self.notes_form = OrderNotesForm(instance=self.order,
                                                  data=self.request.POST)
@@ -964,21 +1056,18 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
-        return [self.payment_form, self.discount_form, self.notes_form] + self.attendee_forms
+        return [self.payment_form, self.notes_form] + self.attendee_forms
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
         if self.payment_form.is_bound:
             active = 'payment'
-        elif self.discount_form.is_bound:
-            active = 'discount'
         elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
             active = 'notes'
         else:
             active = 'summary'
         context.update({
             'payment_form': self.payment_form,
-            'discount_form': self.discount_form,
             'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,

@@ -1,6 +1,6 @@
 {% extends 'brambling/event/order/__base.html' %}
 
-{% load staticfiles floppyforms zenaida daguerre %}
+{% load staticfiles floppyforms zenaida daguerre brambling_markdown %}
 
 {% block title %}Shop – {{ block.super }}{% endblock %}
 
@@ -61,6 +61,7 @@
 								{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
 							</div>
 						{% endfor %}
+						<form id='discountForm'>
 						<div class='list-group-item'>
 							<div class='input-group'>
 								<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
@@ -69,6 +70,7 @@
 								</span>
 							</div>
 						</div>
+						</form>
 					</div>{# /.list-group #}
 				</div>
 			</div>
@@ -212,7 +214,7 @@
 							</div>
 							<div class="col-md-8">
 								<div>
-									{{ event.description|linebreaks }}
+									{{ event.description|markdown }}
 								</div>
 								{% if event.website_url %}
 									<a target="_blank" href="{{ event.website_url }}" class="btn btn-primary">

@@ -291,35 +291,21 @@ class EventCreateForm(forms.ModelForm):
         return instance
 
 
-class EventForm(forms.ModelForm):
-    editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
-                              widget=forms.Textarea,
-                              required=False)
-    invite_attendees = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to the event.',
-                                       widget=forms.Textarea,
-                                       required=False)
-
+class EventBasicForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ('name', 'slug', 'description', 'website_url', 'banner_image',
-                  'city', 'state_or_province', 'country', 'timezone',
-                  'currency', 'start_time', 'end_time', 'dance_styles',
-                  'has_dances', 'has_classes', 'liability_waiver', 'privacy',
-                  'collect_housing_data', 'collect_survey_data',
-                  'cart_timeout', 'start_date', 'end_date',
-                  'check_postmark_cutoff', 'transfers_allowed', 'facebook_url')
+        fields = ('name', 'slug', 'start_date', 'end_date',
+                  'start_time', 'end_time', 'city', 'state_or_province',
+                  'country', 'timezone', 'website_url', 'facebook_url',
+                  'description', 'dance_styles', 'has_dances', 'has_classes')
         widgets = {
             'country': forms.Select,
         }
 
-    def __init__(self, request, organization, organization_editable_by, *args, **kwargs):
-        super(EventForm, self).__init__(*args, **kwargs)
-        self.request = request
+    def __init__(self, organization, *args, **kwargs):
+        super(EventBasicForm, self).__init__(*args, **kwargs)
         self.organization = organization
         self.instance.organization = organization
-        self.organization_editable_by = organization_editable_by
-        if not self.organization_editable_by:
-            del self.fields['editors']
 
         # Always display the timezone that is currently chosen,
         # even if it wouldn't otherwise be displayed.
@@ -329,35 +315,6 @@ class EventForm(forms.ModelForm):
 
         if self.instance.is_demo():
             del self.fields['slug']
-
-        if self.instance.organization.check_payment_allowed:
-            self.fields['check_postmark_cutoff'].required = True
-        else:
-            del self.fields['check_postmark_cutoff']
-
-    def clean_editors(self):
-        editors = self.cleaned_data['editors']
-        if not editors:
-            return []
-
-        validator = EmailValidator()
-        # Split email list by commas and trim whitespace:
-        editors = [x.strip() for x in editors.split(',')]
-        for editor in editors:
-            validator(editor)
-        return editors
-
-    def clean_invite_attendees(self):
-        invite_attendees = self.cleaned_data['invite_attendees']
-        if not invite_attendees:
-            return []
-
-        validator = EmailValidator()
-        # Split email list by commas and trim whitespace:
-        invite_attendees = [x.strip() for x in invite_attendees.split(',')]
-        for editor in invite_attendees:
-            validator(editor)
-        return invite_attendees
 
     def clean_slug(self):
         slug = self.cleaned_data['slug']
@@ -372,15 +329,52 @@ class EventForm(forms.ModelForm):
         return slug
 
     def clean(self):
-        cleaned_data = super(EventForm, self).clean()
+        cleaned_data = super(EventBasicForm, self).clean()
         if ('start_date' in cleaned_data and 'end_date' in cleaned_data and
                 cleaned_data['start_date'] > cleaned_data['end_date']):
             raise ValidationError("Start date must be before or equal to "
                                   "the end date.")
         return cleaned_data
 
+
+class EventDesignForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ('banner_image',)
+
+
+class EventPermissionsForm(forms.ModelForm):
+    editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
+                              widget=forms.Textarea,
+                              required=False)
+
+    class Meta:
+        model = Event
+        fields = ()
+
+    def __init__(self, request, organization, organization_editable_by, *args, **kwargs):
+        super(EventPermissionsForm, self).__init__(*args, **kwargs)
+        self.request = request
+        self.organization = organization
+        self.instance.organization = organization
+        self.organization_editable_by = organization_editable_by
+        if not self.organization_editable_by:
+            del self.fields['editors']
+
+    def clean_editors(self):
+        editors = self.cleaned_data['editors']
+        if not editors:
+            return []
+
+        validator = EmailValidator()
+        # Split email list by commas and trim whitespace:
+        editors = [x.strip() for x in editors.split(',')]
+        for editor in editors:
+            validator(editor)
+        return editors
+
     def save(self):
-        instance = super(EventForm, self).save()
+        instance = super(EventPermissionsForm, self).save()
 
         if self.organization_editable_by and self.cleaned_data['editors']:
             for editor in self.cleaned_data['editors']:
@@ -396,6 +390,45 @@ class EventForm(forms.ModelForm):
                         secure=self.request.is_secure(),
                         site=get_current_site(self.request),
                     )
+        return instance
+
+
+class EventRegistrationForm(forms.ModelForm):
+    invite_attendees = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to the event.',
+                                       widget=forms.Textarea,
+                                       required=False)
+
+    class Meta:
+        model = Event
+        fields = ('privacy', 'cart_timeout', 'transfers_allowed',
+                  'collect_housing_data', 'collect_survey_data',
+                  'liability_waiver', 'currency', 'check_postmark_cutoff')
+
+    def __init__(self, request, organization, *args, **kwargs):
+        super(EventRegistrationForm, self).__init__(*args, **kwargs)
+        self.request = request
+        self.organization = organization
+        self.instance.organization = organization
+
+        if self.instance.organization.check_payment_allowed:
+            self.fields['check_postmark_cutoff'].required = True
+        else:
+            del self.fields['check_postmark_cutoff']
+
+    def clean_invite_attendees(self):
+        invite_attendees = self.cleaned_data['invite_attendees']
+        if not invite_attendees:
+            return []
+
+        validator = EmailValidator()
+        # Split email list by commas and trim whitespace:
+        invite_attendees = [x.strip() for x in invite_attendees.split(',')]
+        for editor in invite_attendees:
+            validator(editor)
+        return invite_attendees
+
+    def save(self):
+        instance = super(EventRegistrationForm, self).save()
 
         if self.cleaned_data['invite_attendees']:
             for invite_attendee in self.cleaned_data['invite_attendees']:
@@ -596,18 +629,6 @@ class ManualPaymentForm(forms.ModelForm):
         txn.created_by = user
         txn.is_confirmed = True
         txn.api_type = txn.event.api_type
-
-
-class ManualDiscountForm(forms.Form):
-    discount = forms.ModelChoiceField(Discount)
-
-    def __init__(self, order, *args, **kwargs):
-        super(ManualDiscountForm, self).__init__(*args, **kwargs)
-        self.fields['discount'].queryset = Discount.objects.filter(event=order.event)
-        self.order = order
-
-    def save(self):
-        self.order.add_discount(self.cleaned_data['discount'], force=True)
 
 
 class OrderNotesForm(forms.ModelForm):
