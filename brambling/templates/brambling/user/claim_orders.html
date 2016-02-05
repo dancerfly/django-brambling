@@ -20,8 +20,8 @@
 	{% else %}
 		{% if claimable_orders %}
 			<p>
-				{% with claimable_count=claimable_orders|length unclaimable_count=unclaimable_orders|length %}
-				{% with order_count=claimable_count|add:unclaimable_count %}
+				{% with claimable_count=claimable_orders|length mergeable_count=mergeable_orders|length %}
+				{% with order_count=claimable_count|add:mergeable_count %}
 				{{ order_count|apnumber|capfirst }} order{{ order_count|pluralize }} {% if order_count == 1 %}was{% else %}were{% endif%} completed with your email address while not logged in.
 				Claim order{{ claimable_orders|pluralize }} below to make changes or keep {% if claimable_orders|length == 1 %}it{% else %}them{% endif%} in your account records.
 				{% endwith %}{% endwith %}
@@ -50,27 +50,55 @@
 			</div>
 		{% endif %}
 
-		{% if unclaimable_orders %}
-			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders already associated with this account.</p>
+		{% if mergeable_orders %}
+			<p>The following orders were created using your email address, but can’t be claimed because they conflict with orders already associated with this account.  Instead, the conflicting orders must be merged.</p>
 
 			<div class='table-responsive'>
 				<table class='table table-striped'>
 					<tbody>
-						{% for order in unclaimable_orders %}
+						{% for order in mergeable_orders %}
 							<tr>
 								<td>
 									<strong>{{ order.event.name }}</strong><br />
 									<span class="text-muted">{% include "brambling/event/_when.html" with event=order.event only %}</span>
+
+									{% url 'brambling_merge_order' as merge_url %}
+									<div class="modal fade" id="confirm-merge{{ forloop.counter }}" tabindex="-1" role="dialog" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title" id="myModalLabel">Confirm Merge</h4>
+												</div>
+												<div class="modal-body">
+													<p>You are about to merge two orders.  Order <strong>{{ order.code }}</strong>, which was created using your email address but is not associated with your Dancerfly account, will be merged with your order for <strong>{{ order.event.name }}</strong>.</p>
+													<p>After the merge, all purchases and attendees from both orders will be part of the same order.  If there is hosting information (for housing visiting dancers) on both orders, only the information that is part of the order belonging to your account will be kept.</p>
+													<p>Order {{ order.code }} will be deleted from the system.</p>
+													<p>This procedure cannot be undone. Do you want to proceed?</p>
+												</div>
+												<div class="modal-footer">
+													<button type="button" class="btn btn-default" data-dismiss="modal">No, I changed my mind</button>
+													<form action="{{ merge_url }}" method='post' class='inline-block'>
+														{% csrf_token %}
+														<input type="hidden" name="pk" value="{{ order.pk }}">
+														<button class='btn btn-primary' type='submit'>Yes, merge the orders</button>
+													</form>
+												</div>
+											</div>
+										</div>
+									</div>
+								</td>
+								<td class='text-right'>
+									<a href="javascript://" data-toggle="modal" data-target="#confirm-merge{{ forloop.counter }}" class="btn btn-default">Merge</a>
 								</td>
 							</tr>
-
 						{% endfor %}
 					</tbody>
 				</table>
 			</div>
 		{% endif %}
 
-		{% if not claimable_orders and not unclaimable_orders %}
+		{% if not claimable_orders and not mergeable_orders %}
 			<p>Thanks for stopping by! Doesn't look like there are any orders out there for you to claim at the moment.</p>
 		{% endif %}
 	{% endif %}

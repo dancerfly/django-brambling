@@ -696,7 +696,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
             event__in=event_pks,
         )
 
-    def get_unclaimable_orders(self):
+    def get_mergeable_orders(self):
         if self.email != self.confirmed_email:
             return Order.objects.none()
         event_pks = Event.objects.filter(order__person=self).values_list('pk', flat=True).distinct()

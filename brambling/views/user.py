@@ -13,7 +13,8 @@ import stripe
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
-                              Event, Organization)
+                              Event, Organization, Transaction, BoughtItem,
+                              EventHousing, Attendee)
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
 from brambling.utils.payment import (dwolla_oauth_url, LIVE,
@@ -296,9 +297,45 @@ class ClaimOrdersView(TemplateView):
         context = super(ClaimOrdersView, self).get_context_data(**kwargs)
         context.update({
             'claimable_orders': self.request.user.get_claimable_orders().select_related('event__organization'),
-            'unclaimable_orders': self.request.user.get_unclaimable_orders().select_related('event__organization'),
+            'mergeable_orders': self.request.user.get_mergeable_orders().select_related('event__organization'),
         })
         return context
+
+
+class MergeOrderView(View):
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            raise Http404
+
+        if request.user.email != request.user.confirmed_email:
+            raise Http404
+
+        pk = request.POST['pk']
+        try:
+            old_order = request.user.get_mergeable_orders().get(pk=pk)
+        except Order.DoesNotExist:
+            raise Http404
+
+        new_order = Order.objects.get(event=old_order.event,
+                                      person=request.user)
+
+        if not new_order.get_eventhousing():
+            EventHousing.objects.filter(order=old_order).update(order=new_order)
+        Attendee.objects.filter(order=old_order).update(order=new_order)
+        Transaction.objects.filter(order=old_order).update(order=new_order)
+        BoughtItem.objects.filter(order=old_order).update(order=new_order)
+        old_order.delete()
+
+        messages.add_message(request, messages.SUCCESS,
+                             "Orders successfully merged.")
+        url = reverse(
+            'brambling_event_attendee_list',
+            kwargs={
+                'event_slug': new_order.event.slug,
+                'organization_slug': new_order.event.organization.slug,
+            })
+        return HttpResponseRedirect(url)
 
 
 class ClaimOrderView(View):
