@@ -1,6 +1,9 @@
 # encoding: utf-8
+from datetime import timedelta
+
 from django.core import mail
 from django.test import TestCase
+from django.utils import timezone
 from mock import patch, MagicMock
 
 from brambling.management.commands.send_daily_emails import Command
@@ -34,6 +37,47 @@ class DailyDigestCommandTestCase(TestCase):
         self.assertEqual(mail.outbox[0].subject, '[Dancerfly] New purchases for your events!')
         self.assertIn(event.name, mail.outbox[0].body)
         self.assertIn(event.name, mail.outbox[0].alternatives[0][0])
+
+    def test_send_digest__owner__no_transactions(self):
+        owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
+        organization = OrganizationFactory(owner=owner)
+        event = EventFactory(organization=organization)
+        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        self.assertEqual(len(mail.outbox), 0)
+        self.command.send_digest(owner)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, '[Dancerfly] New purchases for your events!')
+        self.assertIn(event.name, mail.outbox[0].body)
+        self.assertIn(event.name, mail.outbox[0].alternatives[0][0])
+
+    def test_send_digest__owner__transactions_older_than_one_day(self):
+        owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
+        organization = OrganizationFactory(owner=owner)
+        event = EventFactory(organization=organization)
+        transaction = TransactionFactory(
+            event=event,
+            transaction_type=Transaction.PURCHASE,
+            timestamp=timezone.now() - timedelta(days=2),
+        )
+        self.assertEqual(len(mail.outbox), 0)
+        self.command.send_digest(owner)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_send_digest__owner__transactions_older_than_last_sent(self):
+        owner = PersonFactory(
+            notify_new_purchases=Person.NOTIFY_DAILY,
+            last_new_purchases_digest_sent=timezone.now() - timedelta(hours=1),
+        )
+        organization = OrganizationFactory(owner=owner)
+        event = EventFactory(organization=organization)
+        transaction = TransactionFactory(
+            event=event,
+            transaction_type=Transaction.PURCHASE,
+            timestamp=timezone.now() - timedelta(hours=2),
+        )
+        self.assertEqual(len(mail.outbox), 0)
+        self.command.send_digest(owner)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_send_digest__owner__two_events(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
