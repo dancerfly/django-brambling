@@ -26,7 +26,7 @@
 						<th colspan='2'>Permissions</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody class='permissions-table'>
 					{% for form in organizationmember_forms %}
 						<tr>
 							<th>{{ form.instance.person.get_full_name }}</th>
@@ -89,10 +89,25 @@
 					{% for form in invite_formset %}
 						{% form form using %}
 							<tr>
-								<td>{% formfield form.email with placeholder="Email" %}</td>
+								<td{% if form.errors.email %} class='has-error'{% endif %}>
+									{% formfield form.email with placeholder="Email" %}
+									{% if form.errors.email %}
+										{% for error in form.errors.email %}
+											<p class='help-block'>{{ error }}</p>
+										{% endfor %}
+									{% endif %}
+								</td>
 								<td></td>
-								<td>{% formfield form.kind %}</td>
-								<td></td>
+								{% if organization_editable_by %}
+									<td>
+										{% formfield form.kind %}
+										{% formfield form.DELETE %}
+									</td>
+									<td class='js-actions'></td>
+								{% else %}
+									<td>{{ form.instance.verbose_name }}</td>
+									<td></td>
+								{% endif %}
 							</tr>
 						{% endform %}
 					{% endfor %}
@@ -100,19 +115,22 @@
 			</table>
 		</div>
 
-		<script type="text/html" class='invite-form-template'>
-			{% with form=invite_formset.empty_form %}
-				{% form form using %}
-					<tr>
-						<td>{% formfield form.email with placeholder="Email" %}</td>
-						<td></td>
-						<td>{% formfield form.kind %}</td>
-						<td></td>
-					</tr>
-				{% endform %}
-			{% endwith %}
-		</script>
+		{% if organization_editable_by %}
+			<script type="text/html" class='new-invite-template'>
+				{% with form=invite_formset.empty_form %}
+					{% form form using %}
+						<tr>
+							<td>{% formfield form.email with placeholder="Email" %}</td>
+							<td></td>
+							<td>{% formfield form.kind %}</td>
+							<td class='js-actions'></td>
+						</tr>
+					{% endform %}
+				{% endwith %}
+			</script>
+		{% endif %}
 
+		<span class='js-formset-add'></span>
 		<button class="btn btn-primary" type="submit">
 			Save Changes
 		</button>
@@ -121,4 +139,38 @@
 		</a>
 
 	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% if organization_editable_by %}
+	<script type="text/javascript">
+		$(function () {
+			"use strict";
+
+			var new_invites_chosen = function (e, $row) {
+				$row.find('.chosen-select').each(_brambling_chosen_init);
+			};
+
+			$('.permissions-table').on('row_added.formset', new_invites_chosen);
+
+			$('.permissions-table').formset({
+				prefix: '{{ invite_formset.prefix }}',
+				deleteTrigger: '<a href="#"><i class="fa fa-fw fa-times text-danger"></i></a>',
+				deleteWrapper: '.js-actions',
+				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an invitation</a>',
+				addWrapper: '.js-formset-add',
+				formTemplate: '.new-invite-template'
+			});
+
+			$('.permissions-table').on('change', 'tr:last-child input,tr:last-child select', function () {
+				if ($(this).val() !== '') $('.js-formset-add a').click();
+			});
+
+			$('.permissions-table').on('keyup', 'tr:last-child input', function () {
+				if ($(this).val() !== '') $('.js-formset-add a').click();
+			});
+		}());
+	</script>
+	{% endif %}
 {% endblock %}

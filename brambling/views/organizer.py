@@ -115,6 +115,7 @@ class OrganizationPermissionsView(OrganizationUpdateView):
             OrganizationAdminInviteForm,
             formset=BaseInviteFormSet,
             extra=1,
+            can_delete=True,
         )
 
     def get_context_data(self, **kwargs):
@@ -494,6 +495,7 @@ class EventPermissionsView(TemplateView):
             EventAdminInviteForm,
             formset=BaseInviteFormSet,
             extra=1,
+            can_delete=True,
         )
         self.invite_formset = invite_formset_class(
             request=self.request,

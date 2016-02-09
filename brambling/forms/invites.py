@@ -36,8 +36,10 @@ class BaseInviteFormSet(BaseFormSet):
         return form
 
     def save(self):
+        deleted_forms = set(self.deleted_forms)
         for form in self:
-            form.save()
+            if form not in deleted_forms and form.has_changed():
+                form.save()
 
 
 class BaseInviteForm(forms.Form):
@@ -50,6 +52,7 @@ class BaseInviteForm(forms.Form):
         self.request = request
         self.content = content
         self.fields['kind'].choices = self.choices
+        self.fields['kind'].initial = self.choices[0][0]
 
     def save(self):
         invite_class = get_invite_class(self.cleaned_data['kind'])

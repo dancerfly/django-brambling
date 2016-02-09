@@ -57,8 +57,8 @@
 		<script type="text/javascript" src="{% static "zenaida/lib/chosen/chosen.jquery.min.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/lib/modernizr.js" %}"></script>
 		<script type="text/javascript">
-			$('select.chosen-select').each(function () {
-				var $this = $(this),
+			window._brambling_chosen_init = function (idx, ele) {
+				var $this = $(ele),
 					first_child = $this.children("option").eq(0),
 					options = {
 						width: $this.hasClass('chosen-width-auto') ? "auto" : "100%",
@@ -71,7 +71,8 @@
 				// If the first child has no value, blank its label.
 				if (first_child.val() === "") first_child.html("");
 				$this.chosen(options);
-			})
+			};
+			$('select.chosen-select').each(_brambling_chosen_init);
 		</script>
 		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>
