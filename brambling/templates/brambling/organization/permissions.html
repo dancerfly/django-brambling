@@ -13,81 +13,103 @@
 
 		{{ invite_formset.management_form }}
 
-		{% form form using %}
-			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+		<p>The following people have access to edit this organization and all its events. Only the organization owners can add or remove editors.</p>
 
-			<p>The following people have access to edit this organization and all its events. Only the organization owners can add or remove editors.</p>
-
-			<div class="table-responsive">
-				<table class='table table-striped'>
-					<tbody>
+		<div class="table-responsive">
+			<table class='table table-striped'>
+				<thead>
+					<tr>
+						<th colspan='2'>Name</th>
+						<th colspan='2'>Permissions</th>
+					</tr>
+				</thead>
+				<tbody class='permissions-table'>
+					{% for form in organizationmember_forms %}
 						<tr>
-							<th>{{ organization.owner.get_full_name }}</th>
-							<td>{{ organization.owner.email }}</td>
-							<td><i class='fa fa-fw fa-lock'></i> Owner</td>
-							{% if organization.owner == request.user %}<td></td>{% endif %}
-						</tr>
-						{% for editor in organization.editors.all %}
-							<tr>
-								<th>{{ editor.get_full_name }}</th>
-								<td>{{ editor.email }}</td>
-								<td><i class='fa fa-fw fa-pencil'></i> Editor</td>
-								{% if organization.owner == request.user %}
-									<td>
-										<a href="{% url 'brambling_organization_remove_editor' organization_slug=organization.slug pk=editor.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
-									</td>
+							<th>{{ form.instance.person.get_full_name }}</th>
+							<td>{{ form.instance.person.email }}</td>
+							<td>
+								{% if organization_owned_by %}
+									{% formfield form.role %}
+								{% else %}
+									{{ form.instance.get_role_display }}
 								{% endif %}
-							</tr>
-						{% endfor %}
-						{% for invite in invites %}
+							</td>
+							<td>
+								{% if organization_owned_by %}
+									<a href="{% url 'brambling_organization_remove_member' organization_slug=organization.slug pk=form.instance.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
+
+					{% for invite in invites %}
+						<tr>
+							<th>{{ invite.invite.email }}</th>
+							<td><em>
+								{% if invite.invite.is_sent %}
+									Invitation sent
+								{% else %}
+									Invitation not sent
+								{% endif %}
+							</em></td>
+							<td>
+								{{ invite.verbose_name }}
+							</td>
+							<td>
+								{% if organization_owned_by %}
+									<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+									<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
+
+					{% for form in invite_formset %}
+						{% form form using %}
 							<tr>
-								<th>{{ invite.invite.email }}</th>
-								<td>
-									{% if invite.invite.is_sent %}
-										<i class='fa fa-fw fa-paper-plane'></i> Invitation sent
-									{% else %}
-										<i class='fa fa-fw fa-envelope'></i> Not sent
+								<td{% if form.errors.email %} class='has-error'{% endif %}>
+									{% formfield form.email with placeholder="Email" %}
+									{% if form.errors.email %}
+										{% for error in form.errors.email %}
+											<p class='help-block'>{{ error }}</p>
+										{% endfor %}
 									{% endif %}
 								</td>
-								<td>{{ invite.verbose_name }}</td>
-								{% if organization.owner == request.user %}
+								<td></td>
+								{% if organization_owned_by %}
 									<td>
-										<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
-										<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+										{% formfield form.kind %}
+										{% formfield form.DELETE %}
 									</td>
+									<td class='js-actions'></td>
+								{% else %}
+									<td>{{ form.instance.verbose_name }}</td>
+									<td></td>
 								{% endif %}
 							</tr>
-						{% endfor %}
+						{% endform %}
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
 
-						{% for form in invite_formset %}
-							{% form form using %}
-								<tr>
-									<td>{% formfield form.email with placeholder="Email" %}</td>
-									<td></td>
-									<td>{% formfield form.kind %}</td>
-									<td></td>
-								</tr>
-							{% endform %}
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
+		{% if organization_owned_by %}
+			<script type="text/html" class='new-invite-template'>
+				{% with form=invite_formset.empty_form %}
+					{% form form using %}
+						<tr>
+							<td>{% formfield form.email with placeholder="Email" %}</td>
+							<td></td>
+							<td>{% formfield form.kind %}</td>
+							<td class='js-actions'></td>
+						</tr>
+					{% endform %}
+				{% endwith %}
+			</script>
+		{% endif %}
 
-			{% formrow form.editors with label="Invite more editors" %}
-		{% endform %}
-
-		<script type="text/html" class='invite-form-template'>
-			{% with form=invite_formset.empty_form %}
-				{% form form using %}
-					<tr>
-						<td>{% formfield form.email with placeholder="Email" %}</td>
-						<td></td>
-						<td>{% formfield form.kind %}</td>
-						<td></td>
-					</tr>
-				{% endform %}
-			{% endwith %}
-		</script>
+		<span class='js-formset-add'></span>
 
 		<button class="btn btn-primary" type="submit">
 			Save Changes
@@ -99,4 +121,38 @@
 
 	</form>
 
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% if organization_owned_by %}
+	<script type="text/javascript">
+		$(function () {
+			"use strict";
+
+			var new_invites_chosen = function (e, $row) {
+				$row.find('.chosen-select').each(_brambling_chosen_init);
+			};
+
+			$('.permissions-table').on('row_added.formset', new_invites_chosen);
+
+			$('.permissions-table').formset({
+				prefix: '{{ invite_formset.prefix }}',
+				deleteTrigger: '<a href="#"><i class="fa fa-fw fa-times text-danger"></i></a>',
+				deleteWrapper: '.js-actions',
+				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add an invitation</a>',
+				addWrapper: '.js-formset-add',
+				formTemplate: '.new-invite-template'
+			});
+
+			$('.permissions-table').on('change', 'tr:last-child input,tr:last-child select', function () {
+				if ($(this).val() !== '') $('.js-formset-add a').click();
+			});
+
+			$('.permissions-table').on('keyup', 'tr:last-child input', function () {
+				if ($(this).val() !== '') $('.js-formset-add a').click();
+			});
+		}());
+	</script>
+	{% endif %}
 {% endblock %}

@@ -194,7 +194,7 @@ class EventEditInvite(BaseInvite):
     def accept(self):
         member = EventMember.objects.get_or_create(
             person=self.request.user,
-            event=self.invite.content_id,
+            event=self.get_content(),
             defaults={'role': EventMember.EDIT},
         )[0]
         # If they're at VIEW, upgrade them to EDIT.
@@ -239,7 +239,7 @@ class EventViewInvite(BaseInvite):
         # doesn't downgrade them.
         EventMember.objects.get_or_create(
             person=self.request.user,
-            event=self.invite.content_id,
+            event=self.get_content(),
             defaults={'role': EventMember.VIEW},
         )
 
@@ -278,7 +278,7 @@ class OrganizationOwnerInvite(BaseInvite):
     def accept(self):
         member = OrganizationMember.objects.get_or_create(
             person=self.request.user,
-            organization=self.invite.content_id,
+            organization=self.get_content(),
             defaults={'role': OrganizationMember.OWNER},
         )[0]
         # If they're not at OWNER, upgrade them.
@@ -319,7 +319,7 @@ class OrganizationEditInvite(BaseInvite):
     def accept(self):
         member = OrganizationMember.objects.get_or_create(
             person=self.request.user,
-            organization=self.invite.content_id,
+            organization=self.get_content(),
             defaults={'role': OrganizationMember.EDIT},
         )[0]
         # If they're at VIEW, upgrade them to EDIT.
@@ -360,7 +360,7 @@ class OrganizationViewInvite(BaseInvite):
     def accept(self):
         OrganizationMember.objects.get_or_create(
             person=self.request.user,
-            organization=self.invite.content_id,
+            organization=self.get_content(),
             defaults={'role': OrganizationMember.VIEW},
         )
 

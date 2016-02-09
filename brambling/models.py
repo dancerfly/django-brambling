@@ -430,7 +430,7 @@ class Organization(AbstractDwollaModel):
 
         try:
             member = OrganizationMember.objects.get_cached(
-                organization=self.organization,
+                organization=self,
                 person=person,
 
             )
@@ -451,7 +451,7 @@ class Organization(AbstractDwollaModel):
 
         try:
             member = OrganizationMember.objects.get_cached(
-                organization=self.organization,
+                organization=self,
                 person=person,
 
             )
@@ -472,7 +472,7 @@ class Organization(AbstractDwollaModel):
 
         try:
             OrganizationMember.objects.get_cached(
-                organization=self.organization,
+                organization=self,
                 person=person,
 
             )

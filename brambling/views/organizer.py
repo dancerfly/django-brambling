@@ -97,38 +97,83 @@ class OrganizationUpdateView(UpdateView):
         return context
 
 
-class OrganizationPermissionsView(OrganizationUpdateView):
+class OrganizationPermissionsView(TemplateView):
     template_name = 'brambling/organization/permissions.html'
-    success_view_name = 'brambling_organization_update_permissions'
 
-    def get_form_kwargs(self):
-        kwargs = {
-            'request': self.request,
-            'content': self.object,
-        }
-        if self.request.method == 'POST':
-            kwargs['data'] = self.request.POST
-        return kwargs
+    def get(self, request, *args, **kwargs):
+        self.get_objects()
+        self.get_forms()
+        context = self.get_context_data()
+        return self.render_to_response(context)
 
-    def get_form_class(self):
-        return formset_factory(
+    def post(self, request, *args, **kwargs):
+        self.get_objects()
+        self.get_forms()
+
+        if not self.organization.has_admin_permission(request.user):
+            raise Http404
+
+        all_valid = True
+        for form in self.organizationmember_forms:
+            all_valid = all_valid and form.is_valid()
+        all_valid = all_valid and self.invite_formset.is_valid()
+
+        if all_valid:
+            for form in self.organizationmember_forms:
+                form.save()
+            self.invite_formset.save()
+            return HttpResponseRedirect(self.get_success_url())
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def get_objects(self):
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+
+        if not self.organization.has_view_permission(self.request.user):
+            raise Http404
+
+    def get_forms(self):
+        data = self.request.POST if self.request.method == 'POST' else None
+
+        OrganizationMemberForm = modelform_factory(OrganizationMember, fields=('role',))
+        self.organizationmember_forms = [
+            OrganizationMemberForm(instance=member, prefix='organization-{}'.format(member.pk), data=data)
+            for member in OrganizationMember.objects.filter(organization=self.organization).order_by('role').select_related('person')
+        ]
+
+        invite_formset_class = formset_factory(
             OrganizationAdminInviteForm,
             formset=BaseInviteFormSet,
             extra=1,
             can_delete=True,
         )
+        self.invite_formset = invite_formset_class(
+            request=self.request,
+            content=self.organization,
+            data=data,
+        )
+
+    def get_success_url(self):
+        return reverse('brambling_organization_update_permissions',
+                       kwargs={'organization_slug': self.organization.slug})
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationPermissionsView, self).get_context_data(**kwargs)
-        context['invite_formset'] = context['form']
-        context['invites'] = [
-            get_invite_class(invite.kind)(invite=invite, request=self.request, content=self.object)
-            for invite in (
-                OrganizationOwnerInvite.get_invites(content=self.object) |
-                OrganizationEditInvite.get_invites(content=self.object) |
-                OrganizationViewInvite.get_invites(content=self.object)
-            )
-        ]
+        context.update({
+            'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
+            'organization': self.organization,
+            'organization_owned_by': self.organization.has_admin_permission(self.request.user),
+            'organizationmember_forms': self.organizationmember_forms,
+            'invite_formset': self.invite_formset,
+            'invites': [
+                get_invite_class(invite.kind)(invite=invite, request=self.request, content=self.organization)
+                for invite in (
+                    OrganizationOwnerInvite.get_invites(content=self.organization) |
+                    OrganizationEditInvite.get_invites(content=self.organization) |
+                    OrganizationViewInvite.get_invites(content=self.organization)
+                )
+            ],
+        })
         return context
 
 
@@ -162,21 +207,24 @@ class OrganizationPaymentView(OrganizationUpdateView):
         return context
 
 
-class OrganizationRemoveEditorView(View):
+class OrganizationRemoveMemberView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             raise Http404
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
 
-        if not organization.owner_id == request.user.pk:
+        if not organization.has_admin_permission(request.user):
             raise Http404
         try:
-            person = Person.objects.get(pk=kwargs['pk'])
-        except Person.DoesNotExist:
+            member = OrganizationMember.objects.get(
+                pk=kwargs['pk'],
+                organization=organization,
+            )
+        except OrganizationMember.DoesNotExist:
             pass
         else:
-            organization.editors.remove(person)
-        messages.success(request, 'Removed editor successfully.')
+            member.delete()
+        messages.success(request, 'Removed member successfully.')
         return HttpResponseRedirect(reverse('brambling_organization_update_permissions',
                                     kwargs={'organization_slug': organization.slug}))
 
@@ -438,9 +486,7 @@ class EventDesignView(UpdateView):
 
 
 class EventPermissionsView(TemplateView):
-    model = Event
     template_name = 'brambling/event/organizer/permissions.html'
-    context_object_name = 'event'
 
     def get(self, request, *args, **kwargs):
         self.get_objects()
@@ -637,7 +683,7 @@ class EventRemoveMemberView(View):
             pass
         else:
             member.delete()
-        messages.success(request, 'Removed editor successfully.')
+        messages.success(request, 'Removed member successfully.')
         return HttpResponseRedirect(reverse('brambling_event_permissions',
                                     kwargs={'event_slug': event.slug, 'organization_slug': organization.slug}))
 
