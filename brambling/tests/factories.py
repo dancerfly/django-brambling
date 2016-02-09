@@ -10,7 +10,6 @@ from brambling.models import (
     CustomForm, CustomFormField, EnvironmentalFactor, HousingRequestNight,
     HousingCategory, EventHousing, Home, HousingSlot, DwollaAccount,
 )
-from brambling.utils.invites import EventEditInvite
 from brambling.utils.payment import DWOLLA_SCOPES
 
 
@@ -134,7 +133,7 @@ class InviteFactory(factory.DjangoModelFactory):
     code = factory.Sequence(lambda n: "invite{}".format(n))
     email = "test@test.com"
     user = factory.SubFactory(PersonFactory)
-    kind = EventEditInvite.slug
+    kind = 'event_edit'
 
 
 class TransactionFactory(factory.DjangoModelFactory):

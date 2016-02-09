@@ -15,6 +15,11 @@ from brambling.models import (
     OrganizationMember,
     Transaction,
 )
+from brambling.tests.factories import (
+    EventFactory,
+    OrderFactory,
+    OrganizationFactory,
+)
 
 
 registry = {}
@@ -87,14 +92,17 @@ class BaseInvite(object):
     def post_manage_url(self):
         raise NotImplementedError
 
-    def send(self):
-        InviteMailer(
+    def get_mailer(self):
+        return InviteMailer(
             site=get_current_site(self.request),
             secure=self.request.is_secure(),
             invite=self.invite,
             content=self.get_content(),
-            key="invite_{}".format(self.invite.kind),
-        ).send()
+            key="invite_{}".format(self.slug),
+        )
+
+    def send(self):
+        self.get_mailer().send()
         self.invite.is_sent = True
         self.invite.save()
 
@@ -115,6 +123,23 @@ class BaseInvite(object):
         )
         invite = cls(request, instance, content)
         return invite, created
+
+    @classmethod
+    def _get_fake_content(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def get_fake_invite(cls, request):
+        """Returns a fake invite (i.e. for testing emails)"""
+        instance = Invite(
+            email='support@dancerfly.com',
+            user=request.user,
+            kind=cls.slug,
+            content_id=0,
+        )
+        invite = cls(request, instance)
+        invite._content = cls._get_fake_content()
+        return invite
 
 
 @register_invite
@@ -153,6 +178,10 @@ class EventInvite(BaseInvite):
             'event_slug': content.slug,
             'organization_slug': content.organization.slug
         })
+
+    @classmethod
+    def _get_fake_content(self):
+        return EventFactory.build()
 
 
 @register_invite
@@ -193,6 +222,10 @@ class EventEditInvite(BaseInvite):
             'organization_slug': content.organization.slug
         })
 
+    @classmethod
+    def _get_fake_content(self):
+        return EventFactory.build()
+
 
 @register_invite
 class EventViewInvite(BaseInvite):
@@ -229,6 +262,10 @@ class EventViewInvite(BaseInvite):
             'event_slug': content.slug,
             'organization_slug': content.organization.slug
         })
+
+    @classmethod
+    def _get_fake_content(self):
+        return EventFactory.build()
 
 
 @register_invite
@@ -267,6 +304,10 @@ class OrganizationOwnerInvite(BaseInvite):
             'organization_slug': content.slug
         })
 
+    @classmethod
+    def _get_fake_content(self):
+        return OrganizationFactory.build()
+
 
 @register_invite
 class OrganizationEditInvite(BaseInvite):
@@ -304,6 +345,10 @@ class OrganizationEditInvite(BaseInvite):
             'organization_slug': content.slug
         })
 
+    @classmethod
+    def _get_fake_content(self):
+        return OrganizationFactory.build()
+
 
 @register_invite
 class OrganizationViewInvite(BaseInvite):
@@ -336,6 +381,10 @@ class OrganizationViewInvite(BaseInvite):
         return reverse('brambling_organization_update_permissions', kwargs={
             'organization_slug': content.slug
         })
+
+    @classmethod
+    def _get_fake_content(self):
+        return OrganizationFactory.build()
 
 
 @register_invite
@@ -452,3 +501,12 @@ class TransferInvite(BaseInvite):
             'organization_slug': event.organization.slug,
             'event_slug': event.slug,
         })
+
+    @classmethod
+    def _get_fake_content(self):
+        order = OrderFactory.build()
+        return BoughtItem(
+            order=order,
+            item_name='test item',
+            item_option_name='test item option',
+        )
