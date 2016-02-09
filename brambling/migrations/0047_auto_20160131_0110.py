@@ -56,7 +56,7 @@ def permissions_backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('brambling', '0045_auto_20160131_0109'),
+        ('brambling', '0046_auto_20160131_0109'),
     ]
 
     operations = [
