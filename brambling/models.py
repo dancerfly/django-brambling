@@ -300,7 +300,7 @@ def create_defaults(app_config, **kwargs):
             ])
 
 
-class OrganizationMemberManager(models.Model):
+class OrganizationMemberManager(models.Manager):
     def __init__(self):
         self._cache = {}
         super(OrganizationMemberManager, self).__init__()
@@ -494,7 +494,7 @@ class Organization(AbstractDwollaModel):
         return self.slug == Organization.DEMO_SLUG
 
 
-class EventMemberManager(models.Model):
+class EventMemberManager(models.Manager):
     def __init__(self):
         self._cache = {}
         super(EventMemberManager, self).__init__()
