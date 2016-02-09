@@ -1,0 +1,18 @@
+{% load brambling_plaintext zenaida %}{% regroup transactions by event as event_list %}{% autoescape off %}Congratulations! Your events have made the following sales since {{ cutoff }}
+{% for event in event_list %}
+
+{{ event.grouper.name }}
+{{ protocol }}://{{ site.domain }}{% url "brambling_event_summary" event_slug=event.grouper.slug organization_slug=event.grouper.organization.slug %}
+
+{{ "Code"|ljust:15 }} | {{ "Amount"|ljust:13 }} | {{ "Items"|ljust:12 }}
+{% for transaction in event.list %}{% with items=transaction.bought_items.all %}================+===============+===============================
+{{ transaction.order.code|ljust:15 }} | {{ transaction.amount|format_money:transaction.event.currency|ljust:13 }} | {% if items.0 %}{% filter truncatechars:30 %}{{ items.0.item_name }} ({{ items.0.item_option_name }}){% endfilter %}{% endif %}
+{{ transaction.timestamp|date:"DATE_FORMAT"|ljust:15 }} | {% if transaction.is_unconfirmed_check %}{{ "Check pending"|ljust:13 }}{% else %}{{ ""|ljust:13 }}{% endif %} | {% if items.1 %}{% filter truncatechars:30 %}{{ items.1.item_name }} ({{ items.1.item_option_name }}){% endfilter %}{% endif %}
+{{ transaction.timestamp|date:"TIME_FORMAT"|ljust:15 }} | {{ ""|ljust:13 }} | {% if items.2 %}{% filter truncatechars:30 %}{{ items.2.item_name }} ({{ items.2.item_option_name }}){% endfilter %}{% endif %}
+{% for item in items|slice:"3:" %}
+{{ ""|ljust:15 }} | {{ ""|ljust:13 }} | {{ item.item_name }} ({{ item.item_option_name }})
+{% endfor %}{% endwith %}{% endfor %}{% endfor %}{% endautoescape %}
+
+You can update your notification settings here: {{ protocol }}://{{ site.domain }}{% url "brambling_user_notifications" %}
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)

@@ -647,6 +647,14 @@ class PersonManager(BaseUserManager):
 
 
 class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
+    NOTIFY_NEVER = 'never'
+    NOTIFY_EACH = 'each'
+    NOTIFY_DAILY = 'daily'
+    NOTIFY_NEW_PURCHASES_CHOICES = (
+        (NOTIFY_NEVER, "Don't email me about new purchases"),
+        (NOTIFY_EACH, "Email me about every new purchase"),
+        (NOTIFY_DAILY, "Email me a daily report of new purchases"),
+    )
     email = models.EmailField(max_length=254, unique=True)
     confirmed_email = models.EmailField(max_length=254)
     home = models.ForeignKey('Home', blank=True, null=True,
@@ -654,6 +662,12 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+
+    # Notification settings
+    last_new_purchases_digest_sent = models.DateTimeField(default=None, blank=True, null=True)
+    notify_new_purchases = models.CharField(max_length=5, default=NOTIFY_EACH,
+                                            choices=NOTIFY_NEW_PURCHASES_CHOICES)
+    notify_product_updates = models.BooleanField(default=True)
 
     ### Start custom user requirements
     USERNAME_FIELD = 'email'

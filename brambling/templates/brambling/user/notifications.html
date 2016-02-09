@@ -1,0 +1,32 @@
+{% extends 'brambling/user/__base.html' %}
+
+{% load floppyforms static %}
+
+{% block title %}Notification settings – {{ block.super }}{% endblock %}
+
+
+{% block main %}
+	{{ block.super }}
+	<h2 class="sr-only">Notification settings</h2>
+
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	<form action="{{ request.path }}" method="post">
+		{% csrf_token %}
+		<div class="panel panel-default">
+			<header class="panel-heading">
+				<h4 class="panel-title">Notifications</h4>
+			</header>
+			<div class="panel-body">
+				{% form form using %}
+					{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
+					{% formrow form.notify_new_purchases with label="Notification frequency for events you own or manage" %}
+					{% formrow form.notify_product_updates with label="Email me occasionally about Dancerfly updates that are relevant to my events." %}
+				{% endform %}
+			</div>
+		</div>
+		<button class="btn btn-primary" type="submit">Save changes</button>
+		<a href="" class="btn btn-link">Cancel</a>
+	</form>
+
+{% endblock %}

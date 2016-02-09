@@ -1,11 +1,15 @@
+import datetime
+
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Q
 from django.http import Http404, HttpResponse
+from django.utils import timezone
 from django.views.generic import View
 
 from brambling.mail import (ConfirmationMailer, OrderReceiptMailer,
-                            OrderAlertMailer, InviteMailer)
+                            OrderAlertMailer, InviteMailer, DailyDigestMailer)
 from brambling.models import Transaction, Invite
 
 
@@ -58,6 +62,22 @@ class OrderAlertPreviewView(PreviewView):
     def get_mailer_kwargs(self):
         kwargs = super(OrderAlertPreviewView, self).get_mailer_kwargs()
         kwargs['transaction'] = Transaction.objects.filter(transaction_type=Transaction.PURCHASE).order_by('?')[0]
+        return kwargs
+
+
+class DailyDigestPreviewView(PreviewView):
+    mailer = DailyDigestMailer
+
+    def get_mailer_kwargs(self):
+        kwargs = super(DailyDigestPreviewView, self).get_mailer_kwargs()
+        cutoff = timezone.now() - datetime.timedelta(30)
+        transaction = Transaction.objects.filter(
+            timestamp__gte=cutoff,
+            transaction_type=Transaction.PURCHASE,
+        ).distinct().order_by('?')[0]
+        recipient = transaction.event.organization.owner
+        kwargs['recipient'] = recipient
+        kwargs['cutoff'] = cutoff
         return kwargs
 
 

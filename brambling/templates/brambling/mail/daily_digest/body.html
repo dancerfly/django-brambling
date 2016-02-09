@@ -1,0 +1,93 @@
+{% extends 'brambling/mail/__base.html' %}
+
+{% block content %}
+	{% load zenaida %}
+	{% regroup transactions by event as event_list %}
+
+	<table class='container'>
+		<tr>
+			<td>
+				<p>Congratulations! Your events have made the following sales since {{ cutoff }}.
+				{% for event in event_list %}
+					<table class='row'>
+						<tr>
+							<td class='wrapper'>
+								<table class='eight columns'>
+									<tr>
+										<td>
+											<h4>{{ event.grouper.name }}</h4>
+										</td>
+										<td class='expander'></td>
+									</tr>
+								</table>
+							</td>
+							<td class='wrapper last'>
+								<table class='four columns'>
+									<tr>
+										<td>
+											<table class='button'>
+												<tr>
+													<td>
+														<a href='{{ protocol }}://{{ site.domain }}{% url "brambling_event_summary" event_slug=event.grouper.slug organization_slug=event.grouper.organization.slug %}'>
+															Manage event
+														</a>
+													</td>
+												</tr>
+											</table>
+										</td>
+										<td class='expander'></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+
+					<table class='row'>
+						<tr>
+							<td class='wrapper last'>
+								<table class='twelve columns'>
+									<tr>
+										<th class='five sub-columns'>
+											Code
+										</th>
+										<th class='two sub-columns'>
+											Amount
+										</th>
+										<th class='five sub-columns last'>
+											Items
+										</th>
+									</tr>
+
+
+									{% for transaction in event.list %}
+										{% url 'brambling_event_order_detail' event_slug=event.slug organization_slug=event.organization.slug code=transaction.order.code as url %}
+										<tr>
+											<td class='five sub-columns'>
+												<a href="{{ protocol }}://{{ site.domain }}{{ url }}" target='_blank'>{{ transaction.order.code }}</a><br />
+												{{ transaction.timestamp }}
+											</td>
+											<td class='two sub-columns'>
+												{{ transaction.amount|format_money:transaction.event.currency }}
+												{% if transaction.is_unconfirmed_check %}<br />
+												Check pending{% endif %}
+											</td>
+											<td class='five sub-columns last'>
+												{% for item in transaction.bought_items.all %}
+													{{ item.item_name }} ({{ item.item_option_name }})
+													{% if not forloop.last %}<br />{% endif %}
+												{% endfor %}
+											</td>
+										</tr>
+									{% endfor %}
+								</table>
+							</td>
+						</tr>
+					</table>
+				{% endfor %}
+
+
+				<p class='center'><center><a href='{{ protocol }}://{{ site.domain }}{% url "brambling_user_notifications" %}'>Update your notification settings</a> on Dancerfly</center></p>
+			</td>
+		</tr>
+	</table>
+{% endblock %}

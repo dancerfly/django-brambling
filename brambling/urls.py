@@ -39,7 +39,8 @@ from brambling.views.mail import (
     ConfirmationPreviewView,
     OrderReceiptPreviewView,
     OrderAlertPreviewView,
-    InvitePreviewView
+    InvitePreviewView,
+    DailyDigestPreviewView,
 )
 from brambling.views.organizer import (
     OrganizationUpdateView,
@@ -79,6 +80,7 @@ from brambling.views.payment import (
 )
 from brambling.views.user import (
     AccountView,
+    NotificationsView,
     BillingView,
     HomeView,
     SignUpView,
@@ -317,6 +319,9 @@ urlpatterns = patterns('',
     url(r'^account/$',
         AccountView.as_view(),
         name="brambling_user_account"),
+    url(r'^notifications/$',
+        NotificationsView.as_view(),
+        name="brambling_user_notifications"),
     url(r'^billing/$',
         BillingView.as_view(),
         name="brambling_user_billing"),
@@ -369,6 +374,7 @@ urlpatterns = patterns('',
     url(r'^mail/confirmation/$', ConfirmationPreviewView.as_view()),
     url(r'^mail/order_receipt/$', OrderReceiptPreviewView.as_view()),
     url(r'^mail/order_alert/$', OrderAlertPreviewView.as_view()),
+    url(r'^mail/daily_digest/$', DailyDigestPreviewView.as_view()),
     url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind=Invite.EVENT)),
     url(r'^mail/invite_event_editor/$', InvitePreviewView.as_view(kind=Invite.EVENT_EDITOR)),
     url(r'^mail/invite_org_editor/$', InvitePreviewView.as_view(kind=Invite.ORGANIZATION_EDITOR)),
