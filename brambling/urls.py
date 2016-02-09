@@ -40,7 +40,8 @@ from brambling.views.mail import (
     ConfirmationPreviewView,
     OrderReceiptPreviewView,
     OrderAlertPreviewView,
-    InvitePreviewView
+    InvitePreviewView,
+    DailyDigestPreviewView,
 )
 from brambling.views.organizer import (
     OrganizationUpdateView,
@@ -81,6 +82,7 @@ from brambling.views.payment import (
 )
 from brambling.views.user import (
     AccountView,
+    NotificationsView,
     BillingView,
     HomeView,
     SignUpView,
@@ -90,6 +92,7 @@ from brambling.views.user import (
     CreditCardDeleteView,
     ClaimOrdersView,
     ClaimOrderView,
+    MergeOrderView,
     OrderHistoryView,
     SavedAttendeesView,
     SavedAttendeeManageView,
@@ -314,6 +317,9 @@ urlpatterns = patterns('',
     url(r'^account/$',
         AccountView.as_view(),
         name="brambling_user_account"),
+    url(r'^notifications/$',
+        NotificationsView.as_view(),
+        name="brambling_user_notifications"),
     url(r'^billing/$',
         BillingView.as_view(),
         name="brambling_user_billing"),
@@ -347,6 +353,9 @@ urlpatterns = patterns('',
     url(r'^claim-orders/(?P<pk>\d+)/$',
         ClaimOrderView.as_view(),
         name="brambling_claim_order"),
+    url(r'^merge-order/$',
+        MergeOrderView.as_view(),
+        name="brambling_merge_order"),
     url(r'^events/$',
         OrganizeEventsView.as_view(),
         name="brambling_organize_events"),
@@ -370,6 +379,7 @@ urlpatterns = patterns('',
     url(r'^mail/invite_org_edit/$', InvitePreviewView.as_view(kind='org_edit')),
     url(r'^mail/invite_org_view/$', InvitePreviewView.as_view(kind='org_view')),
     url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind='transfer')),
+    url(r'^mail/daily_digest/$', DailyDigestPreviewView.as_view()),
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 

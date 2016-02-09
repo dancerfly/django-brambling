@@ -11,7 +11,12 @@
 		</div>
 		<nav class="list-group">
 			<a class="list-group-item{% if request.path == brambling_order_history_url %} active{% endif %}" href="{{ brambling_order_history_url }}">History</a>
-			<a class="list-group-item{% if request.path == brambling_claim_orders_url %} active{% endif %}" href="{{ brambling_claim_orders_url }}">Claim orders{% if claimable_orders %} <span class='badge'>{{ claimable_orders|length }}</span>{% endif %}</a>
+
+			{% with claimable_count=claimable_orders|length mergeable_count=mergeable_orders|length %}
+				{% with order_count=claimable_count|add:mergeable_count %}
+				<a class="list-group-item{% if request.path == brambling_claim_orders_url %} active{% endif %}" href="{{ brambling_claim_orders_url }}">Claim orders{% if claimable_orders or mergeable_orders %} <span class='badge'>{{ order_count }}</span>{% endif %}</a>
+				{% endwith %}
+			{% endwith %}
 		</nav>
 	</div>
 {% endblock %}
