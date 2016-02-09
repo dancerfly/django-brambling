@@ -11,6 +11,7 @@ from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrderFactory, TransactionFactory,
                                        ItemFactory, OrganizationFactory,
                                        PersonFactory, ItemOptionFactory)
+from brambling.utils.invites import EventInvite, OrganizationEditInvite, TransferInvite
 from brambling.views.core import InviteAcceptView
 import mock
 
@@ -34,7 +35,7 @@ class InviteTestCase(TestCase):
 
     def test_subject__organization_editor(self):
         event = EventFactory()
-        invite = InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR)
+        invite = InviteFactory(content_id=event.organization.pk, kind=OrganizationEditInvite.slug)
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
@@ -43,7 +44,7 @@ class InviteTestCase(TestCase):
 
     def test_subject__organization_editor_apostrophe(self):
         event = EventFactory(organization=OrganizationFactory(name="Conan's Show"))
-        invite = InviteFactory(content_id=event.organization.pk, kind=Invite.ORGANIZATION_EDITOR, user=PersonFactory(first_name="Conan",
+        invite = InviteFactory(content_id=event.organization.pk, kind=OrganizationEditInvite.slug, user=PersonFactory(first_name="Conan",
                                                                                                                      last_name="O'Brien"))
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
@@ -53,7 +54,7 @@ class InviteTestCase(TestCase):
 
     def test_subject__event(self):
         event = EventFactory(name="Conan's Show")
-        invite = InviteFactory(content_id=event.pk, kind=Invite.EVENT)
+        invite = InviteFactory(content_id=event.pk, kind=EventInvite.slug)
         content = invite.get_content()
         self.assertEqual(len(mail.outbox), 0)
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
@@ -69,7 +70,7 @@ class InviteTestCase(TestCase):
         item_option1 = ItemOptionFactory(price=100, item=item, name='Gold')
         self.order.add_to_cart(item_option1)
         boughtitem = self.order.bought_items.all()[0]
-        invite = InviteFactory(content_id=boughtitem.pk, kind=Invite.TRANSFER, user=PersonFactory(first_name="Conan",
+        invite = InviteFactory(content_id=boughtitem.pk, kind=TransferInvite.slug, user=PersonFactory(first_name="Conan",
                                                                                                   last_name="O'Brien"))
         invite.send(Site('test.com', 'test.com'), content=invite.get_content())
         self.assertEqual(len(mail.outbox), 1)
@@ -149,7 +150,7 @@ class InviteAcceptViewTestCase(TestCase):
     def test_invite(self):
         view = InviteAcceptView()
         event = EventFactory()
-        view.invite = InviteFactory(content_id=event.pk, kind=Invite.EVENT, user=PersonFactory(first_name="Conan",last_name="O'Brien"))
+        view.invite = InviteFactory(content_id=event.pk, kind=EventInvite.slug, user=PersonFactory(first_name="Conan",last_name="O'Brien"))
         view.content = view.invite.get_content()
         view.request = RequestFactory().get('/')
         view.request.user=PersonFactory()

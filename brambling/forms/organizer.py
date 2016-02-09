@@ -11,6 +11,7 @@ from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               DwollaAccount, EventMember,
                               OrganizationMember)
 from brambling.utils.international import clean_postal_code
+from brambling.utils.invites import EventInvite
 from brambling.utils.payment import LIVE, TEST
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
@@ -339,18 +340,13 @@ class EventRegistrationForm(forms.ModelForm):
 
         if self.cleaned_data['invite_attendees']:
             for invite_attendee in self.cleaned_data['invite_attendees']:
-                invite, created = Invite.objects.get_or_create_invite(
+                invite, created = EventInvite.get_or_create(
+                    request=self.request,
                     email=invite_attendee,
-                    user=self.request.user,
-                    kind=Invite.EVENT,
-                    content_id=instance.pk
+                    content=instance
                 )
                 if created:
-                    invite.send(
-                        content=instance,
-                        secure=self.request.is_secure(),
-                        site=get_current_site(self.request),
-                    )
+                    invite.send()
         return instance
 
 
