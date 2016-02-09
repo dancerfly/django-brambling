@@ -6,13 +6,13 @@ from django.forms.models import model_to_dict
 from django.test import TestCase, RequestFactory
 
 from brambling.forms.organizer import EventRegistrationForm
-from brambling.models import Invite, Order
+from brambling.models import Order
 from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrderFactory, TransactionFactory,
                                        ItemFactory, OrganizationFactory,
                                        PersonFactory, ItemOptionFactory)
 from brambling.utils.invites import EventInvite, OrganizationEditInvite, TransferInvite
-from brambling.views.core import InviteAcceptView
+from brambling.views.invites import InviteAcceptView
 import mock
 
 
