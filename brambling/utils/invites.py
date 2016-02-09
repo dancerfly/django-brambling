@@ -129,7 +129,7 @@ class EventInvite(BaseInvite):
         # For invite-only events, this is the only way
         # for people to create an order.
         Order.objects.for_request(
-            event=self.invite.content_id,
+            event=self.get_content(),
             request=self.request,
             create=True
         )

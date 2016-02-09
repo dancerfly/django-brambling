@@ -319,6 +319,9 @@ class OrganizationMemberManager(models.Manager):
             raise OrganizationMember.DoesNotExist
         return self._cache[key]
 
+    def clear_cache(self):
+        self._cache = {}
+
 
 class OrganizationMember(models.Model):
     EDIT = '1-edit'
@@ -686,7 +689,6 @@ class Event(models.Model):
             OrganizationMember.objects.get_cached(
                 organization=self.organization,
                 person=person,
-
             )
         except OrganizationMember.DoesNotExist:
             pass

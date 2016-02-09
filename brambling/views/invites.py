@@ -16,12 +16,12 @@ class InviteAcceptView(TemplateView):
         except Invite.DoesNotExist:
             self.invite = None
         else:
-            if request.user.is_authenticated() and request.user.email == self.invite.email:
+            if request.user.is_authenticated() and request.user.email == self.invite.invite.email:
                 if request.user.confirmed_email != request.user.email:
                     request.user.confirmed_email = request.user.email
                     request.user.save()
-                self.handle_invite()
-                self.invite.delete()
+                self.invite.accept()
+                self.invite.invite.delete()
                 return HttpResponseRedirect(self.get_success_url())
         return super(InviteAcceptView, self).get(request, *args, **kwargs)
 
