@@ -562,25 +562,25 @@ class Event(models.Model):
         if person.is_superuser:
             return ('view', 'edit', 'change_permissions')
 
+        default_perms = ()
         try:
             member = OrganizationMember.objects.get(
                 organization=self,
                 person=person,
             )
         except OrganizationMember.DoesNotExist:
-            return ()
+            pass
+        else:
+            if member.role in (OrganizationMember.OWNER, OrganizationMember.EDIT):
+                # Return here because event perms can't give more.
+                return ('view', 'edit', 'change_permissions')
 
-        if member.role in (OrganizationMember.OWNER, OrganizationMember.EDIT):
-            # Return here because event perms can't give more.
-            return ('view', 'edit', 'change_permissions')
-
-        default_perms = ()
-        if member.role == OrganizationMember.VIEW:
-            default_perms = ('view',)
+            if member.role == OrganizationMember.VIEW:
+                default_perms = ('view',)
 
         try:
             member = EventMember.objects.get(
-                organization=self,
+                event=self,
                 person=person,
             )
         except EventMember.DoesNotExist:
