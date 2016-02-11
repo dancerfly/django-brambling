@@ -170,7 +170,7 @@ class EventInvite(BaseInvite):
         # Invites can be created or modified by people who
         # can edit the event.
         event = self.get_content()
-        return event.has_edit_permission(self.request.user)
+        return self.request.user.has_perm('edit', event)
 
     def post_manage_url(self):
         content = self.get_content()
@@ -212,8 +212,8 @@ class EventEditInvite(BaseInvite):
     def manage_allowed(self):
         # Invites can be created or modified by people who
         # can edit the organization.
-        organization = self.get_content().organization
-        return organization.has_edit_permission(self.request.user)
+        event = self.get_content()
+        return self.request.user.has_perm('change_permissions', event)
 
     def post_manage_url(self):
         content = self.get_content()
@@ -251,10 +251,8 @@ class EventViewInvite(BaseInvite):
         })
 
     def manage_allowed(self):
-        # Invites can be created or modified by people who
-        # can edit the organization.
-        organization = self.get_content().organization
-        return organization.has_edit_permission(self.request.user)
+        event = self.get_content()
+        return self.request.user.has_perm('change_permissions', event)
 
     def post_manage_url(self):
         content = self.get_content()
@@ -296,7 +294,7 @@ class OrganizationOwnerInvite(BaseInvite):
         # Invites can be created or modified by people who
         # have admin access on the org.
         organization = self.get_content()
-        return organization.has_admin_permission(self.request.user)
+        return self.request.user.has_perm('change_permissions', organization)
 
     def post_manage_url(self):
         content = self.get_content()
@@ -337,7 +335,7 @@ class OrganizationEditInvite(BaseInvite):
         # Invites can be created or modified by people who
         # have admin access on the org.
         organization = self.get_content()
-        return organization.has_admin_permission(self.request.user)
+        return self.request.user.has_perm('change_permissions', organization)
 
     def post_manage_url(self):
         content = self.get_content()
@@ -374,7 +372,7 @@ class OrganizationViewInvite(BaseInvite):
         # Invites can be created or modified by people who
         # have admin access on the org.
         organization = self.get_content()
-        return organization.has_admin_permission(self.request.user)
+        return self.request.user.has_perm('change_permissions', organization)
 
     def post_manage_url(self):
         content = self.get_content()

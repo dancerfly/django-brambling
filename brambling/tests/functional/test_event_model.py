@@ -6,9 +6,6 @@ from brambling.tests.factories import EventFactory, PersonFactory, OrderFactory
 
 
 class EventModelTestCase(TestCase):
-    def tearDown(self):
-        OrganizationMember.objects.clear_cache()
-
     def test_viewable_by__public_published__anon(self):
         event = EventFactory(is_published=True, privacy=Event.PUBLIC)
         person = AnonymousUser()

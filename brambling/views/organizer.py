@@ -70,9 +70,9 @@ class OrganizationUpdateView(UpdateView):
     def get_object(self):
         obj = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         user = self.request.user
-        if not obj.has_view_permission(user):
+        if not user.has_perm('view', obj):
             raise Http404
-        if self.request.method == 'POST' and not obj.has_edit_permission(user):
+        if self.request.method == 'POST' and not user.has_perm('edit', obj):
             raise Http404
         return obj
 
@@ -110,7 +110,7 @@ class OrganizationPermissionsView(TemplateView):
         self.get_objects()
         self.get_forms()
 
-        if not self.organization.has_admin_permission(request.user):
+        if not request.user.has_perm('change_permissions', self.organization):
             raise Http404
 
         all_valid = True
@@ -129,7 +129,7 @@ class OrganizationPermissionsView(TemplateView):
     def get_objects(self):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
 
-        if not self.organization.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.organization):
             raise Http404
 
     def get_forms(self):
@@ -162,7 +162,7 @@ class OrganizationPermissionsView(TemplateView):
         context.update({
             'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
             'organization': self.organization,
-            'organization_owned_by': self.organization.has_admin_permission(self.request.user),
+            'organization_owned_by': self.request.user.has_perm('change_permissions', self.organization),
             'organizationmember_forms': self.organizationmember_forms,
             'invite_formset': self.invite_formset,
             'invites': [
@@ -213,7 +213,7 @@ class OrganizationRemoveMemberView(View):
             raise Http404
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
 
-        if not organization.has_admin_permission(request.user):
+        if not request.user.has_perm('change_permissions', organization):
             raise Http404
         try:
             member = OrganizationMember.objects.get(
@@ -251,11 +251,11 @@ class OrganizationDetailView(DetailView):
 
         context.update({
             'events': events,
-            'organization_editable_by': self.object.has_edit_permission(self.request.user),
-            'organization_viewable_by': self.object.has_view_permission(self.request.user),
+            'organization_editable_by': self.request.user.has_perm('edit', self.object),
+            'organization_viewable_by': self.request.user.has_perm('view', self.object),
         })
 
-        if self.object.has_view_permission(self.request.user):
+        if self.request.user.has_perm('view', self.object):
             context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
 
         if self.request.user.is_authenticated():
@@ -334,7 +334,7 @@ class EventSummaryView(TemplateView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(request.user):
+        if not request.user.has_perm('view', self.event):
             raise Http404
         clear_expired_carts(self.event)
         return super(EventSummaryView, self).get(request, *args, **kwargs)
@@ -431,8 +431,7 @@ class EventBasicSettingsView(UpdateView):
     def get_object(self):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
-        user = self.request.user
-        if not event.has_view_permission(user):
+        if not self.request.user.has_perm('view', event):
             raise Http404
         return event
 
@@ -465,8 +464,7 @@ class EventDesignView(UpdateView):
     def get_object(self):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
-        user = self.request.user
-        if not event.has_view_permission(user):
+        if not self.request.user.has_perm('view', event):
             raise Http404
         return event
 
@@ -519,7 +517,7 @@ class EventPermissionsView(TemplateView):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         self.event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
 
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
 
     def get_forms(self):
@@ -561,8 +559,8 @@ class EventPermissionsView(TemplateView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'event': self.event,
             'organization': self.organization,
-            'organization_editable_by': self.organization.has_edit_permission(self.request.user),
-            'event_editable_by': self.event.has_edit_permission(self.request.user),
+            'organization_editable_by': self.request.user.has_perm('edit', self.organization),
+            'event_editable_by': self.request.user.has_perm('edit', self.event),
             'organizationmember_forms': self.organizationmember_forms,
             'eventmember_forms': self.eventmember_forms,
             'invite_formset': self.invite_formset,
@@ -587,9 +585,9 @@ class EventRegistrationView(UpdateView):
         self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
         user = self.request.user
-        if not event.has_view_permission(user):
+        if not user.has_perm('view', event):
             raise Http404
-        self.organization_editable_by = self.organization.has_edit_permission(user)
+        self.organization_editable_by = user.has_perm('edit', self.organization)
         return event
 
     def get_form_kwargs(self):
@@ -627,7 +625,7 @@ class StripeConnectView(View):
         except Organization.DoesNotExist:
             raise Http404
         user = request.user
-        if not organization.has_edit_permission(user):
+        if not user.has_perm('edit', organization):
             raise Http404
         if 'code' in request.GET:
             if api_type == LIVE:
@@ -672,7 +670,7 @@ class EventRemoveMemberView(View):
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
         event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
 
-        if not organization.has_edit_permission(request.user):
+        if not request.user.has_perm('edit', organization):
             raise Http404
         try:
             member = EventMember.objects.get(
@@ -709,7 +707,7 @@ class PublishEventView(View):
         self.organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
         self.event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=self.organization)
 
-        if not self.event.has_edit_permission(request.user):
+        if not request.user.has_perm('edit', self.event):
             raise Http404
         if not self.event.can_be_published():
             raise Http404
@@ -742,7 +740,7 @@ class UnpublishEventView(View):
 
         if self.event.is_frozen:
             raise Http404
-        if not self.event.has_edit_permission(request.user):
+        if not request.user.has_perm('edit', self.event):
             raise Http404
         if self.event.is_published:
             self.event.is_published = False
@@ -757,7 +755,7 @@ class DangerZoneView(TemplateView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(request.user):
+        if not request.user.has_perm('view', self.event):
             raise Http404
         return super(DangerZoneView, self).get(request, *args, **kwargs)
 
@@ -774,9 +772,9 @@ def item_form(request, *args, **kwargs):
     event = get_object_or_404(Event.objects.select_related('organization'),
                               slug=kwargs['event_slug'],
                               organization__slug=kwargs['organization_slug'])
-    if not event.has_view_permission(request.user):
+    if not request.user.has_perm('view', event):
         raise Http404
-    if request.method == 'POST' and not event.has_edit_permission(request.user):
+    if request.method == 'POST' and not request.user.has_perm('edit', event):
         raise Http404
     if 'pk' in kwargs:
         item = get_object_or_404(Item, pk=kwargs['pk'], event=event)
@@ -825,7 +823,7 @@ class ItemDeleteView(DeleteView):
             slug=self.kwargs['event_slug'],
             organization__slug=self.kwargs['organization_slug'],
         )
-        if not self.event.has_edit_permission(self.request.user):
+        if not self.request.user.has_perm('edit', self.event):
             raise Http404
         return get_object_or_404(Item, pk=self.kwargs['pk'], event=self.event)
 
@@ -843,7 +841,7 @@ class ItemListView(ListView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
         qs = super(ItemListView, self).get_queryset()
         return qs.filter(event=self.event
@@ -875,9 +873,9 @@ def discount_form(request, *args, **kwargs):
     event = get_object_or_404(Event.objects.select_related('organization'),
                               slug=kwargs['event_slug'],
                               organization__slug=kwargs['organization_slug'])
-    if not event.has_view_permission(request.user):
+    if not request.user.has_perm('view', event):
         raise Http404
-    if request.method == 'POST' and not event.has_edit_permission(request.user):
+    if request.method == 'POST' and not request.user.has_perm('edit', event):
         raise Http404
     if 'pk' in kwargs:
         discount = get_object_or_404(Discount, pk=kwargs['pk'])
@@ -917,7 +915,7 @@ class DiscountListView(ListView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
         qs = super(DiscountListView, self).get_queryset()
         return qs.filter(event=self.event)
@@ -937,9 +935,9 @@ def custom_form_form(request, *args, **kwargs):
     event = get_object_or_404(Event.objects.select_related('organization'),
                               slug=kwargs['event_slug'],
                               organization__slug=kwargs['organization_slug'])
-    if not event.has_view_permission(request.user):
+    if not request.user.has_perm('view', event):
         raise Http404
-    if request.method == 'POST' and not event.has_edit_permission(request.user):
+    if request.method == 'POST' and not request.user.has_perm('edit', event):
         raise Http404
     if 'pk' in kwargs:
         custom_form = get_object_or_404(CustomForm, pk=kwargs['pk'])
@@ -986,7 +984,7 @@ class CustomFormListView(ListView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
         qs = super(CustomFormListView, self).get_queryset()
         return qs.filter(event=self.event).order_by('form_type', 'index')
@@ -1064,7 +1062,7 @@ class EventTableView(ModelTableView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
 
         report = None
@@ -1163,7 +1161,7 @@ class RefundView(View):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_edit_permission(self.request.user):
+        if not self.request.user.has_perm('edit', self.event):
             raise Http404
         try:
             return Transaction.objects.get(
@@ -1199,9 +1197,9 @@ class OrderDetailView(DetailView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
-        if self.request.method == 'POST' and not self.event.has_edit_permission(self.request.user):
+        if self.request.method == 'POST' and not self.request.user.has_perm('edit', self.event):
             raise Http404
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
@@ -1265,7 +1263,7 @@ class TogglePaymentConfirmationView(View):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_edit_permission(self.request.user):
+        if not self.request.user.has_perm('edit', self.event):
             raise Http404
         try:
             self.order = Order.objects.get(event=self.event,
@@ -1288,7 +1286,7 @@ class SendReceiptView(View):
         event = get_object_or_404(Event.objects.select_related('organization'),
                                   slug=kwargs['event_slug'],
                                   organization__slug=kwargs['organization_slug'])
-        if not event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', event):
             raise Http404
         try:
             order = Order.objects.get(event=event,
@@ -1319,7 +1317,7 @@ class FinancesView(ListView):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
                                        organization__slug=self.kwargs['organization_slug'])
-        if not self.event.has_view_permission(self.request.user):
+        if not self.request.user.has_perm('view', self.event):
             raise Http404
         return super(FinancesView, self).get_queryset().filter(
             event=self.event,
