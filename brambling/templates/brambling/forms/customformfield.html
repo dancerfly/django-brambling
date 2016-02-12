@@ -5,9 +5,11 @@
 
 {% block rows %}
 	<div class='row'>
-		<div class='col-sm-1 hidden-xs'>
-			<span class="js-sortable-handle btn btn-link btn-block a-secret pull-right"><i class="fa fa-fw fa-bars"></i></span>
-		</div>
+		{% if 'edit' in event_permissions %}
+			<div class='col-sm-1 hidden-xs'>
+				<span class="js-sortable-handle btn btn-link btn-block a-secret pull-right"><i class="fa fa-fw fa-bars"></i></span>
+			</div>
+		{% endif %}
 		<div class='margin-trailer-half-xs col-sm-4'>
 			{% formrow form.name using "brambling/forms/rows/no_label.html" with placeholder="Do you snore?" %}
 		</div>
@@ -22,7 +24,7 @@
 	</div>
 
 	<div class="row">
-		<div class='col-sm-5 col-sm-offset-1'>
+		<div class='col-sm-5{% if "edit" in event_permissions %} col-sm-offset-1{% endif %}'>
 			{% formrow form.default %}
 		</div>
 		<div class='col-sm-6'>

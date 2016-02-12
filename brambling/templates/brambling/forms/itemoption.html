@@ -4,9 +4,11 @@
 
 {% block rows %}
 	<div class='row form--single-row'>
-		<div class='col-sm-1 hidden-xs'>
-			<span class="js-sortable-handle btn btn-link btn-block a-secret pull-right"><i class="fa fa-bars"></i></span>
-		</div>
+		{% if 'edit' in event_permissions %}
+			<div class='col-sm-1 hidden-xs'>
+				<span class="js-sortable-handle btn btn-link btn-block a-secret pull-right"><i class="fa fa-bars"></i></span>
+			</div>
+		{% endif %}
 		<div class='margin-trailer-half-xs col-sm-4'>
 			{% formrow form.name using "brambling/forms/rows/no_label.html" with placeholder="Name" %}</div>
 		<div class='margin-trailer-half-xs col-sm-3'>

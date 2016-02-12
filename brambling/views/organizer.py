@@ -93,7 +93,10 @@ class OrganizationUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUpdateView, self).get_context_data(**kwargs)
-        context['organization_admin_nav'] = get_organization_admin_nav(self.object, self.request)
+        context.update({
+            'organization_admin_nav': get_organization_admin_nav(self.object, self.request),
+            'organization_permissions': self.request.user.get_all_permissions(self.object),
+        })
         return context
 
 
@@ -101,18 +104,19 @@ class OrganizationPermissionsView(TemplateView):
     template_name = 'brambling/organization/permissions.html'
 
     def get(self, request, *args, **kwargs):
-        self.get_objects()
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
+        if not self.request.user.has_perm('view', self.organization):
+            raise Http404
         self.get_forms()
         context = self.get_context_data()
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        self.get_objects()
-        self.get_forms()
-
+        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
         if not request.user.has_perm('change_permissions', self.organization):
             raise Http404
 
+        self.get_forms()
         all_valid = True
         for form in self.organizationmember_forms:
             all_valid = all_valid and form.is_valid()
@@ -125,12 +129,6 @@ class OrganizationPermissionsView(TemplateView):
             return HttpResponseRedirect(self.get_success_url())
         context = self.get_context_data()
         return self.render_to_response(context)
-
-    def get_objects(self):
-        self.organization = get_object_or_404(Organization, slug=self.kwargs['organization_slug'])
-
-        if not self.request.user.has_perm('view', self.organization):
-            raise Http404
 
     def get_forms(self):
         data = self.request.POST if self.request.method == 'POST' else None
@@ -162,7 +160,7 @@ class OrganizationPermissionsView(TemplateView):
         context.update({
             'organization_admin_nav': get_organization_admin_nav(self.organization, self.request),
             'organization': self.organization,
-            'organization_owned_by': self.request.user.has_perm('change_permissions', self.organization),
+            'organization_permissions': self.request.user.get_all_permissions(self.organization),
             'organizationmember_forms': self.organizationmember_forms,
             'invite_formset': self.invite_formset,
             'invites': [
@@ -254,6 +252,8 @@ class OrganizationDetailView(DetailView):
         try:
             self.object = self.get_object()
         except Http404:
+            # Backwards-compatibility for pre-org event links
+            # Added March 2015
             event = get_object_or_404(Event, slug=kwargs['organization_slug'])
             return HttpResponseRedirect(event.get_absolute_url())
         context = self.get_context_data(object=self.object)
@@ -267,8 +267,7 @@ class OrganizationDetailView(DetailView):
 
         context.update({
             'events': events,
-            'organization_editable_by': self.request.user.has_perm('edit', self.object),
-            'organization_viewable_by': self.request.user.has_perm('view', self.object),
+            'organization_permissions': self.request.user.get_all_permissions(self.object),
         })
 
         if self.request.user.has_perm('view', self.object):
@@ -449,6 +448,8 @@ class EventBasicSettingsView(UpdateView):
         event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
         if not self.request.user.has_perm('view', event):
             raise Http404
+        if self.request.method == 'POST' and not self.request.user.has_perm('edit', event):
+            raise Http404
         return event
 
     def get_form_kwargs(self):
@@ -467,6 +468,7 @@ class EventBasicSettingsView(UpdateView):
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'organization': self.organization,
+            'event_permissions': self.request.user.get_all_permissions(self.object),
         })
         return context
 
@@ -482,6 +484,8 @@ class EventDesignView(UpdateView):
         event = get_object_or_404(Event.objects, slug=self.kwargs['event_slug'], organization=self.organization)
         if not self.request.user.has_perm('view', event):
             raise Http404
+        if self.request.method == 'POST' and not self.request.user.has_perm('edit', event):
+            raise Http404
         return event
 
     def get_success_url(self):
@@ -495,6 +499,7 @@ class EventDesignView(UpdateView):
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'organization': self.organization,
+            'event_permissions': self.request.user.get_all_permissions(self.object),
         })
         return context
 
@@ -536,6 +541,9 @@ class EventPermissionsView(TemplateView):
         if not self.request.user.has_perm('view', self.event):
             raise Http404
 
+        if self.request.method == 'POST' and not self.request.user.has_perm('edit', self.event):
+            raise Http404
+
     def get_forms(self):
         data = self.request.POST if self.request.method == 'POST' else None
 
@@ -575,8 +583,7 @@ class EventPermissionsView(TemplateView):
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'event': self.event,
             'organization': self.organization,
-            'organization_editable_by': self.request.user.has_perm('edit', self.organization),
-            'event_editable_by': self.request.user.has_perm('edit', self.event),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
             'organizationmember_forms': self.organizationmember_forms,
             'eventmember_forms': self.eventmember_forms,
             'invite_formset': self.invite_formset,
@@ -603,7 +610,8 @@ class EventRegistrationView(UpdateView):
         user = self.request.user
         if not user.has_perm('view', event):
             raise Http404
-        self.organization_editable_by = user.has_perm('edit', self.organization)
+        if self.request.method == 'POST' and not self.request.user.has_perm('edit', event):
+            raise Http404
         return event
 
     def get_form_kwargs(self):
@@ -622,7 +630,8 @@ class EventRegistrationView(UpdateView):
         context.update({
             'event_admin_nav': get_event_admin_nav(self.object, self.request),
             'organization': self.organization,
-            'organization_editable_by': self.organization_editable_by,
+            'event_permissions': self.request.user.get_all_permissions(self.object),
+            'organization_permissions': self.request.user.get_all_permissions(self.organization),
             'registration_invites': EventInvite.get_invites(content=self.object),
         })
         return context
@@ -686,7 +695,7 @@ class EventRemoveMemberView(View):
         organization = get_object_or_404(Organization, slug=kwargs['organization_slug'])
         event = get_object_or_404(Event, slug=kwargs['event_slug'], organization=organization)
 
-        if not request.user.has_perm('edit', organization):
+        if not request.user.has_perm('change_permissions', event):
             raise Http404
         try:
             member = EventMember.objects.get(
@@ -794,6 +803,9 @@ def item_form(request, *args, **kwargs):
         raise Http404
     if 'pk' in kwargs:
         item = get_object_or_404(Item, pk=kwargs['pk'], event=event)
+    elif not request.user.has_perm('edit', event):
+        # Users with view permissions can look but not edit.
+        raise Http404
     else:
         item = Item()
     if request.method == 'POST':
@@ -826,6 +838,7 @@ def item_form(request, *args, **kwargs):
         'itemoption_formset': formset,
         'cart': None,
         'event_admin_nav': get_event_admin_nav(event, request),
+        'event_permissions': request.user.get_all_permissions(event),
     }
     return render_to_response('brambling/event/organizer/item_form.html',
                               context,
@@ -880,6 +893,7 @@ class ItemListView(ListView):
             'event': self.event,
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
         })
         context.update(self.get_forms())
         return context
@@ -942,6 +956,7 @@ class DiscountListView(ListView):
             'event': self.event,
             'cart': None,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
             'discount_form': DiscountForm(self.event, instance=None),
         })
         return context
@@ -985,6 +1000,7 @@ def custom_form_form(request, *args, **kwargs):
         'form': form,
         'formset': formset,
         'event_admin_nav': get_event_admin_nav(event, request),
+        'event_permissions': request.user.get_all_permissions(event),
     }
     return render_to_response('brambling/event/organizer/custom_form_form.html',
                               context,
@@ -1010,6 +1026,7 @@ class CustomFormListView(ListView):
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
         })
         return context
 
@@ -1215,16 +1232,18 @@ class OrderDetailView(DetailView):
                                        organization__slug=self.kwargs['organization_slug'])
         if not self.request.user.has_perm('view', self.event):
             raise Http404
-        if self.request.method == 'POST' and not self.request.user.has_perm('edit', self.event):
-            raise Http404
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
-        self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
+        # Restrict payment form to editors.
+        show_payment_form = self.request.user.has_perm('edit', self.event)
+        self.payment_form = None
+        if show_payment_form:
+            self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.notes_form = OrderNotesForm(instance=self.order)
         self.attendee_forms = [AttendeeNotesForm(instance=attendee)
                                for attendee in self.order.attendees.prefetch_related('bought_items')]
         if self.request.method == 'POST':
-            if 'is_payment_form' in self.request.POST:
+            if show_payment_form and 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
                                                       user=self.request.user,
                                                       data=self.request.POST)
@@ -1237,13 +1256,17 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
-        return [self.payment_form, self.notes_form] + self.attendee_forms
+        if show_payment_form:
+            forms = [self.payment_form, self.notes_form]
+        else:
+            forms = [self.notes_form]
+        return forms + self.attendee_forms
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
-        if self.payment_form.is_bound:
+        if self.payment_form and self.payment_form.is_bound:
             active = 'payment'
-        elif self.notes_form.is_bound or self.request.GET.get('active') == 'notes':
+        elif self.notes_form.is_bound:
             active = 'notes'
         else:
             active = 'summary'
@@ -1252,6 +1275,7 @@ class OrderDetailView(DetailView):
             'notes_form': self.notes_form,
             'order': self.order,
             'event': self.event,
+            'event_permissions': self.request.user.get_all_permissions(self.event),
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
             'active': active,
             'attendee_forms': self.attendee_forms,

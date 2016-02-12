@@ -32,14 +32,14 @@
 							<th>{{ form.instance.person.get_full_name }}</th>
 							<td>{{ form.instance.person.email }}</td>
 							<td>
-								{% if organization_editable_by %}
+								{% if 'change_permissions' in event_permissions %}
 									{% formfield form.role %}
 								{% else %}
 									{{ form.instance.get_role_display }}
 								{% endif %}
 							</td>
 							<td>
-								{% if organization_editable_by %}
+								{% if 'change_permissions' in event_permissions %}
 									<a href="{% url 'brambling_event_remove_member' event_slug=event.slug organization_slug=event.organization.slug pk=form.instance.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
 								{% endif %}
 							</td>
@@ -50,14 +50,14 @@
 							<th>{{ form.instance.person.get_full_name }}</th>
 							<td>{{ form.instance.person.email }}</td>
 							<td>
-								{% if organization_editable_by %}
+								{% if 'change_permissions' in event_permissions %}
 									{% formfield form.role %}
 								{% else %}
 									{{ form.instance.get_role_display }}
 								{% endif %}
 							</td>
 							<td>
-								{% if organization_editable_by %}
+								{% if 'change_permissions' in event_permissions %}
 									<a href="{% url 'brambling_event_remove_member' event_slug=event.slug organization_slug=event.organization.slug pk=form.instance.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
 								{% endif %}
 							</td>
@@ -78,7 +78,7 @@
 								{{ invite.verbose_name }}
 							</td>
 							<td>
-								{% if organization_editable_by %}
+								{% if 'change_permissions' in event_permissions %}
 									<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
 									<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
 								{% endif %}
@@ -86,36 +86,33 @@
 						</tr>
 					{% endfor %}
 
-					{% for form in invite_formset %}
-						{% form form using %}
-							<tr>
-								<td{% if form.errors.email %} class='has-error'{% endif %}>
-									{% formfield form.email with placeholder="Email" %}
-									{% if form.errors.email %}
-										{% for error in form.errors.email %}
-											<p class='help-block'>{{ error }}</p>
-										{% endfor %}
-									{% endif %}
-								</td>
-								<td></td>
-								{% if organization_editable_by %}
+					{% if 'change_permissions' in event_permissions %}
+						{% for form in invite_formset %}
+							{% form form using %}
+								<tr>
+									<td{% if form.errors.email %} class='has-error'{% endif %}>
+										{% formfield form.email with placeholder="Email" %}
+										{% if form.errors.email %}
+											{% for error in form.errors.email %}
+												<p class='help-block'>{{ error }}</p>
+											{% endfor %}
+										{% endif %}
+									</td>
+									<td></td>
 									<td>
 										{% formfield form.kind %}
 										{% formfield form.DELETE %}
 									</td>
 									<td class='js-actions'></td>
-								{% else %}
-									<td>{{ form.instance.verbose_name }}</td>
-									<td></td>
-								{% endif %}
-							</tr>
-						{% endform %}
-					{% endfor %}
+								</tr>
+							{% endform %}
+						{% endfor %}
+					{% endif %}
 				</tbody>
 			</table>
 		</div>
 
-		{% if organization_editable_by %}
+		{% if 'change_permissions' in event_permissions %}
 			<script type="text/html" class='new-invite-template'>
 				{% with form=invite_formset.empty_form %}
 					{% form form using %}
@@ -130,20 +127,22 @@
 			</script>
 		{% endif %}
 
-		<span class='js-formset-add'></span>
-		<button class="btn btn-primary" type="submit">
-			Save Changes
-		</button>
-		<a class="btn btn-link" href="{{ request.path }}">
-			Cancel
-		</a>
+		{% if 'change_permissions' in event_permissions %}
+			<span class='js-formset-add'></span>
+			<button class="btn btn-primary" type="submit">
+				Save Changes
+			</button>
+			<a class="btn btn-link" href="{{ request.path }}">
+				Cancel
+			</a>
+		{% endif %}
 
 	</form>
 {% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
-	{% if organization_editable_by %}
+	{% if 'change_permissions' in event_permissions %}
 	<script type="text/javascript">
 		$(function () {
 			"use strict";

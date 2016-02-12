@@ -45,11 +45,13 @@
 	</h2>
 	<h3>{% if order.person %}<a href="mailto:{{ order.person.email }}">{{ order.person.get_full_name }} &lt;{{ order.person.email }}&gt;</a>{% else %}<a href="mailto:{{ order.email }}">{{ order.email }}</a>{% endif %}</h3>
 
-	<!-- Nav tabs -->
-	<ul class="nav nav-tabs" role="tablist">
-	  <li{% if active == 'summary' %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
-	  <li{% if active == 'payment' %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
-	</ul>
+	{% if payment_form %}
+		<!-- Nav tabs -->
+		<ul class="nav nav-tabs" role="tablist">
+		  <li{% if active == 'summary' %} class="active"{% endif %}><a href="#summary" role="tab" data-toggle="tab">Order summary</a></li>
+		  <li{% if active == 'payment' %} class="active"{% endif %}><a href="#payment" role="tab" data-toggle="tab">Record payment</a></li>
+		</ul>
+	{% endif %}
 
 	<!-- Tab panes -->
 	<div class="tab-content">
@@ -111,21 +113,23 @@
 				</div>
 			</div>
 		</div>
-		<div class="tab-pane{% if active == 'payment' %} active{% endif %}" id="payment">
-			<div class='row'>
-				<div class='col-sm-6 col-sm-offset-3'>
-					<form method='post' action=''>
-						{% csrf_token %}
-						<input type='hidden' name='is_payment_form' value='1'>
-						{% form payment_form using %}
-							{% formrow payment_form.method with using="floppyforms/radio.html" inline=1 %}
-							{% formrow payment_form.amount with append=event.currency %}
-						{% endform %}
-						<button type='submit' class='btn btn-primary'>Record payment</button>
-					</form>
+		{% if payment_form %}
+			<div class="tab-pane{% if active == 'payment' %} active{% endif %}" id="payment">
+				<div class='row'>
+					<div class='col-sm-6 col-sm-offset-3'>
+						<form method='post' action=''>
+							{% csrf_token %}
+							<input type='hidden' name='is_payment_form' value='1'>
+							{% form payment_form using %}
+								{% formrow payment_form.method with using="floppyforms/radio.html" inline=1 %}
+								{% formrow payment_form.amount with append=event.currency %}
+							{% endform %}
+							<button type='submit' class='btn btn-primary'>Record payment</button>
+						</form>
+					</div>
 				</div>
 			</div>
-		</div>
+		{% endif %}
 	</div>
 	{% endtimezone %}
 {% endblock %}

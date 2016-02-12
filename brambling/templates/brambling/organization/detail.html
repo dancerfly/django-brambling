@@ -8,9 +8,9 @@
 	<div class='page-header'>
 		<h1>
 			{{ organization.name }}
-			{% if organization_editable_by or organization_viewable_by %}
+			{% if 'view' in organization_permissions %}
 				<ul class='list-inline pull-right'>
-					{% if organization_editable_by %}
+					{% if 'edit' in organization_permissions %}
 						<li>
 							<a href="{% url "brambling_event_create" %}?organization={{ organization.id }}" class="btn btn-success pull-right">
 								<i class="fa fa-plus fa-fw"></i> Create a new event
