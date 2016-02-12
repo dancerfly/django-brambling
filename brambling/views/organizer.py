@@ -215,6 +215,8 @@ class OrganizationRemoveMemberView(View):
 
         if not request.user.has_perm('change_permissions', organization):
             raise Http404
+
+        removed = True
         try:
             member = OrganizationMember.objects.get(
                 pk=kwargs['pk'],
@@ -223,8 +225,22 @@ class OrganizationRemoveMemberView(View):
         except OrganizationMember.DoesNotExist:
             pass
         else:
-            member.delete()
-        messages.success(request, 'Removed member successfully.')
+            if member.role == OrganizationMember.OWNER:
+                other_owners = OrganizationMember.objects.filter(
+                    organization=organization,
+                    role=OrganizationMember.OWNER,
+                ).exclude(
+                    pk=member.pk
+                )
+                if other_owners.exists():
+                    member.delete()
+                else:
+                    messages.error(request, "Organization must have at least one owner.")
+                    removed = False
+            else:
+                member.delete()
+        if removed:
+            messages.success(request, 'Removed member successfully.')
         return HttpResponseRedirect(reverse('brambling_organization_update_permissions',
                                     kwargs={'organization_slug': organization.slug}))
 
