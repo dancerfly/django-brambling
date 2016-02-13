@@ -781,12 +781,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     def __unicode__(self):
         return self.get_full_name()
 
-    def get_organizations(self):
-        return Organization.objects.filter(
-            models.Q(owner=self) |
-            models.Q(editors=self)
-        ).order_by('name').distinct()
-
     def get_claimable_orders(self):
         if self.email != self.confirmed_email:
             return Order.objects.none()

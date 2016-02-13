@@ -25,9 +25,8 @@ class DashboardView(TemplateView):
 
         if user.is_authenticated():
             admin_events = Event.objects.filter(
-                Q(organization__owner=user) |
-                Q(organization__editors=user) |
-                Q(additional_editors=user)
+                Q(organization__members=user) |
+                Q(members=user)
             ).order_by('-last_modified').distinct()
 
             # Registered events is upcoming things you are / might be going to.
@@ -54,7 +53,7 @@ class DashboardView(TemplateView):
                 'upcoming_events': upcoming_events,
                 'admin_events': admin_events,
                 'registered_events': registered_events,
-                'organizations': user.get_organizations().order_by('-last_modified'),
+                'organizations': user.organizations.order_by('-last_modified'),
             })
 
         return context
