@@ -556,7 +556,7 @@ class Event(models.Model):
         default_perms = ()
         try:
             member = OrganizationMember.objects.get(
-                organization=self,
+                organization=self.organization,
                 person=person,
             )
         except OrganizationMember.DoesNotExist:
