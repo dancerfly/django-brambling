@@ -3,7 +3,7 @@ from django.test import TestCase
 from zenaida.templatetags.zenaida import format_money
 
 from brambling.mail import OrderAlertMailer
-from brambling.models import Transaction
+from brambling.models import Transaction, OrganizationMember
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
                                        ItemOptionFactory, AttendeeFactory,
@@ -15,6 +15,12 @@ class OrderReceiptMailerTestCase(TestCase):
     def setUp(self):
         self.person = PersonFactory()
         event = EventFactory()
+        owner = PersonFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=event.organization,
+            role=OrganizationMember.OWNER,
+        )
         self.order = OrderFactory(event=event, person=self.person)
         transaction = TransactionFactory(event=event, order=self.order,
                                          amount=130)
@@ -56,17 +62,17 @@ class OrderReceiptMailerTestCase(TestCase):
 
     def test_recipients(self):
         self.assertSequenceEqual(self.mailer.get_recipients(),
-                                 [self.order.event.organization.owner.email])
+                                 [self.order.event.organization.members.get().email])
 
     def test_recipients__notify_never(self):
-        person = self.order.event.organization.owner
+        person = self.order.event.organization.members.get()
         person.notify_new_purchases = 'never'
         person.save()
         self.assertSequenceEqual(self.mailer.get_recipients(),
                                  [])
 
     def test_recipients__notify_daily(self):
-        person = self.order.event.organization.owner
+        person = self.order.event.organization.members.get()
         person.notify_new_purchases = 'daily'
         person.save()
         self.assertSequenceEqual(self.mailer.get_recipients(),

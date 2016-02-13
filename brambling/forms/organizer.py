@@ -129,12 +129,15 @@ class EventCreateForm(forms.ModelForm):
         if not request.user.is_authenticated():
             raise ValueError("EventCreateForm requires an authenticated user.")
         self.fields['template_event'].queryset = Event.objects.filter(
-            Q(organization__owner=request.user) |
-            Q(organization__editors=request.user)
+            Q(organization__members=request.user) |
+            Q(members=request.user)
         ).order_by('-last_modified').distinct()
         self.fields['organization'].queryset = Organization.objects.filter(
-            Q(owner=request.user) |
-            Q(editors=request.user)
+            organizationmember__person=request.user,
+            organizationmember__role__in=(
+                OrganizationMember.OWNER,
+                OrganizationMember.EDIT,
+            )
         ).order_by('name').distinct()
         self.initial['create_new_organization'] = not self.fields['organization'].queryset
 
@@ -179,7 +182,11 @@ class EventCreateForm(forms.ModelForm):
             self.instance.organization = Organization.objects.create(
                 name=self.cleaned_data['new_organization_name'],
                 slug=self.cleaned_data['new_organization_slug'],
-                owner=self.request.user,
+            )
+            OrganizationMember.objects.create(
+                organization=self.instance.organization,
+                person=self.request.user,
+                role=OrganizationMember.OWNER,
             )
         else:
             self.instance.organization = self.cleaned_data['organization']

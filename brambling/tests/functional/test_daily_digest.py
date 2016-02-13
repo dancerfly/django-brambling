@@ -7,7 +7,12 @@ from django.utils import timezone
 from mock import patch, MagicMock
 
 from brambling.management.commands.send_daily_emails import Command
-from brambling.models import Person, Transaction
+from brambling.models import (
+    Person,
+    Transaction,
+    OrganizationMember,
+    EventMember,
+)
 from brambling.tests.factories import (
     PersonFactory,
     OrganizationFactory,
@@ -28,7 +33,12 @@ class DailyDigestCommandTestCase(TestCase):
 
     def test_send_digest__owner__one_event(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        organization = OrganizationFactory(owner=owner)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event = EventFactory(organization=organization)
         transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
@@ -40,7 +50,12 @@ class DailyDigestCommandTestCase(TestCase):
 
     def test_send_digest__owner__no_transactions(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        organization = OrganizationFactory(owner=owner)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event = EventFactory(organization=organization)
         transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
@@ -52,7 +67,12 @@ class DailyDigestCommandTestCase(TestCase):
 
     def test_send_digest__owner__transactions_older_than_one_day(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        organization = OrganizationFactory(owner=owner)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event = EventFactory(organization=organization)
         transaction = TransactionFactory(
             event=event,
@@ -68,7 +88,12 @@ class DailyDigestCommandTestCase(TestCase):
             notify_new_purchases=Person.NOTIFY_DAILY,
             last_new_purchases_digest_sent=timezone.now() - timedelta(hours=1),
         )
-        organization = OrganizationFactory(owner=owner)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event = EventFactory(organization=organization)
         transaction = TransactionFactory(
             event=event,
@@ -81,7 +106,12 @@ class DailyDigestCommandTestCase(TestCase):
 
     def test_send_digest__owner__two_events(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        organization = OrganizationFactory(owner=owner)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event1 = EventFactory(organization=organization)
         event2 = EventFactory(organization=organization)
         transaction1 = TransactionFactory(event=event1, transaction_type=Transaction.PURCHASE)
@@ -98,7 +128,11 @@ class DailyDigestCommandTestCase(TestCase):
     def test_send_digest__org_editor(self):
         editor = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
         event = EventFactory()
-        event.organization.editors.add(editor)
+        OrganizationMember.objects.create(
+            person=editor,
+            organization=event.organization,
+            role=OrganizationMember.EDIT,
+        )
         transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(editor)
@@ -110,7 +144,11 @@ class DailyDigestCommandTestCase(TestCase):
     def test_send_digest__event_editor(self):
         editor = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
         event = EventFactory()
-        event.additional_editors.add(editor)
+        EventMember.objects.create(
+            person=editor,
+            event=event,
+            role=EventMember.EDIT,
+        )
         transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(editor)
@@ -122,8 +160,17 @@ class DailyDigestCommandTestCase(TestCase):
     def test_full_send_and_timestamp(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
         editor = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        organization = OrganizationFactory(owner=owner)
-        organization.editors.add(editor)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
+        OrganizationMember.objects.create(
+            person=editor,
+            organization=organization,
+            role=OrganizationMember.EDIT,
+        )
         event = EventFactory(organization=organization)
         transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
@@ -148,8 +195,17 @@ class DailyDigestCommandTestCase(TestCase):
         self.command.stderr = MagicMock()
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
         editor = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        organization = OrganizationFactory(owner=owner)
-        organization.editors.add(editor)
+        organization = OrganizationFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
+        OrganizationMember.objects.create(
+            person=editor,
+            organization=organization,
+            role=OrganizationMember.EDIT,
+        )
         event = EventFactory(organization=organization)
         transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)

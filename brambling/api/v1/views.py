@@ -128,9 +128,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated():
             return qs.filter(
                 Q(person=self.request.user) |
-                Q(event__additional_editors=self.request.user) |
-                Q(event__organization__editors=self.request.user) |
-                Q(event__organization__owner=self.request.user)
+                Q(event__members=self.request.user) |
+                Q(event__organization__members=self.request.user)
             )
 
         # Otherwise, you can view orders in your session.
@@ -208,9 +207,8 @@ class AttendeeViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated():
             return qs.filter(
                 Q(order__person=self.request.user) |
-                Q(order__event__additional_editors=self.request.user) |
-                Q(order__event__organization__editors=self.request.user) |
-                Q(order__event__organization__owner=self.request.user)
+                Q(order__event__members=self.request.user) |
+                Q(order__event__organization__members=self.request.user)
             )
 
         # Otherwise, you can view for orders in your session.
@@ -235,9 +233,8 @@ class EventHousingViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated():
             return qs.filter(
                 Q(order__person=self.request.user) |
-                Q(order__event__additional_editors=self.request.user) |
-                Q(order__event__organization__editors=self.request.user) |
-                Q(order__event__organization__owner=self.request.user)
+                Q(order__event__members=self.request.user) |
+                Q(order__event__organization__members=self.request.user)
             )
 
         # Otherwise, you can view for orders in your session.
@@ -268,9 +265,8 @@ class BoughtItemViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated():
             return qs.filter(
                 Q(order__person=self.request.user) |
-                Q(order__event__additional_editors=self.request.user) |
-                Q(order__event__organization__editors=self.request.user) |
-                Q(order__event__organization__owner=self.request.user)
+                Q(order__event__members=self.request.user) |
+                Q(order__event__organization__members=self.request.user)
             )
 
         # Otherwise, you can view for orders in your session.
@@ -302,9 +298,8 @@ class OrderDiscountViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated():
             return qs.filter(
                 Q(order__person=self.request.user) |
-                Q(order__event__additional_editors=self.request.user) |
-                Q(order__event__organization__editors=self.request.user) |
-                Q(order__event__organization__owner=self.request.user)
+                Q(order__event__members=self.request.user) |
+                Q(order__event__organization__members=self.request.user)
             )
 
         # Otherwise, you can view for orders in your session.
