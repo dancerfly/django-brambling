@@ -79,7 +79,7 @@ class DailyDigestPreviewView(PreviewView):
             timestamp__gte=cutoff,
             transaction_type=Transaction.PURCHASE,
         ).distinct().order_by('?')[0]
-        recipient = transaction.event.organization.owner
+        recipient = transaction.event.organization.members.first()
         kwargs['recipient'] = recipient
         kwargs['cutoff'] = cutoff
         return kwargs

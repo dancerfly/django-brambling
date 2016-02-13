@@ -275,9 +275,8 @@ class OrganizationDetailView(DetailView):
 
         if self.request.user.is_authenticated():
             admin_events = Event.objects.filter(
-                Q(organization__owner=self.request.user) |
-                Q(organization__editors=self.request.user) |
-                Q(additional_editors=self.request.user),
+                Q(organization__members=self.request.user) |
+                Q(members=self.request.user),
                 organization=self.object,
             ).distinct()
 
