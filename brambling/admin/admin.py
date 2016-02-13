@@ -1,10 +1,20 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import Count
-from brambling.models import (Person, Event, DanceStyle,
-                              EnvironmentalFactor, HousingCategory, CustomForm,
-                              CustomFormField, Organization, Order,
-                              DwollaAccount)
+from brambling.models import (
+    Person,
+    Event,
+    DanceStyle,
+    EnvironmentalFactor,
+    HousingCategory,
+    CustomForm,
+    CustomFormField,
+    Organization,
+    Order,
+    DwollaAccount,
+    OrganizationMember,
+    EventMember,
+)
 from brambling.admin.forms import PersonChangeForm, PersonCreationForm
 
 
@@ -51,6 +61,14 @@ class PersonAdmin(UserAdmin):
     email_confirmed.boolean = True
 
 
+class OrganizationMemberInline(admin.TabularInline):
+    model = OrganizationMember
+    fields = ('person', 'role', 'created', 'last_modified')
+    readonly_fields = ('created', 'last_modified')
+    extra = 0
+    raw_id_fields = ('person',)
+
+
 class OrganizationAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
@@ -67,10 +85,6 @@ class OrganizationAdmin(admin.ModelAdmin):
                 'country',
                 'dance_styles',
             ),
-        }),
-        ("Permissions", {
-            'classes': ('grp-collapse grp-closed',),
-            'fields': ("owner", "editors"),
         }),
         ("Stripe info", {
             'classes': ('grp-collapse grp-closed',),
@@ -103,10 +117,11 @@ class OrganizationAdmin(admin.ModelAdmin):
             'fields': ('default_application_fee_percent',)
         }),
     )
-    raw_id_fields = ('owner', 'dwolla_account', 'dwolla_test_account')
-    filter_horizontal = ("dance_styles", "editors")
+    raw_id_fields = ('dwolla_account', 'dwolla_test_account')
+    filter_horizontal = ("dance_styles",)
     list_display = ('name', 'created', 'default_application_fee_percent', 'published_events', 'all_events')
     ordering = ('-created',)
+    inlines = [OrganizationMemberInline]
 
     def get_queryset(self, request):
         qs = super(OrganizationAdmin, self).get_queryset(request)
@@ -123,6 +138,14 @@ class OrganizationAdmin(admin.ModelAdmin):
 
     def published_events(self, obj):
         return obj.published_events
+
+
+class EventMemberInline(admin.TabularInline):
+    model = EventMember
+    fields = ('person', 'role', 'created', 'last_modified')
+    readonly_fields = ('created', 'last_modified')
+    extra = 0
+    raw_id_fields = ('person',)
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -169,11 +192,12 @@ class EventAdmin(admin.ModelAdmin):
         }),
     )
     raw_id_fields = ('organization',)
-    filter_horizontal = ("dance_styles", "additional_editors")
+    filter_horizontal = ("dance_styles",)
     radio_fields = {'api_type': admin.HORIZONTAL}
     list_display = ('name', 'organization', 'is_published', 'is_frozen', 'created', 'application_fee_percent')
     list_filter = ('organization', 'is_published', 'is_frozen')
     ordering = ('-created',)
+    inlines = [EventMemberInline]
 
     def get_queryset(self, request):
         qs = super(EventAdmin, self).get_queryset(request)

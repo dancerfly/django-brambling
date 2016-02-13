@@ -342,9 +342,6 @@ class Organization(AbstractDwollaModel):
     country = CountryField(default='US', blank=True)
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
 
-    owner = models.ForeignKey('Person',
-                              related_name='owner_orgs',
-                              blank=True, null=True)
     members = models.ManyToManyField(
         'Person',
         through=OrganizationMember,
@@ -352,9 +349,6 @@ class Organization(AbstractDwollaModel):
         blank=True,
         null=True,
     )
-    editors = models.ManyToManyField('Person',
-                                     related_name='editor_orgs',
-                                     blank=True, null=True)
 
     # This is a secret value set by admins. It will be cached on the event model.
     default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(2.5),
@@ -523,9 +517,6 @@ class Event(models.Model):
         blank=True,
         null=True,
     )
-    additional_editors = models.ManyToManyField('Person',
-                                                related_name='editor_events',
-                                                blank=True, null=True)
 
     collect_housing_data = models.BooleanField(default=True)
     collect_survey_data = models.BooleanField(default=True)
