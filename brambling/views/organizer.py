@@ -414,6 +414,7 @@ class EventSummaryView(TemplateView):
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
 
             'attendee_count': attendees.count(),
             'itemoptions': itemoptions,
@@ -1150,6 +1151,7 @@ class EventTableView(ModelTableView):
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
             'saved_reports': SavedReport.objects.filter(event=self.event, report_type=self.report_type),
         })
         if self.request.GET.get('report'):
@@ -1369,6 +1371,7 @@ class FinancesView(ListView):
         context.update({
             'event': self.event,
             'event_admin_nav': get_event_admin_nav(self.event, self.request),
+            'event_permissions': self.request.user.get_all_permissions(self.event),
             'table': FinanceTable(self.event, context['transactions']),
         })
         return context

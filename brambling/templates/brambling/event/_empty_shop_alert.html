@@ -1,4 +1,4 @@
-{% if request.user in event.editors.all or request.user == event.owner %}
+{% if 'edit' in event_permissions %}
     {% if event.items.count == 0 %}
         {# If there are no items at all: #}
         <div class="alert alert-warning clearfix">
