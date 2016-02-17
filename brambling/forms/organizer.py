@@ -8,7 +8,7 @@ import floppyforms.__future__ as forms
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, Invite, CustomForm,
                               CustomFormField, Order, Organization, SavedReport,
-                              DwollaAccount, EventMember,
+                              DwollaAccount, UNAMBIGUOUS_CHARS, EventMember,
                               OrganizationMember)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
@@ -439,10 +439,10 @@ class DiscountForm(forms.ModelForm):
         self.fields['item_options'].queryset = ItemOption.objects.filter(item__event=event)
         self.fields['available_end'].initial = event.start_date
         if not self.instance.code:
-            self.generated_code = get_random_string(6)
+            self.generated_code = get_random_string(6, UNAMBIGUOUS_CHARS)
             while Discount.objects.filter(event=self.event,
                                           code=self.generated_code).exists():
-                self.generated_code = get_random_string(6)
+                self.generated_code = get_random_string(6, UNAMBIGUOUS_CHARS)
             self.fields['code'].initial = self.generated_code
 
     def _post_clean(self):

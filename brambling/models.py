@@ -76,6 +76,8 @@ DEFAULT_HOUSING_CATEGORIES = (
     "House",
 )
 
+UNAMBIGUOUS_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
 
 class CACHED_DOES_NOT_EXIST:
     pass
@@ -928,7 +930,7 @@ class OrderManager(models.Manager):
             created = True
             person = request.user if request.user and request.user.is_authenticated() else None
             while True:
-                code = get_random_string(8, Order.CODE_ALLOWED_CHARS)
+                code = get_random_string(8, UNAMBIGUOUS_CHARS)
 
                 if not Order.objects.filter(event=event, code=code).exists():
                     break
@@ -974,8 +976,6 @@ class Order(AbstractDwollaModel):
         (DANCER, 'Other dancer'),
         (OTHER, 'Other'),
     )
-
-    CODE_ALLOWED_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
     event = models.ForeignKey(Event)
     person = models.ForeignKey(Person, blank=True, null=True)
