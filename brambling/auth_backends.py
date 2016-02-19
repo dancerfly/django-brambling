@@ -1,11 +1,3 @@
-from brambling.models import (
-    Organization,
-    OrganizationMember,
-    Event,
-    EventMember,
-)
-
-
 class BramblingBackend(object):
     """
     Handles object-based permissions for brambling models.

@@ -79,10 +79,6 @@ DEFAULT_HOUSING_CATEGORIES = (
 UNAMBIGUOUS_CHARS = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 
-class CACHED_DOES_NOT_EXIST:
-    pass
-
-
 class AbstractNamedModel(models.Model):
     "A base model for any model which needs a human name."
 
