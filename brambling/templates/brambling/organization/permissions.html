@@ -15,81 +15,79 @@
 
 		<p>The following people have access to edit this organization and all its events. Only the organization owners can add or remove editors.</p>
 
-		<div class="table-responsive">
-			<table class='table table-striped'>
-				<thead>
+		<table class='table table-striped'>
+			<thead>
+				<tr>
+					<th colspan='2'>Name</th>
+					<th colspan='2'>Permissions</th>
+				</tr>
+			</thead>
+			<tbody class='permissions-table'>
+				{% for form in organizationmember_forms %}
 					<tr>
-						<th colspan='2'>Name</th>
-						<th colspan='2'>Permissions</th>
+						<th>{{ form.instance.person.get_full_name }}</th>
+						<td>{{ form.instance.person.email }}</td>
+						<td>
+							{% if 'change_permissions' in organization_permissions %}
+								{% formfield form.role %}
+							{% else %}
+								{{ form.instance.get_role_display }}
+							{% endif %}
+						</td>
+						<td>
+							{% if 'change_permissions' in organization_permissions %}
+								<a href="{% url 'brambling_organization_remove_member' organization_slug=organization.slug pk=form.instance.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
+							{% endif %}
+						</td>
 					</tr>
-				</thead>
-				<tbody class='permissions-table'>
-					{% for form in organizationmember_forms %}
-						<tr>
-							<th>{{ form.instance.person.get_full_name }}</th>
-							<td>{{ form.instance.person.email }}</td>
-							<td>
-								{% if 'change_permissions' in organization_permissions %}
-									{% formfield form.role %}
-								{% else %}
-									{{ form.instance.get_role_display }}
-								{% endif %}
-							</td>
-							<td>
-								{% if 'change_permissions' in organization_permissions %}
-									<a href="{% url 'brambling_organization_remove_member' organization_slug=organization.slug pk=form.instance.pk %}"><i class='text-danger fa fa-fw fa-times'></i></a>
-								{% endif %}
-							</td>
-						</tr>
-					{% endfor %}
+				{% endfor %}
 
-					{% for invite in invites %}
-						<tr>
-							<th>{{ invite.invite.email }}</th>
-							<td><em>
-								{% if invite.invite.is_sent %}
-									Invitation sent
-								{% else %}
-									Invitation not sent
-								{% endif %}
-							</em></td>
-							<td>
-								{{ invite.verbose_name }}
-							</td>
-							<td>
-								{% if 'change_permissions' in organization_permissions %}
-									<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
-									<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
-								{% endif %}
-							</td>
-						</tr>
-					{% endfor %}
+				{% for invite in invites %}
+					<tr>
+						<th>{{ invite.invite.email }}</th>
+						<td><em>
+							{% if invite.invite.is_sent %}
+								Invitation sent
+							{% else %}
+								Invitation not sent
+							{% endif %}
+						</em></td>
+						<td>
+							{{ invite.verbose_name }}
+						</td>
+						<td>
+							{% if 'change_permissions' in organization_permissions %}
+								<a href='{% url "brambling_invite_delete" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Cancel invitation'><i class='text-danger fa fa-fw fa-times'></i></a>
+								<a href='{% url "brambling_invite_send" code=invite.invite.code %}' class='tipped' data-toggle="tooltip" data-placement="top" data-container="body" title='Send invitation'><i class='fa fa-fw fa-repeat fa-rotate-270 text-success'></i></a>
+							{% endif %}
+						</td>
+					</tr>
+				{% endfor %}
 
-					{% if 'change_permissions' in organization_permissions %}
-						{% for form in invite_formset %}
-							{% form form using %}
-								<tr>
-									<td{% if form.errors.email %} class='has-error'{% endif %}>
-										{% formfield form.email with placeholder="Email" %}
-										{% if form.errors.email %}
-											{% for error in form.errors.email %}
-												<p class='help-block'>{{ error }}</p>
-											{% endfor %}
-										{% endif %}
-									</td>
-									<td></td>
-									<td>
-										{% formfield form.kind %}
-										{% formfield form.DELETE %}
-									</td>
-									<td class='js-actions'></td>
-								</tr>
-							{% endform %}
-						{% endfor %}
-					{% endif %}
-				</tbody>
-			</table>
-		</div>
+				{% if 'change_permissions' in organization_permissions %}
+					{% for form in invite_formset %}
+						{% form form using %}
+							<tr>
+								<td{% if form.errors.email %} class='has-error'{% endif %}>
+									{% formfield form.email with placeholder="Email" %}
+									{% if form.errors.email %}
+										{% for error in form.errors.email %}
+											<p class='help-block'>{{ error }}</p>
+										{% endfor %}
+									{% endif %}
+								</td>
+								<td></td>
+								<td>
+									{% formfield form.kind %}
+									{% formfield form.DELETE %}
+								</td>
+								<td class='js-actions'></td>
+							</tr>
+						{% endform %}
+					{% endfor %}
+				{% endif %}
+			</tbody>
+		</table>
 
 		{% if 'change_permissions' in organization_permissions %}
 			<script type="text/html" class='new-invite-template'>
