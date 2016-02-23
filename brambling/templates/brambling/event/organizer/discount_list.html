@@ -22,15 +22,17 @@
 					</div>
 			</div>
 		{% endif %}
-		<div class="col-lg-8">
-			<div class="panel panel-default">
-				<header class="panel-heading">
-					<h4 class="panel-title">Create Discount</h4>
-				</header>
-				<div class="panel-body">
-					{% url 'brambling_discount_create' event_slug=event.slug organization_slug=event.organization.slug  as action %}
-					{% include "brambling/event/organizer/_discount_form.html" with action=action %}
+		{% if 'edit' in event_permissions %}
+			<div class="col-lg-8">
+				<div class="panel panel-default">
+					<header class="panel-heading">
+						<h4 class="panel-title">Create Discount</h4>
+					</header>
+					<div class="panel-body">
+						{% url 'brambling_discount_create' event_slug=event.slug organization_slug=event.organization.slug  as action %}
+						{% include "brambling/event/organizer/_discount_form.html" with action=action %}
+					</div>
 				</div>
 			</div>
-		</div>
+		{% endif %}
 {% endblock %}

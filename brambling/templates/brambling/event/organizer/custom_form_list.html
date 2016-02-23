@@ -25,9 +25,11 @@
 						</a>
 					{% endif %}
 				{% endfor %}
-				<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=attendee">
-					<i class='fa fa-fw fa-plus'></i> Add attendee form
-				</a>
+				{% if 'edit' in event_permissions %}
+					<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=attendee">
+						<i class='fa fa-fw fa-plus'></i> Add attendee form
+					</a>
+				{% endif %}
 			</div>
 		</div>{# /.panel #}
 	</div>{# /.col-md-6 #}
@@ -48,9 +50,11 @@
 						</a>
 					{% endif %}
 				{% endfor %}
-				<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=order">
-					<i class='fa fa-fw fa-plus'></i> Add order form
-				</a>
+				{% if 'edit' in event_permissions %}
+					<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=order">
+						<i class='fa fa-fw fa-plus'></i> Add order form
+					</a>
+				{% endif %}
 			</div>
 		</div>{# /.panel #}
 	</div>{# /.col-md-6 #}
@@ -72,9 +76,11 @@
 							</a>
 						{% endif %}
 					{% endfor %}
-					<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=housing">
-						<i class='fa fa-fw fa-plus'></i> Add housing form
-					</a>
+					{% if 'edit' in event_permissions %}
+						<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=housing">
+							<i class='fa fa-fw fa-plus'></i> Add housing form
+						</a>
+					{% endif %}
 				</div>
 			</div>{# /.panel #}
 		</div>{# /.col-md-6 #}
@@ -95,9 +101,11 @@
 							</a>
 						{% endif %}
 					{% endfor %}
-					<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=hosting">
-						<i class='fa fa-fw fa-plus'></i> Add hosting form
-					</a>
+					{% if 'edit' in event_permissions %}
+						<a class='list-group-item' href="{% url 'brambling_form_create' event_slug=event.slug organization_slug=event.organization.slug %}?form_type=hosting">
+							<i class='fa fa-fw fa-plus'></i> Add hosting form
+						</a>
+					{% endif %}
 				</div>
 			</div>{# /.panel #}
 		</div>{# /.col-md-6 #}

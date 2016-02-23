@@ -4,6 +4,7 @@ from django.core import mail
 from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
+from brambling.models import OrganizationMember
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
@@ -13,6 +14,7 @@ from brambling.tests.factories import (
     TransactionFactory,
     OrganizationFactory,
     DiscountFactory,
+    PersonFactory,
 )
 from brambling.views.orders import SummaryView
 
@@ -24,6 +26,12 @@ class SummaryViewTestCase(TestCase):
     def test_payment__sends_email(self):
         """A successful payment should send a receipt email and an alert email."""
         organization = OrganizationFactory(check_payment_allowed=True)
+        owner = PersonFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event = EventFactory(
             collect_housing_data=False,
             organization=organization,
@@ -52,6 +60,12 @@ class SummaryViewTestCase(TestCase):
     def test_comped__sends_email(self):
         """A successful completion with fully-comped items should send a receipt email and an alert email."""
         organization = OrganizationFactory()
+        owner = PersonFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
         event = EventFactory(
             collect_housing_data=False,
             organization=organization,

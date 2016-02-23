@@ -8,8 +8,10 @@ import floppyforms.__future__ as forms
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, Invite, CustomForm,
                               CustomFormField, Order, Organization, SavedReport,
-                              DwollaAccount, UNAMBIGUOUS_CHARS)
+                              DwollaAccount, UNAMBIGUOUS_CHARS, EventMember,
+                              OrganizationMember)
 from brambling.utils.international import clean_postal_code
+from brambling.utils.invites import EventInvite
 from brambling.utils.payment import LIVE, TEST
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
@@ -32,50 +34,6 @@ class OrganizationProfileForm(forms.ModelForm):
             'facebook_url', 'banner_image', 'city',
             'state_or_province', 'country', 'dance_styles'
         )
-
-
-class OrganizationPermissionForm(forms.Form):
-    editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
-                              widget=forms.Textarea,
-                              required=False)
-
-    def __init__(self, request, instance, *args, **kwargs):
-        super(OrganizationPermissionForm, self).__init__(*args, **kwargs)
-        self.instance = instance
-        self.request = request
-        if self.instance.pk is None:
-            self.instance.owner = request.user
-        if not request.user == self.instance.owner:
-            del self.fields['editors']
-
-    def clean_editors(self):
-        editors = self.cleaned_data['editors']
-        if not editors:
-            return []
-
-        validator = EmailValidator()
-        # Split email list by commas and trim whitespace:
-        editors = [x.strip() for x in editors.split(',')]
-        for editor in editors:
-            validator(editor)
-        return editors
-
-    def save(self):
-        if self.request.user == self.instance.owner and self.cleaned_data['editors']:
-            for editor in self.cleaned_data['editors']:
-                invite, created = Invite.objects.get_or_create_invite(
-                    email=editor,
-                    user=self.request.user,
-                    kind=Invite.ORGANIZATION_EDITOR,
-                    content_id=self.instance.pk
-                )
-                if created:
-                    invite.send(
-                        content=self.instance,
-                        secure=self.request.is_secure(),
-                        site=get_current_site(self.request),
-                    )
-        return self.instance
 
 
 class OrganizationPaymentForm(forms.ModelForm):
@@ -171,12 +129,15 @@ class EventCreateForm(forms.ModelForm):
         if not request.user.is_authenticated():
             raise ValueError("EventCreateForm requires an authenticated user.")
         self.fields['template_event'].queryset = Event.objects.filter(
-            Q(organization__owner=request.user) |
-            Q(organization__editors=request.user)
+            Q(organization__members=request.user) |
+            Q(members=request.user)
         ).order_by('-last_modified').distinct()
         self.fields['organization'].queryset = Organization.objects.filter(
-            Q(owner=request.user) |
-            Q(editors=request.user)
+            organizationmember__person=request.user,
+            organizationmember__role__in=(
+                OrganizationMember.OWNER,
+                OrganizationMember.EDIT,
+            )
         ).order_by('name').distinct()
         self.initial['create_new_organization'] = not self.fields['organization'].queryset
 
@@ -221,7 +182,11 @@ class EventCreateForm(forms.ModelForm):
             self.instance.organization = Organization.objects.create(
                 name=self.cleaned_data['new_organization_name'],
                 slug=self.cleaned_data['new_organization_slug'],
-                owner=self.request.user,
+            )
+            OrganizationMember.objects.create(
+                organization=self.instance.organization,
+                person=self.request.user,
+                role=OrganizationMember.OWNER,
             )
         else:
             self.instance.organization = self.cleaned_data['organization']
@@ -343,56 +308,6 @@ class EventDesignForm(forms.ModelForm):
         fields = ('banner_image',)
 
 
-class EventPermissionsForm(forms.ModelForm):
-    editors = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to join the event as an editor.',
-                              widget=forms.Textarea,
-                              required=False)
-
-    class Meta:
-        model = Event
-        fields = ()
-
-    def __init__(self, request, organization, organization_editable_by, *args, **kwargs):
-        super(EventPermissionsForm, self).__init__(*args, **kwargs)
-        self.request = request
-        self.organization = organization
-        self.instance.organization = organization
-        self.organization_editable_by = organization_editable_by
-        if not self.organization_editable_by:
-            del self.fields['editors']
-
-    def clean_editors(self):
-        editors = self.cleaned_data['editors']
-        if not editors:
-            return []
-
-        validator = EmailValidator()
-        # Split email list by commas and trim whitespace:
-        editors = [x.strip() for x in editors.split(',')]
-        for editor in editors:
-            validator(editor)
-        return editors
-
-    def save(self):
-        instance = super(EventPermissionsForm, self).save()
-
-        if self.organization_editable_by and self.cleaned_data['editors']:
-            for editor in self.cleaned_data['editors']:
-                invite, created = Invite.objects.get_or_create_invite(
-                    email=editor,
-                    user=self.request.user,
-                    kind=Invite.EVENT_EDITOR,
-                    content_id=instance.pk
-                )
-                if created:
-                    invite.send(
-                        content=instance,
-                        secure=self.request.is_secure(),
-                        site=get_current_site(self.request),
-                    )
-        return instance
-
-
 class EventRegistrationForm(forms.ModelForm):
     invite_attendees = forms.CharField(help_text='Comma-separated email addresses. Each person will be sent an invitation to the event.',
                                        widget=forms.Textarea,
@@ -432,18 +347,13 @@ class EventRegistrationForm(forms.ModelForm):
 
         if self.cleaned_data['invite_attendees']:
             for invite_attendee in self.cleaned_data['invite_attendees']:
-                invite, created = Invite.objects.get_or_create_invite(
+                invite, created = EventInvite.get_or_create(
+                    request=self.request,
                     email=invite_attendee,
-                    user=self.request.user,
-                    kind=Invite.EVENT,
-                    content_id=instance.pk
+                    content=instance
                 )
                 if created:
-                    invite.send(
-                        content=instance,
-                        secure=self.request.is_secure(),
-                        site=get_current_site(self.request),
-                    )
+                    invite.send()
         return instance
 
 

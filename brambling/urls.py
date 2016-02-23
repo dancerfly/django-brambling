@@ -9,10 +9,9 @@ from brambling.forms.user import (
     FloppySetPasswordForm,
 )
 from brambling.forms.organizer import (
-    OrganizationPermissionForm,
     OrganizationProfileForm,
 )
-from brambling.models import Discount, Invite
+from brambling.models import Discount
 from brambling.views.orders import (
     AddToOrderView,
     RemoveFromOrderView,
@@ -31,6 +30,8 @@ from brambling.views.orders import (
 from brambling.views.core import (
     ExceptionView,
     DashboardView,
+)
+from brambling.views.invites import (
     InviteAcceptView,
     InviteSendView,
     InviteDeleteView,
@@ -44,9 +45,10 @@ from brambling.views.mail import (
 )
 from brambling.views.organizer import (
     OrganizationUpdateView,
+    OrganizationPermissionsView,
     OrganizationPaymentView,
     OrganizationDetailView,
-    OrganizationRemoveEditorView,
+    OrganizationRemoveMemberView,
     OrderRedirectView,
     EventCreateView,
     EventSummaryView,
@@ -55,7 +57,7 @@ from brambling.views.organizer import (
     EventPermissionsView,
     EventRegistrationView,
     StripeConnectView,
-    EventRemoveEditorView,
+    EventRemoveMemberView,
     PublishEventView,
     UnpublishEventView,
     DangerZoneView,
@@ -167,9 +169,9 @@ event_urlpatterns = patterns('',
     url(r'^registration/$',
         EventRegistrationView.as_view(),
         name="brambling_event_registration"),
-    url(r'^remove_editor/(?P<pk>\d+)$',
-        EventRemoveEditorView.as_view(),
-        name="brambling_event_remove_editor"),
+    url(r'^remove_member/(?P<pk>\d+)$',
+        EventRemoveMemberView.as_view(),
+        name="brambling_event_remove_member"),
     url(r'^publish/$',
         PublishEventView.as_view(),
         name="brambling_event_publish"),
@@ -247,18 +249,14 @@ organization_urlpatterns = patterns('',
         ),
         name='brambling_organization_update'),
     url(r'^edit/permissions/$',
-        OrganizationUpdateView.as_view(
-            form_class=OrganizationPermissionForm,
-            template_name='brambling/organization/permissions.html',
-            success_view_name='brambling_organization_update_permissions',
-        ),
+        OrganizationPermissionsView.as_view(),
         name='brambling_organization_update_permissions'),
     url(r'^edit/payment/$',
         OrganizationPaymentView.as_view(),
         name='brambling_organization_update_payment'),
     url(r'^remove_editor/(?P<pk>\d+)$',
-        OrganizationRemoveEditorView.as_view(),
-        name="brambling_organization_remove_editor"),
+        OrganizationRemoveMemberView.as_view(),
+        name="brambling_organization_remove_member"),
 
     url(r'^order/(?:(?P<code>[a-zA-Z0-9]{8})/)?', OrderRedirectView.as_view()),
 
@@ -374,11 +372,14 @@ urlpatterns = patterns('',
     url(r'^mail/confirmation/$', ConfirmationPreviewView.as_view()),
     url(r'^mail/order_receipt/$', OrderReceiptPreviewView.as_view()),
     url(r'^mail/order_alert/$', OrderAlertPreviewView.as_view()),
+    url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind='event')),
+    url(r'^mail/invite_event_edit/$', InvitePreviewView.as_view(kind='event_edit')),
+    url(r'^mail/invite_event_view/$', InvitePreviewView.as_view(kind='event_view')),
+    url(r'^mail/invite_org_owner/$', InvitePreviewView.as_view(kind='org_owner')),
+    url(r'^mail/invite_org_edit/$', InvitePreviewView.as_view(kind='org_edit')),
+    url(r'^mail/invite_org_view/$', InvitePreviewView.as_view(kind='org_view')),
+    url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind='transfer')),
     url(r'^mail/daily_digest/$', DailyDigestPreviewView.as_view()),
-    url(r'^mail/invite_event/$', InvitePreviewView.as_view(kind=Invite.EVENT)),
-    url(r'^mail/invite_event_editor/$', InvitePreviewView.as_view(kind=Invite.EVENT_EDITOR)),
-    url(r'^mail/invite_org_editor/$', InvitePreviewView.as_view(kind=Invite.ORGANIZATION_EDITOR)),
-    url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind=Invite.TRANSFER)),
 
     url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
 

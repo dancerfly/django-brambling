@@ -48,6 +48,8 @@
 		</div>
 
 	{% endform %}
-	<button class='btn btn-primary' type="submit">Save</button>
-	{% if discount.pk %}<a href="../">Cancel</a>{% endif %}
+	{% if 'edit' in event_permissions %}
+		<button class='btn btn-primary' type="submit">Save</button>
+		{% if discount.pk %}<a href="../">Cancel</a>{% endif %}
+	{% endif %}
 </form>

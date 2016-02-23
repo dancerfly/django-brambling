@@ -8,13 +8,17 @@ from django.http import Http404, HttpResponse
 from django.utils import timezone
 from django.views.generic import View
 
+from brambling.utils.invites import get_invite_class
 from brambling.mail import (ConfirmationMailer, OrderReceiptMailer,
                             OrderAlertMailer, InviteMailer, DailyDigestMailer)
-from brambling.models import Transaction, Invite
+from brambling.models import Transaction
 
 
 class PreviewView(View):
     mailer = None
+
+    def get_mailer(self):
+        return self.mailer(**self.get_mailer_kwargs)
 
     def get_mailer_kwargs(self):
         return {
@@ -25,7 +29,7 @@ class PreviewView(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_superuser:
             raise Http404
-        mailer = self.mailer(**self.get_mailer_kwargs())
+        mailer = self.get_mailer()
         if request.GET.get('email'):
             try:
                 validate_email(request.GET['email'])
@@ -75,7 +79,7 @@ class DailyDigestPreviewView(PreviewView):
             timestamp__gte=cutoff,
             transaction_type=Transaction.PURCHASE,
         ).distinct().order_by('?')[0]
-        recipient = transaction.event.organization.owner
+        recipient = transaction.event.organization.members.first()
         kwargs['recipient'] = recipient
         kwargs['cutoff'] = cutoff
         return kwargs
@@ -85,9 +89,7 @@ class InvitePreviewView(PreviewView):
     mailer = InviteMailer
     kind = None
 
-    def get_mailer_kwargs(self):
-        kwargs = super(InvitePreviewView, self).get_mailer_kwargs()
-        kwargs['invite'] = Invite.objects.filter(kind=self.kind).order_by('?')[0]
-        kwargs['content'] = kwargs['invite'].get_content()
-        kwargs['key'] = 'invite_{}'.format(self.kind)
-        return kwargs
+    def get_mailer(self):
+        invite_class = get_invite_class(self.kind)
+        invite = invite_class.get_fake_invite(self.request)
+        return invite.get_mailer()

@@ -415,9 +415,8 @@ class OrganizeEventsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(OrganizeEventsView, self).get_context_data(**kwargs)
         admin_events = Event.objects.filter(
-            Q(organization__owner=self.request.user) |
-            Q(organization__editors=self.request.user) |
-            Q(additional_editors=self.request.user)
+            Q(organization__members=self.request.user) |
+            Q(members=self.request.user)
         ).order_by('-last_modified').select_related('organization').distinct()
         context['admin_events'] = admin_events
         return context
@@ -434,5 +433,5 @@ class OrganizeOrganizationsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(OrganizeOrganizationsView, self).get_context_data(**kwargs)
-        context['organizations'] = self.request.user.get_organizations().order_by('-last_modified')
+        context['organizations'] = self.request.user.organizations.order_by('-last_modified')
         return context

@@ -47,14 +47,23 @@
 			</div>{# /.row #}
 		{% endform %}
 
-		<button class="btn btn-primary" type="submit">
-			Save Changes
-		</button>
+		{% if 'edit' in organization_permissions %}
+			<button class="btn btn-primary" type="submit">
+				Save Changes
+			</button>
 
-		{% if organization.pk %}
-			<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+			{% if organization.pk %}
+				<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+			{% endif %}
 		{% endif %}
 
 	</form>
 
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% if 'edit' not in organization_permissions %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 {% endblock %}

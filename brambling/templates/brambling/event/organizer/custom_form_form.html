@@ -46,70 +46,78 @@
 					</div>
 				{% endfor %}
 			</div>
-			<div class='panel-footer'>
-				<div class='js-formset-add field-add'>
+			{% if 'edit' in event_permissions %}
+				<div class='panel-footer'>
+					<div class='js-formset-add field-add'>
+					</div>
 				</div>
-			</div>
+			{% endif %}
 		</div>
 
-		<button class='btn btn-primary' type="submit">Save</button>
-		{% if custom_form.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
+		{% if 'edit' in event_permissions %}
+			<button class='btn btn-primary' type="submit">Save</button>
+			{% if custom_form.pk %}<a href="../" class="btn btn-link">Cancel</a>{% endif %}
+		{% endif %}
 	</form>
 {% endblock %}
 
 {% block javascripts %}
 	{{ block.super }}
-	<script type="text/javascript">
-		(function () {
-			"use strict";
+	{% if 'edit' in event_permissions %}
+		<script type="text/javascript">
+			(function () {
+				"use strict";
 
-			var choice_types = ['radio', 'select', 'checkboxes', 'select_multiple'];
+				var choice_types = ['radio', 'select', 'checkboxes', 'select_multiple'];
 
-			var setChoicesDisabled = function(ele) {
-				var $ele = $(ele),
-					$choices = $ele.parent().parent().parent().parent().find('.js-form-choices');
-				if (choice_types.indexOf($ele.val()) !== -1) {
-					$choices.slideDown();
-				} else {
-					$choices.slideUp();
+				var setChoicesDisabled = function(ele) {
+					var $ele = $(ele),
+						$choices = $ele.parent().parent().parent().parent().find('.js-form-choices');
+					if (choice_types.indexOf($ele.val()) !== -1) {
+						$choices.slideDown();
+					} else {
+						$choices.slideUp();
+					}
 				}
-			}
 
-			$('select[id$=field_type]').each(function (idx, ele) {
-				setChoicesDisabled(ele);
-			});
-
-			$('body').on('change', 'select[id$=field_type]', function() {
-				setChoicesDisabled(this);
-			});
-
-			$('.field-list').on('row_added.formset', function(e, $row) {
-				setChoicesDisabled($row.find('select[id$=field_type]'));
-			});
-
-			var fields_renumber = function () {
-				$('.field-list .field:visible').each(function(i){
-					$(this).find('.count').html(i+1);
+				$('select[id$=field_type]').each(function (idx, ele) {
+					setChoicesDisabled(ele);
 				});
-			};
 
-			$('.field-list').on('row_added.formset row_removed.formset reordered.formset', fields_renumber);
+				$('body').on('change', 'select[id$=field_type]', function() {
+					setChoicesDisabled(this);
+				});
 
-			var form_field_chosen = function (e, $row) {
-				$row.find('.chosen-select').chosen({width: "100%"})
-			};
+				$('.field-list').on('row_added.formset', function(e, $row) {
+					setChoicesDisabled($row.find('select[id$=field_type]'));
+				});
 
-			$('.field-list').formset({
-				prefix: '{{ formset.prefix }}',
-				deleteTrigger: '<a class="btn btn-link" href="#"><i class="fa fa-fw fa-trash"></i></a>',
-				deleteWrapper: '.js-delete-field',
-				addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add a field</a>',
-				addWrapper: '.js-formset-add.field-add',
-				formTemplate: '.field-template',
-				sortableHandle: '.panel-heading',
-				sortableField: 'index'
-			});
-			$('.field-list').on('row_added.formset', form_field_chosen)
-		}());
-	</script>
+				var fields_renumber = function () {
+					$('.field-list .field:visible').each(function(i){
+						$(this).find('.count').html(i+1);
+					});
+				};
+
+				$('.field-list').on('row_added.formset row_removed.formset reordered.formset', fields_renumber);
+
+				var form_field_chosen = function (e, $row) {
+					$row.find('.chosen-select').chosen({width: "100%"})
+				};
+
+				$('.field-list').formset({
+					prefix: '{{ formset.prefix }}',
+					deleteTrigger: '<a class="btn btn-link" href="#"><i class="fa fa-fw fa-trash"></i></a>',
+					deleteWrapper: '.js-delete-field',
+					addTrigger: '<a href="#" class="btn btn-default"><i class="fa fa-fw fa-plus"></i> Add a field</a>',
+					addWrapper: '.js-formset-add.field-add',
+					formTemplate: '.field-template',
+					sortableHandle: '.panel-heading',
+					sortableField: 'index'
+				});
+				$('.field-list').on('row_added.formset', form_field_chosen)
+			}());
+		</script>
+	{% else %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 {% endblock %}

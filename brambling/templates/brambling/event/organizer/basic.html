@@ -81,12 +81,14 @@
 			{% formrow form.has_classes %}
 		{% endform %}
 
-		<button class="btn btn-primary" type="submit">
-			Save Changes
-		</button>
-		<a class="btn btn-link" href="{{ request.path }}">
-			Cancel
-		</a>
+		{% if 'edit' in event_permissions %}
+			<button class="btn btn-primary" type="submit">
+				Save Changes
+			</button>
+			<a class="btn btn-link" href="{{ request.path }}">
+				Cancel
+			</a>
+		{% endif %}
 
 	</form>
 {% endblock %}
@@ -107,5 +109,11 @@
 			});
 		});
 	</script>
-	{% include "brambling/forms/markdown/_js.html" %}
+
+	{% if 'edit' in event_permissions %}
+		{% include "brambling/forms/markdown/_js.html" %}
+	{% else %}
+		{% include "brambling/forms/markdown/_js.html" with readonly=1 %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 {% endblock %}

@@ -4,7 +4,7 @@ from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
 from brambling.forms.organizer import ManualPaymentForm, EventCreateForm
-from brambling.models import Transaction, Event
+from brambling.models import Transaction, Event, OrganizationMember
 from brambling.tests.factories import (
     OrderFactory,
     PersonFactory,
@@ -87,7 +87,13 @@ class EventCreateFormTestCase(TestCase):
             'organization': str(template.organization.pk),
             'template_event': str(template.pk),
         })
-        request.user = template.organization.owner
+        owner = PersonFactory()
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=template.organization,
+            role=OrganizationMember.OWNER,
+        )
+        request.user = owner
         form = EventCreateForm(request, data=request.POST)
         self.assertFalse(form.errors)
         event = form.save()

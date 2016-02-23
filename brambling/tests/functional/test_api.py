@@ -4,7 +4,11 @@ from django.test import TestCase, RequestFactory
 from brambling.api.v1.views import (
     AttendeeViewSet, BoughtItemViewSet, ItemOptionViewSet
 )
-from brambling.models import Transaction, BoughtItem
+from brambling.models import (
+    Transaction,
+    BoughtItem,
+    EventMember,
+)
 from brambling.tests.factories import (
     DiscountFactory,
     EventFactory,
@@ -32,9 +36,21 @@ class AttendeeViewSetTestCase(TestCase):
         editor2 = PersonFactory()
         editor3 = PersonFactory()
         event = EventFactory(collect_housing_data=False)
-        event.additional_editors.add(editor1)
-        event.additional_editors.add(editor2)
-        event.additional_editors.add(editor3)
+        EventMember.objects.create(
+            person=editor1,
+            event=event,
+            role=EventMember.EDIT,
+        )
+        EventMember.objects.create(
+            person=editor2,
+            event=event,
+            role=EventMember.EDIT,
+        )
+        EventMember.objects.create(
+            person=editor3,
+            event=event,
+            role=EventMember.EDIT,
+        )
         order = OrderFactory(event=event, person=person)
         att1 = AttendeeFactory(order=order)
         att2 = AttendeeFactory(order=order)
@@ -64,9 +80,21 @@ class BoughtItemViewSetTestCase(TestCase):
         editor2 = PersonFactory()
         editor3 = PersonFactory()
         event = EventFactory(collect_housing_data=False)
-        event.additional_editors.add(editor1)
-        event.additional_editors.add(editor2)
-        event.additional_editors.add(editor3)
+        EventMember.objects.create(
+            person=editor1,
+            event=event,
+            role=EventMember.EDIT,
+        )
+        EventMember.objects.create(
+            person=editor2,
+            event=event,
+            role=EventMember.EDIT,
+        )
+        EventMember.objects.create(
+            person=editor3,
+            event=event,
+            role=EventMember.EDIT,
+        )
         order = OrderFactory(event=event, person=person)
         att1 = AttendeeFactory(order=order)
         att2 = AttendeeFactory(order=order)

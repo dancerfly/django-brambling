@@ -76,7 +76,6 @@ class OrganizationFactory(factory.DjangoModelFactory):
 
     name = "Test organization"
     slug = factory.Sequence(lambda n: "test-event-{}".format(n))
-    owner = factory.SubFactory(PersonFactory)
 
     stripe_test_access_token = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_ACCESS_TOKEN'))
     stripe_test_publishable_key = factory.LazyAttribute(lazy_setting('STRIPE_TEST_ORGANIZATION_PUBLISHABLE_KEY'))
@@ -133,7 +132,7 @@ class InviteFactory(factory.DjangoModelFactory):
     code = factory.Sequence(lambda n: "invite{}".format(n))
     email = "test@test.com"
     user = factory.SubFactory(PersonFactory)
-    kind = Invite.EVENT_EDITOR
+    kind = 'event_edit'
 
 
 class TransactionFactory(factory.DjangoModelFactory):

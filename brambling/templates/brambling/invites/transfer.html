@@ -1,0 +1,13 @@
+{% extends 'brambling/invites/__base.html' %}
+
+{% block invite_title %}
+You've been offered an item transfer!
+{% endblock %}
+
+{% block before %}
+	<p>{% with event=content.order.event %}
+		You've been sent a transfer of the following item for
+		<a href="{% url 'brambling_event_root' organization_slug=event.organization.slug event_slug=event.slug %}">{{ event.name }}</a>:
+		<strong>{{ content.item_option_name }} ({{ content.item_name}})</strong>.
+	{% endwith %}</p>
+{% endblock %}

@@ -152,9 +152,8 @@ class OrderAlertMailer(FancyMailer):
     def get_recipients(self):
         from brambling.models import Person
         return Person.objects.filter(
-            Q(owner_orgs=self.order.event.organization) |
-            Q(editor_orgs=self.order.event.organization) |
-            Q(editor_events=self.order.event),
+            Q(organizations=self.order.event.organization) |
+            Q(events=self.order.event),
             notify_new_purchases=Person.NOTIFY_EACH,
         ).values_list('email', flat=True).distinct()
 
@@ -167,9 +166,8 @@ class DailyDigestMailer(FancyMailer):
         self.cutoff = cutoff
         from brambling.models import Transaction
         self.transactions = Transaction.objects.filter(
-            Q(event__additional_editors=recipient) |
-            Q(event__organization__editors=recipient) |
-            Q(event__organization__owner=recipient),
+            Q(event__members=recipient) |
+            Q(event__organization__members=recipient),
             timestamp__gte=cutoff,
             transaction_type=Transaction.PURCHASE,
         ).distinct().select_related('event').prefetch_related('bought_items').order_by('event__name', 'timestamp')

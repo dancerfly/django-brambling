@@ -57,20 +57,22 @@
 		<script type="text/javascript" src="{% static "zenaida/lib/chosen/chosen.jquery.min.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/lib/modernizr.js" %}"></script>
 		<script type="text/javascript">
-			$('select.chosen-select').each(function () {
-				var $this = $(this),
+			window._brambling_chosen_init = function (idx, ele) {
+				var $this = $(ele),
 					first_child = $this.children("option").eq(0),
 					options = {
 						width: $this.hasClass('chosen-width-auto') ? "auto" : "100%",
 						allow_single_deselect: (typeof $this.attr('required')) === "undefined" && first_child.val() === "",
 						placeholder_text_multiple: "Select all that apply",
 						placeholder_text_single: "Select one",
-						inherit_select_classes: true
+						inherit_select_classes: true,
+						disable_search_threshold: 5
 					};
 				// If the first child has no value, blank its label.
 				if (first_child.val() === "") first_child.html("");
 				$this.chosen(options);
-			})
+			};
+			$('select.chosen-select').each(_brambling_chosen_init);
 		</script>
 		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>
 		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>

@@ -47,12 +47,21 @@
 			</div>
 		{% endform %}
 
-		<button class="btn btn-primary" type="submit">
-			Save Changes
-		</button>
-		<a class="btn btn-link" href="{{ request.path }}">
-			Cancel
-		</a>
+		{% if 'edit' in event_permissions %}
+			<button class="btn btn-primary" type="submit">
+				Save Changes
+			</button>
+			<a class="btn btn-link" href="{{ request.path }}">
+				Cancel
+			</a>
+		{% endif %}
 
 	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% if 'edit' not in event_permissions %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 {% endblock %}

@@ -9,25 +9,11 @@
 	{% endcomment %}
 	{% if invite %}
 		<h2>
-			{% if invite.kind == invite.EVENT %}
-				You've been invited to an event!
-			{% elif invite.kind == invite.EVENT_EDITOR %}
-				You've been invited to edit an event!
-			{% elif invite.kind == invite.ORGANIZATION_EDITOR %}
-				You've been invited to edit an organization!
-			{% elif invite.kind == invite.TRANSFER %}
-				You've been offered an item transfer!
-			{% else %}
+			{% block invite_title %}
 				You've been invited to do something, but we're not sure what!
-			{% endif %}
+			{% endblock %}
 		</h2>
-		{% if invite.kind == invite.TRANSFER %}
-			<p>{% with event=content.order.event %}
-				You've been sent a transfer of the following item for
-				<a href="{% url 'brambling_event_root' organization_slug=event.organization.slug event_slug=event.slug %}">{{ event.name }}</a>:
-				<strong>{{ content.item_option_name }} ({{ content.item_name}})</strong>.
-			{% endwith %}</p>
-		{% endif %}
+		{% block before %}{% endblock %}
 		<p>
 			This invitation was sent by <strong>{{ sender_display }}</strong> to <strong>{{ invite.email }}</strong>.
 			{% if invited_person_exists %}

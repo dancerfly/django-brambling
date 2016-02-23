@@ -1,17 +1,28 @@
 # encoding: utf-8
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.messages.middleware import MessageMiddleware
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import TestCase, RequestFactory
 
-from brambling.models import Attendee
+from brambling.models import (
+    Attendee,
+    OrganizationMember,
+)
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
     AttendeeFactory,
     ItemFactory,
     ItemOptionFactory,
+    OrganizationFactory,
+    PersonFactory,
     TransactionFactory,
 )
-from brambling.views.organizer import EventSummaryView, AttendeeFilterView
+from brambling.views.organizer import (
+    EventSummaryView,
+    AttendeeFilterView,
+    OrganizationRemoveMemberView,
+)
 
 
 class EventSummaryTestCase(TestCase):
@@ -162,3 +173,73 @@ class ModelTableViewTestCase(TestCase):
         self.assertEqual(response['content-disposition'], 'attachment; filename="export.csv"')
         content = list(response)
         self.assertIn('£200.00', content[1])
+
+
+class OrganizationRemoveMemberViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.organization = OrganizationFactory()
+        self.owner = PersonFactory()
+        self.owner_member = OrganizationMember.objects.create(
+            organization=self.organization,
+            person=self.owner,
+            role=OrganizationMember.OWNER,
+        )
+        self.editor = PersonFactory()
+        self.editor_member = OrganizationMember.objects.create(
+            organization=self.organization,
+            person=self.editor,
+            role=OrganizationMember.EDIT,
+        )
+        self.request = self.factory.get('/')
+        self.request.user = self.owner
+        SessionMiddleware().process_request(self.request)
+        MessageMiddleware().process_request(self.request)
+
+        self.view = OrganizationRemoveMemberView()
+
+    def test_member_removed__edit(self):
+        response = self.view.get(
+            self.request,
+            pk=self.editor_member.pk,
+            organization_slug=self.organization.slug
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.assertRaises(OrganizationMember.DoesNotExist):
+            OrganizationMember.objects.get(
+                organization=self.organization,
+                person=self.editor,
+            )
+
+    def test_member_removed__owner(self):
+        # Create a second owner
+        owner2 = PersonFactory()
+        OrganizationMember.objects.create(
+            organization=self.organization,
+            person=owner2,
+            role=OrganizationMember.OWNER,
+        )
+        response = self.view.get(
+            self.request,
+            pk=self.owner_member.pk,
+            organization_slug=self.organization.slug
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.assertRaises(OrganizationMember.DoesNotExist):
+            OrganizationMember.objects.get(
+                organization=self.organization,
+                person=self.owner,
+            )
+
+    def test_member_not_removed__last_owner(self):
+        response = self.view.get(
+            self.request,
+            pk=self.owner_member.pk,
+            organization_slug=self.organization.slug
+        )
+        self.assertEqual(response.status_code, 302)
+        member = OrganizationMember.objects.get(
+            organization=self.organization,
+            person=self.owner,
+        )
+        self.assertEqual(member.role, OrganizationMember.OWNER)

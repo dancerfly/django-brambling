@@ -1,0 +1,20 @@
+You've been invited to help manage an organization on Dancerfly!
+
+{{ invite.user.first_name }} is running events for their organization, {{ content.name }}, on dancerfly.com,
+and added you as an owner! That means you have access to all the
+information and tools you need to give them a hand setting up
+and running events for this organization, including the ability to
+add new members to your team. The power... THE POWER!  ...ahem.
+
+Ready to get cracking?
+{% url "brambling_invite_accept" code=invite.code as url %}
+Use the following URL to accept your invitation:
+{{ protocol }}://{{ site.domain }}{{ url }}
+
+Happy editing!
+
+The Dancerfly Team
+
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
+

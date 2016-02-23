@@ -13,6 +13,7 @@ from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFa
                               Attendee, HousingSlot, BoughtItem,
                               Order, Event, CustomForm, Invite)
 from brambling.utils.international import clean_postal_code
+from brambling.utils.invites import TransferInvite
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
                                      stripe_prep, stripe_charge)
 
@@ -540,6 +541,6 @@ class TransferForm(forms.Form):
 
     def clean_boughtitem(self):
         bought_item = self.cleaned_data['bought_item']
-        if Invite.objects.filter(kind=Invite.TRANSFER, content_id=bought_item.pk).exists():
+        if TransferInvite.get_invites(bought_item).exists():
             raise ValidationError("A transfer has already been initiated for this item.")
         return bought_item
