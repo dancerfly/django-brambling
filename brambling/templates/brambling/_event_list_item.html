@@ -40,7 +40,7 @@
 					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Complete your registration now!">
 						<i class="fa fa-exclamation-circle"></i> Almost Registered
 					</a>
-				{% elif event.order and event.order.awaiting_check_confirmation %}
+				{% elif event.order and event.order.unconfirmed_checks.count > 0 %}
 					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Your payment by mail has not yet been received.">
 						<i class="fa fa-exclamation-circle"></i> Almost Registered
 					</a>
@@ -75,7 +75,7 @@
 
 	</div>
 
-	{% if event.order and event.order.awaiting_check_confirmation %}
+	{% if event.order and event.order.unconfirmed_checks.count > 0 %}
 		<div class='alert margin-trailer-md-0 alert-info'>
 			Note: Your passes are reserved, but the organizer has not yet received your payment by mail.
 			<br>If you believe this is in error, please contact the event organizer directly.

@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -50,6 +50,11 @@ class DashboardView(TemplateView):
                 bought_items__status__in=(BoughtItem.BOUGHT,
                                           BoughtItem.RESERVED),
                 event__in=registered_events
+            ).prefetch_related(Prefetch(
+                "transactions",
+                queryset=Transaction.objects.filter(
+                    method=Transaction.CHECK, is_confirmed=False),
+                to_attr="unconfirmed_checks")
             )
             for order in orders:
                 order.event = re_dict[order.event_id]
