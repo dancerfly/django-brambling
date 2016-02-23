@@ -41,7 +41,7 @@
 						<i class="fa fa-exclamation-circle"></i> Almost Registered
 					</a>
 				{% elif event.order and event.order.awaiting_check_confirmation %}
-					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="zokn okn">
+					<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-warning tipped" title="Your payment by mail has not yet been received.">
 						<i class="fa fa-exclamation-circle"></i> Almost Registered
 					</a>
 				{% else %}
