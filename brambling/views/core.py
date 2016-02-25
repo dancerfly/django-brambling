@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import Http404
 from django.utils import timezone
 from django.views.generic import TemplateView, View
@@ -39,8 +39,14 @@ class DashboardView(TemplateView):
             re_dict = dict((e.pk, e) for e in registered_events)
             orders = Order.objects.filter(
                 person=user,
-                bought_items__status=BoughtItem.RESERVED,
+                bought_items__status__in=(BoughtItem.BOUGHT,
+                                          BoughtItem.RESERVED),
                 event__in=registered_events
+            ).prefetch_related(Prefetch(
+                "transactions",
+                queryset=Transaction.objects.filter(
+                    method=Transaction.CHECK, is_confirmed=False),
+                to_attr="unconfirmed_checks")
             )
             for order in orders:
                 order.event = re_dict[order.event_id]
