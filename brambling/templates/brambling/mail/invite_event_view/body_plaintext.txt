@@ -1,0 +1,18 @@
+You've been invited to help edit an event on Dancerfly!
+
+{{ invite.user.first_name }} is running their event, {{ content.name }}, on dancerfly.com,
+and added you to their team as a read-only member! That means you have access to
+this event's data, without having access to change the event's configuration
+or modify anyone's orders.
+
+Ready to get cracking?
+{% url "brambling_invite_accept" code=invite.code as url %}
+Use the following URL to accept your invitation:
+{{ protocol }}://{{ site.domain }}{{ url }}
+
+Happy editing!
+
+The Dancerfly Team
+
+
+Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)

@@ -26,7 +26,7 @@ class OrganizationPermission(BasePermission):
             return True
 
         # Anyone who can edit the org also has RUD permissions.
-        if org.editable_by(request.user):
+        if request.user.has_perm('edit', org):
             return True
 
         # Disallow deletion (for now, just a blanket).
@@ -49,7 +49,7 @@ class EventPermission(BasePermission):
             return True
 
         # Editors can have CRUD access to published event info.
-        if event.editable_by(request.user):
+        if request.user.has_perm('edit', event):
             return True
 
         return False
@@ -79,7 +79,7 @@ class ItemOptionPermission(EventPermission):
 
 class OrderPermission(BasePermission):
     def _has_order_permission(self, request, order):
-        if order.event.editable_by(request.user):
+        if request.user.has_perm('edit', order.event):
             return True
 
         if order.person_id:
@@ -120,7 +120,7 @@ class OrderSearchPermission(BasePermission):
     def has_permission(self, request, view):
         "Make sure the event is editable by the user trying to view orders."
         event = view.get_event()
-        return event.editable_by(request.user)
+        return request.user.has_perm('edit', event)
 
 
 class AttendeePermission(OrderPermission):

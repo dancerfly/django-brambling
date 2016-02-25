@@ -45,11 +45,19 @@
 							</th>
 							{% if organization.stripe_live_connected %}
 								<td>Enabled ({{ organization.stripe_user_id }})</td>
-								<td>{% formrow form.disconnect_stripe_live with label="Disconnect" %}</td>
+								<td>
+									{% if 'edit' in organization_permissions %}
+										{% formrow form.disconnect_stripe_live with label="Disconnect" %}
+									{% endif %}
+								</td>
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
-									<a href='{{ stripe_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
+									{% if 'edit' in organization_permissions %}
+										<a href='{{ stripe_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
+									{% else %}
+										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
+									{% endif %}
 								</td>
 							{% endif %}
 						</tr>
@@ -65,11 +73,19 @@
 								<td>
 									Enabled ({{ dwolla_account.user_id }})
 								</td>
-								<td>{% formrow form.disconnect_dwolla_live with label="Disconnect" %}</td>
+								<td>
+									{% if 'edit' in organization_permissions %}
+										{% formrow form.disconnect_dwolla_live with label="Disconnect" %}
+									{% endif %}
+								</td>
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
-									<a href='{{ dwolla_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
+									{% if 'edit' in organization_permissions %}
+										<a href='{{ dwolla_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
+									{% else %}
+										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
+									{% endif %}
 								</td>
 							{% endif %}
 						</tr>
@@ -85,11 +101,19 @@
 							</th>
 							{% if organization.stripe_test_connected %}
 								<td>Enabled ({{ organization.stripe_test_user_id }})</td>
-								<td>{% formrow form.disconnect_stripe_test with label="Disconnect" %}</td>
+								<td>
+									{% if 'edit' in organization_permissions %}
+										{% formrow form.disconnect_stripe_test with label="Disconnect" %}
+									{% endif %}
+								</td>
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
-									<a href='{{ stripe_test_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
+									{% if 'edit' in organization_permissions %}
+										<a href='{{ stripe_test_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
+									{% else %}
+										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
+									{% endif %}
 								</td>
 							{% endif %}
 						</tr>
@@ -104,12 +128,19 @@
 							{% if dwolla_test_account %}
 								<td>
 									Enabled ({{ dwolla_test_account.user_id }})
+								<td>
+									{% if 'edit' in organization_permissions %}
+										{% formrow form.disconnect_dwolla_test with label="Disconnect" %}
+									{% endif %}
 								</td>
-								<td>{% formrow form.disconnect_dwolla_test with label="Disconnect" %}</td>
 							{% else %}
 								<td>Not Enabled</td>
 								<td>
-									<a href='{{ dwolla_test_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
+									{% if 'edit' in organization_permissions %}
+										<a href='{{ dwolla_test_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
+									{% else %}
+										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
+									{% endif %}
 								</td>
 							{% endif %}
 						</tr>
@@ -127,7 +158,11 @@
 							{% if organization.check_payment_allowed %}Enabled{% else %}Disabled{% endif %}
 						</td>
 						<td>
-							<a href='#CheckConfig' data-toggle="collapse" class="btn btn-xs btn-info"><i class="fa fa-cog"></i> Configure</a>
+							{% if 'edit' in organization_permissions %}
+								<a href='#CheckConfig' data-toggle="collapse" class="btn btn-xs btn-info"><i class="fa fa-cog"></i> Configure</a>
+							{% else %}
+								<button type='button' disabled class="btn btn-xs btn-info tipped" title="Only available for users with permission to edit this organization"><i class="fa fa-cog"></i> Configure</a>
+							{% endif %}
 						</td>
 					</tr>
 					<tr class="collapse active {% if organization.check_payment_allowed or form.has_check_errors %}in{% endif %}" id="CheckConfig">
@@ -168,12 +203,14 @@
 			<p class='text-muted'>Note: This is a demo organization which uses test APIs. None of the transactions made through this organization can result in real money changing hands.</p>
 		{% endif %}
 
-		<button class="btn btn-primary" type="submit">
-			Save Changes
-		</button>
+		{% if 'edit' in organization_permissions %}
+			<button class="btn btn-primary" type="submit">
+				Save Changes
+			</button>
 
-		{% if organization.pk %}
-			<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+			{% if organization.pk %}
+				<a class="btn btn-link" href="{{ request.path }}">Cancel</a>
+			{% endif %}
 		{% endif %}
 
 	</form>
@@ -194,4 +231,8 @@
             }
         });
     </script>
+
+	{% if 'edit' not in organization_permissions %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 {% endblock %}

@@ -1,0 +1,1 @@
+{{ invite.user.get_full_name|safe }} has invited you to help manage {{ content.name|safe }}

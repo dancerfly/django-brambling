@@ -99,7 +99,7 @@
 
 			{% formrow form.currency %}
 
-			{% if organization_editable_by %}
+			{% if 'edit' in organization_permissions %}
 				<p>Payment methods can be managed in the <a href="{% url 'brambling_organization_update_payment' organization_slug=organization.slug %}" target="_blank">organization settings</a>.</p>
 			{% else %}
 				<p>Payment methods can only be updated by people with permission to edit the organization.</p>
@@ -122,12 +122,14 @@
 			{% endif %}
 		{% endform %}
 
-		<button class="btn btn-primary" type="submit">
-			Save Changes
-		</button>
-		<a class="btn btn-link" href="{{ request.path }}">
-			Cancel
-		</a>
+		{% if 'edit' in event_permissions %}
+			<button class="btn btn-primary" type="submit">
+				Save Changes
+			</button>
+			<a class="btn btn-link" href="{{ request.path }}">
+				Cancel
+			</a>
+		{% endif %}
 
 	</form>
 {% endblock %}
@@ -151,5 +153,8 @@
 			toggleInviteInfo($('#id_privacy'));
 	    });
 	</script>
+	{% if not 'edit' in event_permissions %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 
 {% endblock %}

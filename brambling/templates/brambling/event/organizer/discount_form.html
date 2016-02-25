@@ -12,3 +12,10 @@
 	{# novalidate - see https://github.com/brutasse/django-floppyforms/issues/75 #}
 	{% include "brambling/event/organizer/_discount_form.html" with action=request.path %}
 {% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	{% if not 'edit' in event_permissions %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
+{% endblock %}

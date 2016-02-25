@@ -39,9 +39,17 @@
 							</div>
 						{% endfor %}
 					</div>{# /.item-imges-list #}
-					<div class="panel-footer">
-						<div class='js-formset-add image-add'></div>
-					</div>
+					{% if 'edit' in event_permissions %}
+						<div class="panel-footer">
+							<div class='js-formset-add image-add'></div>
+						</div>
+					{% elif not itemimage_formset.forms %}
+						<div class='list-group'>
+							<div class='list-group-item'>
+								<em class='text-muted'>No images</em>
+							</div>
+						</div>
+					{% endif %}
 				</div>{# /.panel #}
 			</div>{# /.col-md-6 #}
 		</div>{# /.row #}
@@ -73,18 +81,22 @@
 				</div>
 			{% endfor %}
 		</div>
-		<div class="panel-footer">
-			<div class='js-formset-add option-add'>
+		{% if 'edit' in event_permissions %}
+			<div class="panel-footer">
+				<div class='js-formset-add option-add'>
+				</div>
 			</div>
-		</div>
+		{% endif %}
 	</div>
 
-	<button id='itemSubmitButton' class='btn btn-primary'>Save</button>
-	{% if item.pk %}
-		{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
-		{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
-		<a href="javascript://" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger">Delete</a>
-		<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
+	{% if 'edit' in event_permissions %}
+		<button id='itemSubmitButton' class='btn btn-primary'>Save</button>
+		{% if item.pk %}
+			{% url 'brambling_item_delete' event_slug=event.slug organization_slug=event.organization.slug pk=item.pk as delete_url %}
+			{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
+			<a href="javascript://" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger">Delete</a>
+			<a href="{{ cancel_url }}" class="btn btn-link">Cancel</a>
+		{% endif %}
 	{% endif %}
 </form>
 {% if item.pk %}

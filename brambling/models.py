@@ -27,7 +27,6 @@ from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
-from brambling.mail import InviteMailer
 from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
@@ -299,6 +298,30 @@ def create_defaults(app_config, **kwargs):
             ])
 
 
+class OrganizationMember(models.Model):
+    EDIT = '1-edit'
+    VIEW = '2-view'
+    OWNER = '0-owner'
+    ROLE_CHOICES = (
+        (OWNER, 'Is organization owner'),
+        (EDIT, 'Can edit organization'),
+        (VIEW, 'Can view organization'),
+    )
+    organization = models.ForeignKey('Organization')
+    person = models.ForeignKey('Person')
+    role = models.CharField(max_length=7, choices=ROLE_CHOICES)
+
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('organization', 'person')
+
+    def __unicode__(self):
+        return u"{}: {}".format(self.organization, self.person)
+
+
 class Organization(AbstractDwollaModel):
     DEMO_SLUG = 'demo'
 
@@ -317,11 +340,13 @@ class Organization(AbstractDwollaModel):
     country = CountryField(default='US', blank=True)
     dance_styles = models.ManyToManyField(DanceStyle, blank=True)
 
-    owner = models.ForeignKey('Person',
-                              related_name='owner_orgs')
-    editors = models.ManyToManyField('Person',
-                                     related_name='editor_orgs',
-                                     blank=True, null=True)
+    members = models.ManyToManyField(
+        'Person',
+        through=OrganizationMember,
+        related_name='organizations',
+        blank=True,
+        null=True,
+    )
 
     # This is a secret value set by admins. It will be cached on the event model.
     default_application_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal(2.5),
@@ -361,10 +386,28 @@ class Organization(AbstractDwollaModel):
             'organization_slug': self.slug,
         })
 
-    def editable_by(self, user):
-        return (user.is_authenticated() and user.is_active and
-                (user.is_superuser or user.pk == self.owner_id or
-                 self.editors.filter(pk=user.pk).exists()))
+    def get_permissions(self, person):
+        if person.is_superuser:
+            return ('view', 'edit', 'change_permissions')
+
+        try:
+            member = OrganizationMember.objects.get(
+                organization=self,
+                person=person,
+            )
+        except OrganizationMember.DoesNotExist:
+            return ()
+
+        if member.role == OrganizationMember.OWNER:
+            return ('view', 'edit', 'change_permissions')
+
+        if member.role == OrganizationMember.EDIT:
+            return ('view', 'edit')
+
+        if member.role == OrganizationMember.VIEW:
+            return ('view',)
+
+        return ()
 
     def stripe_live_connected(self):
         return bool(stripe_live_settings_valid() and self.stripe_user_id)
@@ -378,12 +421,30 @@ class Organization(AbstractDwollaModel):
     def stripe_test_can_connect(self):
         return bool(stripe_test_settings_valid() and not self.stripe_test_user_id)
 
-    def get_invites(self):
-        return Invite.objects.filter(kind=Invite.ORGANIZATION_EDITOR,
-                                     content_id=self.pk)
-
     def is_demo(self):
         return self.slug == Organization.DEMO_SLUG
+
+
+class EventMember(models.Model):
+    EDIT = '1-edit'
+    VIEW = '2-view'
+    ROLE_CHOICES = (
+        (EDIT, 'Can edit event'),
+        (VIEW, 'Can view event'),
+    )
+    event = models.ForeignKey('Event')
+    person = models.ForeignKey('Person')
+    role = models.CharField(max_length=6, choices=ROLE_CHOICES)
+
+    # Internal tracking fields.
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('event', 'person')
+
+    def __unicode__(self):
+        return u"{}: {}: {}".format(self.event.organization, self.event, self.person)
 
 
 class Event(models.Model):
@@ -447,9 +508,13 @@ class Event(models.Model):
     api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
 
     organization = models.ForeignKey(Organization)
-    additional_editors = models.ManyToManyField('Person',
-                                                related_name='editor_events',
-                                                blank=True, null=True)
+    members = models.ManyToManyField(
+        'Person',
+        through=EventMember,
+        related_name='events',
+        blank=True,
+        null=True,
+    )
 
     collect_housing_data = models.BooleanField(default=True)
     collect_survey_data = models.BooleanField(default=True)
@@ -482,17 +547,44 @@ class Event(models.Model):
     def get_liability_waiver(self):
         return self.liability_waiver.format(event=self.name, organization=self.organization.name)
 
-    def editable_by(self, user):
-        return (
-            self.organization.editable_by(user) or (
-                user.is_authenticated() and
-                user.is_active and
-                self.additional_editors.filter(pk=user.pk).exists()
+    def get_permissions(self, person):
+        if person.is_superuser:
+            return ('view', 'edit', 'change_permissions')
+
+        default_perms = ()
+        try:
+            member = OrganizationMember.objects.get(
+                organization=self.organization,
+                person=person,
             )
-        )
+        except OrganizationMember.DoesNotExist:
+            pass
+        else:
+            if member.role in (OrganizationMember.OWNER, OrganizationMember.EDIT):
+                # Return here because event perms can't give more.
+                return ('view', 'edit', 'change_permissions')
+
+            if member.role == OrganizationMember.VIEW:
+                default_perms = ('view',)
+
+        try:
+            member = EventMember.objects.get(
+                event=self,
+                person=person,
+            )
+        except EventMember.DoesNotExist:
+            return default_perms
+
+        if member.role == EventMember.EDIT:
+            return ('view', 'edit')
+
+        if member.role == EventMember.VIEW:
+            return ('view',)
+
+        return default_perms
 
     def viewable_by(self, user):
-        if self.editable_by(user):
+        if user.has_perm('view', self):
             return True
 
         if not self.is_published:
@@ -508,14 +600,6 @@ class Event(models.Model):
 
     def can_be_published(self):
         return ItemOption.objects.filter(item__event=self).exists()
-
-    def get_invites(self):
-        return Invite.objects.filter(kind=Invite.EVENT,
-                                     content_id=self.pk)
-
-    def get_editor_invites(self):
-        return Invite.objects.filter(kind=Invite.EVENT_EDITOR,
-                                     content_id=self.pk)
 
     def stripe_connected(self):
         if self.api_type == Event.LIVE:
@@ -694,12 +778,6 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
 
     def __unicode__(self):
         return self.get_full_name()
-
-    def get_organizations(self):
-        return Organization.objects.filter(
-            models.Q(owner=self) |
-            models.Q(editors=self)
-        ).order_by('name').distinct()
 
     def get_claimable_orders(self):
         if self.email != self.confirmed_email:
@@ -1697,54 +1775,19 @@ class InviteManager(models.Manager):
 
 
 class Invite(models.Model):
-    EVENT = 'event'
-    EVENT_EDITOR = 'editor'
-    ORGANIZATION_EDITOR = 'org_editor'
-    TRANSFER = 'transfer'
-    KIND_CHOICES = (
-        (EVENT, _('Event')),
-        (EVENT_EDITOR, _("Event Editor")),
-        (ORGANIZATION_EDITOR, _("Organization Editor")),
-        (TRANSFER, _("Transfer")),
-    )
-
     objects = InviteManager()
     code = models.CharField(max_length=20, unique=True)
     email = models.EmailField()
     #: User who sent the invitation.
     user = models.ForeignKey(Person, blank=True, null=True)
     is_sent = models.BooleanField(default=False)
-    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
+    kind = models.CharField(max_length=10)
     content_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = (('email', 'content_id', 'kind'),)
-
-    def send(self, site, content=None, secure=False):
-        InviteMailer(
-            site=site,
-            secure=secure,
-            invite=self,
-            content=content,
-            key="invite_{}".format(self.kind),
-        ).send()
-        self.is_sent = True
-        self.save()
-
-    def get_content(self):
-        if self.kind == Invite.EVENT:
-            model = Event
-        elif self.kind == Invite.EVENT_EDITOR:
-            model = Event
-        elif self.kind == Invite.ORGANIZATION_EDITOR:
-            model = Organization
-        elif self.kind == Invite.TRANSFER:
-            model = BoughtItem
-        else:
-            raise ValueError('Unknown kind.')
-        return model.objects.get(pk=self.content_id)
 
 
 class CustomForm(models.Model):

@@ -43,7 +43,7 @@ class NavItem(object):
 
 
 def get_event_admin_nav(event, request):
-    if not event.editable_by(request.user):
+    if not request.user.has_perm('view', event):
         return []
     return (
         {
@@ -76,7 +76,7 @@ def get_event_admin_nav(event, request):
 
 
 def get_organization_admin_nav(organization, request):
-    if not organization.editable_by(request.user):
+    if not request.user.has_perm('view', organization):
         return []
     kwargs = {
         'organization_slug': organization.slug,

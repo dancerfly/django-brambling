@@ -15,6 +15,9 @@
 		hidden_input: false,
 		menubar: false,
 		statusbar: false,
+		{% if readonly %}
+		readonly: true,
+		{% endif %}
 		// Don't run editor save() functions on form submit.
 		add_form_submit_trigger: false,
 		submit_patch: false,

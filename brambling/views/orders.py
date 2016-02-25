@@ -20,6 +20,7 @@ from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
                               Invite, Person, SavedAttendee)
+from brambling.utils.invites import TransferInvite
 from brambling.utils.payment import dwolla_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
@@ -36,7 +37,7 @@ class RactiveShopView(TemplateView):
                                   slug=kwargs['event_slug'],
                                   organization__slug=kwargs['organization_slug'])
 
-        editable_by_user = event.editable_by(self.request.user)
+        editable_by_user = self.request.user.has_perm('edit', event)
 
         if not event.is_published and not editable_by_user:
             raise Http404
@@ -840,18 +841,13 @@ class TransferView(OrderMixin, WorkflowMixin, FormView):
         return kwargs
 
     def form_valid(self, form):
-        invite, created = Invite.objects.get_or_create_invite(
+        invite, created = TransferInvite.get_or_create(
+            request=self.request,
             email=form.cleaned_data['email'],
-            user=self.request.user if self.request.user.is_authenticated() else None,
-            kind=Invite.TRANSFER,
-            content_id=form.cleaned_data['bought_item'].pk,
+            content=form.cleaned_data['bought_item'],
         )
         if created:
-            invite.send(
-                content=form.cleaned_data['bought_item'],
-                secure=self.request.is_secure(),
-                site=get_current_site(self.request)
-            )
+            invite.send()
         return super(TransferView, self).form_valid(form)
 
     def get_success_url(self):

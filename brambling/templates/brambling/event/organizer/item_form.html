@@ -14,5 +14,9 @@
 
 {% block javascripts %}
 	{{ block.super }}
-	{% include "brambling/event/organizer/_item_form_js.html" %}
+	{% if 'edit' in event_permissions %}
+		{% include "brambling/event/organizer/_item_form_js.html" %}
+	{% else %}
+		{% include "brambling/_disable_forms_js.html" %}
+	{% endif %}
 {% endblock %}
