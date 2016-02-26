@@ -11,21 +11,43 @@ app-pkgs:
       - gcc
       - libjpeg8-dev
       - libpq-dev
-      - ruby2.0
-      - ruby2.0-dev
-
-bootstrap_sass:
-  gem.installed:
-    - name: bootstrap-sass
-    - ruby: ruby-2.0
-    - version: 3.3.4.1
-    - require:
-      - pkg: app-pkgs
+      - ruby
 
 webproject_user:
   user.present:
     - name: webproject
     - gid_from_name: True
+
+# See https://docs.saltstack.com/en/latest/ref/states/all/salt.states.rvm.html
+rvm-deps:
+  pkg.installed:
+    - pkgs:
+      - bash
+      - coreutils
+      - gzip
+      - bzip2
+      - gawk
+      - sed
+      - curl
+      - git-core
+      - subversion
+
+ruby-2.2.3:
+    rvm.installed:
+      - default: True
+      - user: webproject
+      - require:
+        - pkg: rvm-deps
+        - user: webproject_user
+
+bootstrap_sass:
+  gem.installed:
+    - name: bootstrap-sass
+    - ruby: 2.2.3
+    - version: 3.3.4.1
+    - require:
+      - pkg: app-pkgs
+      - rvm: ruby-2.2.3
 
 webproject_dirs:
   file.directory:
