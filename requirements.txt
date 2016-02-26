@@ -1,3 +1,4 @@
+pip==8.0.3
 Django==1.7.10
 pytz==2015.2
 sqlparse==0.1.14

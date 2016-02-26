@@ -1,6 +1,5 @@
 -r requirements.txt
 
-pip==7.1.0
 newrelic==2.54.0.41
 -e git+git://github.com/littleweaver/django-brambling.git@master#egg=django-brambling
 djrill==1.3.0
