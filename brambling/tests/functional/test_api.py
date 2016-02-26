@@ -96,9 +96,10 @@ class BoughtItemViewSetTestCase(TestCase):
             role=EventMember.EDIT,
         )
         order = OrderFactory(event=event, person=person)
-        att1 = AttendeeFactory(order=order)
-        att2 = AttendeeFactory(order=order)
-        att3 = AttendeeFactory(order=order)
+        # Set up three attendees to trigger duplication.
+        AttendeeFactory(order=order)
+        AttendeeFactory(order=order)
+        AttendeeFactory(order=order)
 
         item = ItemFactory(event=event)
         item_option = ItemOptionFactory(price=100, item=item)
@@ -139,16 +140,15 @@ class ItemOptionViewSetTestCase(TestCase):
         order2 = OrderFactory(event=event, email='caesar@example.com')
         order2.add_to_cart(item_option2)
         transaction2 = TransactionFactory(event=event, order=self.order,
-                                         amount=130, method=Transaction.CHECK,
-                                         is_confirmed=True)
+                                          amount=130, method=Transaction.CHECK,
+                                          is_confirmed=True)
         order2.mark_cart_paid(transaction2)
-
 
         self.order3 = OrderFactory(event=event, email='caesar@example.com')
         self.order3.add_to_cart(item_option1)
         transaction3 = TransactionFactory(event=event, order=self.order3,
-                                         amount=130, method=Transaction.CHECK,
-                                         is_confirmed=True)
+                                          amount=130, method=Transaction.CHECK,
+                                          is_confirmed=True)
         self.order3.mark_cart_paid(transaction3)
 
         self.viewset = ItemOptionViewSet()

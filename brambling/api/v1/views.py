@@ -35,8 +35,7 @@ from brambling.api.v1.serializers import (
 from brambling.models import (Order, EventHousing, BoughtItem,
                               EnvironmentalFactor, HousingCategory,
                               ItemOption, Item, ItemImage, Attendee, Event,
-                              Organization, DanceStyle, OrderDiscount,
-                              Discount, Event)
+                              Organization, DanceStyle, OrderDiscount)
 
 
 class HousingCategoryViewSet(viewsets.ModelViewSet):
@@ -163,9 +162,11 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = OrderSerializer
     filter_backends = (filters.SearchFilter,)
     permission_classes = [OrderSearchPermission]
-    search_fields = ("code", "person__first_name", "person__middle_name",
+    search_fields = (
+        "code", "person__first_name", "person__middle_name",
         "person__last_name", "attendees__first_name",
-        "attendees__middle_name", "attendees__last_name")
+        "attendees__middle_name", "attendees__last_name"
+    )
 
     def get_event(self):
         event_id = self.request.query_params.get('event', None)

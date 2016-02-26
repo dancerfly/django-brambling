@@ -12,8 +12,9 @@ class Command(BaseCommand):
             action='store',
             dest='days',
             default=15,
-            help='Number of days ahead of time to update refresh tokens.'),
-        )
+            help='Number of days ahead of time to update refresh tokens.',
+        ),
+    )
 
     def handle(self, *args, **options):
         try:

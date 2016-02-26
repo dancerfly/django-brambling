@@ -3,7 +3,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.http import Http404
 from django.test import TestCase, RequestFactory
 
-from brambling.models import Transaction, EventHousing, Order, Attendee
+from brambling.models import Transaction, Order, Attendee
 from brambling.tests.factories import (
     TransactionFactory,
     EventHousingFactory,
@@ -13,9 +13,9 @@ from brambling.tests.factories import (
     AttendeeFactory,
     ItemFactory,
     ItemOptionFactory,
-    OrganizationFactory,
 )
 from brambling.views.user import MergeOrderView
+
 
 class MergeOrderViewTestCase(TestCase):
 
@@ -28,13 +28,13 @@ class MergeOrderViewTestCase(TestCase):
         self.view.request.user = AnonymousUser()
 
         with self.assertRaises(Http404):
-            response = self.view.post(self.view.request)
+            self.view.post(self.view.request)
 
     def test_should_be_not_found_if_user_not_confirmed(self):
         self.view.request.user = PersonFactory(confirmed_email='')
 
         with self.assertRaises(Http404):
-            response = self.view.post(self.view.request)
+            self.view.post(self.view.request)
 
 
 class MergeClaimableOrderTest(TestCase):
@@ -47,7 +47,7 @@ class MergeClaimableOrderTest(TestCase):
 
     def test_should_be_not_found_if_order_claimable_or_does_not_exist(self):
         with self.assertRaises(Http404):
-            response = self.view.post(self.view.request)
+            self.view.post(self.view.request)
 
 
 class MergeUnclaimableOrderTest(TestCase):
@@ -104,32 +104,32 @@ class MergeUnclaimableOrderTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_should_transfer_transactions_to_new_order(self):
-        response = self.view.post(self.view.request)
+        self.view.post(self.view.request)
 
         self.tr2 = Transaction.objects.get(pk=self.tr2.pk)
         self.assertEqual(self.tr2.order, self.order1)
 
     def test_should_transfer_bought_items_to_new_order(self):
-        response = self.view.post(self.view.request)
+        self.view.post(self.view.request)
 
         self.assertEqual(self.order1.bought_items.count(), 3)
         for item in self.tr2.bought_items.all():
             self.assertEqual(item.order, self.order1)
 
     def test_should_transfer_attendees_to_new_order(self):
-        response = self.view.post(self.view.request)
+        self.view.post(self.view.request)
 
         self.att2 = Attendee.objects.get(pk=self.att2.pk)
         self.assertEqual(self.att2.order, self.order1)
 
     def test_should_delete_old_order(self):
-        response = self.view.post(self.view.request)
+        self.view.post(self.view.request)
 
         with self.assertRaises(Order.DoesNotExist):
             Order.objects.get(pk=self.order2.pk)
 
     def test_should_transfer_eventhousing_if_none_present(self):
-        response = self.view.post(self.view.request)
+        self.view.post(self.view.request)
 
         self.order1 = Order.objects.get(pk=self.order1.pk)
 
@@ -141,7 +141,7 @@ class MergeUnclaimableOrderTest(TestCase):
             contact_email='riker@example.com', contact_phone='111-111-1111',
             public_transit_access=True, person_prefer='Troi',
             person_avoid='Worf')
-        response = self.view.post(self.view.request)
+        self.view.post(self.view.request)
 
         self.order1 = Order.objects.get(pk=self.order1.pk)
         self.assertEqual(self.order1.get_eventhousing(), housing1)

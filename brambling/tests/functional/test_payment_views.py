@@ -6,14 +6,7 @@ import mock
 
 from brambling.models import Organization
 from brambling.tests.factories import (
-    EventFactory,
-    OrderFactory,
-    AttendeeFactory,
-    ItemFactory,
-    ItemOptionFactory,
-    TransactionFactory,
     OrganizationFactory,
-    DiscountFactory,
     DwollaOrganizationAccountFactory,
 )
 from brambling.utils.payment import dwolla_redirect_url

@@ -3,6 +3,7 @@ from django.test import TestCase
 from brambling.models import Attendee
 from brambling.tests.factories import EventFactory, OrderFactory, TransactionFactory, ItemFactory, ItemOptionFactory, AttendeeFactory
 
+
 class AttendeeModelTestCase(TestCase):
 
     def test_needs_housing(self):
@@ -17,7 +18,7 @@ class AttendeeModelTestCase(TestCase):
         order.mark_cart_paid(transaction)
 
         a1 = AttendeeFactory(order=order, bought_items=order.bought_items.all(),
-                            housing_status=Attendee.NEED)
+                             housing_status=Attendee.NEED)
         a2 = AttendeeFactory(order=order, bought_items=order.bought_items.all())
         self.assertTrue(a1.needs_housing())
         self.assertFalse(a2.needs_housing())

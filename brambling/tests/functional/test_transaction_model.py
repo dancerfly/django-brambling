@@ -17,7 +17,7 @@ class TransactionModelTestCase(TestCase):
         txn = TransactionFactory(
             amount=Decimal("2.00"),
         )
-        txn2 = TransactionFactory(
+        TransactionFactory(
             related_transaction=txn,
             transaction_type=Transaction.REFUND,
             amount=Decimal("-2.00"),

@@ -6,7 +6,7 @@ from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
                                         label_for_field)
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Q, Sum, Min, Prefetch
+from django.db.models import Q, Min, Prefetch
 from django.forms.forms import pretty_name
 from django.utils.datastructures import SortedDict
 from django.utils.text import capfirst
@@ -19,8 +19,7 @@ from brambling.models import Attendee, Order, BoughtItem, Transaction
 from brambling.utils.timezones import format_as_localtime
 
 
-__all__ = ('related_objects_list', 'ModelTable',
-           'AttendeeTable')
+__all__ = ('ModelTable', 'AttendeeTable', 'OrderTable')
 
 
 TABLE_COLUMN_FIELD = 'columns'

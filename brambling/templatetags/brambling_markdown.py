@@ -25,7 +25,6 @@ md = markdown.Markdown(extensions=['markdown.extensions.nl2br',
                        output_format='html5')
 
 
-
 @register.filter(name='markdown')
 def markdown_filter(text):
     text = bleach.clean(text, strip=True)

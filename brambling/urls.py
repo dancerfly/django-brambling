@@ -102,7 +102,8 @@ from brambling.views.user import (
 )
 
 
-order_urlpatterns = patterns('',
+order_urlpatterns = patterns(
+    '',
     url(r'^ractive-shop/$', RactiveShopView.as_view()),
     url(r'^shop/$',
         ChooseItemsView.as_view(),
@@ -145,7 +146,8 @@ order_urlpatterns = patterns('',
 )
 
 
-event_urlpatterns = patterns('',
+event_urlpatterns = patterns(
+    '',
     url(r'^$',
         RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
         name="brambling_event_root"),
@@ -238,7 +240,8 @@ event_urlpatterns = patterns('',
 )
 
 
-organization_urlpatterns = patterns('',
+organization_urlpatterns = patterns(
+    '',
     url(r'^$',
         OrganizationDetailView.as_view(),
         name='brambling_organization_detail'),
@@ -264,7 +267,8 @@ organization_urlpatterns = patterns('',
 )
 
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^favicon\.ico$', RedirectView.as_view(url=static('brambling/favicon.ico'))),
 
     url(r'about/', TemplateView.as_view(template_name='brambling/about.html'), name='brambling_about'),
