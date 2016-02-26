@@ -202,24 +202,22 @@ gunicorn_circus_start:
 
 
 collectstatic:
-  cmd.wait:
+  cmd.run:
     - name: GEM_PATH=/var/lib/gems/1.9.1 {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py collectstatic --noinput
     - user: webproject
-    - watch:
+    - require:
       - file: webproject_project
       - virtualenv: webproject_env
-    - require:
       - postgres_database: webproject_db
       - user: webproject_user
 
 migrate:
-  cmd.wait:
+  cmd.run:
     - name: GEM_PATH=/var/lib/gems/1.9.1 {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py migrate --noinput
     - user: webproject
-    - watch:
+    - require:
       - file: webproject_project
       - virtualenv: webproject_env
-    - require:
       - postgres_database: webproject_db
       - user: webproject_user
 
