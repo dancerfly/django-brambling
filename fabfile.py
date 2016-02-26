@@ -11,7 +11,7 @@ DEFAULT_BRANCH = 'master'
 
 @task
 def install_salt():
-    run("curl -L https://bootstrap.saltstack.com | sudo sh -s -- -P git v2016.3")
+    run("curl -L https://bootstrap.saltstack.com | sudo sh -s -- -P git a6c0907")
 
 
 @task
