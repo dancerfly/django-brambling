@@ -3,7 +3,6 @@ import datetime
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.utils import timezone
 from django.views.generic import View

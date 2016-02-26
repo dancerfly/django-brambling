@@ -10,11 +10,13 @@ install:
 - pip install --use-mirrors --no-deps -r requirements.txt
 - if [ $DB == 'postgres' ]; then pip install --use-mirrors --no-deps psycopg2==2.5.3;
   fi
+- pip install flake8
 before_script:
 - if [ $DB == 'postgres' ]; then psql -c 'drop database if exists brambling_test;'
   -U postgres; fi
 - if [ $DB == 'postgres' ]; then psql -c 'create database brambling_test;' -U postgres;
   fi
+- "flake8 --ignore=E501 brambling"
 script:
 - "./manage.py test --verbosity=2 brambling"
 notifications:

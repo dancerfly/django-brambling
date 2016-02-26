@@ -7,10 +7,10 @@ from django.utils.timezone import now
 from brambling.models import CustomFormEntry
 from brambling.utils.model_tables import OrderTable
 from brambling.tests.factories import (
-    TransactionFactory, EventFactory, PersonFactory, OrderFactory, ItemFactory,
+    TransactionFactory, EventFactory, OrderFactory, ItemFactory,
     ItemOptionFactory, AttendeeFactory, EnvironmentalFactorFactory,
     HousingRequestNightFactory, HousingCategoryFactory, EventHousingFactory,
-    HomeFactory, HousingSlotFactory, CustomFormFactory, CustomFormFieldFactory)
+    HousingSlotFactory, CustomFormFactory, CustomFormFieldFactory)
 
 
 class OrderTableTestCase(TestCase):
@@ -95,7 +95,6 @@ class OrderTableTestCase(TestCase):
             for field in table.get_list_display():
                 if field.startswith('hosting_'):
                     self.assertEqual(row[field].value, '')
-
 
     def test_filled_housing_fields_if_attendee_provides_housing(self):
         self.order.providing_housing = True

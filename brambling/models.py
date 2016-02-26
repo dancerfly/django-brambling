@@ -27,7 +27,7 @@ from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
-from brambling.utils.payment import (dwolla_refund, stripe_refund, LIVE,
+from brambling.utils.payment import (dwolla_refund, stripe_refund,
                                      stripe_test_settings_valid,
                                      stripe_live_settings_valid,
                                      dwolla_test_settings_valid,
@@ -624,7 +624,7 @@ class Event(models.Model):
 
     def get_housing_dates(self):
         return [
-            self.start_date + timedelta(n-1)
+            self.start_date + timedelta(n - 1)
             for n in xrange((self.end_date - self.start_date).days + 2)
         ]
 
@@ -755,7 +755,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
                                             choices=NOTIFY_NEW_PURCHASES_CHOICES)
     notify_product_updates = models.BooleanField(default=True)
 
-    ### Start custom user requirements
+    # Start custom user requirements
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
@@ -766,7 +766,7 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
     is_active = models.BooleanField(default=True)
 
     objects = PersonManager()
-    ### End custom user requirements
+    # End custom user requirements
 
     # Stripe-related fields
     stripe_customer_id = models.CharField(max_length=36, blank=True)
@@ -1461,9 +1461,11 @@ class BoughtItem(models.Model):
         ordering = ('added',)
 
     def __unicode__(self):
-        return u"{} – {} ({})".format(self.item_option_name,
-                                      self.order.code,
-                                      self.pk)
+        return u"{} – {} ({})".format(
+            self.item_option_name,
+            self.order.code,
+            self.pk,
+        )
 
 
 class OrderDiscount(models.Model):

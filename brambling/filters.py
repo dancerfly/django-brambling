@@ -93,7 +93,7 @@ class AttendeeFilterSet(django_filters.FilterSet):
             fields = SortedDict([
                 (name, filter_.field)
                 for name, filter_ in six.iteritems(self.filters)
-                if not name in self._meta.form.base_fields])
+                if name not in self._meta.form.base_fields])
             Form = type(str('%sForm' % self.__class__.__name__),
                         (self._meta.form,), fields)
             if self.is_bound:

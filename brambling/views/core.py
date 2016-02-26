@@ -3,7 +3,7 @@ from django.http import Http404
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from brambling.models import Event, BoughtItem, Order
+from brambling.models import Event, BoughtItem, Order, Transaction
 
 
 class DashboardView(TemplateView):

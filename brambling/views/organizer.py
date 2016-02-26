@@ -39,14 +39,12 @@ from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
-                              BoughtItemDiscount, BoughtItem,
-                              Person, CustomForm, Organization,
-                              SavedReport, EventMember, OrganizationMember,
-                              Invite)
+                              BoughtItem, CustomForm, Organization,
+                              SavedReport, EventMember, OrganizationMember)
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,
-                                   ajax_required, FinanceTable)
+                                   FinanceTable)
 from brambling.utils.invites import (
     get_invite_class,
     EventInvite,
@@ -643,7 +641,7 @@ class StripeConnectView(View):
             slug, api_type = request.GET.get('state', '').split('|')
         except ValueError:
             raise Http404("Invalid state.")
-        if not api_type in (LIVE, TEST):
+        if api_type not in (LIVE, TEST):
             raise Http404("Invalid api type.")
         try:
             organization = Organization.objects.get(slug=slug)
@@ -1076,7 +1074,7 @@ class ModelTableView(ListView):
             ws.title = 'Data'
             for i, row in enumerate(all_rows):
                 for j, cell in enumerate(row):
-                    ws.cell(row=i+1, column=j+1, value=unicode(cell))
+                    ws.cell(row=i + 1, column=j + 1, value=unicode(cell))
             response = StreamingHttpResponse(
                 save_virtual_workbook(wb),
                 content_type='application/vnd.ms-excel')
@@ -1399,7 +1397,7 @@ class FinancesView(ListView):
             ws.title = 'Finances'
             for i, row in enumerate(table.get_rows(include_headers=True)):
                 for j, cell in enumerate(row):
-                    ws.cell(row=i+1, column=j+1, value=unicode(cell.value))
+                    ws.cell(row=i + 1, column=j + 1, value=unicode(cell.value))
             response = StreamingHttpResponse(
                 save_virtual_workbook(wb),
                 content_type='application/vnd.ms-excel')

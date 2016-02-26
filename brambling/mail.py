@@ -1,11 +1,8 @@
-import datetime
-
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 

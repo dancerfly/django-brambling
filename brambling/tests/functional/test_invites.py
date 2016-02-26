@@ -1,5 +1,4 @@
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
@@ -192,7 +191,7 @@ class InviteTestCase(TestCase):
         person = PersonFactory(first_name="Conan", last_name="O'Brien")
         event = EventFactory()
         order = OrderFactory(event=event, person=person)
-        transaction = TransactionFactory(event=event, order=order, amount=130)
+        TransactionFactory(event=event, order=order, amount=130)
         item = ItemFactory(event=event, name='Multipass')
         item_option1 = ItemOptionFactory(price=100, item=item, name='Gold')
         order.add_to_cart(item_option1)
@@ -282,12 +281,12 @@ class InviteAcceptViewTestCase(TestCase):
     def test_invite(self):
         view = InviteAcceptView()
         event = EventFactory()
-        invite = InviteFactory(content_id=event.pk, kind=EventInvite.slug, user=PersonFactory(first_name="Conan",last_name="O'Brien"))
+        invite = InviteFactory(content_id=event.pk, kind=EventInvite.slug, user=PersonFactory(first_name="Conan", last_name="O'Brien"))
         view.content = event
         view.request = RequestFactory().get('/')
         view.request.user = PersonFactory(email=invite.email, confirmed_email=invite.email)
         self._add_session(view.request)
-        with mock.patch.object(wraps=Order.objects.for_request, target=Order.objects, attribute = 'for_request') as for_request:
+        with mock.patch.object(wraps=Order.objects.for_request, target=Order.objects, attribute='for_request') as for_request:
             view.get(view.request, code=invite.code)
         for_request.assert_called_once_with(create=True, request=view.request, event=view.content)
         orders = Order.objects.all()

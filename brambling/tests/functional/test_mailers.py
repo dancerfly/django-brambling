@@ -6,8 +6,8 @@ from brambling.mail import OrderAlertMailer
 from brambling.models import Transaction, OrganizationMember
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
-                                       ItemOptionFactory, AttendeeFactory,
-                                       DiscountFactory, PersonFactory)
+                                       ItemOptionFactory, DiscountFactory,
+                                       PersonFactory)
 
 
 class OrderReceiptMailerTestCase(TestCase):
@@ -97,7 +97,7 @@ class OrderReceiptMailerTestCase(TestCase):
         self.person = PersonFactory(first_name="Ma'ayan", last_name="Plaut")
         self.event_name = event.name
         self.order = OrderFactory(event=event, person=self.person)
-        transaction = TransactionFactory(event=event, order=self.order,amount=130)
+        transaction = TransactionFactory(event=event, order=self.order, amount=130)
         self.mailer = OrderAlertMailer(transaction, site='dancerfly.com',
                                        secure=True)
         subject = self.mailer.render_subject(self.mailer.get_context_data())

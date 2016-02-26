@@ -1,7 +1,6 @@
 import datetime
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.utils.safestring import mark_safe
 from dwolla.exceptions import DwollaAPIException
 import floppyforms.__future__ as forms
@@ -11,7 +10,7 @@ from zenaida.forms import MemoModelForm
 from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem,
-                              Order, Event, CustomForm, Invite)
+                              Order, Event, CustomForm)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import TransferInvite
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
@@ -166,9 +165,12 @@ class HousingSlotForm(forms.ModelForm):
 
 class HostingForm(MemoModelForm, CustomDataForm):
     providing_housing = forms.BooleanField(initial=False, required=False)
-    save_as_defaults = forms.BooleanField(initial=True, required=False,
-            label="Remember this information for future events.",
-            help_text="You will still be able to modify it later.")
+    save_as_defaults = forms.BooleanField(
+        initial=True,
+        required=False,
+        label="Remember this information for future events.",
+        help_text="You will still be able to modify it later."
+    )
 
     class Meta:
         model = EventHousing

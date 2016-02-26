@@ -16,7 +16,6 @@ from brambling.tests.factories import (
     SavedReportFactory,
     CustomFormFactory,
     CustomFormFieldFactory,
-    OrganizationFactory,
 )
 
 

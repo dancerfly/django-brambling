@@ -13,7 +13,7 @@ import stripe
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
-                              Event, Organization, Transaction, BoughtItem,
+                              Event, Transaction, BoughtItem,
                               EventHousing, Attendee)
 from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer

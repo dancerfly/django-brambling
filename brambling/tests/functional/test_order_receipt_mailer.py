@@ -7,8 +7,9 @@ from brambling.mail import OrderReceiptMailer
 from brambling.models import Transaction
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
-                                       ItemOptionFactory, AttendeeFactory,
-                                       DiscountFactory, PersonFactory)
+                                       ItemOptionFactory, DiscountFactory,
+                                       PersonFactory)
+
 
 class OrderReceiptMailerTestCase(TestCase):
 
@@ -77,8 +78,8 @@ class OrderReceiptMailerTestCase(TestCase):
         self.assertIn(self.total_amount, body)
 
     def test_subject_apostrophe(self):
-        event=EventFactory(name="Han & Leia's Wedding")
-        self.event_name=event.name
+        event = EventFactory(name="Han & Leia's Wedding")
+        self.event_name = event.name
         self.order = OrderFactory(event=event, person=self.person)
         transaction = TransactionFactory(event=event, order=self.order,
                                          amount=130)
@@ -89,6 +90,7 @@ class OrderReceiptMailerTestCase(TestCase):
                             .format(event_name=self.event_name,
                                     order_code=self.order.code))
         self.assertEqual(subject, expected_subject)
+
 
 class OrderReceiptMailerForNonUserTestCase(TestCase):
 
@@ -139,7 +141,6 @@ class OrderReceiptMailerWithUnconfirmedCheckPayments(TestCase):
         self.mailer = OrderReceiptMailer(transaction, site='dancerfly.com',
                                          secure=True)
         self.event = event
-        #assert event.check_postmark_cutoff, '%r' % event.check_postmark_cutoff
 
     def test_still_time_to_mail_check(self):
         self.event.check_postmark_cutoff = date.today() + timedelta(days=5)
