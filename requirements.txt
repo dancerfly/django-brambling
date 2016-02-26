@@ -27,7 +27,7 @@ bleach==1.4.2
 html5lib==0.9999999
 
 # our own django-zenaida - @master until we reach a peggable point.
-https://github.com/littleweaver/django-zenaida/tarball/master
+-e git+git://github.com/littleweaver/django-zenaida.git@master#egg=django-zenaida
 
 # Debugging
 django-debug-toolbar==1.4
