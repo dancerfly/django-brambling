@@ -11,12 +11,13 @@ app-pkgs:
       - gcc
       - libjpeg8-dev
       - libpq-dev
-      - ruby
-      - ruby-dev
+      - ruby2.0
+      - ruby2.0-dev
 
 bootstrap_sass:
   gem.installed:
     - name: bootstrap-sass
+    - ruby: ruby-2.0
     - version: 3.3.4.1
     - require:
       - pkg: app-pkgs
