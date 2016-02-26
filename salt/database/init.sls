@@ -1,6 +1,8 @@
 postgres:
   pkg.installed:
-    - name: postgresql
+    - names:
+      - postgresql
+      - python-psycopg2
   service.running:
     - name: postgresql
     - require:
