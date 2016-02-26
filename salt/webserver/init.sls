@@ -32,6 +32,14 @@ rvm-deps:
       - git-core
       - subversion
 
+gpg-import-D39DC0E3:
+    cmd.run:
+        - user: webproject
+        - require:
+            - user: webproject_user
+        - name: gpg --keyserver hkp://keys.gnupg.net:80 --recv-keys D39DC0E3
+        - unless: gpg --fingerprint |fgrep 'Key fingerprint = 409B 6B17 96C2 7546 2A17  0311 3804 BB82 D39D C0E3'
+
 ruby-2.2.3:
     rvm.installed:
       - default: True
@@ -39,6 +47,7 @@ ruby-2.2.3:
       - require:
         - pkg: rvm-deps
         - user: webproject_user
+        - cmd: gpg-import-D39DC0E3
 
 bootstrap_sass:
   gem.installed:
