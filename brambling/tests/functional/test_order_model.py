@@ -378,7 +378,7 @@ class OrderManagerTestCase(TestCase):
     def test_for_request__code__anon_anon(self):
         """Anonymous users forbidden to access anonymous orders."""
         event = EventFactory()
-        order = OrderFactory(event=event, person=None)
+        OrderFactory(event=event, person=None)
         request = self.factory.get('/')
         self._add_session(request)
         request.user = AnonymousUser()
@@ -391,7 +391,7 @@ class OrderManagerTestCase(TestCase):
         """
         event = EventFactory()
         person = PersonFactory()
-        order = OrderFactory(event=event, person=None)
+        OrderFactory(event=event, person=None)
         request = self.factory.get('/')
         self._add_session(request)
         request.user = person

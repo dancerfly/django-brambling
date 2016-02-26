@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
+from django.db import migrations
+
 
 def forwards_func(apps, schema_editor):
     Attendee = apps.get_model('brambling', 'Attendee')
@@ -14,11 +15,13 @@ def forwards_func(apps, schema_editor):
     Person.objects.filter(name_order='GS').update(name_order='FL')
     Person.objects.filter(name_order='SGM').update(name_order='LFM')
     Person.objects.filter(name_order='SG').update(name_order='LF')
-    SavedAttendee = apps.get_model('brambling', 'SavedAttendee')    
+    SavedAttendee = apps.get_model('brambling', 'SavedAttendee')
     SavedAttendee.objects.filter(name_order='GMS').update(name_order='FML')
     SavedAttendee.objects.filter(name_order='GS').update(name_order='FL')
     SavedAttendee.objects.filter(name_order='SGM').update(name_order='LFM')
     SavedAttendee.objects.filter(name_order='SG').update(name_order='LF')
+
+
 def reverse_func(apps, schema_editor):
     Attendee = apps.get_model('brambling', 'Attendee')
     Attendee.objects.filter(name_order='FML').update(name_order='GMS')
@@ -30,11 +33,13 @@ def reverse_func(apps, schema_editor):
     Person.objects.filter(name_order='FL').update(name_order='GS')
     Person.objects.filter(name_order='LFM').update(name_order='SGM')
     Person.objects.filter(name_order='LF').update(name_order='SG')
-    SavedAttendee = apps.get_model('brambling', 'SavedAttendee')    
+    SavedAttendee = apps.get_model('brambling', 'SavedAttendee')
     SavedAttendee.objects.filter(name_order='FML').update(name_order='GMS')
     SavedAttendee.objects.filter(name_order='FL').update(name_order='GS')
     SavedAttendee.objects.filter(name_order='LFM').update(name_order='SGM')
     SavedAttendee.objects.filter(name_order='LF').update(name_order='SG')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -42,5 +47,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-	migrations.RunPython(forwards_func, reverse_func)
+        migrations.RunPython(forwards_func, reverse_func)
     ]

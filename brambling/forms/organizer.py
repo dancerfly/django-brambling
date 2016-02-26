@@ -1,4 +1,3 @@
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.db.models import Q
@@ -6,9 +5,9 @@ from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
 from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              ItemImage, Transaction, Invite, CustomForm,
+                              ItemImage, Transaction, CustomForm,
                               CustomFormField, Order, Organization, SavedReport,
-                              DwollaAccount, UNAMBIGUOUS_CHARS, EventMember,
+                              DwollaAccount, UNAMBIGUOUS_CHARS,
                               OrganizationMember)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
@@ -425,9 +424,10 @@ ItemImageFormSet = forms.inlineformset_factory(
 class DiscountForm(forms.ModelForm):
     generated_code = None
     item_options = GroupedModelMultipleChoiceField(
-                        queryset=ItemOption.objects.all(),
-                        group_by_field="item",
-                        group_label=lambda x: x.name)
+        queryset=ItemOption.objects.all(),
+        group_by_field="item",
+        group_label=lambda x: x.name,
+    )
 
     class Meta:
         model = Discount
@@ -496,11 +496,13 @@ class AttendeeFilterSetForm(forms.Form):
     HOUSING_STATUS_CHOICES = (("", "---------"),) + Attendee.HOUSING_STATUS_CHOICES
 
     # TODO: Automatically generate fields from the parent filterset.
-    bought_items__item_option = GroupedModelChoiceField(label="Bought Item",
-                    queryset=ItemOption.objects.all(),
-                    group_by_field="item",
-                    group_label=lambda x: x.name,
-                    required=False)
+    bought_items__item_option = GroupedModelChoiceField(
+        label="Bought Item",
+        queryset=ItemOption.objects.all(),
+        group_by_field="item",
+        group_label=lambda x: x.name,
+        required=False,
+    )
     bought_items__discounts__discount = forms.ModelChoiceField(label="Discount",
                                                                queryset=Discount.objects.all(),
                                                                required=False)

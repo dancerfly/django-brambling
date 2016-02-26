@@ -220,7 +220,7 @@ def stripe_refund(order, event, payment_id, amount):
     # Retrieving the charge and refunding it uses the access token.
     charge = stripe.Charge.retrieve(payment_id)
     refund = charge.refunds.create(
-        amount=int(amount*100),
+        amount=int(amount * 100),
         refund_application_fee=True,
         expand=['balance_transaction'],
         metadata={

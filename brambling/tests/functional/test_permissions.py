@@ -7,7 +7,6 @@ from brambling.models import (
 )
 from brambling.tests.factories import (
     EventFactory,
-    OrganizationFactory,
     PersonFactory,
 )
 

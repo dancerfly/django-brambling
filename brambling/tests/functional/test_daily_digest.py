@@ -26,10 +26,10 @@ class DailyDigestCommandTestCase(TestCase):
         self.command = Command()
 
     def test_get_recipients(self):
-        person1 = PersonFactory(notify_new_purchases=Person.NOTIFY_NEVER)
-        person2 = PersonFactory(notify_new_purchases=Person.NOTIFY_EACH)
-        person3 = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
-        self.assertEqual(list(self.command.get_recipients()), [person3])
+        PersonFactory(notify_new_purchases=Person.NOTIFY_NEVER)
+        PersonFactory(notify_new_purchases=Person.NOTIFY_EACH)
+        recipient = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
+        self.assertEqual(list(self.command.get_recipients()), [recipient])
 
     def test_send_digest__owner__one_event(self):
         owner = PersonFactory(notify_new_purchases=Person.NOTIFY_DAILY)
@@ -40,7 +40,7 @@ class DailyDigestCommandTestCase(TestCase):
             role=OrganizationMember.OWNER,
         )
         event = EventFactory(organization=organization)
-        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(owner)
         self.assertEqual(len(mail.outbox), 1)
@@ -57,7 +57,7 @@ class DailyDigestCommandTestCase(TestCase):
             role=OrganizationMember.OWNER,
         )
         event = EventFactory(organization=organization)
-        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(owner)
         self.assertEqual(len(mail.outbox), 1)
@@ -74,7 +74,7 @@ class DailyDigestCommandTestCase(TestCase):
             role=OrganizationMember.OWNER,
         )
         event = EventFactory(organization=organization)
-        transaction = TransactionFactory(
+        TransactionFactory(
             event=event,
             transaction_type=Transaction.PURCHASE,
             timestamp=timezone.now() - timedelta(days=2),
@@ -95,7 +95,7 @@ class DailyDigestCommandTestCase(TestCase):
             role=OrganizationMember.OWNER,
         )
         event = EventFactory(organization=organization)
-        transaction = TransactionFactory(
+        TransactionFactory(
             event=event,
             transaction_type=Transaction.PURCHASE,
             timestamp=timezone.now() - timedelta(hours=2),
@@ -114,8 +114,8 @@ class DailyDigestCommandTestCase(TestCase):
         )
         event1 = EventFactory(organization=organization)
         event2 = EventFactory(organization=organization)
-        transaction1 = TransactionFactory(event=event1, transaction_type=Transaction.PURCHASE)
-        transaction2 = TransactionFactory(event=event2, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event1, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event2, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(owner)
         self.assertEqual(len(mail.outbox), 1)
@@ -133,7 +133,7 @@ class DailyDigestCommandTestCase(TestCase):
             organization=event.organization,
             role=OrganizationMember.EDIT,
         )
-        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(editor)
         self.assertEqual(len(mail.outbox), 1)
@@ -149,7 +149,7 @@ class DailyDigestCommandTestCase(TestCase):
             event=event,
             role=EventMember.EDIT,
         )
-        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.send_digest(editor)
         self.assertEqual(len(mail.outbox), 1)
@@ -172,7 +172,7 @@ class DailyDigestCommandTestCase(TestCase):
             role=OrganizationMember.EDIT,
         )
         event = EventFactory(organization=organization)
-        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.handle()
         self.assertEqual(len(mail.outbox), 2)
@@ -207,7 +207,7 @@ class DailyDigestCommandTestCase(TestCase):
             role=OrganizationMember.EDIT,
         )
         event = EventFactory(organization=organization)
-        transaction = TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
+        TransactionFactory(event=event, transaction_type=Transaction.PURCHASE)
         self.assertEqual(len(mail.outbox), 0)
         self.command.handle()
         # stderr.write called four times: message & traceback per error.

@@ -4,7 +4,7 @@ from django.test import TestCase
 from brambling.utils.model_tables import AttendeeTable
 from brambling.models import CustomFormEntry
 from brambling.tests.factories import (
-    TransactionFactory, EventFactory, PersonFactory, OrderFactory, ItemFactory,
+    TransactionFactory, EventFactory, OrderFactory, ItemFactory,
     ItemOptionFactory, AttendeeFactory, EnvironmentalFactorFactory,
     HousingRequestNightFactory, HousingCategoryFactory, CustomFormFactory,
     CustomFormFieldFactory)
@@ -90,7 +90,6 @@ class AttendeeTableTestCase(TestCase):
         table = AttendeeTable(self.event)
         for row in table:
             self.assertEqual(row[self.custom_key1].value, 'ochre')
-
 
     def test_filled_housing_fields_if_attendee_needs_housing(self):
         self.attendee.housing_status = 'need'

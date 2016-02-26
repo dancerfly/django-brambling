@@ -8,10 +8,8 @@ from brambling.models import OrganizationMember
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
-    AttendeeFactory,
     ItemFactory,
     ItemOptionFactory,
-    TransactionFactory,
     OrganizationFactory,
     DiscountFactory,
     PersonFactory,

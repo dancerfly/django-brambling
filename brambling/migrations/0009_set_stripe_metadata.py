@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import warnings
 
-from django.db import models, migrations
+from django.db import migrations
 
 import stripe
 
