@@ -47,6 +47,8 @@ def salt_call():
 
 @task
 def deploy(branch_or_commit=DEFAULT_BRANCH):
+    if not run('which salt-call', quiet=True):
+        install_salt()
     sync_pillar()
     deploy_code(branch_or_commit)
     salt_call()
