@@ -49,22 +49,14 @@ ruby-2.2.3:
       - user: webproject_user
       - cmd: gpg-import-D39DC0E3
 
-webproject_gemset:
-  rvm.gemset_present:
-      - ruby: ruby-2.2.3
-      - user: webproject
-      - require:
-          - rvm: ruby-2.2.3
-
 bootstrap_sass:
   gem.installed:
     - name: bootstrap-sass
     - user: webproject
-    - ruby: ruby-2.2.3@webproject_gemset
+    - ruby: ruby-2.2.3@default
     - version: 3.3.4.1
     - require:
       - pkg: app-pkgs
-      - rvm: webproject_gemset
 
 webproject_dirs:
   file.directory:
@@ -243,7 +235,7 @@ gunicorn_circus_start:
 
 collectstatic:
   cmd.run:
-    - name: GEM_PATH=/var/lib/gems/1.9.1 {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py collectstatic --noinput
+    - name: {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py collectstatic --noinput
     - user: webproject
     - require:
       - file: webproject_project
@@ -253,7 +245,7 @@ collectstatic:
 
 migrate:
   cmd.run:
-    - name: GEM_PATH=/var/lib/gems/1.9.1 {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py migrate --noinput
+    - name: {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py migrate --noinput
     - user: webproject
     - require:
       - file: webproject_project
@@ -264,7 +256,7 @@ migrate:
 dwolla_update_tokens:
   cron.present:
     - user: webproject
-    - name: GEM_PATH=/var/lib/gems/1.9.1 {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py update_tokens --days=15
+    - name: {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py update_tokens --days=15
     - hour: 6
     - minute: 0
 
