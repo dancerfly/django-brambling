@@ -69,20 +69,17 @@ Deploying to a server
 ---------------------
 
 First, set up an ubuntu server on whatever service and set up your ssh config
-appropriately. Once that's done...
+appropriately. Once that's done, install fabric (if you don't have it already): `pip install fabric`
 
-1. Install fabric (if you don't have it already): `pip install fabric`
-2. Run `fab -H name-of-server deploy:branch-name`. This will do the following:
+Then, all you need to do is run `fab -H name-of-server deploy:branch-name`. This does the following:
 
-  * Installs our server configuration tool, `salt <http://saltstack.com/>`_, which will handle most
-    of the heavy lifting for you. This only happens if salt isn't installed yet.
-  * Syncs your local pillar data with the remote version using rsync.
-  * Deploys the specified branch from Github.
-  * Runs salt.
-  * Runs migrations.
-  * Collects static files.
+* Installs our server configuration tool, `salt <http://saltstack.com/>`_, which will handle most
+  of the heavy lifting for you. This only happens if salt isn't installed yet.
+* Syncs your local pillar data with the remote version using rsync.
+* Deploys the specified branch from Github.
+* Runs salt.
+* Runs migrations.
+* Collects static files.
 
-  Each of these steps can also be run individually.
-
-You should now be done! Run `fab` with no arguments to see a full list of commands, or
-check out fabfile.py!
+Each of these steps can also be run individually. Run `fab` with no arguments to see a full list of commands, or
+check out fabfile.py.
