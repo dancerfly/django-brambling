@@ -57,6 +57,7 @@ bootstrap_sass:
     - version: 3.3.4.1
     - require:
       - pkg: app-pkgs
+      - rvm: ruby-2.2.3
 
 webproject_dirs:
   file.directory:
