@@ -41,22 +41,30 @@ gpg-import-D39DC0E3:
         - unless: gpg --fingerprint |fgrep 'Key fingerprint = 409B 6B17 96C2 7546 2A17  0311 3804 BB82 D39D C0E3'
 
 ruby-2.2.3:
-    rvm.installed:
-      - default: True
+  rvm.installed:
+    - default: True
+    - user: webproject
+    - require:
+      - pkg: rvm-deps
+      - user: webproject_user
+      - cmd: gpg-import-D39DC0E3
+
+webproject_gemset:
+  rvm.gemset_present:
+      - ruby: ruby-2.2.3
       - user: webproject
       - require:
-        - pkg: rvm-deps
-        - user: webproject_user
-        - cmd: gpg-import-D39DC0E3
+          - rvm: ruby-2.2.3
 
 bootstrap_sass:
   gem.installed:
     - name: bootstrap-sass
-    - ruby: 2.2.3
+    - user: webproject
+    - ruby: ruby-2.2.3@webproject_gemset
     - version: 3.3.4.1
     - require:
       - pkg: app-pkgs
-      - rvm: ruby-2.2.3
+      - rvm: webproject_gemset
 
 webproject_dirs:
   file.directory:
