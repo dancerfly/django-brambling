@@ -233,27 +233,6 @@ gunicorn_circus_start:
       - virtualenv: webproject_env
     - onlyif: "[ `circusctl status gunicorn` == 'stopped' ]"
 
-
-collectstatic:
-  cmd.run:
-    - name: {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py collectstatic --noinput
-    - user: webproject
-    - require:
-      - file: webproject_project
-      - virtualenv: webproject_env
-      - postgres_database: webproject_db
-      - user: webproject_user
-
-migrate:
-  cmd.run:
-    - name: {{ pillar['files']['env_dir'] }}bin/python {{ pillar['files']['project_dir'] }}manage.py migrate --noinput
-    - user: webproject
-    - require:
-      - file: webproject_project
-      - virtualenv: webproject_env
-      - postgres_database: webproject_db
-      - user: webproject_user
-
 dwolla_update_tokens:
   cron.present:
     - user: webproject

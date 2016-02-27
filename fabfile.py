@@ -50,6 +50,8 @@ def deploy(branch_or_commit=DEFAULT_BRANCH):
     sync_pillar()
     deploy_code(branch_or_commit)
     salt_call()
+    manage('migrate --noinput')
+    manage('collectstatic --noinput')
 
 
 @task
