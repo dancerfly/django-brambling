@@ -1,7 +1,7 @@
+from collections import OrderedDict
 import copy
 
 from django.db import models
-from django.utils.datastructures import SortedDict
 from django.forms.forms import pretty_name
 from django.utils.translation import ugettext as _
 import django_filters
@@ -90,7 +90,7 @@ class AttendeeFilterSet(django_filters.FilterSet):
         # 2. Don't override custom ordering field
         # 3. Pass in self.event
         if not hasattr(self, '_form'):
-            fields = SortedDict([
+            fields = OrderedDict([
                 (name, filter_.field)
                 for name, filter_ in six.iteritems(self.filters)
                 if name not in self._meta.form.base_fields])

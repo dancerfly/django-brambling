@@ -269,7 +269,7 @@ organization_urlpatterns = patterns(
 
 urlpatterns = patterns(
     '',
-    url(r'^favicon\.ico$', RedirectView.as_view(url=static('brambling/favicon.ico'))),
+    url(r'^favicon\.ico$', RedirectView.as_view(url=static('brambling/favicon.ico'), permanent=False)),
 
     url(r'about/', TemplateView.as_view(template_name='brambling/about.html'), name='brambling_about'),
     url(r'faq/', TemplateView.as_view(template_name='brambling/faq.html'), name='brambling_faq'),

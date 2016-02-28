@@ -1,6 +1,7 @@
 # encoding: utf8
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 from datetime import timedelta
 from decimal import Decimal
 import itertools
@@ -19,7 +20,6 @@ from django.db.models import signals, Sum
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
@@ -1116,7 +1116,7 @@ class Order(AbstractDwollaModel):
             'transactions',
         ).order_by('-added')
 
-        transactions = SortedDict()
+        transactions = OrderedDict()
 
         # Prepopulate transactions dictionary.
         for txn in itertools.chain([None], transactions_qs):
@@ -1822,7 +1822,7 @@ class CustomForm(models.Model):
 
     def get_fields(self):
         # Returns field definition dict that can be added to a form
-        return SortedDict((
+        return OrderedDict((
             (field.key, field.formfield())
             for field in self.fields.all()
         ))
