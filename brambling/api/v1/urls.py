@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
 from rest_framework.routers import DefaultRouter
 
 from brambling.api.v1.views import (
@@ -35,8 +35,7 @@ router.register('ordersearch', OrderSearchViewSet, base_name='ordersearch')
 router.register('orderdiscount', OrderDiscountViewSet)
 router.register('organization', OrganizationViewSet)
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-)
+]

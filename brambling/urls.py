@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
 from django.http import HttpResponse
 from django.templatetags.static import static
 from django.views.generic.base import TemplateView, RedirectView
@@ -102,8 +102,7 @@ from brambling.views.user import (
 )
 
 
-order_urlpatterns = patterns(
-    '',
+order_urlpatterns = [
     url(r'^ractive-shop/$', RactiveShopView.as_view()),
     url(r'^shop/$',
         ChooseItemsView.as_view(),
@@ -143,11 +142,10 @@ order_urlpatterns = patterns(
     url(r'^transfer/$',
         TransferView.as_view(),
         name="brambling_event_order_transfer"),
-)
+]
 
 
-event_urlpatterns = patterns(
-    '',
+event_urlpatterns = [
     url(r'^$',
         RedirectView.as_view(pattern_name="brambling_event_order_summary", permanent=False),
         name="brambling_event_root"),
@@ -237,11 +235,10 @@ event_urlpatterns = patterns(
     url(r'^danger-zone/$',
         DangerZoneView.as_view(),
         name="brambling_event_danger_zone"),
-)
+]
 
 
-organization_urlpatterns = patterns(
-    '',
+organization_urlpatterns = [
     url(r'^$',
         OrganizationDetailView.as_view(),
         name='brambling_organization_detail'),
@@ -264,11 +261,10 @@ organization_urlpatterns = patterns(
     url(r'^order/(?:(?P<code>[a-zA-Z0-9]{8})/)?', OrderRedirectView.as_view()),
 
     url(r'^(?P<event_slug>[\w-]+)/', include(event_urlpatterns)),
-)
+]
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^favicon\.ico$', RedirectView.as_view(url=static('brambling/favicon.ico'), permanent=False)),
 
     url(r'about/', TemplateView.as_view(template_name='brambling/about.html'), name='brambling_about'),
@@ -394,4 +390,4 @@ urlpatterns = patterns(
         name="brambling_event_create"),
 
     url(r'^(?P<organization_slug>[\w-]+)/', include(organization_urlpatterns)),
-)
+]
