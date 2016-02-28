@@ -741,8 +741,8 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
         (NOTIFY_EACH, "Email me about every new purchase"),
         (NOTIFY_DAILY, "Email me a daily report of new purchases"),
     )
-    email = models.EmailField(max_length=254, unique=True)
-    confirmed_email = models.EmailField(max_length=254)
+    email = models.EmailField(unique=True)
+    confirmed_email = models.EmailField()
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
 
@@ -1558,7 +1558,7 @@ class Attendee(AbstractNamedModel):
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
-    email = models.EmailField(max_length=254)
+    email = models.EmailField()
     phone = models.CharField(max_length=50, blank=True)
     liability_waiver = models.BooleanField(default=False, help_text="Must be agreed to by the attendee themselves.")
     photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
@@ -1613,7 +1613,7 @@ class Attendee(AbstractNamedModel):
 
 class SavedAttendee(AbstractNamedModel):
     person = models.ForeignKey(Person)
-    email = models.EmailField(max_length=254)
+    email = models.EmailField()
     phone = models.CharField(max_length=50, blank=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='saved_attendee_cause',
