@@ -1,12 +1,16 @@
+import os
+
 from fabric.api import task, run, sudo, cd, env
 from fabric.contrib.files import exists
-from fabric.contrib.project import rsync_project
+from fabric.operations import local, put
 
 
 env.use_ssh_config = True
 REPO_SLUG = 'django-brambling'
 REPO_URL = "https://github.com/littleweaver/" + REPO_SLUG + ".git"
+PILLAR_REPO_URL = "git@github.com:littleweaver/dancerfly-pillar.git"
 DEFAULT_BRANCH = 'master'
+CURRENT_DIR = os.path.dirname(__file__)
 
 
 @task
@@ -15,10 +19,20 @@ def install_salt():
 
 
 @task
-def sync_pillar():
+def sync_pillar(branch_or_commit='master'):
+    if not os.path.exists(os.path.join(CURRENT_DIR, 'pillar')):
+        local("git clone {} pillar".format(PILLAR_REPO_URL))
+    if not exists('/root/.ssh/id_rsa'):
+        put(local_path='pillar/id_rsa',
+            remote_path='/root/.ssh/id_rsa',
+            mode='0400')
     if not exists('/srv/pillar'):
-        sudo('mkdir /srv/pillar')
-    rsync_project(local_dir='pillar/', remote_dir='/srv/pillar/')
+        sudo("git clone {} /srv/pillar".format(PILLAR_REPO_URL))
+    with cd('/srv/pillar'):
+        sudo('git fetch')
+        sudo('git stash')
+        sudo('git checkout {}'.format(branch_or_commit))
+        sudo('git reset --hard origin/{}'.format(branch_or_commit))
 
 
 @task
