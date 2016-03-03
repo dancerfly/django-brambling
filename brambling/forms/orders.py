@@ -14,7 +14,8 @@ from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFa
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import TransferInvite
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
-                                     stripe_prep, stripe_charge)
+                                     stripe_prep, stripe_charge,
+                                     InvalidAmountException)
 
 
 STRIPE_API_ERROR = mark_safe("We're having trouble connecting to the payment "
@@ -415,19 +416,19 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             'event': self.order.event,
             'order': self.order,
         }
-        self._charge = None
-        if self.amount >= 0:
-            try:
-                if self.cleaned_data.get('save_card'):
-                    self.card = self.add_card(self.cleaned_data['token'])
-                    self._charge = stripe_charge(self.card.id, customer=self.customer, **kwargs)
-                else:
-                    self._charge = stripe_charge(self.cleaned_data['token'], **kwargs)
-                    self.card = self._charge.card
-            except stripe.error.CardError, e:
-                self.add_error(None, e.message)
-            except stripe.error.APIError, e:
-                self.add_error(None, STRIPE_API_ERROR)
+        try:
+            if self.cleaned_data.get('save_card'):
+                self.card = self.add_card(self.cleaned_data['token'])
+                self._charge = stripe_charge(self.card.id, customer=self.customer, **kwargs)
+            else:
+                self._charge = stripe_charge(self.cleaned_data['token'], **kwargs)
+                self.card = self._charge.card
+        except stripe.error.CardError, e:
+            self.add_error(None, e.message)
+        except stripe.error.APIError, e:
+            self.add_error(None, STRIPE_API_ERROR)
+        except InvalidAmountException, e:
+            self.add_error(None, e.message)
 
     def save(self):
         if self.cleaned_data.get('save_card'):
@@ -468,6 +469,8 @@ class SavedCardPaymentForm(BasePaymentForm):
             self.add_error(None, e.message)
         except stripe.error.APIError, e:
             self.add_error(None, STRIPE_API_ERROR)
+        except InvalidAmountException, e:
+            self.add_error(None, e.message)
 
     def save(self):
         return self.save_payment(self._charge, self.card)
