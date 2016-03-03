@@ -493,19 +493,17 @@ class DwollaPaymentForm(BasePaymentForm):
 
     def _post_clean(self):
         if 'dwolla_pin' in self.cleaned_data and 'source' in self.cleaned_data:
-            self._charge = None
-            if self.amount > 0:
-                try:
-                    self._charge = dwolla_charge(
-                        account=self.dwolla_account,
-                        amount=float(self.amount),
-                        order=self.order,
-                        event=self.order.event,
-                        pin=self.cleaned_data['dwolla_pin'],
-                        source=self.cleaned_data['source']
-                    )
-                except (ValueError, DwollaAPIException) as e:
-                    self.add_error(None, getattr(e, 'response', e.message))
+            try:
+                self._charge = dwolla_charge(
+                    account=self.dwolla_account,
+                    amount=float(self.amount),
+                    order=self.order,
+                    event=self.order.event,
+                    pin=self.cleaned_data['dwolla_pin'],
+                    source=self.cleaned_data['source']
+                )
+            except (ValueError, DwollaAPIException) as e:
+                self.add_error(None, getattr(e, 'response', e.message))
 
     def save(self):
         return Transaction.from_dwolla_charge(

@@ -225,6 +225,26 @@ class SavedCardPaymentFormTestCase(TestCase):
 class DwollaPaymentFormTestCase(TestCase):
 
     @patch('brambling.forms.orders.dwolla_get_sources')
+    def test_negative_charge_adds_errors(self, dwolla_get_sources):
+        dwolla_get_sources.return_value = DWOLLA_SOURCES
+        order = OrderFactory()
+        event = order.event
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
+        event.organization.save()
+        person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
+        pin = '1234'
+        source = 'Balance'
+        form = DwollaPaymentForm(order=order, amount=Decimal('-1.00'),
+                                 data={'dwolla_pin': pin, 'source': source},
+                                 user=person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'],
+                         ["Cannot charge an amount less than zero."])
+
+    @patch('brambling.forms.orders.dwolla_get_sources')
     @patch('brambling.forms.orders.dwolla_charge')
     def test_dwolla_payment_form(self, dwolla_charge, dwolla_get_sources):
         dwolla_charge.return_value = DWOLLA_CHARGE
