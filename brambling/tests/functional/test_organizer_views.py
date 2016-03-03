@@ -8,6 +8,7 @@ from django.test import TestCase, RequestFactory
 from brambling.models import (
     Attendee,
     OrganizationMember,
+    Transaction,
 )
 from brambling.tests.factories import (
     EventFactory,
@@ -56,6 +57,16 @@ class SendReceiptTestCase(TestCase):
     def test_txn_not_found(self):
         event = self.event
         self.view.kwargs = {'payment_pk': 0}
+
+        with self.assertRaises(Http404):
+            self.view.get(self.view.request, event_slug=event.slug,
+                          organization_slug=event.organization.slug)
+
+    def test_txn_not_purchase(self):
+        event = self.event
+        self.view.kwargs = {'payment_pk': self.transaction.pk}
+        self.transaction.transaction_type = Transaction.OTHER
+        self.transaction.save()
 
         with self.assertRaises(Http404):
             self.view.get(self.view.request, event_slug=event.slug,

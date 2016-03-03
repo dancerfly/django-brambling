@@ -1328,7 +1328,10 @@ class SendReceiptView(View):
         if not self.request.user.has_perm('view', event):
             raise Http404
         try:
-            transaction = Transaction.objects.get(pk=self.kwargs['payment_pk'])
+            transaction = Transaction.objects.get(
+                pk=self.kwargs['payment_pk'],
+                transaction_type=Transaction.PURCHASE,
+            )
         except Transaction.DoesNotExist:
             raise Http404
 
