@@ -14,7 +14,8 @@ from brambling.tests.factories import (
     DwollaUserAccountFactory,
     DwollaOrganizationAccountFactory,
 )
-from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
+from brambling.utils.payment import (dwolla_prep, dwolla_charge, dwolla_refund,
+                                     InvalidAmountException)
 
 
 VCR_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')
@@ -49,6 +50,29 @@ CHARGE_DATA = {
 
 
 class DwollaChargeTestCase(TestCase):
+
+    def test_dolla_charge__negative(self):
+        event = EventFactory(api_type=Event.TEST,
+                             application_fee_percent=Decimal('2.5'))
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
+        event.organization.save()
+        self.assertTrue(event.dwolla_connected())
+        dwolla_prep(Event.TEST)
+
+        person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
+        order = OrderFactory(person=person, event=event, code='dwoll1')
+        with self.assertRaises(InvalidAmountException):
+            dwolla_charge(
+                account=person.dwolla_test_account,
+                amount=-1.00,
+                order=order,
+                event=event,
+                pin=settings.DWOLLA_TEST_USER_PIN,
+                source='Balance',
+            )
+
     @vcr.use_cassette(os.path.join(VCR_DIR, 'test_dwolla_charge__user.yaml'))
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,

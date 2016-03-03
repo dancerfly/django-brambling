@@ -94,6 +94,8 @@ def dwolla_charge(account, amount, order, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
+    if amount < 0:
+        raise InvalidAmountException('Cannot charge an amount less than zero.')
     if account.api_type != event.api_type:
         raise ValueError("Account and event API types do not match.")
     org_account = event.organization.get_dwolla_account(event.api_type)
