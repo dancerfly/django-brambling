@@ -63,3 +63,23 @@ Then, navigate to ``http://127.0.0.1:8000/`` in your favorite web browser!
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/littleweaver/django-brambling
    :target: https://gitter.im/littleweaver/django-brambling?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+
+Deploying to a server
+---------------------
+
+First, set up an ubuntu server on whatever service and set up your ssh config
+appropriately. Once that's done, install fabric (if you don't have it already): `pip install fabric`
+
+Then, all you need to do is run `fab -H name-of-server deploy:branch-name`. This does the following:
+
+* Installs our server configuration tool, `salt <http://saltstack.com/>`_, which will handle most
+  of the heavy lifting for you. This only happens if salt isn't installed yet.
+* Syncs your local pillar data with the remote version using rsync.
+* Deploys the specified branch from Github.
+* Runs salt.
+* Runs migrations.
+* Collects static files.
+
+Each of these steps can also be run individually. Run `fab` with no arguments to see a full list of commands, or
+check out fabfile.py.

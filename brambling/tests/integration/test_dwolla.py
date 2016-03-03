@@ -1,4 +1,5 @@
 from decimal import Decimal
+import os
 
 from django.conf import settings
 from django.test import TestCase
@@ -14,6 +15,9 @@ from brambling.tests.factories import (
     DwollaOrganizationAccountFactory,
 )
 from brambling.utils.payment import dwolla_prep, dwolla_charge, dwolla_refund
+
+
+VCR_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')
 
 
 CHARGE_DATA = {
@@ -45,7 +49,7 @@ CHARGE_DATA = {
 
 
 class DwollaChargeTestCase(TestCase):
-    @vcr.use_cassette('../brambling/tests/integration/fixtures/test_dwolla_charge__user.yaml')
+    @vcr.use_cassette(os.path.join(VCR_DIR, 'test_dwolla_charge__user.yaml'))
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
