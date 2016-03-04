@@ -1328,22 +1328,23 @@ class SendReceiptView(View):
         if not self.request.user.has_perm('view', event):
             raise Http404
         try:
-            order = Order.objects.get(event=event,
-                                      code=self.kwargs['code'])
-        except Order.DoesNotExist:
+            transaction = Transaction.objects.get(
+                pk=self.kwargs['payment_pk'],
+                transaction_type=Transaction.PURCHASE,
+            )
+        except Transaction.DoesNotExist:
             raise Http404
 
         OrderReceiptMailer(
-            order=order,
-            summary_data=order.get_summary_data(),
+            transaction=transaction,
             site=get_current_site(request),
             secure=request.is_secure(),
         ).send()
 
-        messages.success(request, 'Receipt sent to {}!'.format(order.person.email if order.person else order.email))
+        messages.success(request, 'Receipt sent to {}!'.format(transaction.order.person.email if transaction.order.person else transaction.order.email))
         return HttpResponseRedirect(reverse(
             'brambling_event_order_detail',
-            kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug, 'code': order.code}
+            kwargs={'event_slug': event.slug, 'organization_slug': event.organization.slug, 'code': transaction.order.code}
         ))
 
 
