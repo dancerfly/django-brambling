@@ -140,6 +140,7 @@ class TransactionFactory(factory.DjangoModelFactory):
         model = Transaction
 
     event = factory.SubFactory(EventFactory)
+    transaction_type = Transaction.PURCHASE
 
 
 class ItemFactory(factory.DjangoModelFactory):
