@@ -1,5 +1,5 @@
 pip==8.0.3
-Django==1.8.9
+Django==1.8.11
 pytz==2015.2
 sqlparse==0.1.14
 unicode-slugify==0.1.3
