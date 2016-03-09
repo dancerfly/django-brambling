@@ -32,7 +32,7 @@
 
 	{% if txn.transaction_type == txn.PURCHASE and 'edit' in event_permissions %}
 		{% if txn.can_refund %}
-			<a class='btn btn-default' data-toggle="modal" data-target="#refund-{{ txn.pk }}"><i class='fa fa-fw fa-undo'></i> Refund</a>
+			<a class='btn btn-default margin-trailer-tiny' data-toggle="modal" data-target="#refund-{{ txn.pk }}"><i class='fa fa-fw fa-undo'></i> Refund</a>
 
 			<div class="modal fade" id="refund-{{ txn.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ txn.pk }}" aria-hidden="true">
 				<div class="modal-dialog modal-sm">
@@ -52,7 +52,10 @@
 				</div>
 			</div>
 		{% else %}
-			<a href='javascript://' class='btn btn-default disabled'><i class='fa fa-fw fa-ban'></i> Refunded</a>
+			<a href='javascript://' class='btn btn-default disabled margin-trailer-tiny'><i class='fa fa-fw fa-ban'></i> Refunded</a>
 		{% endif %}
+	{% endif %}
+	{% if txn.transaction_type == txn.PURCHASE %}
+		<a class='btn btn-success' href="{% url 'brambling_event_send_receipt' event_slug=event.slug organization_slug=event.organization.slug payment_pk=txn.pk %}"><i class='fa fa-paper-plane'></i> Send receipt</a>
 	{% endif %}
 {% endblock %}

@@ -210,7 +210,7 @@ event_urlpatterns = patterns(
     url(r'^orders/(?P<code>[a-zA-Z0-9]{8})/confirm/(?P<payment_pk>\d+)/$',
         TogglePaymentConfirmationView.as_view(),
         name="brambling_event_toggle_payment_confirmation"),
-    url(r'^orders/(?P<code>[a-zA-Z0-9]{8})/send_receipt/$',
+    url(r'^orders/send_receipt/(?P<payment_pk>\d+)/$',
         SendReceiptView.as_view(),
         name="brambling_event_send_receipt"),
 

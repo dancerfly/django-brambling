@@ -2,11 +2,13 @@
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.middleware import MessageMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.http import Http404
 from django.test import TestCase, RequestFactory
 
 from brambling.models import (
     Attendee,
     OrganizationMember,
+    Transaction,
 )
 from brambling.tests.factories import (
     EventFactory,
@@ -22,7 +24,63 @@ from brambling.views.organizer import (
     EventSummaryView,
     AttendeeFilterView,
     OrganizationRemoveMemberView,
+    SendReceiptView,
 )
+
+
+class SendReceiptTestCase(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        owner = PersonFactory()
+        self.event = EventFactory(collect_housing_data=False)
+        OrganizationMember.objects.create(
+            person=owner,
+            organization=self.event.organization,
+            role=OrganizationMember.OWNER,
+        )
+        order = OrderFactory(event=self.event, code='aaaaaaaa')
+        self.transaction = TransactionFactory(event=self.event, order=order)
+        item = ItemFactory(event=self.event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        order.add_to_cart(item_option)
+        order.add_to_cart(item_option)
+        order.mark_cart_paid(self.transaction)
+
+        AttendeeFactory(order=order, bought_items=order.bought_items.all())
+
+        self.view = SendReceiptView()
+        self.view.request = self.factory.get('/')
+        self.view.request.user = owner
+
+    def test_txn_not_found(self):
+        event = self.event
+        self.view.kwargs = {'payment_pk': 0}
+
+        with self.assertRaises(Http404):
+            self.view.get(self.view.request, event_slug=event.slug,
+                          organization_slug=event.organization.slug)
+
+    def test_txn_not_purchase(self):
+        event = self.event
+        self.view.kwargs = {'payment_pk': self.transaction.pk}
+        self.transaction.transaction_type = Transaction.OTHER
+        self.transaction.save()
+
+        with self.assertRaises(Http404):
+            self.view.get(self.view.request, event_slug=event.slug,
+                          organization_slug=event.organization.slug)
+
+    def test_successful_send(self):
+        event = self.event
+        self.view.kwargs = {'payment_pk': self.transaction.pk}
+        SessionMiddleware().process_request(self.view.request)
+        MessageMiddleware().process_request(self.view.request)
+
+        response = self.view.get(self.view.request, event_slug=event.slug,
+                                 organization_slug=event.organization.slug)
+        self.assertEqual(response.status_code, 302)
 
 
 class EventSummaryTestCase(TestCase):
