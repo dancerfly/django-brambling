@@ -8,7 +8,6 @@ from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q, Min, Prefetch
 from django.forms.forms import pretty_name
-from django.utils.datastructures import SortedDict
 from django.utils.text import capfirst
 import floppyforms as forms
 from zenaida.templatetags.zenaida import format_money
@@ -286,7 +285,7 @@ class ModelTable(object):
     def empty_filter_form(self):
         if not hasattr(self, '_empty_filter_form'):
             filterset = self.filterset
-            fields = SortedDict([
+            fields = OrderedDict([
                 (name, filter_.field)
                 for name, filter_ in six.iteritems(filterset.filters)])
             fields[filterset.order_by_field] = filterset.ordering_field

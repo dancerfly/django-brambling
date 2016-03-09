@@ -1,6 +1,7 @@
 # encoding: utf8
 from __future__ import unicode_literals
 
+from collections import OrderedDict
 from datetime import timedelta
 from decimal import Decimal
 import itertools
@@ -19,7 +20,6 @@ from django.db.models import signals, Sum
 from django.template.defaultfilters import date
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.datastructures import SortedDict
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
@@ -345,7 +345,6 @@ class Organization(AbstractDwollaModel):
         through=OrganizationMember,
         related_name='organizations',
         blank=True,
-        null=True,
     )
 
     # This is a secret value set by admins. It will be cached on the event model.
@@ -513,7 +512,6 @@ class Event(models.Model):
         through=EventMember,
         related_name='events',
         blank=True,
-        null=True,
     )
 
     collect_housing_data = models.BooleanField(default=True)
@@ -741,8 +739,8 @@ class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, Permissi
         (NOTIFY_EACH, "Email me about every new purchase"),
         (NOTIFY_DAILY, "Email me a daily report of new purchases"),
     )
-    email = models.EmailField(max_length=254, unique=True)
-    confirmed_email = models.EmailField(max_length=254)
+    email = models.EmailField(unique=True)
+    confirmed_email = models.EmailField()
     home = models.ForeignKey('Home', blank=True, null=True,
                              related_name='residents')
 
@@ -1116,7 +1114,7 @@ class Order(AbstractDwollaModel):
             'transactions',
         ).order_by('-added')
 
-        transactions = SortedDict()
+        transactions = OrderedDict()
 
         # Prepopulate transactions dictionary.
         for txn in itertools.chain([None], transactions_qs):
@@ -1251,7 +1249,7 @@ class Transaction(models.Model):
     order = models.ForeignKey('Order', related_name='transactions', blank=True, null=True)
     remote_id = models.CharField(max_length=40, blank=True)
     card = models.ForeignKey('CreditCard', blank=True, null=True, on_delete=models.SET_NULL)
-    bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True, null=True)
+    bought_items = models.ManyToManyField('BoughtItem', related_name='transactions', blank=True)
 
     class Meta:
         get_latest_by = 'timestamp'
@@ -1558,7 +1556,7 @@ class Attendee(AbstractNamedModel):
 
     # Basic data - always required for attendees.
     basic_completed = models.BooleanField(default=False)
-    email = models.EmailField(max_length=254)
+    email = models.EmailField()
     phone = models.CharField(max_length=50, blank=True)
     liability_waiver = models.BooleanField(default=False, help_text="Must be agreed to by the attendee themselves.")
     photo_consent = models.BooleanField(default=False, verbose_name='I consent to have my photo taken at this event.')
@@ -1567,17 +1565,15 @@ class Attendee(AbstractNamedModel):
 
     # Housing information - all optional.
     housing_completed = models.BooleanField(default=False)
-    nights = models.ManyToManyField(HousingRequestNight, blank=True, null=True)
+    nights = models.ManyToManyField(HousingRequestNight, blank=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='attendee_cause',
                                       blank=True,
-                                      null=True,
                                       verbose_name="People around me may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='attendee_avoid',
                                       blank=True,
-                                      null=True,
                                       verbose_name="I can't/don't want to be around")
 
     person_prefer = models.TextField(blank=True,
@@ -1591,7 +1587,6 @@ class Attendee(AbstractNamedModel):
     housing_prefer = models.ManyToManyField(HousingCategory,
                                             related_name='event_preferred_by',
                                             blank=True,
-                                            null=True,
                                             verbose_name="I prefer to stay somewhere that is (a/an)")
 
     other_needs = models.TextField(blank=True)
@@ -1613,18 +1608,16 @@ class Attendee(AbstractNamedModel):
 
 class SavedAttendee(AbstractNamedModel):
     person = models.ForeignKey(Person)
-    email = models.EmailField(max_length=254)
+    email = models.EmailField()
     phone = models.CharField(max_length=50, blank=True)
     ef_cause = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='saved_attendee_cause',
                                       blank=True,
-                                      null=True,
                                       verbose_name="People around me may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='saved_attendee_avoid',
                                       blank=True,
-                                      null=True,
                                       verbose_name="I can't/don't want to be around")
 
     person_prefer = models.TextField(blank=True,
@@ -1637,7 +1630,6 @@ class SavedAttendee(AbstractNamedModel):
 
     housing_prefer = models.ManyToManyField(HousingCategory,
                                             blank=True,
-                                            null=True,
                                             verbose_name="I prefer to stay somewhere that is (a/an)")
 
     other_needs = models.TextField(blank=True)
@@ -1663,13 +1655,11 @@ class Home(models.Model):
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='home_present',
                                         blank=True,
-                                        null=True,
                                         verbose_name="People in my/our home may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='home_avoid',
                                       blank=True,
-                                      null=True,
                                       verbose_name="I/We don't want in my/our home")
 
     person_prefer = models.TextField(blank=True,
@@ -1683,7 +1673,6 @@ class Home(models.Model):
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='homes',
                                                 blank=True,
-                                                null=True,
                                                 verbose_name="My/Our home is (a/an)")
 
 
@@ -1710,13 +1699,11 @@ class EventHousing(models.Model):
     ef_present = models.ManyToManyField(EnvironmentalFactor,
                                         related_name='eventhousing_present',
                                         blank=True,
-                                        null=True,
                                         verbose_name="People in the home may be exposed to")
 
     ef_avoid = models.ManyToManyField(EnvironmentalFactor,
                                       related_name='eventhousing_avoid',
                                       blank=True,
-                                      null=True,
                                       verbose_name="I/We don't want in my/our home")
 
     person_prefer = models.TextField(blank=True,
@@ -1730,7 +1717,6 @@ class EventHousing(models.Model):
     housing_categories = models.ManyToManyField(HousingCategory,
                                                 related_name='eventhousing',
                                                 blank=True,
-                                                null=True,
                                                 verbose_name="Our home is (a/an)")
 
     custom_data = GenericRelation('CustomFormEntry', content_type_field='related_ct', object_id_field='related_id')
@@ -1822,7 +1808,7 @@ class CustomForm(models.Model):
 
     def get_fields(self):
         # Returns field definition dict that can be added to a form
-        return SortedDict((
+        return OrderedDict((
             (field.key, field.formfield())
             for field in self.fields.all()
         ))

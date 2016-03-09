@@ -10,8 +10,7 @@ from django.db.models import Count, Sum, Q
 from django.forms import formset_factory
 from django.http import (Http404, HttpResponseRedirect, JsonResponse,
                          StreamingHttpResponse)
-from django.shortcuts import get_object_or_404, render_to_response
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.http import is_safe_url
 from django.views.generic import (ListView, CreateView, UpdateView,
@@ -838,9 +837,7 @@ def item_form(request, *args, **kwargs):
         'event_admin_nav': get_event_admin_nav(event, request),
         'event_permissions': request.user.get_all_permissions(event),
     }
-    return render_to_response('brambling/event/organizer/item_form.html',
-                              context,
-                              context_instance=RequestContext(request))
+    return render(request, 'brambling/event/organizer/item_form.html', context)
 
 
 class ItemDeleteView(DeleteView):
@@ -929,9 +926,7 @@ def discount_form(request, *args, **kwargs):
         'cart': None,
         'event_admin_nav': get_event_admin_nav(event, request),
     }
-    return render_to_response('brambling/event/organizer/discount_form.html',
-                              context,
-                              context_instance=RequestContext(request))
+    return render(request, 'brambling/event/organizer/discount_form.html', context)
 
 
 class DiscountListView(ListView):
@@ -1000,9 +995,7 @@ def custom_form_form(request, *args, **kwargs):
         'event_admin_nav': get_event_admin_nav(event, request),
         'event_permissions': request.user.get_all_permissions(event),
     }
-    return render_to_response('brambling/event/organizer/custom_form_form.html',
-                              context,
-                              context_instance=RequestContext(request))
+    return render(request, 'brambling/event/organizer/custom_form_form.html', context)
 
 
 class CustomFormListView(ListView):
