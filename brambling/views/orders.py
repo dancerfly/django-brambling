@@ -694,10 +694,10 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         self.summary_data = self.order.get_summary_data()
         self.net_balance = self.summary_data['net_balance']
-        if self.net_balance == 0:
+        if self.net_balance <= 0:
             valid = True
             payment = Transaction.objects.create(
-                amount=0,
+                amount=self.net_balance,
                 method=Transaction.NONE,
                 transaction_type=Transaction.PURCHASE,
                 is_confirmed=True,

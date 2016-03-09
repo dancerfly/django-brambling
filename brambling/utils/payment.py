@@ -17,6 +17,10 @@ constants.debug = settings.DEBUG
 DWOLLA_SCOPES = "send|accountinfofull|funding|transactions"
 
 
+class InvalidAmountException(ValueError):
+    """The amount to be charged must be zero or positive."""
+
+
 def get_fee(event, amount):
     fee = event.application_fee_percent / 100 * Decimal(str(amount))
     return fee.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
@@ -90,6 +94,8 @@ def dwolla_charge(account, amount, order, event, pin, source):
     """
     Charges to dwolla and returns a charge transaction.
     """
+    if amount < 0:
+        raise InvalidAmountException('Cannot charge an amount less than zero.')
     if account.api_type != event.api_type:
         raise ValueError("Account and event API types do not match.")
     org_account = event.organization.get_dwolla_account(event.api_type)
@@ -182,8 +188,8 @@ def stripe_prep(api_type):
 
 
 def stripe_charge(card_or_token, amount, order, event, customer=None):
-    if amount <= 0:
-        return None
+    if amount < 0:
+        raise InvalidAmountException('Cannot charge an amount less than zero.')
     stripe_prep(event.api_type)
     if event.api_type == LIVE:
         access_token = event.organization.stripe_access_token
