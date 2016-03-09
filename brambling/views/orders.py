@@ -19,7 +19,7 @@ from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
-                              Person, SavedAttendee)
+                              Person, SavedAttendee, CustomForm)
 from brambling.utils.invites import TransferInvite
 from brambling.utils.payment import dwolla_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
@@ -151,7 +151,8 @@ class SurveyStep(OrderStep):
 
     @classmethod
     def include_in(cls, workflow):
-        return workflow.event.collect_survey_data
+        return (workflow.event.collect_survey_data or
+                workflow.event.forms.filter(form_type=CustomForm.ORDER).exists())
 
     def _is_completed(self):
         if not self.workflow.order:
