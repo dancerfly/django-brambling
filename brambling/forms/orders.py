@@ -14,7 +14,8 @@ from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFa
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import TransferInvite
 from brambling.utils.payment import (dwolla_charge, dwolla_get_sources,
-                                     stripe_prep, stripe_charge)
+                                     stripe_prep, stripe_charge,
+                                     InvalidAmountException)
 
 
 STRIPE_API_ERROR = mark_safe("We're having trouble connecting to the payment "
@@ -426,6 +427,8 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             self.add_error(None, e.message)
         except stripe.error.APIError, e:
             self.add_error(None, STRIPE_API_ERROR)
+        except InvalidAmountException, e:
+            self.add_error(None, e.message)
 
     def save(self):
         if self.cleaned_data.get('save_card'):
@@ -466,6 +469,8 @@ class SavedCardPaymentForm(BasePaymentForm):
             self.add_error(None, e.message)
         except stripe.error.APIError, e:
             self.add_error(None, STRIPE_API_ERROR)
+        except InvalidAmountException, e:
+            self.add_error(None, e.message)
 
     def save(self):
         return self.save_payment(self._charge, self.card)
@@ -488,19 +493,17 @@ class DwollaPaymentForm(BasePaymentForm):
 
     def _post_clean(self):
         if 'dwolla_pin' in self.cleaned_data and 'source' in self.cleaned_data:
-            self._charge = None
-            if self.amount > 0:
-                try:
-                    self._charge = dwolla_charge(
-                        account=self.dwolla_account,
-                        amount=float(self.amount),
-                        order=self.order,
-                        event=self.order.event,
-                        pin=self.cleaned_data['dwolla_pin'],
-                        source=self.cleaned_data['source']
-                    )
-                except (ValueError, DwollaAPIException) as e:
-                    self.add_error(None, getattr(e, 'response', e.message))
+            try:
+                self._charge = dwolla_charge(
+                    account=self.dwolla_account,
+                    amount=float(self.amount),
+                    order=self.order,
+                    event=self.order.event,
+                    pin=self.cleaned_data['dwolla_pin'],
+                    source=self.cleaned_data['source']
+                )
+            except (ValueError, DwollaAPIException) as e:
+                self.add_error(None, getattr(e, 'response', e.message))
 
     def save(self):
         return Transaction.from_dwolla_charge(

@@ -1,6 +1,6 @@
 {% load floppyforms zenaida %}
 
-<form class='margin-trailer-tiny'>
+<form id='discountForm' class='margin-trailer-tiny'>
 	<div class='input-group input-group-lg'>
 		<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
 		<span class='input-group-btn'>
@@ -9,12 +9,12 @@
 	</div>
 </form>
 
-{% if net_balance == 0 %}
-	<form novalidate action="" method="post">
+{% if net_balance <= 0 %}
+	<form novalidate action="" method="post" class='margin-trailer-tiny'>
 		{% csrf_token %}
-		<button type="submit" class="btn btn-primary">Confirm cart purchases</button>
+		<button type="submit" class="btn btn-primary btn-block">Confirm cart purchases</button>
 	</form>
-{% elif net_balance > 0 %}
+{% else %}
 	<div class="panel-group" id="accordion">
 		{% if event.stripe_connected %}
 			{% if choose_card_form and choose_card_form.fields.card.queryset %}

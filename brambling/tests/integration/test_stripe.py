@@ -5,10 +5,31 @@ import stripe
 
 from brambling.models import Event, Transaction
 from brambling.tests.factories import EventFactory, OrderFactory
-from brambling.utils.payment import stripe_prep, stripe_charge, stripe_refund
+from brambling.utils.payment import (stripe_prep, stripe_charge, stripe_refund,
+                                     InvalidAmountException)
 
 
 class StripeTestCase(TestCase):
+
+    def test_charge__negative_amount(self):
+        event = EventFactory(api_type=Event.TEST,
+                             application_fee_percent=Decimal('2.5'))
+        order = OrderFactory(event=event)
+        stripe_prep(Event.TEST)
+        stripe.api_key = event.organization.stripe_test_access_token
+        token = stripe.Token.create(
+            card={
+                "number": '4242424242424242',
+                "exp_month": 12,
+                "exp_year": 2050,
+                "cvc": '123'
+            },
+        )
+
+        with self.assertRaises(InvalidAmountException):
+            stripe_charge(token, amount=Decimal('-9.01'), order=order,
+                          event=event)
+
     def test_charge__no_customer(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))

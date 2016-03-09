@@ -138,59 +138,111 @@ DWOLLA_SOURCES = [
 ]
 
 
-class PaymentFormTestCase(TestCase):
+class OneTimePaymentFormTestCase(TestCase):
+
+    def setUp(self):
+        self.order = OrderFactory()
+        self.event = self.order.event
+        self.person = PersonFactory()
+        self.token = 'FAKE_TOKEN'
+
     @patch('brambling.forms.orders.stripe_charge')
     @patch('brambling.forms.orders.stripe_prep')
-    def test_one_time_payment_form(self, stripe_prep, stripe_charge):
+    def test_successful_charge(self, stripe_prep, stripe_charge):
         stripe_charge.return_value = STRIPE_CHARGE
-        order = OrderFactory()
-        event = order.event
-        person = PersonFactory()
-        token = 'FAKE_TOKEN'
-        form = OneTimePaymentForm(order=order, amount=Decimal('42.15'), data={'token': token}, user=person)
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
+                                  data={'token': self.token}, user=self.person)
         self.assertTrue(form.is_bound)
         self.assertFalse(form.errors)
         stripe_charge.assert_called_once_with(
-            token,
+            self.token,
             amount=Decimal('42.15'),
-            event=event,
-            order=order,
+            event=self.event,
+            order=self.order,
         )
         self.assertEqual(stripe_prep.call_count, 0)
         txn = form.save()
         self.assertIsInstance(txn, Transaction)
-        self.assertEqual(txn.event, event)
+        self.assertEqual(txn.event, self.event)
         self.assertEqual(txn.amount, Decimal('42.15'))
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
+    @patch('brambling.forms.orders.stripe_prep')
+    def test_negative_charge_adds_errors(self, stripe_prep):
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('-1.00'),
+                                  data={'token': self.token}, user=self.person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'],
+                         ["Cannot charge an amount less than zero."])
+
+
+class SavedCardPaymentFormTestCase(TestCase):
+
+    def setUp(self):
+        self.person = PersonFactory(stripe_test_customer_id='FAKE_CUSTOMER_ID')
+        self.order = OrderFactory(person=self.person)
+        self.event = self.order.event
+        self.card = CardFactory(is_saved=True)
+        self.person.cards.add(self.card)
+        self.person.save()
+
     @patch('brambling.forms.orders.stripe_charge')
     @patch('brambling.forms.orders.stripe_prep')
-    def test_saved_card_payment_form(self, stripe_prep, stripe_charge):
+    def test_successful_charge(self, stripe_prep, stripe_charge):
         stripe_charge.return_value = STRIPE_CHARGE
-        person = PersonFactory(stripe_test_customer_id='FAKE_CUSTOMER_ID')
-        order = OrderFactory(person=person)
-        event = order.event
-        card = CardFactory(is_saved=True)
-        person.cards.add(card)
-        person.save()
-        form = SavedCardPaymentForm(order, Decimal('42.15'), data={'card': card.pk})
+        form = SavedCardPaymentForm(self.order, Decimal('42.15'),
+                                    data={'card': self.card.pk})
         self.assertTrue(form.is_bound)
         self.assertFalse(form.errors)
         stripe_charge.assert_called_once_with(
-            card.stripe_card_id,
+            self.card.stripe_card_id,
             amount=Decimal('42.15'),
-            event=event,
-            order=order,
+            event=self.event,
+            order=self.order,
             customer='FAKE_CUSTOMER_ID'
         )
         self.assertEqual(stripe_prep.call_count, 0)
         txn = form.save()
         self.assertIsInstance(txn, Transaction)
-        self.assertEqual(txn.event, event)
+        self.assertEqual(txn.event, self.event)
         self.assertEqual(txn.amount, Decimal('42.15'))
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
+
+    @patch('brambling.forms.orders.stripe_prep')
+    def test_negative_amount_adds_errors(self, stripe_prep):
+        form = SavedCardPaymentForm(self.order, Decimal('-1.00'),
+                                    data={'card': self.card.pk})
+
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'],
+                         ["Cannot charge an amount less than zero."])
+
+
+class DwollaPaymentFormTestCase(TestCase):
+
+    @patch('brambling.forms.orders.dwolla_get_sources')
+    def test_negative_charge_adds_errors(self, dwolla_get_sources):
+        dwolla_get_sources.return_value = DWOLLA_SOURCES
+        order = OrderFactory()
+        event = order.event
+        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
+        event.organization.save()
+        person = PersonFactory()
+        person.dwolla_test_account = DwollaUserAccountFactory()
+        person.save()
+        pin = '1234'
+        source = 'Balance'
+        form = DwollaPaymentForm(order=order, amount=Decimal('-1.00'),
+                                 data={'dwolla_pin': pin, 'source': source},
+                                 user=person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'],
+                         ["Cannot charge an amount less than zero."])
 
     @patch('brambling.forms.orders.dwolla_get_sources')
     @patch('brambling.forms.orders.dwolla_charge')
@@ -246,6 +298,9 @@ class PaymentFormTestCase(TestCase):
         self.assertTrue(form.is_bound)
         self.assertTrue(form.errors)
         self.assertEqual(form.errors['__all__'], [oauth_refresh.return_value['error_description']])
+
+
+class CheckPaymentFormTestCase(TestCase):
 
     def test_check_payment_form(self):
         order = OrderFactory()
