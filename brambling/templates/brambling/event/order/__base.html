@@ -115,6 +115,7 @@
 		$(function(){
 			$('body').on('click', 'a[target]', function(e) {
 				var $this = $(this);
+				if ($this.hasClass('disabled')) return true;
 				var target = $this.attr('target');
 				if (target === '_blank') return true;
 				$this.removeAttr('target');
