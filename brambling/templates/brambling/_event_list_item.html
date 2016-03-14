@@ -55,10 +55,47 @@
 				</a>
 			{% endif %}
 		{% if is_admin %}
-			<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="margin-trailer-half btn btn-default">
-				<i class="fa fa-cog"></i>
-				Manage Event
-			</a>
+			<div class="btn-group">
+				<a class="margin-trailer-half btn btn-default dropdown-toggle tipped" title='Manage Event' type="button" id="manageEvent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-container="body">
+					<i class="fa fa-cog"></i>
+					Manage Event
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu" aria-labelledby="manageEvent">
+					<li>
+						<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Event Summary</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_event_basic' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Basic Information</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_event_permissions' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Team and Permissions</a>
+					</li>
+					<li role="separator" class="divider"></li>
+					<li>
+						<a href="{% url 'brambling_event_registration' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Registration Settings</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Items</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_form_list' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Forms</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_discount_list' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Discounts</a>
+					</li>
+					<li role="separator" class="divider"></li>
+					<li>
+						<a href="{% url 'brambling_event_attendees' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Attendee Data</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_event_orders' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Order Data</a>
+					</li>
+					<li>
+						<a href="{% url 'brambling_event_finances' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Finance Data</a>
+					</li>
+				</ul>
+			</div>
 		{% endif %}
 		{% if event.website_url %}
 			<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
