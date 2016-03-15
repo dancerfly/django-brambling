@@ -19,6 +19,10 @@ webproject_user:
     - gid_from_name: True
 
 # See https://docs.saltstack.com/en/latest/ref/states/all/salt.states.rvm.html
+# If there are any issues, run the following as webproject:
+# $ rvm autolibs read-fail
+# $ rvm requirements
+# $ rvm autolibs enable
 rvm-deps:
   pkg.installed:
     - pkgs:
@@ -31,6 +35,18 @@ rvm-deps:
       - curl
       - git-core
       - subversion
+      - libreadline6-dev
+      - libyaml-dev
+      - libsqlite3-dev
+      - sqlite3
+      - autoconf
+      - libgdbm-dev
+      - libncurses5-dev
+      - automake
+      - libtool
+      - bison
+      - pkg-config
+      - libffi-dev
 
 gpg-import-D39DC0E3:
     cmd.run:
