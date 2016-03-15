@@ -37,7 +37,7 @@ gpg-import-D39DC0E3:
         - user: webproject
         - require:
             - user: webproject_user
-        - name: gpg --keyserver hkp://keys.gnupg.net:80 --recv-keys D39DC0E3
+        - name: gpg --keyserver hkp://keys.gnupg.net:80 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
         - unless: gpg --fingerprint |fgrep 'Key fingerprint = 409B 6B17 96C2 7546 2A17  0311 3804 BB82 D39D C0E3'
 
 ruby-2.2.3:
