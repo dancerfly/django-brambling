@@ -184,7 +184,7 @@ class EventAdmin(admin.ModelAdmin):
         }),
         ("Permissions", {
             'classes': ('grp-collapse grp-closed',),
-            'fields': ("organization", "additional_editors"),
+            'fields': ("organization",),
         }),
         ("Dancerfly Internal", {
             'classes': ('grp-collapse grp-closed',),
