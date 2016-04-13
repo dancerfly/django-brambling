@@ -194,6 +194,18 @@ ssl_key:
       - pkg: nginx
       - file: crt_dir
 
+dhparam:
+  file.managed:
+    - name: {{ pillar['files']['crt_dir'] }}dhparam.pem
+    - contents: |-
+        {{ pillar['deploy']['dhparam']|indent(8) }}
+    - mode: 400
+    - user: nginx
+    - group: nginx
+    - require:
+      - pkg: nginx
+      - file: crt_dir
+
 eventlet:
   pip.installed:
     - bin_env: {{ pillar['files']['env_dir'] }}
