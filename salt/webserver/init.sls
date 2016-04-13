@@ -145,6 +145,7 @@ nginx:
       - file: nginx_conf
       - file: ssl_crt
       - file: ssl_key
+      - file: dhparam
       - file: gandi_plus_intermediates_crt
     - require:
         - pkg: nginx
