@@ -1,8 +1,10 @@
 import os
+from functools import wraps
 
 from fabric.api import task, run, sudo, cd, env
 from fabric.contrib.files import exists
 from fabric.operations import local, put, require
+from fabric.utils import abort
 
 
 env.use_ssh_config = True
@@ -21,6 +23,22 @@ TIERS = {
         'hosts': ['root@162.243.226.226'],
     },
 }
+
+def forbid_in_tiers(*forbidden_tiers):
+
+    def func_wrapper(func):
+        @wraps(func)
+        def returned_wrapper(*args, **kwargs):
+            if env.get('tier') in forbidden_tiers:
+                msg = ('This command cannot run on the {} tier.'.format(env.tier))
+                msg += "\n\nTry one of these tiers instead: {}".format(
+                    ', '.join(set(TIERS.keys()) - set(forbidden_tiers))
+                )
+                abort(msg)
+            else:
+                return func(*args, **kwargs)
+        return returned_wrapper
+    return func_wrapper
 
 
 def tier_set(tier_name='staging'):
