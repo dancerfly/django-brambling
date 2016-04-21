@@ -145,6 +145,8 @@ nginx:
       - file: nginx_conf
       - file: ssl_crt
       - file: ssl_key
+      - file: dhparam
+      - file: gandi_plus_intermediates_crt
     - require:
         - pkg: nginx
 
@@ -174,7 +176,20 @@ ssl_crt:
   file.managed:
     - name: {{ pillar['files']['crt_dir'] }}dancerfly.crt
     - contents: |-
-        {{ pillar['deploy']['ssl_crt']|indent(8) }}
+        {{ pillar['deploy']['dancerfly_ssl_crt']|indent(8) }}
+        {{ pillar['deploy']['gandi_plus_intermediates_ssl_crt']|indent(8) }}
+    - mode: 400
+    - user: nginx
+    - group: nginx
+    - require:
+      - pkg: nginx
+      - file: crt_dir
+
+gandi_plus_intermediates_crt:
+  file.managed:
+    - name: {{ pillar['files']['crt_dir'] }}gandi_plus_intermediates.crt
+    - contents: |-
+        {{ pillar['deploy']['gandi_plus_intermediates_ssl_crt']|indent(8) }}
     - mode: 400
     - user: nginx
     - group: nginx
@@ -187,6 +202,18 @@ ssl_key:
     - name: {{ pillar['files']['crt_dir'] }}dancerfly.key
     - contents: |-
         {{ pillar['deploy']['ssl_key']|indent(8) }}
+    - mode: 400
+    - user: nginx
+    - group: nginx
+    - require:
+      - pkg: nginx
+      - file: crt_dir
+
+dhparam:
+  file.managed:
+    - name: {{ pillar['files']['crt_dir'] }}dhparam.pem
+    - contents: |-
+        {{ pillar['deploy']['dhparam']|indent(8) }}
     - mode: 400
     - user: nginx
     - group: nginx
