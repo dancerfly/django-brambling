@@ -925,6 +925,7 @@ def discount_form(request, *args, **kwargs):
         'discount_form': form,
         'cart': None,
         'event_admin_nav': get_event_admin_nav(event, request),
+        'event_permissions': request.user.get_all_permissions(event),
     }
     return render(request, 'brambling/event/organizer/discount_form.html', context)
 
