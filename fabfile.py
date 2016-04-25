@@ -24,8 +24,8 @@ TIERS = {
     },
 }
 
-def forbid_in_tiers(*forbidden_tiers):
 
+def forbid_in_tiers(*forbidden_tiers):
     def func_wrapper(func):
         @wraps(func)
         def returned_wrapper(*args, **kwargs):
