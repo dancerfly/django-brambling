@@ -50,6 +50,7 @@
 			{% form form using %}
 				{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
+				{% if event.collect_survey_data %}
 				{% formrow form.heard_through %}
 
 				<div id="heardOtherField" class="collapse{% if form.instance.heard_through %} in{% endif %}">
@@ -67,6 +68,7 @@
 					</div>
 					{% formrow form.send_flyers_country %}
 				</div>
+				{% endif %}
 
 				{% for field in form.custom_fields %}
 					{% formrow field %}
