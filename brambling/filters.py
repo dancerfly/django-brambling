@@ -119,6 +119,10 @@ class OrderFilterSet(FloppyFilterSet):
         model = Order
         fields = ['providing_housing', 'send_flyers']
         form = forms.Form
-        order_by = ['code', '-code', '-completed_date']
+        order_by = [
+            ('-completed_date', 'Most recent'),
+            ('code', 'Code'),
+            ('-code', 'Code (descending)'),
+        ]
 # Workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145
 forms.MultipleChoiceField.hidden_widget = forms.MultipleHiddenInput
