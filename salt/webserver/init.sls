@@ -19,6 +19,10 @@ webproject_user:
     - gid_from_name: True
 
 # See https://docs.saltstack.com/en/latest/ref/states/all/salt.states.rvm.html
+# If there are any issues, run the following as webproject:
+# $ rvm autolibs read-fail
+# $ rvm requirements
+# $ rvm autolibs enable
 rvm-deps:
   pkg.installed:
     - pkgs:
@@ -31,13 +35,25 @@ rvm-deps:
       - curl
       - git-core
       - subversion
+      - libreadline6-dev
+      - libyaml-dev
+      - libsqlite3-dev
+      - sqlite3
+      - autoconf
+      - libgdbm-dev
+      - libncurses5-dev
+      - automake
+      - libtool
+      - bison
+      - pkg-config
+      - libffi-dev
 
 gpg-import-D39DC0E3:
     cmd.run:
         - user: webproject
         - require:
             - user: webproject_user
-        - name: gpg --keyserver hkp://keys.gnupg.net:80 --recv-keys D39DC0E3
+        - name: gpg --keyserver hkp://keys.gnupg.net:80 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
         - unless: gpg --fingerprint |fgrep 'Key fingerprint = 409B 6B17 96C2 7546 2A17  0311 3804 BB82 D39D C0E3'
 
 ruby-2.2.3:
@@ -129,6 +145,8 @@ nginx:
       - file: nginx_conf
       - file: ssl_crt
       - file: ssl_key
+      - file: dhparam
+      - file: gandi_plus_intermediates_crt
     - require:
         - pkg: nginx
 
@@ -158,7 +176,20 @@ ssl_crt:
   file.managed:
     - name: {{ pillar['files']['crt_dir'] }}dancerfly.crt
     - contents: |-
-        {{ pillar['deploy']['ssl_crt']|indent(8) }}
+        {{ pillar['deploy']['dancerfly_ssl_crt']|indent(8) }}
+        {{ pillar['deploy']['gandi_plus_intermediates_ssl_crt']|indent(8) }}
+    - mode: 400
+    - user: nginx
+    - group: nginx
+    - require:
+      - pkg: nginx
+      - file: crt_dir
+
+gandi_plus_intermediates_crt:
+  file.managed:
+    - name: {{ pillar['files']['crt_dir'] }}gandi_plus_intermediates.crt
+    - contents: |-
+        {{ pillar['deploy']['gandi_plus_intermediates_ssl_crt']|indent(8) }}
     - mode: 400
     - user: nginx
     - group: nginx
@@ -171,6 +202,18 @@ ssl_key:
     - name: {{ pillar['files']['crt_dir'] }}dancerfly.key
     - contents: |-
         {{ pillar['deploy']['ssl_key']|indent(8) }}
+    - mode: 400
+    - user: nginx
+    - group: nginx
+    - require:
+      - pkg: nginx
+      - file: crt_dir
+
+dhparam:
+  file.managed:
+    - name: {{ pillar['files']['crt_dir'] }}dhparam.pem
+    - contents: |-
+        {{ pillar['deploy']['dhparam']|indent(8) }}
     - mode: 400
     - user: nginx
     - group: nginx

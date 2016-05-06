@@ -696,7 +696,7 @@ class Discount(models.Model):
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
                                      default=FLAT)
-    amount = models.DecimalField(max_digits=5, decimal_places=2,
+    amount = models.DecimalField(max_digits=6, decimal_places=2,
                                  validators=[MinValueValidator(0)],
                                  verbose_name="discount value")
     event = models.ForeignKey(Event)
@@ -1234,9 +1234,9 @@ class Transaction(models.Model):
         (DWOLLA, REFUND, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
         (DWOLLA, REFUND, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
     }
-    amount = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    application_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    processing_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    application_fee = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    processing_fee = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     timestamp = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(Person, blank=True, null=True)
     method = models.CharField(max_length=7, choices=METHOD_CHOICES)
@@ -1496,7 +1496,7 @@ class BoughtItemDiscount(models.Model):
     discount_type = models.CharField(max_length=7,
                                      choices=TYPE_CHOICES,
                                      default=FLAT)
-    amount = models.DecimalField(max_digits=5, decimal_places=2,
+    amount = models.DecimalField(max_digits=6, decimal_places=2,
                                  validators=[MinValueValidator(0)])
 
     class Meta:
@@ -1790,8 +1790,7 @@ class CustomForm(models.Model):
         (HOUSING, _('Housing')),
         (HOSTING, _('Hosting')),
     )
-    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES,
-                                 help_text='Order forms will only display if "collect survey data" is checked in your event settings')
+    form_type = models.CharField(max_length=8, choices=FORM_TYPE_CHOICES)
     event = models.ForeignKey(Event, related_name="forms")
     # TODO: Add fk/m2m to BoughtItem to limit people the form is
     # displayed to.
