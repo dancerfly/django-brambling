@@ -8,6 +8,7 @@
 	{{ block.super }}
 
 	<script type="text/javascript" src="{% static 'zenaida/js/bootstrap/tab.js' %}"></script>
+	<script type="text/javascript" src="{% static 'brambling/brambling.refundform.js' %}"></script>
 	<script>
 		$(function() {
 			$('[data-toggle=tab]').click(function (e) {
@@ -56,6 +57,9 @@
 				<div class='col-sm-6'>
 					{% for txn, txn_dict in transactions.iteritems %}
 						{% include "brambling/event/organizer/_transaction_receipt.html" %}
+					{% endfor %}
+					{% for form in transaction_forms %}
+						{% include "brambling/event/organizer/_transaction_refund_form.html" %}
 					{% endfor %}
 				</div>
 				<div class='col-sm-6'>

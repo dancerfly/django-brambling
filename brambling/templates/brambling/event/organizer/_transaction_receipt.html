@@ -31,31 +31,16 @@
 	</div>
 
 	{% if txn.transaction_type == txn.PURCHASE and 'edit' in event_permissions %}
-		{% if txn.can_refund %}
+		{% if txn.get_refundable_amount > 0 %}
 			<a class='btn btn-default margin-trailer-tiny' data-toggle="modal" data-target="#refund-{{ txn.pk }}"><i class='fa fa-fw fa-undo'></i> Refund</a>
-
-			<div class="modal fade" id="refund-{{ txn.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ txn.pk }}" aria-hidden="true">
-				<div class="modal-dialog modal-sm">
-					<div class="modal-content">
-						<div class="modal-body">
-							<form action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=txn.pk %}' method='post' class='form-inline'>
-								{% csrf_token %}
-								<h4 id="Label{{ txn.pk }}">Are you sure you want to refund {{ txn.amount|format_money:event.currency }} and all related purchases?</h4>
-								{% if txn.has_dwolla_payments %}
-									<input type="text" maxlength="4" placeholder="Dwolla PIN" class="form-control" name="dwolla_pin" required autocomplete="off">
-								{% endif %}
-								<button type='submit' class='btn btn-success btn-block'>Yes, refund</button>
-								<button type="button" class="btn btn-danger btn-block" data-dismiss="modal">No</button>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
 		{% else %}
 			<a href='javascript://' class='btn btn-default disabled margin-trailer-tiny'><i class='fa fa-fw fa-ban'></i> Refunded</a>
 		{% endif %}
 	{% endif %}
 	{% if txn.transaction_type == txn.PURCHASE %}
 		<a class='btn btn-success' href="{% url 'brambling_event_send_receipt' event_slug=event.slug organization_slug=event.organization.slug payment_pk=txn.pk %}"><i class='fa fa-paper-plane'></i> Send receipt</a>
+	{% endif %}
+
+	{% if txn.transaction_type == txn.PURCHASE and 'edit' in event_permissions %}
 	{% endif %}
 {% endblock %}

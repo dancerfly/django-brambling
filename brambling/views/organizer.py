@@ -33,7 +33,8 @@ from brambling.forms.organizer import (ItemForm, ItemOptionFormSet,
                                        CustomFormFieldFormSet, OrderNotesForm,
                                        OrganizationPaymentForm, AttendeeNotesForm,
                                        EventCreateForm, EventBasicForm,
-                                       EventDesignForm, EventRegistrationForm)
+                                       EventDesignForm, EventRegistrationForm,
+                                       TransactionRefundForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
@@ -1249,10 +1250,12 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
+        self.transaction_forms = [TransactionRefundForm(t)
+                             for t in self.order.transactions.all()]
         if show_payment_form:
-            forms = [self.payment_form, self.notes_form]
+            forms = [self.payment_form, self.notes_form, self.transaction_forms]
         else:
-            forms = [self.notes_form]
+            forms = [self.notes_form, self.transaction_forms]
         return forms + self.attendee_forms
 
     def get_context_data(self, **kwargs):
@@ -1266,6 +1269,7 @@ class OrderDetailView(DetailView):
         context.update({
             'payment_form': self.payment_form,
             'notes_form': self.notes_form,
+            'transaction_forms': self.transaction_forms,
             'order': self.order,
             'event': self.event,
             'event_permissions': self.request.user.get_all_permissions(self.event),

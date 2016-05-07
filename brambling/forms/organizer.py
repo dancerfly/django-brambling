@@ -8,7 +8,7 @@ from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, CustomForm,
                               CustomFormField, Order, Organization, SavedReport,
                               DwollaAccount, UNAMBIGUOUS_CHARS,
-                              OrganizationMember)
+                              OrganizationMember, BoughtItem)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
 from brambling.utils.payment import LIVE, TEST
@@ -553,3 +553,17 @@ class AttendeeNotesForm(forms.ModelForm):
     class Meta:
         model = Attendee
         fields = ('notes',)
+
+
+class TransactionRefundForm(forms.Form):
+    items = forms.ModelMultipleChoiceField(queryset=BoughtItem.objects.none(),
+                                           required=False,
+                                           widget=forms.CheckboxSelectMultiple)
+    amount = forms.DecimalField(required=False, max_digits=9, decimal_places=2,
+                                localize=False)
+
+    def __init__(self, transaction, *args, **kwargs):
+        super(TransactionRefundForm, self).__init__(*args, **kwargs)
+        self.transaction = transaction
+        self.fields['amount'].max_value = self.transaction.get_refundable_amount()
+        self.fields['items'].queryset = self.transaction.bought_items.all()
