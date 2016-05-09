@@ -13,7 +13,7 @@ from django.http import (Http404, HttpResponseRedirect, JsonResponse,
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.http import is_safe_url
-from django.views.generic import (ListView, CreateView, UpdateView,
+from django.views.generic import (ListView, CreateView, UpdateView, FormView,
                                   TemplateView, DetailView, View, DeleteView)
 
 from floppyforms.__future__.models import modelform_factory
@@ -1183,7 +1183,18 @@ class OrderFilterView(EventTableView):
         )
 
 
-class RefundView(View):
+class RefundView(FormView):
+    form_class = TransactionRefundForm
+    template_name = "brambling/event/organizer/refund_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(RefundView, self).get_context_data(**kwargs)
+        context['event'] = self.event
+        context['order'] = self.transaction.order
+        context['organization'] = self.event.organization
+        context['transaction'] = self.transaction
+        return context
+
     def get_object(self):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
@@ -1191,21 +1202,37 @@ class RefundView(View):
         if not self.request.user.has_perm('edit', self.event):
             raise Http404
         try:
-            return Transaction.objects.get(
+            self.transaction = Transaction.objects.get(
                 event=self.event,
                 order__code=self.kwargs['code'],
                 pk=self.kwargs['pk']
             )
+            return self.transaction
         except Transaction.DoesNotExist:
             raise Http404
 
-    def post(self, request, *args, **kwargs):
-        txn = self.get_object()
+    def get_form_kwargs(self):
+        kwargs = super(RefundView, self).get_form_kwargs()
+        kwargs['transaction'] = self.get_object()
+        return kwargs
+
+    def form_valid(self, form):
+        transaction = self.transaction
+        # Must be an empty queryset if no items to refund.
+        # If transaction.refund receives `None` it will refund all items.
+        bought_items = form.cleaned_data.get('items', BoughtItem.objects.none())
+        if bought_items:
+            bought_items = BoughtItem.objects.filter(pk__in=[x.pk for x in bought_items])
+        refund_data = {
+            'issuer': self.request.user,
+            'dwolla_pin': form.cleaned_data.get('dwolla_pin'),
+            'amount': form.cleaned_data.get('amount'),
+            'bought_items': bought_items
+        }
         try:
-            txn.refund(issuer=request.user,
-                       dwolla_pin=request.POST.get('dwolla_pin'))
+            transaction.refund(**refund_data)
         except Exception as e:
-            messages.error(request, e.message)
+            messages.error(self.request, e.message)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,

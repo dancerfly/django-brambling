@@ -55,12 +55,32 @@
 		<div class="tab-pane{% if active == 'summary' %} active{% endif %}" id="summary">
 			<div class='row'>
 				<div class='col-sm-6'>
+
+					{# Receipts: #}
 					{% for txn, txn_dict in transactions.iteritems %}
 						{% include "brambling/event/organizer/_transaction_receipt.html" %}
 					{% endfor %}
+
+					{# Refund Forms: #}
 					{% for form in transaction_forms %}
-						{% include "brambling/event/organizer/_transaction_refund_form.html" %}
+						{% with txn=form.transaction %}
+							<div class="modal fade text-left" id="refund-{{ txn.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ txn.pk }}" aria-hidden="true">
+								<div class="modal-dialog">
+									<form class='modal-content js-refund-form' data-currency="{{ event.currency }}" action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=txn.pk %}' method='post'>
+										<div class="modal-body">
+											{% csrf_token %}
+											{% include "brambling/event/organizer/_refund_form_inner.html" %}
+										</div>{# /.modal-body #}
+										<div class="modal-footer">
+											<button type='button' class='btn btn-default' data-dismiss='modal'>Cancel</button>
+											<button type='submit' class='btn btn-primary'>Refund</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						{% endwith %}
 					{% endfor %}
+
 				</div>
 				<div class='col-sm-6'>
 					<div class='panel panel-primary'>

@@ -25,6 +25,11 @@
 		this.$el.on('change', 'input[type="checkbox"]:not(:disabled)', _.bind(this.render, this));
 		this.$el.on('click', '.js-custom-amount-trigger, .js-default-amount-trigger', _.bind(this.toggleCustomAmount, this))
 
+		// Update state
+		if (this.$customAmountInput.val() !== "" && this.calculateDefaultAmount() !== parseInt(this.$customAmountInput.val())) {
+			this.state.customAmount = true;
+		}
+
 		this.render();
 	};
 
@@ -33,10 +38,8 @@
 	};
 
 	RefundForm.prototype.render = function () {
-		var checkedRefundItems = this.$checkboxes.filter(":checked").toArray();
-		var priceTotal = _.reduce(checkedRefundItems, function (memo, el) {
-			return memo + parseInt($(el).data('item-price'));
-		}, 0);
+		var checkedRefundItems = this.$checkboxes.filter(":checked");
+		var priceTotal = this.calculateDefaultAmount();
 		var countTotal = checkedRefundItems.length;
 
 		this.$refundAmountText.html(this.formatMoney(priceTotal));
@@ -54,6 +57,14 @@
 			this.$defaultAmountTrigger.addClass('hidden');
 			if (!this.state.customAmount) this.$customAmountInput.val(priceTotal);
 		}
+	};
+
+	RefundForm.prototype.calculateDefaultAmount = function () {
+		var checkedRefundItems = this.$checkboxes.filter(":checked").toArray();
+		var amount = _.reduce(checkedRefundItems, function (memo, el) {
+			return memo + parseInt($(el).data('item-price'));
+		}, 0);
+		return amount;
 	};
 
 	RefundForm.prototype.toggleCustomAmount = function () {

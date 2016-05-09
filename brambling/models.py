@@ -1349,7 +1349,7 @@ class Transaction(models.Model):
         ).aggregate(refunded=Sum('amount'))['refunded']
         # None means there are no refunds, which is relevant
         # for 0-amount transactions.
-        return self.amount if refunded is None else self.amount + refunded > 0
+        return self.amount if refunded is None else self.amount + refunded
 
     def can_refund(self):
         refunded = self.related_transaction_set.filter(
@@ -1392,25 +1392,28 @@ class Transaction(models.Model):
             'event': self.event,
         }
 
-        # May raise an error
-        if self.method == Transaction.STRIPE:
-            refund = stripe_refund(
-                event=self.order.event,
-                order=self.order,
-                payment_id=self.remote_id,
-                amount=amount,
-            )
-            txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
-        elif self.method == Transaction.DWOLLA:
-            refund = dwolla_refund(
-                order=self.order,
-                event=self.order.event,
-                payment_id=self.remote_id,
-                amount=amount,
-                pin=dwolla_pin,
-            )
-            txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
-        else:
+        if amount > 0:
+            # May raise an error
+            if self.method == Transaction.STRIPE:
+                refund = stripe_refund(
+                    event=self.order.event,
+                    order=self.order,
+                    payment_id=self.remote_id,
+                    amount=amount,
+                )
+                txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
+            elif self.method == Transaction.DWOLLA:
+                refund = dwolla_refund(
+                    order=self.order,
+                    event=self.order.event,
+                    payment_id=self.remote_id,
+                    amount=amount,
+                    pin=dwolla_pin,
+                )
+                txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
+
+        # If no payment processor was involved, just make a transaction
+        if amount <= 0 or self.method not in (Transaction.STRIPE, Transaction.DWOLLA):
             txn = Transaction.objects.create(
                 transaction_type=Transaction.REFUND,
                 amount=-1 * amount,
@@ -1422,6 +1425,7 @@ class Transaction(models.Model):
         txn.bought_items = bought_items
         bought_items.update(status=BoughtItem.REFUNDED)
         return txn
+
     refund.alters_data = True
 
 

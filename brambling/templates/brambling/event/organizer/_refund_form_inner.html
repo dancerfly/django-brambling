@@ -1,0 +1,71 @@
+{% load floppyforms zenaida brambling_forms brambling %}
+
+{% with field=form.items bought_items=form.fields.items.queryset.all name=form.items.html_name %}
+
+	{% include "brambling/forms/_top_error_list.html" %}
+
+	{% if bought_items.count > 0 %}
+		<div class="list-group">
+			<div class="list-group">
+				{% if field.errors %}
+					<div class="list-group-item list-group-item-danger">
+						{% for error in field.errors %}
+							{{ error }}
+							{% if not forloop.last %}<br />{% endif %}
+						{% endfor %}
+					</div>
+				{% endif %}
+				{% for item in bought_items %}
+					<div class="list-group-item {% if item.status = 'refunded' %}disabled{% endif %}">
+						<label for="id_refund_{{ item.pk }}" class="row label-block">
+							<div class="col-xs-1 text-center">
+								<input
+									type="checkbox"
+									{% if item.pk|to_string in form.items.value or item.status = 'refunded' %}
+										checked="checked"
+									{% endif %}
+									{% if item.status = 'refunded' %}
+										disabled
+									{% else %}
+										name="{{ name }}"
+									{% endif %}
+									value="{{ item.pk }}"
+									id="id_refund_{{ item.pk }}"
+									data-item-id="{{ item.pk }}"
+									data-item-price="{{ item.price }}"
+								/>
+							</div>
+							<div class="col-xs-6">
+								<strong>{{ item.item_name }}: {{ item.item_option_name }}</strong>
+							</div>
+							<div class="col-xs-4">
+								{{ item.attendee.get_full_name }}
+							</div>
+							<div class="col-xs-1">
+								{{ item.price|format_money:event.currency }}
+							</div>
+						</label>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+
+{% endwith %}
+
+<div class="form-inline">
+	Refund
+	<strong class="js-total-refund-money">{{ txn.get_refundable_amount|format_money:event.currency }}</strong>
+	<span class="js-total-refund-money-custom hidden">
+		{% formrow form.amount using "brambling/forms/rows/no_label_no_errors.html" with append=event.currency %}
+	</span>
+	{% if txn.bought_items.count > 0%}for <strong class="js-total-refund-items">{{ txn.bought_items.count }}</strong> items{% endif %}?
+	This action cannot be undone.<br />
+	{% for error in form.amount.errors %}
+		<div class="text-danger">{{ error }}</div>
+	{% endfor %}
+	<a href="javascript://" class="text-small js-custom-amount-trigger">Change amount</a>
+	<a href="javascript://" class="text-small js-default-amount-trigger hidden">Use default amount</a>
+</div>
+
+{% if form.dwolla_pin %}{{ form.dwolla_pin }}{% endif %}

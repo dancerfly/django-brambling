@@ -1,0 +1,23 @@
+{% extends 'brambling/event/organizer/__narrow.html' %}
+
+{% load static %}
+
+{% block title %}Refund Transaction from Order {{ order.code }} – {{ block.super }}{% endblock %}
+
+{% block main %}
+	{{ block.super }}
+
+	<h2>Refund Transaction from Order {{ order.code }}</h2>
+
+	<form class='js-refund-form' data-currency="{{ event.currency }}" action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=transaction.pk %}' method='post'>
+		{% csrf_token %}
+		{% include "brambling/event/organizer/_refund_form_inner.html" with txn=transaction %}
+		<button type='submit' class='btn btn-primary'>Refund</button>
+		<a class='btn btn-link' href='{% url 'brambling_event_order_detail' organization_slug=event.organization.slug event_slug=event.slug code=order.code %}'>Cancel</button>
+	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ block.super }}
+	<script type="text/javascript" src="{% static 'brambling/brambling.refundform.js' %}"></script>
+{% endblock %}
