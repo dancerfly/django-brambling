@@ -1251,7 +1251,7 @@ class OrderDetailView(DetailView):
                         form.is_bound = True
                         break
         self.transaction_forms = [TransactionRefundForm(t)
-                             for t in self.order.transactions.all()]
+                                  for t in self.order.transactions.all()]
         if show_payment_form:
             forms = [self.payment_form, self.notes_form, self.transaction_forms]
         else:
