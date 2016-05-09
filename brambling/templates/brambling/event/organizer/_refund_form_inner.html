@@ -5,7 +5,7 @@
 	{% include "brambling/forms/_top_error_list.html" %}
 
 	{% if bought_items.count > 0 %}
-		<div class="list-group">
+		<div class="tooltip-wrapper">
 			<div class="list-group">
 				{% if field.errors %}
 					<div class="list-group-item list-group-item-danger">
@@ -16,7 +16,7 @@
 					</div>
 				{% endif %}
 				{% for item in bought_items %}
-					<div class="list-group-item {% if item.status = 'refunded' %}disabled{% endif %}">
+					<div class="list-group-item {% if item.status = 'refunded' %}disabled tipped{% endif %}" {% if item.status = 'refunded' %}title="Refunded" data-placement="left" data-container="body"{% endif %}>
 						<label for="id_refund_{{ item.pk }}" class="row label-block">
 							<div class="col-xs-1 text-center">
 								<input
@@ -48,7 +48,7 @@
 					</div>
 				{% endfor %}
 			</div>
-		</div>
+		</div>{# /.tooltip-wrapper #}
 	{% endif %}
 
 {% endwith %}
