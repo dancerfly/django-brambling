@@ -582,7 +582,6 @@ class TransactionRefundForm(forms.Form):
         items = self.cleaned_data['items']
         return [item for item in items if item.status != BoughtItem.REFUNDED]
 
-
     def clean_amount(self):
         amount = self.cleaned_data['amount']
         refundable_amount = self.transaction.get_refundable_amount()

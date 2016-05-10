@@ -1342,7 +1342,6 @@ class Transaction(models.Model):
     def is_unconfirmed_check(self):
         return self.method == Transaction.CHECK and not self.is_confirmed
 
-    # TODO: This should replace `can_refund`
     def get_refundable_amount(self):
         refunded = self.related_transaction_set.filter(
             transaction_type=Transaction.REFUND
@@ -1350,14 +1349,6 @@ class Transaction(models.Model):
         # None means there are no refunds, which is relevant
         # for 0-amount transactions.
         return self.amount if refunded is None else self.amount + refunded
-
-    def can_refund(self):
-        refunded = self.related_transaction_set.filter(
-            transaction_type=Transaction.REFUND
-        ).aggregate(refunded=Sum('amount'))['refunded']
-        # None means there are no refunds, which is relevant
-        # for 0-amount transactions.
-        return refunded is None or self.amount + refunded > 0
 
     def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
         if amount is None:
