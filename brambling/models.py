@@ -1342,6 +1342,9 @@ class Transaction(models.Model):
     def is_unconfirmed_check(self):
         return self.method == Transaction.CHECK and not self.is_confirmed
 
+    def get_returnable_items(self):
+        return self.bought_items.filter(status=BoughtItem.BOUGHT)
+
     def get_refundable_amount(self):
         refunded = self.related_transaction_set.filter(
             transaction_type=Transaction.REFUND
