@@ -592,3 +592,11 @@ class TransactionRefundForm(forms.Form):
             raise ValidationError(msg)
 
         return amount
+
+    def clean(self):
+        cleaned_data = super(TransactionRefundForm, self).clean()
+        amount = cleaned_data.get('amount')
+        items = cleaned_data.get('items')
+        if amount == 0 and len(items) == 0:
+            msg = "Select items or specify a value to refund."
+            raise ValidationError(msg)
