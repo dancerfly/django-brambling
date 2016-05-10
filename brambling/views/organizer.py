@@ -11,6 +11,7 @@ from django.forms import formset_factory
 from django.http import (Http404, HttpResponseRedirect, JsonResponse,
                          StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, render
+from django.template.defaultfilters import pluralize
 from django.utils import timezone
 from django.utils.http import is_safe_url
 from django.views.generic import (ListView, CreateView, UpdateView, FormView,
@@ -21,6 +22,8 @@ from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 import requests
 import unicodecsv as csv
+
+from zenaida.templatetags.zenaida import format_money
 
 from brambling.forms.invites import (
     BaseInviteFormSet,
@@ -1221,8 +1224,11 @@ class RefundView(FormView):
         # Must be an empty queryset if no items to refund.
         # If transaction.refund receives `None` it will refund all items.
         bought_items = form.cleaned_data.get('items', BoughtItem.objects.none())
-        if bought_items:
+
+        # Compare to None to allow for an empty queryset
+        if bought_items is not None:
             bought_items = BoughtItem.objects.filter(pk__in=[x.pk for x in bought_items])
+
         refund_data = {
             'issuer': self.request.user,
             'dwolla_pin': form.cleaned_data.get('dwolla_pin'),
@@ -1230,9 +1236,25 @@ class RefundView(FormView):
             'bought_items': bought_items
         }
         try:
-            transaction.refund(**refund_data)
+            successful_refund = transaction.refund(**refund_data)
         except Exception as e:
             messages.error(self.request, e.message)
+
+        if successful_refund is not None:
+            refunded_item_count = successful_refund.bought_items.count()
+            refunded_amount = successful_refund.amount
+
+            success_message = "Refunded "
+            if refunded_item_count:
+                success_message += "{0} item{1}".format(
+                        refunded_item_count,
+                        pluralize(refunded_item_count))
+            if refunded_item_count and refunded_amount:
+                success_message += " and "
+            if refunded_amount:
+                success_message += format_money(successful_refund.amount.copy_abs(), successful_refund.order.event.currency)
+            success_message += "."
+            messages.success(self.request, success_message)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
