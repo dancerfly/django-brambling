@@ -66,7 +66,7 @@
 						{% with txn=form.transaction %}
 							<div class="modal fade text-left" id="refund-{{ txn.pk }}" tabindex="-1" role="dialog" aria-labelledby="Label{{ txn.pk }}" aria-hidden="true">
 								<div class="modal-dialog">
-									<form class='modal-content js-refund-form' data-currency="{{ event.currency }}" action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=txn.pk %}' method='post'>
+									<form class='modal-content js-refund-form' data-currency="{{ event.currency }}" data-max-refund="{{ txn.get_refundable_amount }}" action='{% url 'brambling_event_refund' event_slug=event.slug organization_slug=event.organization.slug code=order.code pk=txn.pk %}' method='post'>
 										<div class="modal-body">
 											{% csrf_token %}
 											{% include "brambling/event/organizer/_refund_form_inner.html" %}

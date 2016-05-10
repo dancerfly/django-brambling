@@ -20,10 +20,11 @@
 
 		// Some useful values
 		this.currency = this.$el.data('currency');
+		this.maxAmount = this.$el.data('max-refund');
 
 		// Set listeners
 		this.$el.on('change', 'input[type="checkbox"]:not(:disabled)', _.bind(this.render, this));
-		this.$el.on('click', '.js-custom-amount-trigger, .js-default-amount-trigger', _.bind(this.toggleCustomAmount, this))
+		this.$el.on('click', '.js-custom-amount-trigger, .js-default-amount-trigger', _.bind(this.toggleCustomAmount, this));
 
 		// Update state
 		if (this.$customAmountInput.val() !== "" && this.calculateDefaultAmount() !== parseInt(this.$customAmountInput.val())) {
@@ -64,7 +65,7 @@
 		var amount = _.reduce(checkedRefundItems, function (memo, el) {
 			return memo + parseInt($(el).data('item-price'));
 		}, 0);
-		return amount;
+		return Math.min(amount, this.maxAmount);
 	};
 
 	RefundForm.prototype.toggleCustomAmount = function () {
