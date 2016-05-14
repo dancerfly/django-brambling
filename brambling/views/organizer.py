@@ -1247,8 +1247,8 @@ class RefundView(FormView):
             success_message = "Refunded "
             if refunded_item_count:
                 success_message += "{0} item{1}".format(
-                        refunded_item_count,
-                        pluralize(refunded_item_count))
+                    refunded_item_count,
+                    pluralize(refunded_item_count))
             if refunded_item_count and refunded_amount:
                 success_message += " and "
             if refunded_amount:
