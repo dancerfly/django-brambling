@@ -1361,6 +1361,9 @@ class Transaction(models.Model):
             amount = refundable_amount
         if bought_items is None:
             bought_items = returnable_items
+        # Early return if there is no amount and no items to refund
+        if not amount and not bought_items:
+            return
 
         # Refundable is the amount that hasn't been refunded from total.
         # Amount is how much we're trying to refund. If we know amount is greater
