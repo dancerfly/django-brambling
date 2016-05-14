@@ -1354,28 +1354,18 @@ class Transaction(models.Model):
         return self.amount if refunded is None else self.amount + refunded
 
     def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
+        refundable_amount = self.get_refundable_amount()
+        returnable_items = self.get_returnable_items()
+
         if amount is None:
-            amount = self.amount
+            amount = refundable_amount
         if bought_items is None:
-            bought_items = self.bought_items.filter(status=BoughtItem.BOUGHT)
-
-        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum']
-        if total_refunds is not None:
-            refundable = self.amount + total_refunds
-
-            # If there's no money to refund, just return.
-            # TODO: Long term this should actually be a check of whether
-            # bought_items has length and should apply whether or not
-            # there are already refunds.
-            if refundable == 0:
-                return None
-        else:
-            refundable = self.amount
+            bought_items = returnable_items
 
         # Refundable is the amount that hasn't been refunded from total.
         # Amount is how much we're trying to refund. If we know amount is greater
         # than what's left on the transaction, don't go through with it.
-        if amount > refundable:
+        if amount > refundable_amount:
             raise ValueError("Not enough money available")
 
         refund_kwargs = {
