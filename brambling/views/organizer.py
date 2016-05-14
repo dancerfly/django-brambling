@@ -1277,15 +1277,15 @@ class OrderDetailView(DetailView):
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
         # Restrict payment form to editors.
-        show_payment_form = self.request.user.has_perm('edit', self.event)
+        can_edit_event = self.request.user.has_perm('edit', self.event)
         self.payment_form = None
-        if show_payment_form:
+        if can_edit_event:
             self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.notes_form = OrderNotesForm(instance=self.order)
         self.attendee_forms = [AttendeeNotesForm(instance=attendee)
                                for attendee in self.order.attendees.prefetch_related('bought_items')]
         if self.request.method == 'POST':
-            if show_payment_form and 'is_payment_form' in self.request.POST:
+            if can_edit_event and 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
                                                       user=self.request.user,
                                                       data=self.request.POST)
@@ -1298,12 +1298,12 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
-        self.transaction_forms = [TransactionRefundForm(t)
-                                  for t in self.order.transactions.all()]
-        if show_payment_form:
-            forms = [self.payment_form, self.notes_form, self.transaction_forms]
+        self.transaction_refund_forms = [TransactionRefundForm(t)
+                                         for t in self.order.transactions.all()]
+        if can_edit_event:
+            forms = [self.payment_form, self.notes_form, self.transaction_refund_forms]
         else:
-            forms = [self.notes_form, self.transaction_forms]
+            forms = [self.notes_form]
         return forms + self.attendee_forms
 
     def get_context_data(self, **kwargs):
@@ -1317,7 +1317,7 @@ class OrderDetailView(DetailView):
         context.update({
             'payment_form': self.payment_form,
             'notes_form': self.notes_form,
-            'transaction_forms': self.transaction_forms,
+            'transaction_refund_forms': self.transaction_refund_forms,
             'order': self.order,
             'event': self.event,
             'event_permissions': self.request.user.get_all_permissions(self.event),
