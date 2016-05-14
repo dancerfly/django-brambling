@@ -1,4 +1,4 @@
-{% load floppyforms zenaida brambling_forms brambling %}
+{% load floppyforms zenaida brambling_forms %}
 
 {% with field=form.items bought_items=form.fields.items.queryset.all name=form.items.html_name %}
 
@@ -21,7 +21,7 @@
 							<div class="col-xs-1 text-center">
 								<input
 									type="checkbox"
-									{% if item.pk|to_string in form.items.value or item.status = 'refunded' %}
+									{% if item.pk|stringformat:"s" in form.items.value or item.status = 'refunded' %}
 										checked="checked"
 									{% endif %}
 									{% if item.status = 'refunded' %}
