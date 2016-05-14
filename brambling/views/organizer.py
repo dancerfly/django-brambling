@@ -1239,8 +1239,7 @@ class RefundView(FormView):
             successful_refund = transaction.refund(**refund_data)
         except Exception as e:
             messages.error(self.request, e.message)
-
-        if successful_refund is not None:
+        else:
             refunded_item_count = successful_refund.bought_items.count()
             refunded_amount = successful_refund.amount
 
