@@ -561,12 +561,13 @@ class TransactionRefundForm(forms.Form):
                                            required=False,
                                            widget=forms.CheckboxSelectMultiple)
     amount = forms.DecimalField(required=False, max_digits=9, decimal_places=2,
-                                localize=False)
+                                localize=False, min_value=0)
 
     def __init__(self, transaction, *args, **kwargs):
         super(TransactionRefundForm, self).__init__(*args, **kwargs)
         self.transaction = transaction
         self.fields['amount'].max_value = self.transaction.get_refundable_amount()
+        self.fields['amount'].initial = self.transaction.get_refundable_amount()
         self.fields['items'].queryset = self.transaction.bought_items.all()
         self.fields['items'].initial = self.fields['items'].queryset
         if self.transaction.method == Transaction.DWOLLA:

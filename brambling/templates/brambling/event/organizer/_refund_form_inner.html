@@ -21,7 +21,8 @@
 							<div class="col-xs-1 text-center">
 								<input
 									type="checkbox"
-									{% if item.pk|stringformat:"s" in form.items.value or item.status = 'refunded' %}
+									{# form.items.value might be list of strings or a list of integers #}
+									{% if item.pk|stringformat:"s" in form.items.value or item.pk in form.items.value or item.status = 'refunded' %}
 										checked="checked"
 									{% endif %}
 									{% if item.status = 'refunded' %}
