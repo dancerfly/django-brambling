@@ -62,11 +62,11 @@
 	</span>
 	{% if txn.bought_items.count > 0%}for <strong class="js-total-refund-items">{{ txn.bought_items.count }}</strong> items{% endif %}?
 	This action cannot be undone.<br />
+	<a href="javascript://" class="text-small js-custom-amount-trigger">Change amount</a>
+	<a href="javascript://" class="text-small js-default-amount-trigger hidden">Use default amount</a>
 	{% for error in form.amount.errors %}
 		<div class="text-danger">{{ error }}</div>
 	{% endfor %}
-	<a href="javascript://" class="text-small js-custom-amount-trigger">Change amount</a>
-	<a href="javascript://" class="text-small js-default-amount-trigger hidden">Use default amount</a>
 </div>
 
 {% if form.dwolla_pin %}{{ form.dwolla_pin }}{% endif %}
