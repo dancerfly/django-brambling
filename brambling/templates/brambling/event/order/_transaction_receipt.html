@@ -16,15 +16,18 @@
 	</div>
 	<ul class='list-group'>
 		{% for item in txn_dict.items %}
-			<li class='list-group-item'>
+			<li class='list-group-item {% if item.status = 'refunded' and txn.transaction_type = 'purchase' %}disabled{% endif %}'>
+				{% if item.status = 'refunded' and txn.transaction_type = 'purchase' %}
+					<span class="label label-default">Returned</span>
+				{% endif %}
 				{{ item.item_option_name }} ({{ item.item_name }})
 				<span class='pull-right'>
 					{% with amount=item.price|format_money:event.currency %}
-					{% if txn and txn.transaction_type == txn.REFUND %}
-						({{ amount }})
-					{% else %}
-						{{ amount }}
-					{% endif %}
+						{% if txn and txn.transaction_type == txn.REFUND %}
+							({{ amount }})
+						{% else %}
+							{{ amount }}
+						{% endif %}
 					{% endwith %}
 				</span>
 			</li>
@@ -66,36 +69,43 @@
 		<div class='panel-footer'>
 			<div class='row'>
 				<div class='col-xs-6'>
-					<h4>
+					<strong>
 						{% if txn.card %}
 							<i class='fa fa-fw fa-{{ txn.card.get_icon }}'></i>
 							{{ txn.card.brand }}
-							&bull;&bull;&bull;&bull;{{ txn.card.last4 }}
+							&bull;&bull;&bull;&bull;{{ txn.card.last4 }}:
 						{% else %}
-							{{ txn.get_method_display }}
+							{{ txn.get_method_display }}:
 						{% endif %}
-					</h4>
-					<p>
-						{% with amount=txn.amount|absolute_value|format_money:event.currency %}
-							{% if txn.amount > 0 %}
-								{{ amount }}
-							{% else %}
-								({{ amount }})
-							{% endif %}
-						{% endwith %}
-					</p>
+					</strong>
+					{% with amount=txn.amount|absolute_value|format_money:event.currency %}
+						{% if txn.amount > 0 %}
+							{{ amount }}
+						{% else %}
+							({{ amount }})
+						{% endif %}
+					{% endwith %}
+					{% if txn.get_refundable_amount != txn.amount %}
+						<br /><strong>Balance:</strong> {{ txn.get_refundable_amount|format_money:event.currency }}
+					{% endif %}
 				</div>
 				<div class='col-xs-6'>
-					<div class='pull-right text-right'>
+					<div class='pull-right'>
 						{% block actions %}
 							{% if txn.is_confirmed %}
-								<p class='alert alert-success pull-right'>
-									<i class='fa fa-check'></i> Confirmed
-								</p>
+								<span class='label label-success pull-right text-medium'>
+									<i class="fa fa-check-circle"></i>
+									<span class="text-medium text-baseline-middle">
+										Confirmed
+									</span>
+								</span>
 							{% else %}
-								<p class='alert alert-warning pull-right'>
-									<i class='fa fa-warning'></i> Pending
-								</p>
+								<span class='label label-warning pull-right text-medium'>
+									<i class="fa fa-warning"></i>
+									<span class="text-medium text-baseline-middle">
+										Pending
+									</span>
+								</span>
 							{% endif %}
 						{% endblock %}
 					</div>

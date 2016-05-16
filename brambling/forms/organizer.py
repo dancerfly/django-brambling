@@ -8,13 +8,14 @@ from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               ItemImage, Transaction, CustomForm,
                               CustomFormField, Order, Organization, SavedReport,
                               DwollaAccount, UNAMBIGUOUS_CHARS,
-                              OrganizationMember)
+                              OrganizationMember, BoughtItem)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
 from brambling.utils.payment import LIVE, TEST
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
+from zenaida.templatetags.zenaida import format_money
 
 
 class OrganizationProfileForm(forms.ModelForm):
@@ -553,3 +554,49 @@ class AttendeeNotesForm(forms.ModelForm):
     class Meta:
         model = Attendee
         fields = ('notes',)
+
+
+class TransactionRefundForm(forms.Form):
+    items = forms.ModelMultipleChoiceField(queryset=BoughtItem.objects.none(),
+                                           required=False,
+                                           widget=forms.CheckboxSelectMultiple)
+    amount = forms.DecimalField(required=False, max_digits=9, decimal_places=2,
+                                localize=False, min_value=0)
+
+    def __init__(self, transaction, *args, **kwargs):
+        super(TransactionRefundForm, self).__init__(*args, **kwargs)
+        self.transaction = transaction
+        self.fields['amount'].max_value = self.transaction.get_refundable_amount()
+        self.fields['amount'].initial = self.transaction.get_refundable_amount()
+        self.fields['items'].queryset = self.transaction.bought_items.all()
+        self.fields['items'].initial = self.fields['items'].queryset
+        if self.transaction.method == Transaction.DWOLLA:
+            self.fields['dwolla_pin'] = forms.RegexField(min_length=4, max_length=4, regex="\d+")
+
+    def clean_items(self):
+        """
+        Check that items being refunded are not already refunded. If they are,
+        ignore them.
+
+        """
+
+        items = self.cleaned_data['items']
+        return [item for item in items if item.status != BoughtItem.REFUNDED]
+
+    def clean_amount(self):
+        amount = self.cleaned_data['amount']
+        refundable_amount = self.transaction.get_refundable_amount()
+
+        if amount > refundable_amount:
+            msg = 'Amount to refund is larger than amount refundable. Only {0} is left on this transaction.'.format(format_money(refundable_amount, self.transaction.event.currency))
+            raise ValidationError(msg)
+
+        return amount
+
+    def clean(self):
+        cleaned_data = super(TransactionRefundForm, self).clean()
+        amount = cleaned_data.get('amount')
+        items = cleaned_data.get('items')
+        if amount == 0 and len(items) == 0:
+            msg = "Select items or specify a value to refund."
+            raise ValidationError(msg)
