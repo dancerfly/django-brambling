@@ -123,6 +123,10 @@ class TransactionRefundTestCase(TestCase):
         with self.assertRaises(ValueError):
             self.txn.refund(bought_items=BoughtItem.objects.filter(pk=alien_item.pk))
 
+    def test_negative_refund_error(self):
+        with self.assertRaises(ValueError):
+            self.txn.refund(amount=Decimal("-20.00"))
+
     @mock.patch('brambling.models.dwolla_refund')
     def test_dwolla_refund(self, dwolla_refund):
         dwolla_refund.return_value = {

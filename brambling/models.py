@@ -1370,6 +1370,8 @@ class Transaction(models.Model):
         # than what's left on the transaction, don't go through with it.
         if amount > refundable_amount:
             raise ValueError("Not enough money available")
+        if amount < 0:
+            raise ValueError("Refund cannot be negative")
 
         # Make sure we're not returning items that aren't part of t
         if any([item not in returnable_items for item in bought_items]):
@@ -1383,7 +1385,7 @@ class Transaction(models.Model):
             'event': self.event,
         }
 
-        if amount > 0:
+        if amount != 0:
             # May raise an error
             if self.method == Transaction.STRIPE:
                 refund = stripe_refund(
@@ -1404,7 +1406,7 @@ class Transaction(models.Model):
                 txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
 
         # If no payment processor was involved, just make a transaction
-        if amount <= 0 or self.method not in (Transaction.STRIPE, Transaction.DWOLLA):
+        if amount == 0 or self.method not in (Transaction.STRIPE, Transaction.DWOLLA):
             txn = Transaction.objects.create(
                 transaction_type=Transaction.REFUND,
                 amount=-1 * amount,
