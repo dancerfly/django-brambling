@@ -569,7 +569,7 @@ class TransactionRefundForm(forms.Form):
         self.fields['amount'].max_value = self.transaction.get_refundable_amount()
         self.fields['items'].queryset = self.transaction.bought_items.all()
         self.fields['items'].initial = self.fields['items'].queryset
-        if self.transaction.method is Transaction.DWOLLA:
+        if self.transaction.method == Transaction.DWOLLA:
             self.fields['dwolla_pin'] = forms.RegexField(min_length=4, max_length=4, regex="\d+")
 
     def clean_items(self):
@@ -587,7 +587,7 @@ class TransactionRefundForm(forms.Form):
         refundable_amount = self.transaction.get_refundable_amount()
 
         if amount > refundable_amount:
-            msg = 'Amount to refund is larger than amount refundable. Only {0} is left on this transaction.'.format(format_money(refundable_amount, self.transaction.order.event.currency))
+            msg = 'Amount to refund is larger than amount refundable. Only {0} is left on this transaction.'.format(format_money(refundable_amount, self.transaction.event.currency))
             raise ValidationError(msg)
 
         return amount
