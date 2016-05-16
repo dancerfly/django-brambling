@@ -1371,6 +1371,10 @@ class Transaction(models.Model):
         if amount > refundable_amount:
             raise ValueError("Not enough money available")
 
+        # Make sure we're not returning items that aren't part of t
+        if any([item not in returnable_items for item in bought_items]):
+            raise ValueError("Encountered item not in tranasction to refund")
+
         refund_kwargs = {
             'order': self.order,
             'related_transaction': self,
