@@ -60,7 +60,7 @@
 	<span class="js-total-refund-money-custom hidden">
 		{% formrow form.amount using "brambling/forms/rows/no_label_no_errors.html" with append=event.currency %}
 	</span>
-	{% if txn.bought_items.count > 0%}for <strong class="js-total-refund-items">{{ txn.bought_items.count }}</strong> items{% endif %}?
+	{% if txn.bought_items.count > 0%}for <strong class="js-total-refund-items">{{ txn.bought_items.count }}</strong> <span class="js-refund-items-noun">items</span>{% endif %}?
 	This action cannot be undone.<br />
 	<a href="javascript://" class="text-small js-custom-amount-trigger">Change amount</a>
 	<a href="javascript://" class="text-small js-default-amount-trigger hidden">Use default amount</a>

@@ -13,6 +13,7 @@
 		this.$checkboxes = this.$el.find('input[type="checkbox"]:not(:disabled)');
 		this.$refundAmountText = this.$el.find('.js-total-refund-money');
 		this.$refundItemCountText = this.$el.find('.js-total-refund-items');
+		this.$refundItemCountNoun = this.$el.find('.js-refund-items-noun');
 		this.$customAmountWrapper = this.$el.find('.js-total-refund-money-custom');
 		this.$customAmountInput = this.$customAmountWrapper.find('input');
 		this.$customAmountTrigger = this.$el.find('.js-custom-amount-trigger');
@@ -45,6 +46,7 @@
 
 		this.$refundAmountText.html(this.formatMoney(priceTotal));
 		this.$refundItemCountText.html(countTotal);
+		this.$refundItemCountNoun.html(countTotal !== 1 ? "items" : "item");
 
 		if (this.state.customAmount) {
 			this.$refundAmountText.addClass('hidden');
