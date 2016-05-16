@@ -1221,13 +1221,11 @@ class RefundView(FormView):
 
     def form_valid(self, form):
         transaction = self.transaction
-        # Must be an empty queryset if no items to refund.
-        # If transaction.refund receives `None` it will refund all items.
-        bought_items = form.cleaned_data.get('items', BoughtItem.objects.none())
 
-        # Compare to None to allow for an empty queryset
-        if bought_items is not None:
-            bought_items = BoughtItem.objects.filter(pk__in=[x.pk for x in bought_items])
+        if 'items' in form.cleaned_data:
+            bought_items = BoughtItem.objects.filter(pk__in=[x.pk for x in form.cleaned_data['items']])
+        else:
+            bought_items = BoughtItem.objects.none()
 
         refund_data = {
             'issuer': self.request.user,
