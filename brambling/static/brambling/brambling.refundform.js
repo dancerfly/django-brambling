@@ -64,6 +64,12 @@
 
 	RefundForm.prototype.calculateDefaultAmount = function () {
 		var checkedRefundItems = this.$checkboxes.filter(":checked").toArray();
+		var totalRefundItems = this.$checkboxes;
+
+		// If there are no items to refund or all items have been refunded
+		// already, default to max amount
+		if (totalRefundItems.length === 0) return this.maxAmount;
+
 		var amount = _.reduce(checkedRefundItems, function (memo, el) {
 			return memo + parseInt($(el).data('item-price'));
 		}, 0);
