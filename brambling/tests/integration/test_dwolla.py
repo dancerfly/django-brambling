@@ -7,6 +7,9 @@ from dwolla import transactions
 import vcr
 
 from brambling.models import Event, Transaction
+from brambling.payment.core import InvalidAmountException
+from brambling.payment.dwolla.api import dwolla_charge, dwolla_refund
+from brambling.payment.dwolla.core import dwolla_prep
 from brambling.tests.factories import (
     EventFactory,
     PersonFactory,
@@ -14,8 +17,6 @@ from brambling.tests.factories import (
     DwollaUserAccountFactory,
     DwollaOrganizationAccountFactory,
 )
-from brambling.utils.payment import (dwolla_prep, dwolla_charge, dwolla_refund,
-                                     InvalidAmountException)
 
 
 VCR_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')

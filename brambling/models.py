@@ -27,12 +27,19 @@ from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
-from brambling.utils.payment import (dwolla_refund, stripe_refund,
-                                     stripe_test_settings_valid,
-                                     stripe_live_settings_valid,
-                                     dwolla_test_settings_valid,
-                                     dwolla_live_settings_valid,
-                                     dwolla_prep, DWOLLA_SCOPES)
+from brambling.payment.core import TEST, LIVE
+from brambling.payment.dwolla.api import dwolla_refund
+from brambling.payment.dwolla.auth import DWOLLA_SCOPES
+from brambling.payment.dwolla.core import (
+    dwolla_test_settings_valid,
+    dwolla_live_settings_valid,
+    dwolla_prep,
+)
+from brambling.payment.stripe.api import stripe_refund
+from brambling.payment.stripe.core import (
+    stripe_test_settings_valid,
+    stripe_live_settings_valid,
+)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -124,8 +131,8 @@ class AbstractNamedModel(models.Model):
 
 
 class DwollaAccount(models.Model):
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, _('Live')),
         (TEST, _('Test')),
@@ -459,8 +466,8 @@ class Event(models.Model):
         (INVITED, _("Only people invited to the event can see the event and register")),
     )
 
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, _('Live')),
         (TEST, _('Test')),
@@ -809,8 +816,8 @@ class CreditCard(models.Model):
         ('Diners Club', 'Diners Club'),
         ('Unknown', 'Unknown'),
     )
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, 'Live'),
         (TEST, 'Test'),
@@ -1206,8 +1213,8 @@ class Transaction(models.Model):
         (NONE, 'No balance change'),
     )
 
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, _('Live')),
         (TEST, _('Test')),

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import mock
 
-from brambling.utils.payment import get_fee
+from brambling.payment.core import get_fee
 
 
 class GetFeeTestCase(TestCase):

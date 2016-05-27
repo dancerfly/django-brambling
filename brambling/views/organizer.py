@@ -58,9 +58,9 @@ from brambling.utils.invites import (
     OrganizationViewInvite,
 )
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
-from brambling.utils.payment import (dwolla_oauth_url,
-                                     stripe_organization_oauth_url,
-                                     LIVE, TEST)
+from brambling.payment.core import LIVE, TEST
+from brambling.payment.dwolla.auth import dwolla_oauth_url
+from brambling.payment.stripe.auth import stripe_organization_oauth_url
 
 
 class OrganizationUpdateView(UpdateView):

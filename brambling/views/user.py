@@ -15,14 +15,19 @@ from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
 from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
                               Event, Transaction, BoughtItem,
                               EventHousing, Attendee)
-from brambling.tokens import token_generators
 from brambling.mail import ConfirmationMailer
-from brambling.utils.payment import (dwolla_oauth_url, LIVE,
-                                     stripe_test_settings_valid,
-                                     stripe_live_settings_valid,
-                                     dwolla_test_settings_valid,
-                                     dwolla_live_settings_valid,
-                                     stripe_prep)
+from brambling.payment.core import LIVE
+from brambling.payment.dwolla.auth import dwolla_oauth_url
+from brambling.payment.dwolla.core import (
+    dwolla_test_settings_valid,
+    dwolla_live_settings_valid,
+)
+from brambling.payment.stripe.core import (
+    stripe_prep,
+    stripe_test_settings_valid,
+    stripe_live_settings_valid,
+)
+from brambling.tokens import token_generators
 
 
 class SignUpView(CreateView):

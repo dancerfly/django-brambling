@@ -9,9 +9,9 @@ from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
                               CustomFormField, Order, Organization, SavedReport,
                               DwollaAccount, UNAMBIGUOUS_CHARS,
                               OrganizationMember, BoughtItem)
+from brambling.payment.core import LIVE, TEST
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
-from brambling.utils.payment import LIVE, TEST
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)

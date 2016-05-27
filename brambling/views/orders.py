@@ -20,8 +20,8 @@ from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
                               Person, SavedAttendee, CustomForm)
+from brambling.payment.dwolla.auth import dwolla_oauth_url
 from brambling.utils.invites import TransferInvite
-from brambling.utils.payment import dwolla_oauth_url
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
                                    WorkflowMixin)

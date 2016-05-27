@@ -4,9 +4,10 @@ from django.test import TestCase
 import stripe
 
 from brambling.models import Event, Transaction
+from brambling.payment.core import InvalidAmountException
+from brambling.payment.stripe.api import stripe_charge, stripe_refund
+from brambling.payment.stripe.core import stripe_prep
 from brambling.tests.factories import EventFactory, OrderFactory
-from brambling.utils.payment import (stripe_prep, stripe_charge, stripe_refund,
-                                     InvalidAmountException)
 
 
 class StripeTestCase(TestCase):

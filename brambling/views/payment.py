@@ -12,11 +12,9 @@ from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 
 from brambling.models import Organization, Order, Transaction, Person, DwollaAccount
-from brambling.utils.payment import (
-    dwolla_prep,
-    LIVE,
-    dwolla_redirect_url,
-)
+from brambling.payment.core import LIVE
+from brambling.payment.dwolla.auth import dwolla_redirect_url
+from brambling.payment.dwolla.core import dwolla_prep
 
 
 class DwollaConnectView(View):

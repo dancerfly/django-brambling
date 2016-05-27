@@ -9,8 +9,8 @@ import floppyforms.__future__ as forms
 
 from brambling.mail import ConfirmationMailer
 from brambling.models import Person, Home, DwollaAccount
+from brambling.payment.core import LIVE
 from brambling.utils.international import clean_postal_code
-from brambling.utils.payment import LIVE
 
 
 class FloppyAuthenticationForm(AuthenticationForm):
