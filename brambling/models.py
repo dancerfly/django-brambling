@@ -6,6 +6,7 @@ from datetime import timedelta
 from decimal import Decimal
 import itertools
 import json
+from string import Template
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
@@ -543,7 +544,11 @@ class Event(models.Model):
         })
 
     def get_liability_waiver(self):
-        return self.liability_waiver.format(event=self.name, organization=self.organization.name)
+        reformatted_template = (unicode(self.liability_waiver)
+                                .replace('{event}', '${event}')
+                                .replace('{organization}', '${organization}'))
+        templ = Template(reformatted_template)
+        return templ.safe_substitute(event=self.name, organization=self.organization.name)
 
     def get_permissions(self, person):
         if person.is_superuser:
