@@ -6,7 +6,6 @@ from datetime import timedelta
 from decimal import Decimal
 import itertools
 import json
-from string import Template
 
 from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin,
                                         BaseUserManager)
