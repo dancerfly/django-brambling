@@ -544,11 +544,9 @@ class Event(models.Model):
         })
 
     def get_liability_waiver(self):
-        reformatted_template = (unicode(self.liability_waiver)
-                                .replace('{event}', '${event}')
-                                .replace('{organization}', '${organization}'))
-        templ = Template(reformatted_template)
-        return templ.safe_substitute(event=self.name, organization=self.organization.name)
+        return (self.liability_waiver
+                .replace('{event}', self.name)
+                .replace('{organization}', self.organization.name))
 
     def get_permissions(self, person):
         if person.is_superuser:
