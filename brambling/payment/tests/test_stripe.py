@@ -3,10 +3,9 @@ from decimal import Decimal
 from django.test import TestCase
 import stripe
 
-from brambling.models import Event, Transaction
+from brambling.models import Transaction
 from brambling.payment.core import (
     InvalidAmountException,
-    LIVE,
     TEST,
 )
 from brambling.payment.stripe.api import (
