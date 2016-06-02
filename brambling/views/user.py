@@ -8,7 +8,6 @@ from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View, ListView, DeleteView)
 import floppyforms.__future__ as forms
-import stripe
 
 from brambling.forms.orders import AddCardForm
 from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
@@ -22,8 +21,11 @@ from brambling.payment.dwolla.core import (
     dwolla_test_settings_valid,
     dwolla_live_settings_valid,
 )
+from brambling.payment.stripe.api import (
+    stripe_get_customer,
+    stripe_delete_card,
+)
 from brambling.payment.stripe.core import (
-    stripe_prep,
     stripe_test_settings_valid,
     stripe_live_settings_valid,
 )
@@ -229,14 +231,9 @@ class CreditCardDeleteView(View):
 
         creditcard.is_saved = False
         creditcard.save()
-        customer = None
-        stripe_prep(creditcard.api_type)
-        if creditcard.api_type == CreditCard.LIVE and creditcard.person.stripe_customer_id:
-            customer = stripe.Customer.retrieve(creditcard.person.stripe_customer_id)
-        if creditcard.api_type == CreditCard.TEST and creditcard.person.stripe_test_customer_id:
-            customer = stripe.Customer.retrieve(creditcard.person.stripe_test_customer_id)
+        customer = stripe_get_customer(creditcard.person, creditcard.api_type, create=False)
         if customer is not None:
-            customer.cards.retrieve(creditcard.stripe_card_id).delete()
+            stripe_delete_card(customer, creditcard.stripe_card_id)
         return self.success()
 
     def post(self, *args, **kwargs):

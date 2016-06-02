@@ -13,6 +13,7 @@ from brambling.payment.stripe.api import (
     stripe_get_customer,
     stripe_add_card,
     stripe_charge,
+    stripe_delete_card,
     stripe_refund,
 )
 from brambling.payment.stripe.core import stripe_prep
@@ -155,6 +156,14 @@ class StripeCustomerTestCase(TestCase):
         user.refresh_from_db()
         self.assertEqual(user.stripe_test_customer_id, customer.id)
 
+    def test_get_customer__no_create(self):
+        user = PersonFactory()
+        self.assertEqual(user.stripe_test_customer_id, '')
+        customer = stripe_get_customer(user, TEST, create=False)
+        self.assertIsNone(customer)
+        user.refresh_from_db()
+        self.assertEqual(user.stripe_test_customer_id, '')
+
     def test_add_card(self):
         stripe_prep(TEST)
         token = stripe.Token.create(
@@ -165,8 +174,11 @@ class StripeCustomerTestCase(TestCase):
                 "cvc": '123'
             },
         )
-        customer = stripe.Customer.create(
-            source=token,
-        )
-        import pdb; pdb.set_trace()
-        data = stripe_add_card(customer, token, TEST)
+        customer = stripe.Customer.create()
+        self.assertEqual(customer.sources.total_count, 0)
+        card = stripe_add_card(customer, token, TEST)
+        customer = stripe.Customer.retrieve(customer.id)
+        self.assertEqual(customer.sources.total_count, 1)
+        stripe_delete_card(customer, card.id)
+        customer = stripe.Customer.retrieve(customer.id)
+        self.assertEqual(customer.sources.total_count, 0)

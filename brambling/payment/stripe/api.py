@@ -4,7 +4,7 @@ from brambling.payment.core import LIVE, InvalidAmountException, get_fee
 from brambling.payment.stripe.core import stripe_prep
 
 
-def stripe_get_customer(user, api_type):
+def stripe_get_customer(user, api_type, create=True):
     stripe_prep(api_type)
 
     if api_type == LIVE:
@@ -14,6 +14,8 @@ def stripe_get_customer(user, api_type):
     customer_id = getattr(user, customer_attr)
 
     if not customer_id:
+        if not create:
+            return None
         customer = stripe.Customer.create(
             email=user.email,
             description=user.get_full_name(),
@@ -30,7 +32,11 @@ def stripe_get_customer(user, api_type):
 
 def stripe_add_card(customer, token, api_type):
     stripe_prep(api_type)
-    return customer.cards.create(source=token)
+    return customer.sources.create(source=token)
+
+
+def stripe_delete_card(customer, card_id):
+    customer.sources.retrieve(card_id).delete()
 
 
 def stripe_charge(source, amount, order, event, customer=None):
