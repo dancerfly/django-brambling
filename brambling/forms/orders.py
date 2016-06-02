@@ -13,8 +13,11 @@ from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFa
                               Order, Event, CustomForm)
 from brambling.payment.core import InvalidAmountException
 from brambling.payment.dwolla.api import dwolla_charge, dwolla_get_sources
-from brambling.payment.stripe.api import stripe_charge
-from brambling.payment.stripe.core import stripe_prep
+from brambling.payment.stripe.api import (
+    stripe_get_customer,
+    stripe_add_card,
+    stripe_charge,
+)
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import TransferInvite
 
@@ -341,29 +344,8 @@ class AddCardForm(forms.Form):
                 self.add_error(None, e.message)
 
     def add_card(self, token):
-        user = self.user
-        stripe_prep(self.api_type)
-
-        if self.api_type == Event.LIVE:
-            customer_attr = 'stripe_customer_id'
-        else:
-            customer_attr = 'stripe_test_customer_id'
-        customer_id = getattr(user, customer_attr)
-
-        if not customer_id:
-            customer = stripe.Customer.create(
-                email=user.email,
-                description=user.get_full_name(),
-                metadata={
-                    'brambling_id': user.id
-                },
-            )
-            setattr(user, customer_attr, customer.id)
-            user.save()
-        else:
-            customer = stripe.Customer.retrieve(customer_id)
-        self.customer = customer
-        return customer.cards.create(card=token)
+        self.customer = stripe_get_customer(self.user, self.api_type)
+        return stripe_add_card(self.customer, token, self.api_type)
 
     def save(self):
         return self.save_card(self.card, self.user)

@@ -4,6 +4,35 @@ from brambling.payment.core import LIVE, InvalidAmountException, get_fee
 from brambling.payment.stripe.core import stripe_prep
 
 
+def stripe_get_customer(user, api_type):
+    stripe_prep(api_type)
+
+    if api_type == LIVE:
+        customer_attr = 'stripe_customer_id'
+    else:
+        customer_attr = 'stripe_test_customer_id'
+    customer_id = getattr(user, customer_attr)
+
+    if not customer_id:
+        customer = stripe.Customer.create(
+            email=user.email,
+            description=user.get_full_name(),
+            metadata={
+                'brambling_id': user.id
+            },
+        )
+        setattr(user, customer_attr, customer.id)
+        user.save()
+    else:
+        customer = stripe.Customer.retrieve(customer_id)
+    return customer
+
+
+def stripe_add_card(customer, token, api_type):
+    stripe_prep(api_type)
+    return customer.cards.create(source=token)
+
+
 def stripe_charge(source, amount, order, event, customer=None):
     if amount < 0:
         raise InvalidAmountException('Cannot charge an amount less than zero.')
@@ -52,7 +81,6 @@ def stripe_refund(order, event, payment_id, amount):
         },
     )
 
-    # Retrieving the application fee data requires the application api token.
     stripe_prep(event.api_type)
     try:
         application_fee = stripe.ApplicationFee.all(charge=charge).data[0]

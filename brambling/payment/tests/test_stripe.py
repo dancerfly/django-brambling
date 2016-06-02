@@ -4,19 +4,32 @@ from django.test import TestCase
 import stripe
 
 from brambling.models import Event, Transaction
-from brambling.payment.core import InvalidAmountException
-from brambling.payment.stripe.api import stripe_charge, stripe_refund
+from brambling.payment.core import (
+    InvalidAmountException,
+    LIVE,
+    TEST,
+)
+from brambling.payment.stripe.api import (
+    stripe_get_customer,
+    stripe_add_card,
+    stripe_charge,
+    stripe_refund,
+)
 from brambling.payment.stripe.core import stripe_prep
-from brambling.tests.factories import EventFactory, OrderFactory
+from brambling.tests.factories import (
+    EventFactory,
+    OrderFactory,
+    PersonFactory,
+)
 
 
-class StripeTestCase(TestCase):
+class StripeChargeTestCase(TestCase):
 
     def test_charge__negative_amount(self):
-        event = EventFactory(api_type=Event.TEST,
+        event = EventFactory(api_type=TEST,
                              application_fee_percent=Decimal('2.5'))
         order = OrderFactory(event=event)
-        stripe_prep(Event.TEST)
+        stripe_prep(TEST)
         stripe.api_key = event.organization.stripe_test_access_token
         token = stripe.Token.create(
             card={
@@ -32,11 +45,11 @@ class StripeTestCase(TestCase):
                           event=event)
 
     def test_charge__no_customer(self):
-        event = EventFactory(api_type=Event.TEST,
+        event = EventFactory(api_type=TEST,
                              application_fee_percent=Decimal('2.5'))
         order = OrderFactory(event=event)
         self.assertTrue(event.stripe_connected())
-        stripe_prep(Event.TEST)
+        stripe_prep(TEST)
         stripe.api_key = event.organization.stripe_test_access_token
 
         token = stripe.Token.create(
@@ -78,11 +91,11 @@ class StripeTestCase(TestCase):
         self.assertEqual(refund_txn.processing_fee, -1 * txn.processing_fee)
 
     def test_charge__customer(self):
-        event = EventFactory(api_type=Event.TEST,
+        event = EventFactory(api_type=TEST,
                              application_fee_percent=Decimal('2.5'))
         order = OrderFactory(event=event)
         self.assertTrue(event.stripe_connected())
-        stripe_prep(Event.TEST)
+        stripe_prep(TEST)
 
         token = stripe.Token.create(
             card={
@@ -126,3 +139,34 @@ class StripeTestCase(TestCase):
         self.assertEqual(refund_txn.amount, -1 * txn.amount)
         self.assertEqual(refund_txn.application_fee, -1 * txn.application_fee)
         self.assertEqual(refund_txn.processing_fee, -1 * txn.processing_fee)
+
+
+class StripeCustomerTestCase(TestCase):
+    def test_get_customer(self):
+        user = PersonFactory()
+        self.assertEqual(user.stripe_test_customer_id, '')
+        customer = stripe_get_customer(user, TEST)
+        user.refresh_from_db()
+        self.assertEqual(user.stripe_test_customer_id, customer.id)
+        self.assertEqual(customer.email, user.email)
+
+        new_customer = stripe_get_customer(user, TEST)
+        self.assertEqual(new_customer.id, customer.id)
+        user.refresh_from_db()
+        self.assertEqual(user.stripe_test_customer_id, customer.id)
+
+    def test_add_card(self):
+        stripe_prep(TEST)
+        token = stripe.Token.create(
+            card={
+                "number": '4242424242424242',
+                "exp_month": 12,
+                "exp_year": 2050,
+                "cvc": '123'
+            },
+        )
+        customer = stripe.Customer.create(
+            source=token,
+        )
+        import pdb; pdb.set_trace()
+        data = stripe_add_card(customer, token, TEST)

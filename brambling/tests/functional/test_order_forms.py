@@ -147,8 +147,7 @@ class OneTimePaymentFormTestCase(TestCase):
         self.token = 'FAKE_TOKEN'
 
     @patch('brambling.forms.orders.stripe_charge')
-    @patch('brambling.forms.orders.stripe_prep')
-    def test_successful_charge(self, stripe_prep, stripe_charge):
+    def test_successful_charge(self, stripe_charge):
         stripe_charge.return_value = STRIPE_CHARGE
         form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
                                   data={'token': self.token}, user=self.person)
@@ -160,7 +159,6 @@ class OneTimePaymentFormTestCase(TestCase):
             event=self.event,
             order=self.order,
         )
-        self.assertEqual(stripe_prep.call_count, 0)
         txn = form.save()
         self.assertIsInstance(txn, Transaction)
         self.assertEqual(txn.event, self.event)
@@ -168,8 +166,7 @@ class OneTimePaymentFormTestCase(TestCase):
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
-    @patch('brambling.forms.orders.stripe_prep')
-    def test_negative_charge_adds_errors(self, stripe_prep):
+    def test_negative_charge_adds_errors(self):
         form = OneTimePaymentForm(order=self.order, amount=Decimal('-1.00'),
                                   data={'token': self.token}, user=self.person)
         self.assertTrue(form.is_bound)
@@ -189,8 +186,7 @@ class SavedCardPaymentFormTestCase(TestCase):
         self.person.save()
 
     @patch('brambling.forms.orders.stripe_charge')
-    @patch('brambling.forms.orders.stripe_prep')
-    def test_successful_charge(self, stripe_prep, stripe_charge):
+    def test_successful_charge(self, stripe_charge):
         stripe_charge.return_value = STRIPE_CHARGE
         form = SavedCardPaymentForm(self.order, Decimal('42.15'),
                                     data={'card': self.card.pk})
@@ -203,7 +199,6 @@ class SavedCardPaymentFormTestCase(TestCase):
             order=self.order,
             customer='FAKE_CUSTOMER_ID'
         )
-        self.assertEqual(stripe_prep.call_count, 0)
         txn = form.save()
         self.assertIsInstance(txn, Transaction)
         self.assertEqual(txn.event, self.event)
@@ -211,8 +206,7 @@ class SavedCardPaymentFormTestCase(TestCase):
         self.assertEqual(txn.application_fee, Decimal('1.05'))
         self.assertEqual(txn.processing_fee, Decimal('1.52'))
 
-    @patch('brambling.forms.orders.stripe_prep')
-    def test_negative_amount_adds_errors(self, stripe_prep):
+    def test_negative_amount_adds_errors(self):
         form = SavedCardPaymentForm(self.order, Decimal('-1.00'),
                                     data={'card': self.card.pk})
 
