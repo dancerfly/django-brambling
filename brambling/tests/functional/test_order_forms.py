@@ -6,49 +6,97 @@ from django.utils import timezone
 from mock import patch
 import stripe
 
-from brambling.forms.orders import (OneTimePaymentForm,
-                                    SavedCardPaymentForm,
-                                    DwollaPaymentForm,
-                                    CheckPaymentForm)
+from brambling.forms.orders import (
+    OneTimePaymentForm,
+    SavedCardPaymentForm,
+    DwollaPaymentForm,
+    CheckPaymentForm,
+)
 from brambling.models import Transaction
-from brambling.tests.factories import OrderFactory, PersonFactory, CardFactory, DwollaUserAccountFactory, DwollaOrganizationAccountFactory
+from brambling.payment.core import TEST
+from brambling.tests.factories import (
+    OrderFactory,
+    PersonFactory,
+    CardFactory,
+    DwollaUserAccountFactory,
+    DwollaOrganizationAccountFactory,
+    EventFactory,
+)
 
 
 STRIPE_CHARGE = stripe.Charge.construct_from({
     "amount": 4215,
     "amount_refunded": 0,
+    "application_fee": "fee_8ZDpRjN3NgSvSM",
     "balance_transaction": {
         "amount": 4215,
-        "available_on": 1423872000,
-        "created": 1423348868,
+        "available_on": 1465430400,
+        "created": 1464910662,
         "currency": "usd",
         "description": None,
         "fee": 257,
         "fee_details": [
+            {
+                "amount": 105,
+                "application": "ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR",
+                "currency": "usd",
+                "description": "Dancerfly application fee",
+                "type": "application_fee"
+            },
             {
                 "amount": 152,
                 "application": None,
                 "currency": "usd",
                 "description": "Stripe processing fees",
                 "type": "stripe_fee"
-            },
-            {
-                "amount": 105,
-                "application": "FAKE",
-                "currency": "usd",
-                "description": "Dancerfly application fee",
-                "type": "application_fee"
             }
         ],
-        "id": "FAKE",
+        "id": "txn_18I5NiKDDJKt8tvufAp4pa0i",
         "net": 3958,
         "object": "balance_transaction",
-        "source": "FAKE",
+        "source": "ch_18I5NiKDDJKt8tvuixpSiCYN",
+        "sourced_transfers": {
+            "data": [],
+            "has_more": False,
+            "object": "list",
+            "total_count": 0,
+            "url": "/v1/transfers?source_transaction=ch_18I5NiKDDJKt8tvuixpSiCYN"
+        },
         "status": "pending",
         "type": "charge"
     },
     "captured": True,
-    "card": {
+    "created": 1464910662,
+    "currency": "usd",
+    "customer": None,
+    "description": None,
+    "destination": None,
+    "dispute": None,
+    "failure_code": None,
+    "failure_message": None,
+    "fraud_details": {},
+    "id": "ch_18I5NiKDDJKt8tvuixpSiCYN",
+    "invoice": None,
+    "livemode": False,
+    "metadata": {
+        "event": "Test event",
+        "order": "000001"
+    },
+    "object": "charge",
+    "order": None,
+    "paid": True,
+    "receipt_email": None,
+    "receipt_number": None,
+    "refunded": False,
+    "refunds": {
+        "data": [],
+        "has_more": False,
+        "object": "list",
+        "total_count": 0,
+        "url": "/v1/charges/ch_18I5NiKDDJKt8tvuixpSiCYN/refunds"
+    },
+    "shipping": None,
+    "source": {
         "address_city": None,
         "address_country": None,
         "address_line1": None,
@@ -64,39 +112,18 @@ STRIPE_CHARGE = stripe.Charge.construct_from({
         "dynamic_last4": None,
         "exp_month": 12,
         "exp_year": 2050,
-        "fingerprint": "FAKE",
+        "fingerprint": "ER8TJFn2KwxGXmA8",
         "funding": "credit",
-        "id": "FAKE",
+        "id": "card_18I5NiKDDJKt8tvuGIPdNdWu",
         "last4": "4242",
+        "metadata": {},
         "name": None,
-        "object": "card"
+        "object": "card",
+        "tokenization_method": None
     },
-    "created": 1423348868,
-    "currency": "usd",
-    "customer": None,
-    "description": None,
-    "dispute": None,
-    "failure_code": None,
-    "failure_message": None,
-    "fraud_details": {},
-    "id": "FAKE",
-    "invoice": None,
-    "livemode": False,
-    "metadata": {},
-    "object": "charge",
-    "paid": True,
-    "receipt_email": None,
-    "receipt_number": None,
-    "refunded": False,
-    "refunds": {
-        "data": [],
-        "has_more": False,
-        "object": "list",
-        "total_count": 0,
-        "url": "/v1/charges/FAKE/refunds"
-    },
-    "shipping": None,
-    "statement_descriptor": None
+    "source_transfer": None,
+    "statement_descriptor": None,
+    "status": "succeeded"
 }, 'FAKE')
 
 
@@ -141,8 +168,8 @@ DWOLLA_SOURCES = [
 class OneTimePaymentFormTestCase(TestCase):
 
     def setUp(self):
-        self.order = OrderFactory()
-        self.event = self.order.event
+        self.event = EventFactory(api_type=TEST)
+        self.order = OrderFactory(event=self.event)
         self.person = PersonFactory()
         self.token = 'FAKE_TOKEN'
 
