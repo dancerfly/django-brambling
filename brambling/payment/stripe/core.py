@@ -5,7 +5,7 @@ from brambling.payment.core import LIVE
 
 
 def stripe_prep(api_type):
-    stripe.api_version = '2015-01-11'
+    stripe.api_version = '2016-03-07'
     if api_type == LIVE:
         stripe.api_key = settings.STRIPE_SECRET_KEY
     else:

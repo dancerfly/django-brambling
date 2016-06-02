@@ -93,11 +93,11 @@ class StripeTestCase(TestCase):
             },
         )
         customer = stripe.Customer.create(
-            card=token,
+            source=token,
         )
-        card = customer.default_card
+        source = customer.default_source
         charge = stripe_charge(
-            card,
+            source,
             amount=42.15,
             event=event,
             order=order,
