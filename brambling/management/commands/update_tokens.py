@@ -2,7 +2,7 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
-from brambling.utils.payment import dwolla_update_tokens
+from brambling.payment.dwolla.auth import dwolla_update_tokens
 
 
 class Command(BaseCommand):

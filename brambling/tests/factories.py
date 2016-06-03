@@ -10,7 +10,7 @@ from brambling.models import (
     CustomForm, CustomFormField, EnvironmentalFactor, HousingRequestNight,
     HousingCategory, EventHousing, Home, HousingSlot, DwollaAccount,
 )
-from brambling.utils.payment import DWOLLA_SCOPES
+from brambling.payment.dwolla.auth import DWOLLA_SCOPES
 
 
 def lazy_setting(setting):
