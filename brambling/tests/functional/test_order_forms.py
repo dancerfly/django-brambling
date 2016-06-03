@@ -7,13 +7,14 @@ from mock import patch
 import stripe
 
 from brambling.forms.orders import (
+    STRIPE_API_ERROR,
     OneTimePaymentForm,
     SavedCardPaymentForm,
     DwollaPaymentForm,
     CheckPaymentForm,
 )
 from brambling.models import Transaction
-from brambling.payment.core import TEST
+from brambling.payment.core import TEST, InvalidAmountException
 from brambling.tests.factories import (
     OrderFactory,
     PersonFactory,
@@ -201,6 +202,46 @@ class OneTimePaymentFormTestCase(TestCase):
         self.assertEqual(form.errors['__all__'],
                          ["Cannot charge an amount less than zero."])
 
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_carderror(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = stripe.error.CardError(error_message, 1, 1)
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
+                                  data={'token': self.token}, user=self.person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [error_message])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_apierror(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = stripe.error.APIError(error_message, 1, 1)
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
+                                  data={'token': self.token}, user=self.person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [STRIPE_API_ERROR])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_invalidamountexception(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = InvalidAmountException(error_message)
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
+                                  data={'token': self.token}, user=self.person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [error_message])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_invalidrequesterror(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = stripe.error.InvalidRequestError(error_message, 1)
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
+                                  data={'token': self.token}, user=self.person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [error_message])
+
 
 class SavedCardPaymentFormTestCase(TestCase):
 
@@ -241,6 +282,46 @@ class SavedCardPaymentFormTestCase(TestCase):
         self.assertTrue(form.errors)
         self.assertEqual(form.errors['__all__'],
                          ["Cannot charge an amount less than zero."])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_carderror(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = stripe.error.CardError(error_message, 1, 1)
+        form = SavedCardPaymentForm(order=self.order, amount=Decimal('42.15'),
+                                    data={'card': self.card.pk})
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [error_message])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_apierror(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = stripe.error.APIError(error_message, 1, 1)
+        form = SavedCardPaymentForm(order=self.order, amount=Decimal('42.15'),
+                                    data={'card': self.card.pk})
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [STRIPE_API_ERROR])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_invalidamountexception(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = InvalidAmountException(error_message)
+        form = SavedCardPaymentForm(order=self.order, amount=Decimal('42.15'),
+                                    data={'card': self.card.pk})
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [error_message])
+
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_invalidrequesterror(self, stripe_charge):
+        error_message = "Hi"
+        stripe_charge.side_effect = stripe.error.InvalidRequestError(error_message, 1)
+        form = SavedCardPaymentForm(order=self.order, amount=Decimal('42.15'),
+                                    data={'card': self.card.pk})
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['__all__'], [error_message])
 
 
 class DwollaPaymentFormTestCase(TestCase):

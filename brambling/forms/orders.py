@@ -410,6 +410,8 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             self.add_error(None, e.message)
         except stripe.error.APIError, e:
             self.add_error(None, STRIPE_API_ERROR)
+        except stripe.error.InvalidRequestError, e:
+            self.add_error(None, e.message)
         except InvalidAmountException, e:
             self.add_error(None, e.message)
 
@@ -452,6 +454,8 @@ class SavedCardPaymentForm(BasePaymentForm):
             self.add_error(None, e.message)
         except stripe.error.APIError, e:
             self.add_error(None, STRIPE_API_ERROR)
+        except stripe.error.InvalidRequestError, e:
+            self.add_error(None, e.message)
         except InvalidAmountException, e:
             self.add_error(None, e.message)
 
