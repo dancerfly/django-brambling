@@ -27,12 +27,19 @@ from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
-from brambling.utils.payment import (dwolla_refund, stripe_refund,
-                                     stripe_test_settings_valid,
-                                     stripe_live_settings_valid,
-                                     dwolla_test_settings_valid,
-                                     dwolla_live_settings_valid,
-                                     dwolla_prep, DWOLLA_SCOPES)
+from brambling.payment.core import TEST, LIVE
+from brambling.payment.dwolla.api import dwolla_refund
+from brambling.payment.dwolla.auth import DWOLLA_SCOPES
+from brambling.payment.dwolla.core import (
+    dwolla_test_settings_valid,
+    dwolla_live_settings_valid,
+    dwolla_prep,
+)
+from brambling.payment.stripe.api import stripe_refund
+from brambling.payment.stripe.core import (
+    stripe_test_settings_valid,
+    stripe_live_settings_valid,
+)
 
 
 DEFAULT_DANCE_STYLES = (
@@ -124,8 +131,8 @@ class AbstractNamedModel(models.Model):
 
 
 class DwollaAccount(models.Model):
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, _('Live')),
         (TEST, _('Test')),
@@ -459,8 +466,8 @@ class Event(models.Model):
         (INVITED, _("Only people invited to the event can see the event and register")),
     )
 
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, _('Live')),
         (TEST, _('Test')),
@@ -543,7 +550,9 @@ class Event(models.Model):
         })
 
     def get_liability_waiver(self):
-        return self.liability_waiver.format(event=self.name, organization=self.organization.name)
+        return (self.liability_waiver
+                .replace('{event}', self.name)
+                .replace('{organization}', self.organization.name))
 
     def get_permissions(self, person):
         if person.is_superuser:
@@ -809,8 +818,8 @@ class CreditCard(models.Model):
         ('Diners Club', 'Diners Club'),
         ('Unknown', 'Unknown'),
     )
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, 'Live'),
         (TEST, 'Test'),
@@ -1206,8 +1215,8 @@ class Transaction(models.Model):
         (NONE, 'No balance change'),
     )
 
-    LIVE = 'live'
-    TEST = 'test'
+    LIVE = LIVE
+    TEST = TEST
     API_CHOICES = (
         (LIVE, _('Live')),
         (TEST, _('Test')),
@@ -1342,38 +1351,40 @@ class Transaction(models.Model):
     def is_unconfirmed_check(self):
         return self.method == Transaction.CHECK and not self.is_confirmed
 
-    def can_refund(self):
+    def get_returnable_items(self):
+        return self.bought_items.filter(status=BoughtItem.BOUGHT)
+
+    def get_refundable_amount(self):
         refunded = self.related_transaction_set.filter(
             transaction_type=Transaction.REFUND
         ).aggregate(refunded=Sum('amount'))['refunded']
         # None means there are no refunds, which is relevant
         # for 0-amount transactions.
-        return refunded is None or self.amount + refunded > 0
+        return self.amount if refunded is None else self.amount + refunded
 
     def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
+        refundable_amount = self.get_refundable_amount()
+        returnable_items = self.get_returnable_items()
+
         if amount is None:
-            amount = self.amount
+            amount = refundable_amount
         if bought_items is None:
-            bought_items = self.bought_items.filter(status=BoughtItem.BOUGHT)
-
-        total_refunds = self.related_transaction_set.aggregate(Sum('amount'))['amount__sum']
-        if total_refunds is not None:
-            refundable = self.amount + total_refunds
-
-            # If there's no money to refund, just return.
-            # TODO: Long term this should actually be a check of whether
-            # bought_items has length and should apply whether or not
-            # there are already refunds.
-            if refundable == 0:
-                return None
-        else:
-            refundable = self.amount
+            bought_items = returnable_items
+        # Early return if there is no amount and no items to refund
+        if not amount and not bought_items:
+            return
 
         # Refundable is the amount that hasn't been refunded from total.
         # Amount is how much we're trying to refund. If we know amount is greater
         # than what's left on the transaction, don't go through with it.
-        if amount > refundable:
+        if amount > refundable_amount:
             raise ValueError("Not enough money available")
+        if amount < 0:
+            raise ValueError("Refund cannot be negative")
+
+        # Make sure we're not returning items that aren't part of t
+        if any([item not in returnable_items for item in bought_items]):
+            raise ValueError("Encountered item not in tranasction to refund")
 
         refund_kwargs = {
             'order': self.order,
@@ -1383,25 +1394,28 @@ class Transaction(models.Model):
             'event': self.event,
         }
 
-        # May raise an error
-        if self.method == Transaction.STRIPE:
-            refund = stripe_refund(
-                event=self.order.event,
-                order=self.order,
-                payment_id=self.remote_id,
-                amount=amount,
-            )
-            txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
-        elif self.method == Transaction.DWOLLA:
-            refund = dwolla_refund(
-                order=self.order,
-                event=self.order.event,
-                payment_id=self.remote_id,
-                amount=amount,
-                pin=dwolla_pin,
-            )
-            txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
-        else:
+        if amount != 0:
+            # May raise an error
+            if self.method == Transaction.STRIPE:
+                refund = stripe_refund(
+                    event=self.order.event,
+                    order=self.order,
+                    payment_id=self.remote_id,
+                    amount=amount,
+                )
+                txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
+            elif self.method == Transaction.DWOLLA:
+                refund = dwolla_refund(
+                    order=self.order,
+                    event=self.order.event,
+                    payment_id=self.remote_id,
+                    amount=amount,
+                    pin=dwolla_pin,
+                )
+                txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
+
+        # If no payment processor was involved, just make a transaction
+        if amount == 0 or self.method not in (Transaction.STRIPE, Transaction.DWOLLA):
             txn = Transaction.objects.create(
                 transaction_type=Transaction.REFUND,
                 amount=-1 * amount,
@@ -1413,6 +1427,7 @@ class Transaction(models.Model):
         txn.bought_items = bought_items
         bought_items.update(status=BoughtItem.REFUNDED)
         return txn
+
     refund.alters_data = True
 
 

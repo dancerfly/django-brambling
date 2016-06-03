@@ -1,7 +1,11 @@
 # encoding: utf-8
+import mock
+
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.middleware import MessageMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.test import TestCase, RequestFactory
 
@@ -9,6 +13,7 @@ from brambling.models import (
     Attendee,
     OrganizationMember,
     Transaction,
+    Person,
 )
 from brambling.tests.factories import (
     EventFactory,
@@ -301,3 +306,101 @@ class OrganizationRemoveMemberViewTestCase(TestCase):
             person=self.owner,
         )
         self.assertEqual(member.role, OrganizationMember.OWNER)
+
+
+class RefundViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.owner = Person.objects.create_user(email="owner@owner.me", password="secret")
+        self.non_owner = Person.objects.create_user(email="nonowner@nonowner.me", password="secret")
+        self.event = EventFactory(collect_housing_data=False)
+        OrganizationMember.objects.create(
+            person=self.owner,
+            organization=self.event.organization,
+            role=OrganizationMember.OWNER,
+        )
+        order = OrderFactory(event=self.event, code='aaaaaaaa')
+        self.transaction = TransactionFactory(event=self.event, order=order)
+        item = ItemFactory(event=self.event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        order.add_to_cart(item_option)
+        order.add_to_cart(item_option)
+        order.mark_cart_paid(self.transaction)
+
+        AttendeeFactory(order=order, bought_items=order.bought_items.all())
+
+    def test_user_no_permissions_get(self):
+        self.client.login(email="nonowner@nonowner.me", password="secret")
+        response = self.client.get(reverse("brambling_event_refund", kwargs={
+            'organization_slug': self.event.organization.slug,
+            'event_slug': self.event.slug,
+            'code': self.transaction.order.code,
+            'pk': self.transaction.pk
+        }))
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_no_permissions_post(self):
+        self.client.login(email="nonowner@nonowner.me", password="secret")
+        response = self.client.post(reverse("brambling_event_refund", kwargs={
+            'organization_slug': self.event.organization.slug,
+            'event_slug': self.event.slug,
+            'code': self.transaction.order.code,
+            'pk': self.transaction.pk
+        }))
+        self.assertEqual(response.status_code, 404)  # not found
+
+    def test_successful_refund_redirect(self):
+        self.transaction.amount = '40'
+        self.transaction.save()
+        self.client.login(email="owner@owner.me", password="secret")
+        data = {
+            'amount': '20'
+        }
+        response = self.client.post(reverse("brambling_event_refund", kwargs={
+            'organization_slug': self.event.organization.slug,
+            'event_slug': self.event.slug,
+            'code': self.transaction.order.code,
+            'pk': self.transaction.pk
+        }), data)
+        self.assertEqual(response.status_code, 302)  # temporary redirect
+        self.assertRedirects(response, reverse("brambling_event_order_detail",
+                                               kwargs={
+                                                   'organization_slug': self.event.organization.slug,
+                                                   'event_slug': self.event.slug,
+                                                   'code': self.transaction.order.code,
+                                               }))
+
+    def test_successful_refund_message(self):
+        self.transaction.amount = '40'
+        self.transaction.save()
+        self.client.login(email="owner@owner.me", password="secret")
+        data = {
+            'amount': '20'
+        }
+        response = self.client.post(reverse("brambling_event_refund", kwargs={
+            'organization_slug': self.event.organization.slug,
+            'event_slug': self.event.slug,
+            'code': self.transaction.order.code,
+            'pk': self.transaction.pk
+        }), data, follow=True)
+        ctx_messages = list(response.context['messages'])
+        self.assertEqual(ctx_messages[0].level, messages.SUCCESS)
+
+    @mock.patch('brambling.models.Transaction.refund')
+    def test_unsuccessful_refund_message(self, refund):
+        refund.side_effect = ValueError('Terrible value.')
+        self.transaction.amount = '40'
+        self.transaction.save()
+        self.client.login(email="owner@owner.me", password="secret")
+        data = {
+            'amount': '20'
+        }
+        response = self.client.post(reverse("brambling_event_refund", kwargs={
+            'organization_slug': self.event.organization.slug,
+            'event_slug': self.event.slug,
+            'code': self.transaction.order.code,
+            'pk': self.transaction.pk
+        }), data, follow=True)
+        ctx_messages = list(response.context['messages'])
+        self.assertEqual(ctx_messages[0].level, messages.ERROR)

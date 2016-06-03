@@ -11,9 +11,10 @@ from django.forms import formset_factory
 from django.http import (Http404, HttpResponseRedirect, JsonResponse,
                          StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, render
+from django.template.defaultfilters import pluralize
 from django.utils import timezone
 from django.utils.http import is_safe_url
-from django.views.generic import (ListView, CreateView, UpdateView,
+from django.views.generic import (ListView, CreateView, UpdateView, FormView,
                                   TemplateView, DetailView, View, DeleteView)
 
 from floppyforms.__future__.models import modelform_factory
@@ -21,6 +22,8 @@ from openpyxl import Workbook
 from openpyxl.writer.excel import save_virtual_workbook
 import requests
 import unicodecsv as csv
+
+from zenaida.templatetags.zenaida import format_money
 
 from brambling.forms.invites import (
     BaseInviteFormSet,
@@ -33,7 +36,8 @@ from brambling.forms.organizer import (ItemForm, ItemOptionFormSet,
                                        CustomFormFieldFormSet, OrderNotesForm,
                                        OrganizationPaymentForm, AttendeeNotesForm,
                                        EventCreateForm, EventBasicForm,
-                                       EventDesignForm, EventRegistrationForm)
+                                       EventDesignForm, EventRegistrationForm,
+                                       TransactionRefundForm)
 from brambling.forms.user import SignUpForm
 from brambling.mail import OrderReceiptMailer
 from brambling.models import (Event, Item, Discount, Transaction,
@@ -54,9 +58,9 @@ from brambling.utils.invites import (
     OrganizationViewInvite,
 )
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
-from brambling.utils.payment import (dwolla_oauth_url,
-                                     stripe_organization_oauth_url,
-                                     LIVE, TEST)
+from brambling.payment.core import LIVE, TEST
+from brambling.payment.dwolla.auth import dwolla_oauth_url
+from brambling.payment.stripe.auth import stripe_organization_oauth_url
 
 
 class OrganizationUpdateView(UpdateView):
@@ -1182,7 +1186,18 @@ class OrderFilterView(EventTableView):
         )
 
 
-class RefundView(View):
+class RefundView(FormView):
+    form_class = TransactionRefundForm
+    template_name = "brambling/event/organizer/refund_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(RefundView, self).get_context_data(**kwargs)
+        context['event'] = self.event
+        context['order'] = self.transaction.order
+        context['organization'] = self.event.organization
+        context['transaction'] = self.transaction
+        return context
+
     def get_object(self):
         self.event = get_object_or_404(Event.objects.select_related('organization'),
                                        slug=self.kwargs['event_slug'],
@@ -1190,21 +1205,53 @@ class RefundView(View):
         if not self.request.user.has_perm('edit', self.event):
             raise Http404
         try:
-            return Transaction.objects.get(
+            self.transaction = Transaction.objects.get(
                 event=self.event,
                 order__code=self.kwargs['code'],
                 pk=self.kwargs['pk']
             )
+            return self.transaction
         except Transaction.DoesNotExist:
             raise Http404
 
-    def post(self, request, *args, **kwargs):
-        txn = self.get_object()
+    def get_form_kwargs(self):
+        kwargs = super(RefundView, self).get_form_kwargs()
+        kwargs['transaction'] = self.get_object()
+        return kwargs
+
+    def form_valid(self, form):
+        transaction = self.transaction
+
+        if 'items' in form.cleaned_data:
+            bought_items = BoughtItem.objects.filter(pk__in=[x.pk for x in form.cleaned_data['items']])
+        else:
+            bought_items = BoughtItem.objects.none()
+
+        refund_data = {
+            'issuer': self.request.user,
+            'dwolla_pin': form.cleaned_data.get('dwolla_pin'),
+            'amount': form.cleaned_data.get('amount'),
+            'bought_items': bought_items
+        }
         try:
-            txn.refund(issuer=request.user,
-                       dwolla_pin=request.POST.get('dwolla_pin'))
+            successful_refund = transaction.refund(**refund_data)
         except Exception as e:
-            messages.error(request, e.message)
+            messages.error(self.request, e.message)
+        else:
+            refunded_item_count = successful_refund.bought_items.count()
+            refunded_amount = successful_refund.amount
+
+            success_message = "Refunded "
+            if refunded_item_count:
+                success_message += "{0} item{1}".format(
+                    refunded_item_count,
+                    pluralize(refunded_item_count))
+            if refunded_item_count and refunded_amount:
+                success_message += " and "
+            if refunded_amount:
+                success_message += format_money(successful_refund.amount.copy_abs(), successful_refund.order.event.currency)
+            success_message += "."
+            messages.success(self.request, success_message)
 
         url = reverse('brambling_event_order_detail',
                       kwargs={'event_slug': self.event.slug,
@@ -1228,15 +1275,15 @@ class OrderDetailView(DetailView):
         self.order = get_object_or_404(Order, event=self.event,
                                        code=self.kwargs['code'])
         # Restrict payment form to editors.
-        show_payment_form = self.request.user.has_perm('edit', self.event)
+        can_edit_event = self.request.user.has_perm('edit', self.event)
         self.payment_form = None
-        if show_payment_form:
+        if can_edit_event:
             self.payment_form = ManualPaymentForm(order=self.order, user=self.request.user)
         self.notes_form = OrderNotesForm(instance=self.order)
         self.attendee_forms = [AttendeeNotesForm(instance=attendee)
                                for attendee in self.order.attendees.prefetch_related('bought_items')]
         if self.request.method == 'POST':
-            if show_payment_form and 'is_payment_form' in self.request.POST:
+            if can_edit_event and 'is_payment_form' in self.request.POST:
                 self.payment_form = ManualPaymentForm(order=self.order,
                                                       user=self.request.user,
                                                       data=self.request.POST)
@@ -1249,8 +1296,10 @@ class OrderDetailView(DetailView):
                         form.data = self.request.POST
                         form.is_bound = True
                         break
-        if show_payment_form:
-            forms = [self.payment_form, self.notes_form]
+        self.transaction_refund_forms = [TransactionRefundForm(t)
+                                         for t in self.order.transactions.all()]
+        if can_edit_event:
+            forms = [self.payment_form, self.notes_form, self.transaction_refund_forms]
         else:
             forms = [self.notes_form]
         return forms + self.attendee_forms
@@ -1266,6 +1315,7 @@ class OrderDetailView(DetailView):
         context.update({
             'payment_form': self.payment_form,
             'notes_form': self.notes_form,
+            'transaction_refund_forms': self.transaction_refund_forms,
             'order': self.order,
             'event': self.event,
             'event_permissions': self.request.user.get_all_permissions(self.event),

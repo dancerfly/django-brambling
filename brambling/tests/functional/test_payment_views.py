@@ -5,11 +5,11 @@ from django.test import TestCase, RequestFactory
 import mock
 
 from brambling.models import Organization
+from brambling.payment.dwolla.auth import dwolla_redirect_url
 from brambling.tests.factories import (
     OrganizationFactory,
     DwollaOrganizationAccountFactory,
 )
-from brambling.utils.payment import dwolla_redirect_url
 from brambling.views.payment import DwollaConnectView
 
 

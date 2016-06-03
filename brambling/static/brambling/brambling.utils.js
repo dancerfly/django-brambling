@@ -3,7 +3,7 @@
 ;(function () {
 	"use strict";
 
-	// Filters to be used in Ractive mustaches:
+	// Filters to be used in Ractive mustaches and elsewhere:
 	brambling.filters = {
 		// Wraps a bit of text in an element:
 		highlight: function (needle, haystack, open_tag, close_tag) {
@@ -25,6 +25,18 @@
 			}
 
 			return returnVal;
+		},
+		formatMoney: function (amount, currency) {
+			var symbol_map = {
+				USD: '$',
+				GBP: '£'
+			};
+			var formattedAmount = amount.toFixed(2);
+
+			if (symbol_map[currency]) {
+				return symbol_map[currency] + formattedAmount;
+			}
+			return '' + formattedAmount + ' ' + currency;
 		}
 	};
 
