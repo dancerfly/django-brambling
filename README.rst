@@ -18,7 +18,7 @@ The installation instructions below assume you have the following software on yo
 
 * `Python 2.7.x <http://www.python.org/download/releases/2.7.6/>`_
 * `Pip <https://pip.readthedocs.org/en/latest/installing.html>`_
-* `virtualenv <http://www.virtualenv.org/en/latest/virtualenv.html#installation>`_ (optional)
+* `virtualenv <https://virtualenv.pypa.io/en/stable/installation/>`_ (optional)
 * `virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/install.html>`_ (optional)
 
 Installation instructions
