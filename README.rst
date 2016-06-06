@@ -17,7 +17,6 @@ Prerequisites
 The installation instructions below assume you have the following software on your machine:
 
 * `Python 2.7.x <http://www.python.org/download/releases/2.7.6/>`_
-* `Ruby <https://www.ruby-lang.org/en/installation/>`_
 * `Pip <https://pip.readthedocs.org/en/latest/installing.html>`_
 * `virtualenv <http://www.virtualenv.org/en/latest/virtualenv.html#installation>`_ (optional)
 * `virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/install.html>`_ (optional)
@@ -44,9 +43,6 @@ Then, to install:
     # Install python requirements. This may take a while.
     pip install -r django-brambling/test_project/requirements.txt
 
-    # Install ruby requirements. This could also take a second.
-    gem install bundler # Ensure you have Bundler. May need sudo.
-    bundle install --gemfile django-brambling/Gemfile # Install Ruby requirements.
 
 Get it running
 --------------
