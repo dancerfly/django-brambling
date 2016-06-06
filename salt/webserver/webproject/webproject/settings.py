@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'django_filters',
     'daguerre',
     'compressor',
+    'bootstrap',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -130,9 +131,6 @@ STATICFILES_FINDERS = (
     # other finders..
     'compressor.finders.CompressorFinder',
 )
-
-_BOOTSTRAP_SASS_SUBPATH = "/gems/bootstrap-sass-3.3.4.1/assets/stylesheets/"
-STATICFILES_DIRS = [x + _BOOTSTRAP_SASS_SUBPATH for x in os.environ.get('GEM_PATH', '').split(":") if os.path.isdir(x + _BOOTSTRAP_SASS_SUBPATH)]
 
 COMPRESS_PRECOMPILERS = (
     ('text/sass', 'django_libsass.SassCompiler'),
