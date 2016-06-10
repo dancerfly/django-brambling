@@ -1,8 +1,9 @@
 import json
 
 from django.core.exceptions import SuspiciousOperation
+from django.core.urlresolvers import reverse
 from django.http import Http404
-from django.test import TestCase, RequestFactory
+from django.test import Client, TestCase, RequestFactory
 import mock
 
 from brambling.models import Transaction
@@ -51,6 +52,11 @@ class DwollaWebhookTestCase(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.view = DwollaWebhookView.as_view()
+
+    def test_should_not_check_csrf_tokens(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        response = csrf_client.post(reverse('brambling_dwolla_webhook'))
+        self.assertNotEqual(response.status_code, 403)
 
     def test_bad_content_type(self):
         request = self.factory.post('/', content_type='text/xml', data='12345')
