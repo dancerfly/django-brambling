@@ -3,6 +3,7 @@ import json
 from django.contrib import messages
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
+from django.db import transaction
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -10,11 +11,14 @@ from django.utils.http import is_safe_url
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
+import stripe
 
-from brambling.models import Organization, Order, Transaction, Person, DwollaAccount
-from brambling.payment.core import LIVE
+from brambling.models import (Organization, Order, Transaction, Person,
+                              DwollaAccount, ProcessedStripeEvent)
+from brambling.payment.core import LIVE, TEST
 from brambling.payment.dwolla.auth import dwolla_redirect_url
 from brambling.payment.dwolla.core import dwolla_prep
+from brambling.payment.stripe.core import stripe_prep
 
 
 class DwollaConnectView(View):
@@ -123,3 +127,89 @@ class DwollaWebhookView(View):
         txn.is_confirmed = True if data['Transaction']['Status'] == 'processed' else False
         txn.save()
         return HttpResponse('')
+
+
+class StripeWebhookView(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(StripeWebhookView, self).dispatch(*args, **kwargs)
+
+    def post(self, request):
+        if request.META['CONTENT_TYPE'] != 'application/json':
+            raise Http404('Incorrect content type')
+
+        try:
+            event_data = json.loads(request.body)
+        except ValueError:
+            raise Http404('Webhook failed to decode request body')
+
+        stripe_event_id = event_data.get('id')
+        if not stripe_event_id:
+            raise Http404('Event does not have an id')
+
+        if event_data.get('livemode', False):
+            stripe_prep(LIVE)
+        else:
+            stripe_prep(TEST)
+
+        try:
+            event = stripe.Event.retrieve(stripe_event_id)
+        except stripe.error.InvalidRequestError:
+            raise Http404('Event not found on stripe')
+
+        if event.type != 'charge.refunded':
+            return HttpResponse(status=200)
+
+        with transaction.atomic():
+            try:
+                (ProcessedStripeEvent.objects
+                 .select_for_update().get(stripe_event_id=stripe_event_id))
+            except ProcessedStripeEvent.DoesNotExist:
+                ProcessedStripeEvent.objects.create(
+                    stripe_event_id=stripe_event_id)
+            else:
+                return HttpResponse(status=200)
+
+        try:
+            refund_id = event['data']['object']['refunds']['data'][0]['id']
+            refund = stripe.Refund.retrieve(refund_id, expand=['balance_transaction'])
+        except KeyError:
+            return HttpResponse(status=200)
+        except stripe.error.InvalidRequestError:
+            raise Http404('Refund not found on stripe')
+
+        try:
+            charge_id = event['data']['object']['id']
+            txn = Transaction.objects.get(remote_id=charge_id)
+        except Transaction.DoesNotExist:
+            return HttpResponse(status=200)
+        except KeyError:
+            raise Http404('Charge id not found')
+
+        try:
+            charge = stripe.Charge.retrieve(charge_id,
+                                            expand=['balance_transaction'])
+        except stripe.error.InvalidRequestError:
+            raise Http404('Charge not found on stripe')
+
+        try:
+            application_fee = stripe.ApplicationFee.all(charge=charge).data[0]
+        except IndexError:
+            raise Http404('Charge has no application fees')
+
+        application_fee_refund = application_fee.refunds.data[0]
+        refund_group = {
+            'refund': refund,
+            'application_fee_refund': application_fee_refund,
+        }
+
+        refund_kwargs = {
+            'order': txn.order,
+            'related_transaction': txn,
+            'api_type': txn.api_type,
+            'event': txn.event,
+        }
+        Transaction.from_stripe_refund(refund_group, **refund_kwargs)
+
+        return HttpResponse(status=200)
