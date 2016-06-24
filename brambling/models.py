@@ -1979,6 +1979,11 @@ class SavedReport(models.Model):
     querystring = models.TextField()
 
 
+class ProcessedStripeEvent(models.Model):
+    stripe_event_id = models.CharField(max_length=35)
+    created = models.DateTimeField(auto_now_add=True)
+
+
 # Update event / org last-modified stats on various changes
 @receiver(signals.post_save, sender=Transaction)
 @receiver(signals.post_save, sender=Item)
