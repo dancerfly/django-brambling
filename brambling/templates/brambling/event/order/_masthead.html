@@ -28,9 +28,14 @@
 			</div>{# /.relative-bottom.relative-left.relative-right #}
 
 			{% if event_admin_nav %}
-				<a href="{% url "brambling_event_summary" event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-primary-light relative-top relative-right">
-					<i class="fa fa-cog"></i> Manage Event
-				</a>
+				<div class="btn-group relative-top relative-right">
+					<a href="{% url "brambling_event_summary" event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-primary-light dropdown-toggle tipped" title='Manage Event' type="button" id="manageEvent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-container="body">
+						<i class="fa fa-cog"></i>
+						Manage Event
+						<span class="caret"></span>
+					</a>
+					{% include "brambling/_event_manage_dropdown.html" with classes="dropdown-menu-right" %}
+				</div>
 			{% endif %}
 		</div>{# /.relative #}
 	</div>{# /.masthead-cover-image #}

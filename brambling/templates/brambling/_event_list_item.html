@@ -61,40 +61,7 @@
 					Manage Event
 					<span class="caret"></span>
 				</a>
-				<ul class="dropdown-menu" aria-labelledby="manageEvent">
-					<li>
-						<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Event Summary</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_event_basic' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Basic Information</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_event_permissions' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Team and Permissions</a>
-					</li>
-					<li role="separator" class="divider"></li>
-					<li>
-						<a href="{% url 'brambling_event_registration' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Registration Settings</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_item_list' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Items</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_form_list' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Forms</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_discount_list' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Discounts</a>
-					</li>
-					<li role="separator" class="divider"></li>
-					<li>
-						<a href="{% url 'brambling_event_attendees' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Attendee Data</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_event_orders' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Order Data</a>
-					</li>
-					<li>
-						<a href="{% url 'brambling_event_finances' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Finance Data</a>
-					</li>
-				</ul>
+				{% include "brambling/_event_manage_dropdown.html" %}
 			</div>
 		{% endif %}
 		{% if event.website_url %}
