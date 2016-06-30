@@ -66,16 +66,6 @@
 					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm hidden-md">for <strong>{{ event.name }}</strong>!</span>
 				</a>
 			{% endif %}
-		{% if is_admin %}
-			<div class="btn-group">
-				<a class="margin-trailer-half btn btn-default dropdown-toggle tipped" title='Manage Event' type="button" id="manageEvent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-container="body">
-					<i class="fa fa-cog"></i>
-					Manage Event
-					<span class="caret"></span>
-				</a>
-				{% include "brambling/_event_manage_dropdown.html" %}
-			</div>
-		{% endif %}
 		{% if event.website_url %}
 			<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
 				<i class="fa fa-fw fa-globe"></i>
