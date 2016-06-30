@@ -11,6 +11,18 @@
 				<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
 				<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
 			</div>
+
+			{% if is_admin %}
+				<div class="btn-group relative-right relative-top">
+					<a class="btn btn-default dropdown-toggle tipped" title='Manage Event' type="button" id="manageEvent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-container="body">
+						<i class="fa fa-cog"></i>
+						Manage
+						<span class="caret"></span>
+					</a>
+					{% include "brambling/_event_manage_dropdown.html" with classes="dropdown-menu-right" %}
+				</div>
+			{% endif %}
+
 		</div>
 	</a>
 	<h3>
