@@ -250,16 +250,18 @@
 					// accordingly. TODO: the attendees component should not be responsible
 					// for updating the stepbar. Someday we'll want a parent Shop component
 					// to handle that.
+					var steps = []
 					if (thisObj.components.stepbar) {
 						var stepbar = thisObj.findComponent('stepbar');
 						stepbar.setAccessible(stepbar.getNextAfter('attendees').key, canContinue);
 						stepbar.setCompleted('attendees', canContinue)
+						steps = stepbar.get('steps')
 					}
-
 
 					thisObj.set({
 						'attendees': atts,
 						'unassigned_items': unassigned_items,
+						'steps': steps,
 					});
 				}
 			});
