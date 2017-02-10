@@ -4,15 +4,27 @@
 	{% adjust event.banner_image 'fill' width=940 height=300 as banner_image %}
 {% endif %}
 
-<div class="margin-trailer-dbl event-listing">
+<div class="margin-trailer-dbl event-listing relative">
 	<a href="{% url 'brambling_event_shop' event_slug=event.slug organization_slug=event.organization.slug %}" class="a-secret a-opacity">
-		<div class="event-listing-image relative"{% if banner_image %} style="background-image: url({{ banner_image }})"{% endif %}>
+		<div class="event-listing-image"{% if banner_image %} style="background-image: url({{ banner_image }})"{% endif %}>
 			<div class="datecard">
 				<h5 class="datecard-month">{{ event.start_date|date:"M" }}</h5>
 				<p class="datecard-day">{{ event.start_date|date:"j" }}</p>
 			</div>
+
+
 		</div>
 	</a>
+	{% if is_admin %}
+	<div class="btn-group relative-right relative-top">
+		<a class="btn btn-default dropdown-toggle tipped" title='Manage Event' type="button" id="manageEvent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-container="body">
+			<i class="fa fa-cog"></i>
+			Manage
+			<span class="caret"></span>
+		</a>
+		{% include "brambling/_event_manage_dropdown.html" with classes="dropdown-menu-right" %}
+	</div>
+	{% endif %}
 	<h3>
 		{{ event.name }}
 		{% if is_admin and not event.is_published %}
@@ -54,12 +66,6 @@
 					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm hidden-md">for <strong>{{ event.name }}</strong>!</span>
 				</a>
 			{% endif %}
-		{% if is_admin %}
-			<a href="{% url 'brambling_event_summary' event_slug=event.slug organization_slug=event.organization.slug %}" class="margin-trailer-half btn btn-default">
-				<i class="fa fa-cog"></i>
-				Manage Event
-			</a>
-		{% endif %}
 		{% if event.website_url %}
 			<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
 				<i class="fa fa-fw fa-globe"></i>
