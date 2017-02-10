@@ -45,6 +45,11 @@
 			</small>
 		{% endif %}
 	</h3>
+	{% with styles=event.dance_styles.all %}
+		{% if styles %}
+			<h5 class="text-muted event-tags">{% for style in styles %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
+		{% endif %}
+	{% endwith %}
 	<p class="margin-0">
 		<i class="fa fa-clock-o fa-fw"></i>
 		{% include "brambling/event/_when.html" %}
@@ -55,5 +60,4 @@
 			{% include "brambling/event/_where.html" %}
 		</p>
 	{% endif %}
-	<h5 class="text-muted event-tags margin-0">{% for style in event.dance_styles.all %}<span class="list-comma">{{ style }}</span>{% endfor %}</h5>
 </div>
