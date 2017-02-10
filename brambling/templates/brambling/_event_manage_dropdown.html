@@ -8,6 +8,9 @@
 	<li>
 		<a href="{% url 'brambling_event_permissions' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Team and Permissions</a>
 	</li>
+	<li>
+		<a href="{% url 'brambling_event_design' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Design</a>
+	</li>
 	<li role="separator" class="divider"></li>
 	<li>
 		<a href="{% url 'brambling_event_registration' event_slug=event.slug organization_slug=event.organization.slug %}" class="btn btn-link">Registration Settings</a>
