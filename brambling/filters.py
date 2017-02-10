@@ -124,5 +124,7 @@ class OrderFilterSet(FloppyFilterSet):
             ('code', 'Code'),
             ('-code', 'Code (descending)'),
         ]
+
+
 # Workaround for https://github.com/gregmuellegger/django-floppyforms/issues/145
 forms.MultipleChoiceField.hidden_widget = forms.MultipleHiddenInput
