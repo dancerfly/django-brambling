@@ -1,5 +1,4 @@
 from django.db.models import Q
-from django.http import Http404
 from rest_framework import viewsets, serializers, status, filters
 from rest_framework.response import Response
 
@@ -170,7 +169,7 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_event(self):
         event_id = self.request.query_params.get('event', None)
-        return Event.objects.get(pk=event_id)
+        return Event.objects.filter(pk=event_id).first()
 
     def get_queryset(self):
         "Filter orders down to those which are for the specific event provided."
@@ -183,7 +182,7 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
 
         event = self.get_event()
         if not event:
-            raise Http404('No event id specified.')
+            return qs.none()
 
         return qs.filter(event=event)
 
