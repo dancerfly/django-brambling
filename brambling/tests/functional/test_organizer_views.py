@@ -404,3 +404,61 @@ class RefundViewTestCase(TestCase):
         }), data, follow=True)
         ctx_messages = list(response.context['messages'])
         self.assertEqual(ctx_messages[0].level, messages.ERROR)
+
+
+class OrderDetailViewTest(TestCase):
+    def setUp(self):
+        self.owner = Person.objects.create_user(email="owner@owner.me", password="secret")
+        self.non_owner = Person.objects.create_user(email="nonowner@nonowner.me", password="secret")
+        self.event = EventFactory(collect_housing_data=False)
+        OrganizationMember.objects.create(
+            person=self.owner,
+            organization=self.event.organization,
+            role=OrganizationMember.OWNER,
+        )
+        self.order = OrderFactory(event=self.event, code='aaaaaaaa')
+        self.transaction = TransactionFactory(event=self.event, order=self.order)
+        item = ItemFactory(event=self.event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        self.order.add_to_cart(item_option)
+        self.order.add_to_cart(item_option)
+        self.order.mark_cart_paid(self.transaction)
+
+        self.attendee = AttendeeFactory(order=self.order, bought_items=self.order.bought_items.all())
+        self.url = reverse('brambling_event_order_detail', kwargs={
+            'event_slug': self.event.slug,
+            'organization_slug': self.event.organization.slug,
+            'code': self.order.code,
+        })
+
+    def test_post__order_notes(self):
+        self.client.login(username=self.owner.email, password='secret')
+        response = self.client.post(
+            self.url,
+            {
+                'is_notes_form': '1',
+                'notes': 'Hello',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], 'http://testserver{}'.format(self.url))
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.notes, 'Hello')
+
+    def test_post__attendee_notes(self):
+        self.client.login(username=self.owner.email, password='secret')
+        response = self.client.post(
+            self.url,
+            {
+                'is_attendee_form': '1',
+                'attendee_id': str(self.attendee.pk),
+                'notes': 'Hello',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], 'http://testserver{}'.format(self.url))
+        self.attendee.refresh_from_db()
+        self.assertEqual(self.attendee.notes, 'Hello')
