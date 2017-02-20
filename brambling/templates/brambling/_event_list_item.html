@@ -11,10 +11,10 @@
 		<div class="event-listing-image"{% if banner_image %} style="background-image: url({{ banner_image }})"{% endif %}>
 		</div>
 	</a>
-	{% if is_registered %}
-		<div class="btn-group relative-right relative-top">
+	<div class="relative-right relative-top">
+		{% if is_registered %}
 			{% if event.order and event.order.has_cart %}
-				<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default tipped" title="Complete your registration now!" data-placement="bottom">
+				<a href="{{ event.get_absolute_url }}" class="btn btn-default tipped" title="Complete your registration now!" data-placement="bottom">
 					<i class="fa fa-exclamation-circle"></i> Cart expires in
 
 					{% td_to_dict event.order.cart_expire_time|td_timeuntil as time_left %}
@@ -34,8 +34,16 @@
 					<i class="fa fa-check"></i> Registered
 				</a>
 			{% endif %}
-		</div>
-	{% endif %}
+		{% endif %}
+		{% if is_admin %}
+			<a class="btn btn-default dropdown-toggle tipped" title='Manage Event' type="button" id="manageEvent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" data-container="body">
+				<i class="fa fa-cog"></i>
+				Manage
+				<span class="caret"></span>
+			</a>
+			{% include "brambling/_event_manage_dropdown.html" with classes="dropdown-menu-right" %}
+		{% endif %}
+	</div>
 	<h3>
 		<a href="{{ event_url }}">{{ event.name }}</a>
 		{% if is_admin and not event.is_published %}
