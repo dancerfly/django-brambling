@@ -1,6 +1,10 @@
 .event-listing-image
 	width: 100%
-	padding-top: 27%
+	// 300 / 940 is the height/width ratio of the banner image.
+	// We use this technique to scale the size of the element
+	// properly while still being responsive and avoiding
+	// layout shifting as images load.
+	padding-top: percentage(300 / 940)
 	background-image: $dancers-event-banner-url
 	background-size: cover
 	background-position: center
@@ -9,32 +13,16 @@
 	box-sizing: border-box
 	border-radius: $border-radius-base
 
-.datecard
-	position: absolute
-	top: 6px
-	left: 6px
-	text-align: center
-	width:  50px
-	height: 50px
-	border-radius: $border-radius-base
-	float: left
-	color: white
-	box-shadow: inset 0 0 0 1px rgba(0,0,0,.2)
-	background-color: rgba($yellow-dark,0.9)
-
-.datecard-month
-	margin: 5px 0 0
-	text-transform: uppercase
-	font-size: floor(($font-size-base * 1.25))
-	font-weight: $headings-font-weight-normal
-
-.datecard-day
-	margin: 0
-	line-height: 1em
-	font-size: floor(($font-size-base * 1.5))
-
 .event-listing
 	& > .relative-right
 		right: 6px
 	& > .relative-top
 		top: 6px
+
+	& > h3
+		margin-top: 10px
+		margin-bottom: 5px
+
+	& > h5
+		margin-top: 0
+		margin-bottom: 5px
