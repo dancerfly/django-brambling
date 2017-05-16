@@ -62,23 +62,16 @@
 					</a>
 				{% endif %}
 			{% else %}
-				<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default">
-					<i class="fa fa-ticket"></i> Register <span class="hidden-xs hidden-sm hidden-md">for <strong>{{ event.name }}</strong>!</span>
+				<a href="{{ event.get_absolute_url }}" class="margin-trailer-half btn btn-default-dark">
+					<i class="fa fa-ticket"></i> Register!</span>
 				</a>
 			{% endif %}
 		{% if event.website_url %}
-			<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default-dark">
-				<i class="fa fa-fw fa-globe"></i>
+			<a target="_blank" href="{{ event.website_url }}" class="margin-trailer-half btn btn-default">
+				<i class="fa fa-globe"></i>
 				Website
 			</a>
 		{% endif %}
-		{% if event.facebook_url %}
-			<a target="_blank" href="{{ event.facebook_url }}" class="margin-trailer-half btn btn-default-dark">
-				<i class="fa fa-fw fa-facebook"></i>
-				Facebook
-			</a>
-		{% endif %}
-
 	</div>
 
 	{% if event.order and event.order.unconfirmed_checks %}
