@@ -1480,6 +1480,12 @@ class BoughtItem(models.Model):
     attendee = models.ForeignKey('Attendee', blank=True, null=True,
                                  related_name='bought_items', on_delete=models.SET_NULL)
 
+    def can_transfer(self):
+        return (
+            self.status == self.BOUGHT and
+            not self.transactions.filter(is_confirmed=False).exists()
+        )
+
     class Meta:
         ordering = ('added',)
 

@@ -25,7 +25,7 @@
 							({{ item.item_name }})
 							{% if event.transfers_allowed %}
 								{% url "brambling_event_order_transfer" event_slug=event.slug organization_slug=event.organization.slug as transfer_url %}
-								{% if item.status == item.BOUGHT %}
+								{% if item.can_transfer %}
 									<a href='{{ transfer_url }}?bought_item={{ item.pk }}' class='pull-right'>
 										<i class='fa fa-exchange'></i>
 										Transfer
