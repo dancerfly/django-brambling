@@ -94,6 +94,9 @@ class DwollaConnectView(View):
 
 class DwollaWebhookView(View):
     @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(DwollaWebhookView, self).dispatch(*args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         if request.META['CONTENT_TYPE'] != "application/json":
             raise Http404("Incorrect content type")
