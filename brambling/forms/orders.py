@@ -533,6 +533,8 @@ class TransferForm(forms.Form):
 
     def clean_bought_item(self):
         bought_item = self.cleaned_data['bought_item']
+        if not bought_item.can_transfer():
+            raise forms.ValidationError("This item is not eligible for transfer.")
         if TransferInvite.get_invites(bought_item).exists():
             raise ValidationError("A transfer has already been initiated for this item.")
         return bought_item
