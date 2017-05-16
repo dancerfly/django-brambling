@@ -29,6 +29,9 @@
 									<a href='{{ transfer_url }}?bought_item={{ item.pk }}' class='pull-right'>
 										<i class='fa fa-exchange'></i>
 										Transfer
+										{% if not user.is_authenticated %}
+										(account required)
+										{% endif %}
 									</a>
 								{% endif %}
 							{% endif %}
