@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import date as dtdate, timedelta
 from decimal import Decimal
 import itertools
 import json
@@ -634,6 +634,16 @@ class Event(models.Model):
             self.start_date + timedelta(n - 1)
             for n in xrange((self.end_date - self.start_date).days + 2)
         ]
+
+    def check_postmark_past(self):
+        """
+        If there is a check postmark cutoff,
+        returns whether that date is past or not.
+        If there isn't a cutoff yet, returns false.
+        """
+        if self.check_postmark_cutoff:
+            return self.check_postmark_cutoff < dtdate.today()
+        return False
 
 
 class Item(models.Model):
