@@ -1,6 +1,10 @@
 .event-listing-image
 	width: 100%
-	padding-top: (300 / 940) * 100%
+	// 300 / 940 is the height/width ratio of the banner image.
+	// We use this technique to scale the size of the element
+	// properly while still being responsive and avoiding
+	// layout shifting as images load.
+	padding-top: percentage(300 / 940)
 	background-image: $dancers-event-banner-url
 	background-size: cover
 	background-position: center
