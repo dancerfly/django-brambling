@@ -115,6 +115,15 @@
 
 			{% if event.organization.check_payment_allowed %}
 				{% formrow form.check_postmark_cutoff with label="Checks must be postmarked by" %}
+				{% if event.check_postmark_past  %}
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="alert alert-warning" role="alert">
+							Postmarked date has passed. Payment by check will not be shown as a payment option.
+						</div>
+					</div>
+				</div>
+				{% endif %}
 			{% endif %}
 
 			{% if event.is_demo %}
