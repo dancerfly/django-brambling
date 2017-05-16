@@ -283,7 +283,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         stripe_prep(TEST)
 
         self.event = EventFactory()
-        self.order = OrderFactory()
+        self.order = OrderFactory(event=self.event)
 
         self.factory = RequestFactory()
         self.view = StripeWebhookView.as_view()
@@ -308,7 +308,11 @@ class SuccessfulRefundWebhookTestCase(TestCase):
 
         charge = stripe_charge(token, 100, self.order, self.event)
 
-        self.txn = Transaction.from_stripe_charge(charge, event=self.event)
+        self.txn = Transaction.from_stripe_charge(
+            charge,
+            event=self.event,
+            order=self.order,
+        )
 
         self.refund = stripe_refund(self.order, self.event, charge.id, 100)
 
@@ -321,9 +325,16 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         event_retrieve.return_value = self.mock_event
         response = self.view(self.request)
 
-        Transaction.objects.get(related_transaction=self.txn,
-                                transaction_type=Transaction.REFUND)
+        refund = Transaction.objects.get(
+            related_transaction=self.txn,
+            transaction_type=Transaction.REFUND,
+        )
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(refund.amount, -100)
+        self.assertEqual(refund.application_fee, -2.5)
+        self.assertEqual(refund.method, Transaction.STRIPE)
+        self.assertEqual(refund.order, self.order)
+        self.assertEqual(refund.event, self.event)
 
     @mock.patch('stripe.Event.retrieve')
     def test_events_should_be_processed_exactly_once(self, event_retrieve):
