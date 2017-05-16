@@ -9,6 +9,14 @@
 		{{ block.super }}
 	{% endwith %}
 
+	{% if not user.is_authenticated %}
+	<div class='alert alert-danger'>
+		Sorry!
+		<b>You need to <a href="{% url 'brambling_signup' %}">create an account</a> to transfer an item.</b>
+		You'll be able to claim this order right away if you <a href="{% url 'brambling_signup' %}">create an account</a> with the same email address.
+	</div>
+	{% endif %}
+
 	<div class='row'>
 		<div class='col-xs-6 col-xs-offset-3'>
 			<p>
@@ -20,18 +28,20 @@
 
 			<form method='post' action=''>
 				{% csrf_token %}
-				{% form form using %}
-					{% formrow form.bought_item with label="Item to transfer" %}
-					{% formrow form.email with label="Send item to..." help_text="Email address" %}
-				{% endform %}
+				<fieldset {% if not user.is_authenticated %}disabled{% endif %}>
+					{% form form using %}
+						{% formrow form.bought_item with label="Item to transfer" %}
+						{% formrow form.email with label="Send item to..." help_text="Email address" %}
+					{% endform %}
 
-				<button type='submit' class='btn btn-success'>Transfer it!</button>
+					<button type='submit' class='btn btn-success'>Transfer it!</button>
 
-				{% url "brambling_event_order_summary" event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
+					{% url "brambling_event_order_summary" event_slug=event.slug organization_slug=event.organization.slug as cancel_url %}
 
-				<a href='{{ cancel_url }}' class='btn btn-link'>
-					Wait, never mind
-				</a>
+					<a href='{{ cancel_url }}' class='btn btn-link'>
+						Wait, never mind
+					</a>
+				</fieldset>
 			</form>
 		</div>
 	</div>
