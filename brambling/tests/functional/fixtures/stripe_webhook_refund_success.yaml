@@ -1,74 +1,35 @@
 interactions:
 - request:
-    body: null
+    body: card%5Bnumber%5D=4242424242424242&card%5Bexp_year%5D=2017&card%5Bcvc%5D=123&card%5Bexp_month%5D=12
     headers:
       Accept: ['*/*']
       Accept-Encoding: ['gzip, deflate']
       Authorization: [Bearer sk_test_OBAqgCaFyOUaaFwHJirSbg9D]
       Connection: [keep-alive]
+      Content-Length: ['98']
+      Content-Type: [application/x-www-form-urlencoded]
       Stripe-Version: ['2016-03-07']
       User-Agent: [Stripe/v1 PythonBindings/1.35.0]
       X-Stripe-Client-User-Agent: ['{"lang": "python", "publisher": "stripe", "httplib":
-          "requests", "uname": "Linux brux 4.4.0-24-generic #43-Ubuntu SMP Wed Jun
-          8 19:27:37 UTC 2016 x86_64 x86_64", "lang_version": "2.7.10", "platform":
-          "Linux-4.4.0-24-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
+          "requests", "uname": "Linux brux 4.4.0-78-generic #99-Ubuntu SMP Thu Apr
+          27 15:29:09 UTC 2017 x86_64 x86_64", "lang_version": "2.7.10", "platform":
+          "Linux-4.4.0-78-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
           "1.35.0"}']
-    method: GET
-    uri: https://api.stripe.com/v1/events/evt_18EgsB2dPuL5A6oo1eOhCyit
+    method: POST
+    uri: https://api.stripe.com/v1/tokens
   response:
-    body: {string: !!python/unicode "{\n  \"id\": \"evt_18EgsB2dPuL5A6oo1eOhCyit\"\
-        ,\n  \"object\": \"event\",\n  \"api_version\": \"2015-01-11\",\n  \"created\"\
-        : 1464101467,\n  \"data\": {\n    \"object\": {\n      \"id\": \"ch_18C9kF2dPuL5A6ooUE5opsBX\"\
-        ,\n      \"object\": \"charge\",\n      \"amount\": 12000,\n      \"amount_refunded\"\
-        : 6000,\n      \"application_fee\": null,\n      \"balance_transaction\":\
-        \ \"txn_18C9kF2dPuL5A6ooysxS4uFL\",\n      \"captured\": true,\n      \"card\"\
-        : {\n        \"id\": \"card_18C9kF2dPuL5A6ooIVeNe8kV\",\n        \"object\"\
-        : \"card\",\n        \"address_city\": null,\n        \"address_country\"\
-        : null,\n        \"address_line1\": null,\n        \"address_line1_check\"\
-        : null,\n        \"address_line2\": null,\n        \"address_state\": null,\n\
-        \        \"address_zip\": null,\n        \"address_zip_check\": null,\n  \
-        \      \"brand\": \"Visa\",\n        \"country\": \"US\",\n        \"customer\"\
-        : null,\n        \"cvc_check\": \"pass\",\n        \"dynamic_last4\": null,\n\
-        \        \"exp_month\": 11,\n        \"exp_year\": 2019,\n        \"fingerprint\"\
-        : \"l4ENmRZWbEtyXQRg\",\n        \"funding\": \"credit\",\n        \"last4\"\
-        : \"4242\",\n        \"metadata\": {},\n        \"name\": null,\n        \"\
-        tokenization_method\": null\n      },\n      \"created\": 1463497467,\n  \
-        \    \"currency\": \"usd\",\n      \"customer\": null,\n      \"description\"\
-        : null,\n      \"destination\": null,\n      \"dispute\": null,\n      \"\
-        failure_code\": null,\n      \"failure_message\": null,\n      \"fraud_details\"\
-        : {},\n      \"invoice\": null,\n      \"livemode\": false,\n      \"metadata\"\
-        : {\n        \"order\": \"7pMR6czT\",\n        \"event\": \"Demo Event\"\n\
-        \      },\n      \"order\": null,\n      \"paid\": true,\n      \"receipt_email\"\
-        : null,\n      \"receipt_number\": null,\n      \"refunded\": false,\n   \
-        \   \"refunds\": {\n        \"object\": \"list\",\n        \"data\": [\n \
-        \         {\n            \"id\": \"re_18EgsB2dPuL5A6ooGEq33q9o\",\n      \
-        \      \"object\": \"refund\",\n            \"amount\": 6000,\n          \
-        \  \"balance_transaction\": \"txn_18EgsB2dPuL5A6oozQ0nLPkz\",\n          \
-        \  \"charge\": \"ch_18C9kF2dPuL5A6ooUE5opsBX\",\n            \"created\":\
-        \ 1464101467,\n            \"currency\": \"usd\",\n            \"metadata\"\
-        : {\n              \"order\": \"7pMR6czT\",\n              \"event\": \"Demo\
-        \ Event\"\n            },\n            \"reason\": null,\n            \"receipt_number\"\
-        : null,\n            \"status\": \"succeeded\"\n          }\n        ],\n\
-        \        \"has_more\": false,\n        \"total_count\": 1,\n        \"url\"\
-        : \"/v1/charges/ch_18C9kF2dPuL5A6ooUE5opsBX/refunds\"\n      },\n      \"\
-        shipping\": null,\n      \"source\": {\n        \"id\": \"card_18C9kF2dPuL5A6ooIVeNe8kV\"\
-        ,\n        \"object\": \"card\",\n        \"address_city\": null,\n      \
-        \  \"address_country\": null,\n        \"address_line1\": null,\n        \"\
-        address_line1_check\": null,\n        \"address_line2\": null,\n        \"\
-        address_state\": null,\n        \"address_zip\": null,\n        \"address_zip_check\"\
-        : null,\n        \"brand\": \"Visa\",\n        \"country\": \"US\",\n    \
-        \    \"customer\": null,\n        \"cvc_check\": \"pass\",\n        \"dynamic_last4\"\
-        : null,\n        \"exp_month\": 11,\n        \"exp_year\": 2019,\n       \
-        \ \"fingerprint\": \"l4ENmRZWbEtyXQRg\",\n        \"funding\": \"credit\"\
-        ,\n        \"last4\": \"4242\",\n        \"metadata\": {},\n        \"name\"\
-        : null,\n        \"tokenization_method\": null\n      },\n      \"source_transfer\"\
-        : null,\n      \"statement_descriptor\": null,\n      \"status\": \"paid\"\
-        \n    },\n    \"previous_attributes\": {\n      \"amount_refunded\": 0,\n\
-        \      \"refunds\": {\n        \"object\": \"list\",\n        \"data\": [],\n\
-        \        \"has_more\": false,\n        \"total_count\": 0,\n        \"url\"\
-        : \"/v1/charges/ch_18C9kF2dPuL5A6ooUE5opsBX/refunds\"\n      }\n    }\n  },\n\
-        \  \"livemode\": false,\n  \"pending_webhooks\": 0,\n  \"request\": \"req_8ViIc76ys8DfCL\"\
-        ,\n  \"type\": \"charge.refunded\"\n}\n"}
+    body: {string: !!python/unicode "{\n  \"id\": \"tok_1AKCFA2dPuL5A6oojItHki9O\"\
+        ,\n  \"object\": \"token\",\n  \"card\": {\n    \"id\": \"card_1AKCFA2dPuL5A6oop0qvsM1Z\"\
+        ,\n    \"object\": \"card\",\n    \"address_city\": null,\n    \"address_country\"\
+        : null,\n    \"address_line1\": null,\n    \"address_line1_check\": null,\n\
+        \    \"address_line2\": null,\n    \"address_state\": null,\n    \"address_zip\"\
+        : null,\n    \"address_zip_check\": null,\n    \"brand\": \"Visa\",\n    \"\
+        country\": \"US\",\n    \"cvc_check\": \"unchecked\",\n    \"dynamic_last4\"\
+        : null,\n    \"exp_month\": 12,\n    \"exp_year\": 2017,\n    \"fingerprint\"\
+        : \"l4ENmRZWbEtyXQRg\",\n    \"funding\": \"credit\",\n    \"last4\": \"4242\"\
+        ,\n    \"metadata\": {},\n    \"name\": null,\n    \"tokenization_method\"\
+        : null\n  },\n  \"client_ip\": \"65.183.132.230\",\n  \"created\": 1494966368,\n\
+        \  \"livemode\": false,\n  \"type\": \"card\",\n  \"used\": false\n}\n"}
     headers:
       access-control-allow-credentials: ['true']
       access-control-allow-methods: ['GET, POST, HEAD, OPTIONS, DELETE']
@@ -76,12 +37,90 @@ interactions:
       access-control-max-age: ['300']
       cache-control: ['no-cache, no-store']
       connection: [keep-alive]
-      content-length: ['3553']
+      content-length: ['782']
       content-type: [application/json]
-      date: ['Thu, 23 Jun 2016 20:39:57 GMT']
-      request-id: [req_8h2h34YFJYkTe5]
+      date: ['Tue, 16 May 2017 20:26:08 GMT']
+      request-id: [req_AfXJc7ZrwcotCC]
       server: [nginx]
       strict-transport-security: [max-age=31556926; includeSubDomains]
+      stripe-version: ['2016-03-07']
+    status: {code: 200, message: OK}
+- request:
+    body: application_fee=250&source=tok_1AKCFA2dPuL5A6oojItHki9O&currency=USD&amount=10000&expand%5B%5D=balance_transaction&metadata%5Border%5D=000001&metadata%5Bevent%5D=Test+event
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Bearer sk_test_OBAqgCaFyOUaaFwHJirSbg9D]
+      Connection: [keep-alive]
+      Content-Length: ['172']
+      Content-Type: [application/x-www-form-urlencoded]
+      Stripe-Account: [acct_15VviQKDDJKt8tvu]
+      Stripe-Version: ['2016-03-07']
+      User-Agent: [Stripe/v1 PythonBindings/1.35.0]
+      X-Stripe-Client-User-Agent: ['{"lang": "python", "publisher": "stripe", "httplib":
+          "requests", "uname": "Linux brux 4.4.0-78-generic #99-Ubuntu SMP Thu Apr
+          27 15:29:09 UTC 2017 x86_64 x86_64", "lang_version": "2.7.10", "platform":
+          "Linux-4.4.0-78-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
+          "1.35.0"}']
+    method: POST
+    uri: https://api.stripe.com/v1/charges
+  response:
+    body: {string: !!python/unicode "{\n  \"id\": \"ch_1AKCFAKDDJKt8tvuOJUHwMOo\"\
+        ,\n  \"object\": \"charge\",\n  \"amount\": 10000,\n  \"amount_refunded\"\
+        : 0,\n  \"application\": \"ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR\",\n  \"application_fee\"\
+        : \"fee_1AKCFAKDDJKt8tvuRUn116pA\",\n  \"balance_transaction\": {\n    \"\
+        id\": \"txn_1AKCFAKDDJKt8tvuadaYRsbg\",\n    \"object\": \"balance_transaction\"\
+        ,\n    \"amount\": 10000,\n    \"available_on\": 1495497600,\n    \"created\"\
+        : 1494966368,\n    \"currency\": \"usd\",\n    \"description\": null,\n  \
+        \  \"fee\": 570,\n    \"fee_details\": [\n      {\n        \"amount\": 320,\n\
+        \        \"application\": null,\n        \"currency\": \"usd\",\n        \"\
+        description\": \"Stripe processing fees\",\n        \"type\": \"stripe_fee\"\
+        \n      },\n      {\n        \"amount\": 250,\n        \"application\": \"\
+        ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR\",\n        \"currency\": \"usd\",\n \
+        \       \"description\": \"Dancerfly application fee\",\n        \"type\"\
+        : \"application_fee\"\n      }\n    ],\n    \"net\": 9430,\n    \"source\"\
+        : \"ch_1AKCFAKDDJKt8tvuOJUHwMOo\",\n    \"sourced_transfers\": {\n      \"\
+        object\": \"list\",\n      \"data\": [],\n      \"has_more\": false,\n   \
+        \   \"total_count\": 0,\n      \"url\": \"/v1/transfers?source_transaction=ch_1AKCFAKDDJKt8tvuOJUHwMOo\"\
+        \n    },\n    \"status\": \"pending\",\n    \"type\": \"charge\"\n  },\n \
+        \ \"captured\": true,\n  \"created\": 1494966368,\n  \"currency\": \"usd\"\
+        ,\n  \"customer\": null,\n  \"description\": null,\n  \"destination\": null,\n\
+        \  \"dispute\": null,\n  \"failure_code\": null,\n  \"failure_message\": null,\n\
+        \  \"fraud_details\": {},\n  \"invoice\": null,\n  \"livemode\": false,\n\
+        \  \"metadata\": {\n    \"order\": \"000001\",\n    \"event\": \"Test event\"\
+        \n  },\n  \"on_behalf_of\": null,\n  \"order\": null,\n  \"outcome\": {\n\
+        \    \"network_status\": \"approved_by_network\",\n    \"reason\": null,\n\
+        \    \"risk_level\": \"normal\",\n    \"seller_message\": \"Payment complete.\"\
+        ,\n    \"type\": \"authorized\"\n  },\n  \"paid\": true,\n  \"receipt_email\"\
+        : null,\n  \"receipt_number\": null,\n  \"refunded\": false,\n  \"refunds\"\
+        : {\n    \"object\": \"list\",\n    \"data\": [],\n    \"has_more\": false,\n\
+        \    \"total_count\": 0,\n    \"url\": \"/v1/charges/ch_1AKCFAKDDJKt8tvuOJUHwMOo/refunds\"\
+        \n  },\n  \"review\": null,\n  \"shipping\": null,\n  \"source\": {\n    \"\
+        id\": \"card_1AKCFAKDDJKt8tvuMMlrzHYX\",\n    \"object\": \"card\",\n    \"\
+        address_city\": null,\n    \"address_country\": null,\n    \"address_line1\"\
+        : null,\n    \"address_line1_check\": null,\n    \"address_line2\": null,\n\
+        \    \"address_state\": null,\n    \"address_zip\": null,\n    \"address_zip_check\"\
+        : null,\n    \"brand\": \"Visa\",\n    \"country\": \"US\",\n    \"customer\"\
+        : null,\n    \"cvc_check\": \"pass\",\n    \"dynamic_last4\": null,\n    \"\
+        exp_month\": 12,\n    \"exp_year\": 2017,\n    \"fingerprint\": \"ER8TJFn2KwxGXmA8\"\
+        ,\n    \"funding\": \"credit\",\n    \"last4\": \"4242\",\n    \"metadata\"\
+        : {},\n    \"name\": null,\n    \"tokenization_method\": null\n  },\n  \"\
+        source_transfer\": null,\n  \"statement_descriptor\": null,\n  \"status\"\
+        : \"succeeded\",\n  \"transfer_group\": null\n}\n"}
+    headers:
+      access-control-allow-credentials: ['true']
+      access-control-allow-methods: ['GET, POST, HEAD, OPTIONS, DELETE']
+      access-control-allow-origin: ['*']
+      access-control-max-age: ['300']
+      cache-control: ['no-cache, no-store']
+      connection: [keep-alive]
+      content-length: ['2776']
+      content-type: [application/json]
+      date: ['Tue, 16 May 2017 20:26:09 GMT']
+      request-id: [req_AfXJCoOjx4YiU3]
+      server: [nginx]
+      strict-transport-security: [max-age=31556926; includeSubDomains]
+      stripe-account: [acct_15VviQKDDJKt8tvu]
       stripe-version: ['2016-03-07']
     status: {code: 200, message: OK}
 - request:
@@ -89,34 +128,97 @@ interactions:
     headers:
       Accept: ['*/*']
       Accept-Encoding: ['gzip, deflate']
-      Authorization: [Bearer sk_test_OBAqgCaFyOUaaFwHJirSbg9D]
+      Authorization: [Bearer sk_test_RtvEzuMs6zepSHO9CvQUx9xK]
       Connection: [keep-alive]
       Stripe-Version: ['2016-03-07']
       User-Agent: [Stripe/v1 PythonBindings/1.35.0]
       X-Stripe-Client-User-Agent: ['{"lang": "python", "publisher": "stripe", "httplib":
-          "requests", "uname": "Linux brux 4.4.0-24-generic #43-Ubuntu SMP Wed Jun
-          8 19:27:37 UTC 2016 x86_64 x86_64", "lang_version": "2.7.10", "platform":
-          "Linux-4.4.0-24-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
+          "requests", "uname": "Linux brux 4.4.0-78-generic #99-Ubuntu SMP Thu Apr
+          27 15:29:09 UTC 2017 x86_64 x86_64", "lang_version": "2.7.10", "platform":
+          "Linux-4.4.0-78-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
           "1.35.0"}']
     method: GET
-    uri: https://api.stripe.com/v1/refunds/re_18EgsB2dPuL5A6ooGEq33q9o?expand%5B%5D=balance_transaction
+    uri: https://api.stripe.com/v1/charges/ch_1AKCFAKDDJKt8tvuOJUHwMOo
   response:
-    body: {string: !!python/unicode "{\n  \"id\": \"re_18EgsB2dPuL5A6ooGEq33q9o\"\
-        ,\n  \"object\": \"refund\",\n  \"amount\": 6000,\n  \"balance_transaction\"\
-        : {\n    \"id\": \"txn_18EgsB2dPuL5A6oozQ0nLPkz\",\n    \"object\": \"balance_transaction\"\
-        ,\n    \"amount\": -6000,\n    \"available_on\": 1464101467,\n    \"created\"\
-        : 1464101467,\n    \"currency\": \"usd\",\n    \"description\": \"REFUND FOR\
-        \ CHARGE\",\n    \"fee\": -174,\n    \"fee_details\": [\n      {\n       \
-        \ \"amount\": -174,\n        \"application\": null,\n        \"currency\"\
+    body: {string: !!python/unicode "{\n  \"id\": \"ch_1AKCFAKDDJKt8tvuOJUHwMOo\"\
+        ,\n  \"object\": \"charge\",\n  \"amount\": 10000,\n  \"amount_refunded\"\
+        : 0,\n  \"application\": \"ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR\",\n  \"application_fee\"\
+        : \"fee_1AKCFAKDDJKt8tvuRUn116pA\",\n  \"balance_transaction\": \"txn_1AKCFAKDDJKt8tvuadaYRsbg\"\
+        ,\n  \"captured\": true,\n  \"created\": 1494966368,\n  \"currency\": \"usd\"\
+        ,\n  \"customer\": null,\n  \"description\": null,\n  \"destination\": null,\n\
+        \  \"dispute\": null,\n  \"failure_code\": null,\n  \"failure_message\": null,\n\
+        \  \"fraud_details\": {},\n  \"invoice\": null,\n  \"livemode\": false,\n\
+        \  \"metadata\": {\n    \"order\": \"000001\",\n    \"event\": \"Test event\"\
+        \n  },\n  \"on_behalf_of\": null,\n  \"order\": null,\n  \"outcome\": {\n\
+        \    \"network_status\": \"approved_by_network\",\n    \"reason\": null,\n\
+        \    \"risk_level\": \"normal\",\n    \"seller_message\": \"Payment complete.\"\
+        ,\n    \"type\": \"authorized\"\n  },\n  \"paid\": true,\n  \"receipt_email\"\
+        : null,\n  \"receipt_number\": null,\n  \"refunded\": false,\n  \"refunds\"\
+        : {\n    \"object\": \"list\",\n    \"data\": [],\n    \"has_more\": false,\n\
+        \    \"total_count\": 0,\n    \"url\": \"/v1/charges/ch_1AKCFAKDDJKt8tvuOJUHwMOo/refunds\"\
+        \n  },\n  \"review\": null,\n  \"shipping\": null,\n  \"source\": {\n    \"\
+        id\": \"card_1AKCFAKDDJKt8tvuMMlrzHYX\",\n    \"object\": \"card\",\n    \"\
+        address_city\": null,\n    \"address_country\": null,\n    \"address_line1\"\
+        : null,\n    \"address_line1_check\": null,\n    \"address_line2\": null,\n\
+        \    \"address_state\": null,\n    \"address_zip\": null,\n    \"address_zip_check\"\
+        : null,\n    \"brand\": \"Visa\",\n    \"country\": \"US\",\n    \"customer\"\
+        : null,\n    \"cvc_check\": \"pass\",\n    \"dynamic_last4\": null,\n    \"\
+        exp_month\": 12,\n    \"exp_year\": 2017,\n    \"fingerprint\": \"ER8TJFn2KwxGXmA8\"\
+        ,\n    \"funding\": \"credit\",\n    \"last4\": \"4242\",\n    \"metadata\"\
+        : {},\n    \"name\": null,\n    \"tokenization_method\": null\n  },\n  \"\
+        source_transfer\": null,\n  \"statement_descriptor\": null,\n  \"status\"\
+        : \"succeeded\",\n  \"transfer_group\": null\n}\n"}
+    headers:
+      access-control-allow-credentials: ['true']
+      access-control-allow-methods: ['GET, POST, HEAD, OPTIONS, DELETE']
+      access-control-allow-origin: ['*']
+      access-control-max-age: ['300']
+      cache-control: ['no-cache, no-store']
+      connection: [keep-alive]
+      content-length: ['1853']
+      content-type: [application/json]
+      date: ['Tue, 16 May 2017 20:26:09 GMT']
+      request-id: [req_AfXJ0qLvapPs4h]
+      server: [nginx]
+      strict-transport-security: [max-age=31556926; includeSubDomains]
+      stripe-account: [acct_15VviQKDDJKt8tvu]
+      stripe-version: ['2016-03-07']
+    status: {code: 200, message: OK}
+- request:
+    body: amount=10000&expand%5B%5D=balance_transaction&refund_application_fee=True&metadata%5Border%5D=000001&metadata%5Bevent%5D=Test+event
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Authorization: [Bearer sk_test_RtvEzuMs6zepSHO9CvQUx9xK]
+      Connection: [keep-alive]
+      Content-Length: ['131']
+      Content-Type: [application/x-www-form-urlencoded]
+      Stripe-Version: ['2016-03-07']
+      User-Agent: [Stripe/v1 PythonBindings/1.35.0]
+      X-Stripe-Client-User-Agent: ['{"lang": "python", "publisher": "stripe", "httplib":
+          "requests", "uname": "Linux brux 4.4.0-78-generic #99-Ubuntu SMP Thu Apr
+          27 15:29:09 UTC 2017 x86_64 x86_64", "lang_version": "2.7.10", "platform":
+          "Linux-4.4.0-78-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
+          "1.35.0"}']
+    method: POST
+    uri: https://api.stripe.com/v1/charges/ch_1AKCFAKDDJKt8tvuOJUHwMOo/refunds
+  response:
+    body: {string: !!python/unicode "{\n  \"id\": \"re_1AKCFCKDDJKt8tvunwpLvSVz\"\
+        ,\n  \"object\": \"refund\",\n  \"amount\": 10000,\n  \"balance_transaction\"\
+        : {\n    \"id\": \"txn_1AKCFCKDDJKt8tvulD3YO01x\",\n    \"object\": \"balance_transaction\"\
+        ,\n    \"amount\": -10000,\n    \"available_on\": 1495497600,\n    \"created\"\
+        : 1494966370,\n    \"currency\": \"usd\",\n    \"description\": \"REFUND FOR\
+        \ CHARGE\",\n    \"fee\": -320,\n    \"fee_details\": [\n      {\n       \
+        \ \"amount\": -320,\n        \"application\": null,\n        \"currency\"\
         : \"usd\",\n        \"description\": \"Stripe processing fee refund\",\n \
-        \       \"type\": \"stripe_fee\"\n      }\n    ],\n    \"net\": -5826,\n \
-        \   \"source\": \"re_18EgsB2dPuL5A6ooGEq33q9o\",\n    \"sourced_transfers\"\
+        \       \"type\": \"stripe_fee\"\n      }\n    ],\n    \"net\": -9680,\n \
+        \   \"source\": \"re_1AKCFCKDDJKt8tvunwpLvSVz\",\n    \"sourced_transfers\"\
         : {\n      \"object\": \"list\",\n      \"data\": [],\n      \"has_more\"\
-        : false,\n      \"total_count\": 0,\n      \"url\": \"/v1/transfers?source_transaction=re_18EgsB2dPuL5A6ooGEq33q9o\"\
-        \n    },\n    \"status\": \"available\",\n    \"type\": \"refund\"\n  },\n\
-        \  \"charge\": \"ch_18C9kF2dPuL5A6ooUE5opsBX\",\n  \"created\": 1464101467,\n\
-        \  \"currency\": \"usd\",\n  \"metadata\": {\n    \"order\": \"7pMR6czT\"\
-        ,\n    \"event\": \"Demo Event\"\n  },\n  \"reason\": null,\n  \"receipt_number\"\
+        : false,\n      \"total_count\": 0,\n      \"url\": \"/v1/transfers?source_transaction=re_1AKCFCKDDJKt8tvunwpLvSVz\"\
+        \n    },\n    \"status\": \"pending\",\n    \"type\": \"refund\"\n  },\n \
+        \ \"charge\": \"ch_1AKCFAKDDJKt8tvuOJUHwMOo\",\n  \"created\": 1494966370,\n\
+        \  \"currency\": \"usd\",\n  \"metadata\": {\n    \"order\": \"000001\",\n\
+        \    \"event\": \"Test event\"\n  },\n  \"reason\": null,\n  \"receipt_number\"\
         : null,\n  \"status\": \"succeeded\"\n}\n"}
     headers:
       access-control-allow-credentials: ['true']
@@ -125,12 +227,13 @@ interactions:
       access-control-max-age: ['300']
       cache-control: ['no-cache, no-store']
       connection: [keep-alive]
-      content-length: ['1103']
+      content-length: ['1101']
       content-type: [application/json]
-      date: ['Thu, 23 Jun 2016 20:39:57 GMT']
-      request-id: [req_8h2hhASjx4kOoB]
+      date: ['Tue, 16 May 2017 20:26:10 GMT']
+      request-id: [req_AfXJ2xsD72Tk3i]
       server: [nginx]
       strict-transport-security: [max-age=31556926; includeSubDomains]
+      stripe-account: [acct_15VviQKDDJKt8tvu]
       stripe-version: ['2016-03-07']
     status: {code: 200, message: OK}
 - request:
@@ -143,104 +246,29 @@ interactions:
       Stripe-Version: ['2016-03-07']
       User-Agent: [Stripe/v1 PythonBindings/1.35.0]
       X-Stripe-Client-User-Agent: ['{"lang": "python", "publisher": "stripe", "httplib":
-          "requests", "uname": "Linux brux 4.4.0-24-generic #43-Ubuntu SMP Wed Jun
-          8 19:27:37 UTC 2016 x86_64 x86_64", "lang_version": "2.7.10", "platform":
-          "Linux-4.4.0-24-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
+          "requests", "uname": "Linux brux 4.4.0-78-generic #99-Ubuntu SMP Thu Apr
+          27 15:29:09 UTC 2017 x86_64 x86_64", "lang_version": "2.7.10", "platform":
+          "Linux-4.4.0-78-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
           "1.35.0"}']
     method: GET
-    uri: https://api.stripe.com/v1/charges/ch_18C9kF2dPuL5A6ooUE5opsBX?expand%5B%5D=balance_transaction
-  response:
-    body: {string: !!python/unicode "{\n  \"id\": \"ch_18C9kF2dPuL5A6ooUE5opsBX\"\
-        ,\n  \"object\": \"charge\",\n  \"amount\": 12000,\n  \"amount_refunded\"\
-        : 6000,\n  \"application_fee\": null,\n  \"balance_transaction\": {\n    \"\
-        id\": \"txn_18C9kF2dPuL5A6ooysxS4uFL\",\n    \"object\": \"balance_transaction\"\
-        ,\n    \"amount\": 12000,\n    \"available_on\": 1463616000,\n    \"created\"\
-        : 1463497467,\n    \"currency\": \"usd\",\n    \"description\": null,\n  \
-        \  \"fee\": 558,\n    \"fee_details\": [\n      {\n        \"amount\": 378,\n\
-        \        \"application\": null,\n        \"currency\": \"usd\",\n        \"\
-        description\": \"Stripe processing fees\",\n        \"type\": \"stripe_fee\"\
-        \n      },\n      {\n        \"amount\": 180,\n        \"application\": \"\
-        ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR\",\n        \"currency\": \"usd\",\n \
-        \       \"description\": \"Dancerfly application fee\",\n        \"type\"\
-        : \"application_fee\"\n      }\n    ],\n    \"net\": 11442,\n    \"source\"\
-        : \"ch_18C9kF2dPuL5A6ooUE5opsBX\",\n    \"sourced_transfers\": {\n      \"\
-        object\": \"list\",\n      \"data\": [],\n      \"has_more\": false,\n   \
-        \   \"total_count\": 0,\n      \"url\": \"/v1/transfers?source_transaction=ch_18C9kF2dPuL5A6ooUE5opsBX\"\
-        \n    },\n    \"status\": \"available\",\n    \"type\": \"charge\"\n  },\n\
-        \  \"captured\": true,\n  \"created\": 1463497467,\n  \"currency\": \"usd\"\
-        ,\n  \"customer\": null,\n  \"description\": null,\n  \"destination\": null,\n\
-        \  \"dispute\": null,\n  \"failure_code\": null,\n  \"failure_message\": null,\n\
-        \  \"fraud_details\": {},\n  \"invoice\": null,\n  \"livemode\": false,\n\
-        \  \"metadata\": {\n    \"order\": \"7pMR6czT\",\n    \"event\": \"Demo Event\"\
-        \n  },\n  \"order\": null,\n  \"paid\": true,\n  \"receipt_email\": null,\n\
-        \  \"receipt_number\": null,\n  \"refunded\": false,\n  \"refunds\": {\n \
-        \   \"object\": \"list\",\n    \"data\": [\n      {\n        \"id\": \"re_18EgsB2dPuL5A6ooGEq33q9o\"\
-        ,\n        \"object\": \"refund\",\n        \"amount\": 6000,\n        \"\
-        balance_transaction\": \"txn_18EgsB2dPuL5A6oozQ0nLPkz\",\n        \"charge\"\
-        : \"ch_18C9kF2dPuL5A6ooUE5opsBX\",\n        \"created\": 1464101467,\n   \
-        \     \"currency\": \"usd\",\n        \"metadata\": {\n          \"order\"\
-        : \"7pMR6czT\",\n          \"event\": \"Demo Event\"\n        },\n       \
-        \ \"reason\": null,\n        \"receipt_number\": null,\n        \"status\"\
-        : \"succeeded\"\n      }\n    ],\n    \"has_more\": false,\n    \"total_count\"\
-        : 1,\n    \"url\": \"/v1/charges/ch_18C9kF2dPuL5A6ooUE5opsBX/refunds\"\n \
-        \ },\n  \"shipping\": null,\n  \"source\": {\n    \"id\": \"card_18C9kF2dPuL5A6ooIVeNe8kV\"\
-        ,\n    \"object\": \"card\",\n    \"address_city\": null,\n    \"address_country\"\
-        : null,\n    \"address_line1\": null,\n    \"address_line1_check\": null,\n\
-        \    \"address_line2\": null,\n    \"address_state\": null,\n    \"address_zip\"\
-        : null,\n    \"address_zip_check\": null,\n    \"brand\": \"Visa\",\n    \"\
-        country\": \"US\",\n    \"customer\": null,\n    \"cvc_check\": \"pass\",\n\
-        \    \"dynamic_last4\": null,\n    \"exp_month\": 11,\n    \"exp_year\": 2019,\n\
-        \    \"fingerprint\": \"l4ENmRZWbEtyXQRg\",\n    \"funding\": \"credit\",\n\
-        \    \"last4\": \"4242\",\n    \"metadata\": {},\n    \"name\": null,\n  \
-        \  \"tokenization_method\": null\n  },\n  \"source_transfer\": null,\n  \"\
-        statement_descriptor\": null,\n  \"status\": \"succeeded\"\n}\n"}
-    headers:
-      access-control-allow-credentials: ['true']
-      access-control-allow-methods: ['GET, POST, HEAD, OPTIONS, DELETE']
-      access-control-allow-origin: ['*']
-      access-control-max-age: ['300']
-      cache-control: ['no-cache, no-store']
-      connection: [keep-alive]
-      content-length: ['2923']
-      content-type: [application/json]
-      date: ['Thu, 23 Jun 2016 20:39:57 GMT']
-      request-id: [req_8h2hv7x0c3ky9c]
-      server: [nginx]
-      strict-transport-security: [max-age=31556926; includeSubDomains]
-      stripe-version: ['2016-03-07']
-    status: {code: 200, message: OK}
-- request:
-    body: null
-    headers:
-      Accept: ['*/*']
-      Accept-Encoding: ['gzip, deflate']
-      Authorization: [Bearer sk_test_OBAqgCaFyOUaaFwHJirSbg9D]
-      Connection: [keep-alive]
-      Stripe-Version: ['2016-03-07']
-      User-Agent: [Stripe/v1 PythonBindings/1.35.0]
-      X-Stripe-Client-User-Agent: ['{"lang": "python", "publisher": "stripe", "httplib":
-          "requests", "uname": "Linux brux 4.4.0-24-generic #43-Ubuntu SMP Wed Jun
-          8 19:27:37 UTC 2016 x86_64 x86_64", "lang_version": "2.7.10", "platform":
-          "Linux-4.4.0-24-generic-x86_64-with-Ubuntu-16.04-xenial", "bindings_version":
-          "1.35.0"}']
-    method: GET
-    uri: https://api.stripe.com/v1/application_fees?charge=ch_18C9kF2dPuL5A6ooUE5opsBX
+    uri: https://api.stripe.com/v1/application_fees?charge=ch_1AKCFAKDDJKt8tvuOJUHwMOo
   response:
     body: {string: !!python/unicode "{\n  \"object\": \"list\",\n  \"data\": [\n \
-        \   {\n      \"id\": \"fee_8T5wqjX6ZHLBG7\",\n      \"object\": \"application_fee\"\
-        ,\n      \"account\": \"acct_103ulr2dPuL5A6oo\",\n      \"amount\": 180,\n\
-        \      \"amount_refunded\": 90,\n      \"application\": \"ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR\"\
-        ,\n      \"balance_transaction\": \"txn_18C9kF2dPuL5A6oohnqRmwFk\",\n    \
-        \  \"charge\": \"ch_18C9kF2dPuL5A6ooUE5opsBX\",\n      \"created\": 1463497467,\n\
-        \      \"currency\": \"usd\",\n      \"livemode\": false,\n      \"originating_transaction\"\
-        : null,\n      \"refunded\": false,\n      \"refunds\": {\n        \"object\"\
-        : \"list\",\n        \"data\": [\n          {\n            \"id\": \"fr_8ViIe4waj0df4V\"\
-        ,\n            \"object\": \"fee_refund\",\n            \"amount\": 90,\n\
-        \            \"balance_transaction\": \"txn_18EgsB2dPuL5A6oogdpIlwvy\",\n\
-        \            \"created\": 1464101467,\n            \"currency\": \"usd\",\n\
-        \            \"fee\": \"fee_8T5wqjX6ZHLBG7\",\n            \"metadata\": {}\n\
-        \          }\n        ],\n        \"has_more\": false,\n        \"total_count\"\
-        : 1,\n        \"url\": \"/v1/application_fees/fee_8T5wqjX6ZHLBG7/refunds\"\
+        \   {\n      \"id\": \"fee_1AKCFAKDDJKt8tvuRUn116pA\",\n      \"object\":\
+        \ \"application_fee\",\n      \"account\": \"acct_15VviQKDDJKt8tvu\",\n  \
+        \    \"amount\": 250,\n      \"amount_refunded\": 250,\n      \"application\"\
+        : \"ca_4chEaXTzoWf7wlHdukG9gYj2n4ivgvpR\",\n      \"balance_transaction\"\
+        : \"txn_1AKCFA2dPuL5A6ooBYi2O5PE\",\n      \"charge\": \"ch_1AKCFAKDDJKt8tvuOJUHwMOo\"\
+        ,\n      \"created\": 1494966368,\n      \"currency\": \"usd\",\n      \"\
+        livemode\": false,\n      \"originating_transaction\": null,\n      \"refunded\"\
+        : true,\n      \"refunds\": {\n        \"object\": \"list\",\n        \"data\"\
+        : [\n          {\n            \"id\": \"fr_AfXJyxuhMLoDiF\",\n           \
+        \ \"object\": \"fee_refund\",\n            \"amount\": 250,\n            \"\
+        balance_transaction\": \"txn_1AKCFC2dPuL5A6ooL11dPn7L\",\n            \"created\"\
+        : 1494966370,\n            \"currency\": \"usd\",\n            \"fee\": \"\
+        fee_1AKCFAKDDJKt8tvuRUn116pA\",\n            \"metadata\": {}\n          }\n\
+        \        ],\n        \"has_more\": false,\n        \"total_count\": 1,\n \
+        \       \"url\": \"/v1/application_fees/fee_1AKCFAKDDJKt8tvuRUn116pA/refunds\"\
         \n      }\n    }\n  ],\n  \"has_more\": false,\n  \"url\": \"/v1/application_fees\"\
         \n}\n"}
     headers:
@@ -250,10 +278,10 @@ interactions:
       access-control-max-age: ['300']
       cache-control: ['no-cache, no-store']
       connection: [keep-alive]
-      content-length: ['1104']
+      content-length: ['1135']
       content-type: [application/json]
-      date: ['Thu, 23 Jun 2016 20:39:58 GMT']
-      request-id: [req_8h2hrut23hdROF]
+      date: ['Tue, 16 May 2017 20:26:10 GMT']
+      request-id: [req_AfXJdrt3GRn3Ef]
       server: [nginx]
       strict-transport-security: [max-age=31556926; includeSubDomains]
       stripe-version: ['2016-03-07']

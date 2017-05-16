@@ -1,7 +1,7 @@
 import json
 import os
 
-import copy
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.http import Http404
@@ -12,6 +12,7 @@ import vcr
 
 from brambling.models import Transaction
 from brambling.payment.stripe.core import stripe_prep
+from brambling.payment.stripe.api import stripe_charge, stripe_refund
 from brambling.payment.core import TEST
 from brambling.tests.factories import (TransactionFactory, OrderFactory,
                                        EventFactory, ItemFactory,
@@ -57,137 +58,6 @@ TRANSACTION_STATUS_DATA = {
     }
 
 }
-
-
-STRIPE_REFUND_EVENT = json.loads("""{
-  "api_version": "2015-01-11",
-  "created": 1464101467,
-  "data": {
-    "object": {
-      "amount": 12000,
-      "amount_refunded": 6000,
-      "application_fee": null,
-      "balance_transaction": "txn_18C9kF2dPuL5A6ooysxS4uFL",
-      "captured": true,
-      "card": {
-        "address_city": null,
-        "address_country": null,
-        "address_line1": null,
-        "address_line1_check": null,
-        "address_line2": null,
-        "address_state": null,
-        "address_zip": null,
-        "address_zip_check": null,
-        "brand": "Visa",
-        "country": "US",
-        "customer": null,
-        "cvc_check": "pass",
-        "dynamic_last4": null,
-        "exp_month": 11,
-        "exp_year": 2019,
-        "fingerprint": "l4ENmRZWbEtyXQRg",
-        "funding": "credit",
-        "id": "card_18C9kF2dPuL5A6ooIVeNe8kV",
-        "last4": "4242",
-        "metadata": {},
-        "name": null,
-        "object": "card",
-        "tokenization_method": null
-      },
-      "created": 1463497467,
-      "currency": "usd",
-      "customer": null,
-      "description": null,
-      "destination": null,
-      "dispute": null,
-      "failure_code": null,
-      "failure_message": null,
-      "fraud_details": {},
-      "id": "ch_18C9kF2dPuL5A6ooUE5opsBX",
-      "invoice": null,
-      "livemode": false,
-      "metadata": {
-        "event": "Demo Event",
-        "order": "7pMR6czT"
-      },
-      "object": "charge",
-      "order": null,
-      "paid": true,
-      "receipt_email": null,
-      "receipt_number": null,
-      "refunded": false,
-      "refunds": {
-        "data": [
-          {
-            "amount": 6000,
-            "balance_transaction": "txn_18EgsB2dPuL5A6oozQ0nLPkz",
-            "charge": "ch_18C9kF2dPuL5A6ooUE5opsBX",
-            "created": 1464101467,
-            "currency": "usd",
-            "id": "re_18EgsB2dPuL5A6ooGEq33q9o",
-            "metadata": {
-              "event": "Demo Event",
-              "order": "7pMR6czT"
-            },
-            "object": "refund",
-            "reason": null,
-            "receipt_number": null,
-            "status": "succeeded"
-          }
-        ],
-        "has_more": false,
-        "object": "list",
-        "total_count": 1,
-        "url": "/v1/charges/ch_18C9kF2dPuL5A6ooUE5opsBX/refunds"
-      },
-      "shipping": null,
-      "source": {
-        "address_city": null,
-        "address_country": null,
-        "address_line1": null,
-        "address_line1_check": null,
-        "address_line2": null,
-        "address_state": null,
-        "address_zip": null,
-        "address_zip_check": null,
-        "brand": "Visa",
-        "country": "US",
-        "customer": null,
-        "cvc_check": "pass",
-        "dynamic_last4": null,
-        "exp_month": 11,
-        "exp_year": 2019,
-        "fingerprint": "l4ENmRZWbEtyXQRg",
-        "funding": "credit",
-        "id": "card_18C9kF2dPuL5A6ooIVeNe8kV",
-        "last4": "4242",
-        "metadata": {},
-        "name": null,
-        "object": "card",
-        "tokenization_method": null
-      },
-      "source_transfer": null,
-      "statement_descriptor": null,
-      "status": "paid"
-    },
-    "previous_attributes": {
-      "amount_refunded": 0,
-      "refunds": {
-        "data": [],
-        "has_more": false,
-        "object": "list",
-        "total_count": 0,
-        "url": "/v1/charges/ch_18C9kF2dPuL5A6ooUE5opsBX/refunds"
-      }
-    }
-  },
-  "id": "evt_18EgsB2dPuL5A6oo1eOhCyit",
-  "livemode": false,
-  "object": "event",
-  "pending_webhooks": 0,
-  "request": "req_8ViIc76ys8DfCL",
-  "type": "charge.refunded"
-}""")
 
 
 class DwollaWebhookTestCase(TestCase):
@@ -305,26 +175,14 @@ class StripeWebhookBadRequestTestCase(TestCase):
         with self.assertRaises(Http404):
             self.view(request)
 
-    def test_non_refund_event_type(self):
-        non_refund_event = copy.deepcopy(STRIPE_REFUND_EVENT)
-        non_refund_event['type'] = 'coupon.created'
-        non_refund_event['data']['object'] = {
-            "id": "25OFF",
-            "object": "coupon",
-            "amount_off": None,
-            "created": 1466196826,
-            "currency": "usd",
-            "duration": "repeating",
-            "duration_in_months": 3,
-            "livemode": False,
-            "max_redemptions": None,
-            "metadata": {
-            },
-            "percent_off": 25,
-            "redeem_by": None,
-            "times_redeemed": 0,
-            "valid": True,
-        }
+    @mock.patch('stripe.Event.retrieve')
+    def test_non_refund_event_type(self, event_retrieve):
+        non_refund_event = stripe.Event.construct_from({
+            'id': 'coupon_1',
+            'type': 'coupon.created',
+        }, settings.STRIPE_TEST_SECRET_KEY)
+
+        event_retrieve.return_value = non_refund_event
         data = json.dumps(non_refund_event)
 
         request = self.factory.post('/', content_type='application/json', data=data)
@@ -332,9 +190,7 @@ class StripeWebhookBadRequestTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_missing_event_id(self):
-        event_without_id = dict(STRIPE_REFUND_EVENT)
-        del event_without_id['id']
-        data = json.dumps(event_without_id)
+        data = json.dumps({})
 
         request = self.factory.post('/', content_type='application/json', data=data)
         with self.assertRaises(Http404):
@@ -351,7 +207,7 @@ class StripeWebhookRefundTestCase(TestCase):
 
         self.factory = RequestFactory()
         self.view = StripeWebhookView.as_view()
-        self.data = json.dumps(STRIPE_REFUND_EVENT)
+        self.data = json.dumps({'id': 'evt_123_event_id'})
 
         self.request = self.factory.post(path='/',
                                          content_type='application/json',
@@ -379,54 +235,50 @@ class StripeWebhookRefundTestCase(TestCase):
         with self.assertRaises(Http404):
             self.view(self.request)
 
-    @mock.patch('stripe.ApplicationFee.all')
-    @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_fee_not_found.yaml'))
-    def test_stripe_application_fee_not_found(self, application_fee_retrieve):
-        remote_id = STRIPE_REFUND_EVENT['data']['object']['id']
-        self.txn = TransactionFactory(event=self.event, order=self.order,
-                                      remote_id=remote_id)
-        empty_data = stripe.resource.ListObject.construct_from(
-            {'data': []}, TEST)
-        application_fee_retrieve.return_value = empty_data
-
-        with self.assertRaises(Http404):
-            self.view(self.request)
-
     @mock.patch('stripe.Charge.retrieve')
     @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_charge_not_found.yaml'))
     def test_stripe_charge_not_found(self, charge_retrieve):
-        remote_id = STRIPE_REFUND_EVENT['data']['object']['id']
+        # remote_id = STRIPE_REFUND_EVENT['data']['object']['id']
         self.txn = TransactionFactory(event=self.event, order=self.order,
-                                      remote_id=remote_id)
+                                      remote_id='charge_id')
         charge_retrieve.side_effect = stripe.error.InvalidRequestError(
             'not found', 1)
 
         with self.assertRaises(Http404):
             self.view(self.request)
 
+    @mock.patch('stripe.Event.retrieve')
     @vcr.use_cassette(os.path.join(VCR_DIR, 'test_stripe_webhook_refund.yaml'))
-    def test_transaction_not_found(self):
+    def test_transaction_not_found(self, event_retrieve):
+        event_retrieve.return_value = stripe.Event.construct_from({
+            'id': 'event_1',
+            'type': 'charge.refunded',
+            'data': {
+                'object': {'id': 'charge_id'},
+            },
+        }, settings.STRIPE_TEST_SECRET_KEY)
         response = self.view(self.request)
         self.assertEqual(response.status_code, 200)
         with self.assertRaises(Transaction.DoesNotExist):
-            Transaction.objects.get(
-                remote_id=STRIPE_REFUND_EVENT['data']['object']['id'])
+            Transaction.objects.get(remote_id='charge_id')
 
     @mock.patch('stripe.Event.retrieve')
     @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_charge_id_not_found.yaml'))
-    def test_charge_id_not_found(self, stripe_retrieve):
-        event_without_charge_id = copy.deepcopy(STRIPE_REFUND_EVENT)
-        del event_without_charge_id['data']['object']['id']
-
-        stripe_retrieve.return_value = stripe.resource.Event.construct_from(
-            event_without_charge_id, TEST)
+    def test_charge_id_not_found(self, event_retrieve):
+        event_retrieve.return_value = stripe.Event.construct_from({
+            'id': 'event_1',
+            'type': 'charge.refunded',
+            'data': {
+                'object': {},
+            },
+        }, settings.STRIPE_TEST_SECRET_KEY)
 
         with self.assertRaises(Http404):
             self.view(self.request)
 
 
 class SuccessfulRefundWebhookTestCase(TestCase):
-
+    @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_refund_success.yaml'))
     def setUp(self):
         stripe_prep(TEST)
 
@@ -435,7 +287,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
 
         self.factory = RequestFactory()
         self.view = StripeWebhookView.as_view()
-        self.data = json.dumps(STRIPE_REFUND_EVENT)
+        self.data = json.dumps({'id': 'evt_123_event_id'})
 
         self.request = self.factory.post(path='/',
                                          content_type='application/json',
@@ -444,21 +296,38 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         item = ItemFactory(event=self.event)
         item_option = ItemOptionFactory(price=60, item=item)
         self.order.add_to_cart(item_option)
-        remote_id = STRIPE_REFUND_EVENT['data']['object']['id']
-        self.txn = TransactionFactory(event=self.event, order=self.order,
-                                      remote_id=remote_id)
+
+        token = stripe.Token.create(
+            card={
+                'number': '4242424242424242',
+                'exp_month': 12,
+                'exp_year': 2017,
+                'cvc': '123'
+            },
+        )
+
+        charge = stripe_charge(token, 100, self.order, self.event)
+
+        self.txn = Transaction.from_stripe_charge(charge, event=self.event)
+
+        self.refund = stripe_refund(self.order, self.event, charge.id, 100)
+
+        data = mock.Mock(object=mock.Mock(name='charge', id=charge.id))
+        self.mock_event = mock.Mock(data=data, type='charge.refunded')
         self.order.mark_cart_paid(self.txn)
 
-    @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_refund_success.yaml'))
-    def test_transaction_refunded_successfully(self):
+    @mock.patch('stripe.Event.retrieve')
+    def test_transaction_refunded_successfully(self, event_retrieve):
+        event_retrieve.return_value = self.mock_event
         response = self.view(self.request)
 
         Transaction.objects.get(related_transaction=self.txn,
                                 transaction_type=Transaction.REFUND)
         self.assertEqual(response.status_code, 200)
 
-    @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_refund_idempotence.yaml'))
-    def test_events_should_be_processed_exactly_once(self):
+    @mock.patch('stripe.Event.retrieve')
+    def test_events_should_be_processed_exactly_once(self, event_retrieve):
+        event_retrieve.return_value = self.mock_event
         response1 = self.view(self.request)
         response2 = self.view(self.request)
 

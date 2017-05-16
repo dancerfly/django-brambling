@@ -3,7 +3,6 @@ import json
 from django.contrib import messages
 from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
-from django.db import transaction
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -161,55 +160,58 @@ class StripeWebhookView(View):
         if event.type != 'charge.refunded':
             return HttpResponse(status=200)
 
-        with transaction.atomic():
-            try:
-                (ProcessedStripeEvent.objects
-                 .select_for_update().get(stripe_event_id=stripe_event_id))
-            except ProcessedStripeEvent.DoesNotExist:
-                ProcessedStripeEvent.objects.create(
-                    stripe_event_id=stripe_event_id)
-            else:
-                return HttpResponse(status=200)
-
-        try:
-            refund_id = event['data']['object']['refunds']['data'][0]['id']
-            refund = stripe.Refund.retrieve(refund_id, expand=['balance_transaction'])
-        except KeyError:
+        _, new_event = ProcessedStripeEvent.objects.get_or_create(
+            stripe_event_id=stripe_event_id)
+        if not new_event:
             return HttpResponse(status=200)
-        except stripe.error.InvalidRequestError:
-            raise Http404('Refund not found on stripe')
 
         try:
-            charge_id = event['data']['object']['id']
+            charge_id = event.data.object.id
             txn = Transaction.objects.get(remote_id=charge_id)
         except Transaction.DoesNotExist:
             return HttpResponse(status=200)
-        except KeyError:
+        except AttributeError:
             raise Http404('Charge id not found')
 
+        event = txn.event
+        if event.api_type == LIVE:
+            access_token = event.organization.stripe_access_token
+        else:
+            access_token = event.organization.stripe_test_access_token
+        stripe.api_key = access_token
+
         try:
-            charge = stripe.Charge.retrieve(charge_id,
-                                            expand=['balance_transaction'])
+            charge = stripe.Charge.retrieve(
+                charge_id,
+                expand=[
+                    'balance_transaction',
+                    'application_fee',
+                    'refunds.balance_transaction',
+                ],
+            )
         except stripe.error.InvalidRequestError:
             raise Http404('Charge not found on stripe')
 
-        try:
-            application_fee = stripe.ApplicationFee.all(charge=charge).data[0]
-        except IndexError:
-            raise Http404('Charge has no application fees')
+        for refund in charge.refunds:
+            if Transaction.objects.filter(
+                transaction_type=Transaction.REFUND,
+                method=Transaction.STRIPE,
+                remote_id=refund.id,
+                related_transaction=txn,
+            ).exists():
+                continue
+            application_fee_refund = charge.application_fee.refunds.data[0]
+            refund_group = {
+                'refund': refund,
+                'application_fee_refund': application_fee_refund,
+            }
 
-        application_fee_refund = application_fee.refunds.data[0]
-        refund_group = {
-            'refund': refund,
-            'application_fee_refund': application_fee_refund,
-        }
-
-        refund_kwargs = {
-            'order': txn.order,
-            'related_transaction': txn,
-            'api_type': txn.api_type,
-            'event': txn.event,
-        }
-        Transaction.from_stripe_refund(refund_group, **refund_kwargs)
+            refund_kwargs = {
+                'order': txn.order,
+                'related_transaction': txn,
+                'api_type': txn.api_type,
+                'event': txn.event,
+            }
+            Transaction.from_stripe_refund(refund_group, **refund_kwargs)
 
         return HttpResponse(status=200)
