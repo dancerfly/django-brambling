@@ -836,7 +836,7 @@ class TransferView(OrderMixin, WorkflowMixin, FormView):
     def post(self, *args, **kwargs):
         # We want users to create an account if they want to transfer
         # an item. The Invite model currently also expects a user.
-        return super(TransferView, self).dispatch(*args, **kwargs)
+        return super(TransferView, self).post(*args, **kwargs)
 
     def get_initial(self):
         return self.request.GET
