@@ -1,4 +1,6 @@
 # encoding: utf-8
+from datetime import timedelta
+
 from django.contrib.auth.models import AnonymousUser
 from django.core import mail
 from django.test import TestCase, RequestFactory
@@ -14,7 +16,11 @@ from brambling.tests.factories import (
     DiscountFactory,
     PersonFactory,
 )
-from brambling.views.orders import SummaryView
+from brambling.views.orders import (
+    SummaryView,
+    TransferView,
+    RegistrationWorkflow,
+)
 
 
 class SummaryViewTestCase(TestCase):
@@ -87,3 +93,59 @@ class SummaryViewTestCase(TestCase):
         response = view.post(view.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(mail.outbox), 2)
+
+
+class TransferViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_transfer_item(self):
+        """A user should be able to transfer an item on their order to an
+        email address."""
+        organization = OrganizationFactory(check_payment_allowed=True)
+        event_owner = PersonFactory()
+        OrganizationMember.objects.create(
+            person=event_owner,
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
+        event = EventFactory(
+            collect_housing_data=False,
+            organization=organization,
+            check_postmark_cutoff=timezone.now().date() + timedelta(1),
+        )
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        orderer = PersonFactory()
+        receiver = PersonFactory()
+        order = OrderFactory(
+            event=event,
+            person=orderer,
+        )
+        order.add_to_cart(item_option)
+
+        view = TransferView()
+        view.request = self.factory.post('/')
+        view.request.user = orderer
+        view.event = event
+        view.order = order
+        view.item = item
+        view.workflow = RegistrationWorkflow(
+            order=order,
+            event=event,
+        )
+        view.current_step = view.workflow.steps.get(view.current_step_slug)
+        import pdb
+        pdb.set_trace()
+        response = view.post(view.request)
+
+    def test_unauthenticated_transfer_fails(self):
+        """Only authenticated users should be allowed to transfer items,
+        despite unauthenticated visitors being alloewd to place orders.
+        """
+        pass
+
+    def test_pending_payment_transfer_fails(self):
+        """A transfer on an item with unconfirmed transactions should be prohibited."""
+        pass
