@@ -1298,11 +1298,13 @@ class OrderDetailView(DetailView):
                         break
         self.transaction_refund_forms = [TransactionRefundForm(t)
                                          for t in self.order.transactions.all()]
+
+        # Transaction refund forms are not handled by this view so don't
+        # get included here.
+        forms = [self.notes_form] + self.attendee_forms
         if can_edit_event:
-            forms = [self.payment_form, self.notes_form, self.transaction_refund_forms]
-        else:
-            forms = [self.notes_form]
-        return forms + self.attendee_forms
+            forms.append(self.payment_form)
+        return forms
 
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
