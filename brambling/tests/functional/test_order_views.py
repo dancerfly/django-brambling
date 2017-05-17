@@ -6,7 +6,7 @@ from django.core import mail
 from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
-from brambling.models import OrganizationMember
+from brambling.models import OrganizationMember, BoughtItem
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
@@ -15,6 +15,7 @@ from brambling.tests.factories import (
     OrganizationFactory,
     DiscountFactory,
     PersonFactory,
+    TransactionFactory,
 )
 from brambling.views.orders import (
     SummaryView,
@@ -124,21 +125,30 @@ class TransferViewTestCase(TestCase):
             person=orderer,
         )
         order.add_to_cart(item_option)
+        transaction = TransactionFactory(event=event, is_confirmed=True)
+        order.mark_cart_paid(transaction)
+
+        # The BoughtItem should be in the correct state if we've set up this
+        # test Order correctly.
+        self.assertEqual(order.bought_items.first().status, BoughtItem.BOUGHT)
 
         view = TransferView()
-        view.request = self.factory.post('/')
-        view.request.user = orderer
-        view.event = event
-        view.order = order
-        view.item = item
-        view.workflow = RegistrationWorkflow(
-            order=order,
-            event=event,
+        view.kwargs = dict(
+            event_slug=event.slug,
+            organization_slug=organization.slug,
         )
+        view.request = self.factory.post('/', dict(
+            bought_item=order.bought_items.first().pk,
+            email=receiver.email,
+        ))
+        view.request.user = orderer
+        view.order = order
+        view.workflow = RegistrationWorkflow(order=order, event=event)
         view.current_step = view.workflow.steps.get(view.current_step_slug)
-        import pdb
-        pdb.set_trace()
         response = view.post(view.request)
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('offered an item transfer', mail.outbox[0].body)
 
     def test_unauthenticated_transfer_fails(self):
         """Only authenticated users should be allowed to transfer items,
