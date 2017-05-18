@@ -417,6 +417,7 @@ class EventSummaryView(TemplateView):
             'event_permissions': self.request.user.get_all_permissions(self.event),
 
             'attendee_count': attendees.count(),
+            'attendee_emails': ','.join(a.email for a in attendees),
             'itemoptions': itemoptions,
             'discounts': discounts,
 
