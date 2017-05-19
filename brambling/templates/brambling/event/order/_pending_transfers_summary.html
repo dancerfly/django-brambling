@@ -6,9 +6,9 @@
 		</div>
 	</header>
 
-	<ul class="list-items">
+	<ul class="list-group">
 		{% for transfer in pending_transfers %}
-		<li class="list-items__item">
+		<li class="list-item list-group-item">
 			<span>
 				{{ transfer.bought_item.item_option_name }}
 				({{ transfer.bought_item.item_name }})
