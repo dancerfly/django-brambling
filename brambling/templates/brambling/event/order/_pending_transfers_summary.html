@@ -6,12 +6,23 @@
 		</div>
 	</header>
 
-	<ul>
+	<ul class="list-items">
 		{% for transfer in pending_transfers %}
-		<li>
-			{{ transfer.bought_item.item_option_name }} ({{ transfer.bought_item.item_name }})
-			offered to
-			{{ transfer.invite.email }} {{ transfer.invite.created|timesince }} ago
+		<li class="list-items__item">
+			<span>
+				{{ transfer.bought_item.item_option_name }}
+				({{ transfer.bought_item.item_name }})
+				offered to
+				{{ transfer.invite.email }}
+				{{ transfer.invite.created|timesince }} ago
+			</span>
+
+			<a
+				href="#"
+				class="btn btn-default disabled{% comment %}Until #598 is completed {% endcomment %}"
+			>
+				Cancel
+			</a>
 		</li>
 		{% endfor %}
 	</ul>
