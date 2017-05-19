@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Q
@@ -830,6 +831,12 @@ class TransferView(OrderMixin, WorkflowMixin, FormView):
     template_name = 'brambling/event/order/transfer.html'
     workflow_class = RegistrationWorkflow
     current_step_slug = 'payment'
+
+    @method_decorator(login_required)
+    def post(self, *args, **kwargs):
+        # We want users to create an account if they want to transfer
+        # an item. The Invite model currently also expects a user.
+        return super(TransferView, self).post(*args, **kwargs)
 
     def get_initial(self):
         return self.request.GET

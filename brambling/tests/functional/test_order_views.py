@@ -1,10 +1,12 @@
 # encoding: utf-8
+from datetime import timedelta
+
 from django.contrib.auth.models import AnonymousUser
 from django.core import mail
 from django.test import TestCase, RequestFactory
 from django.utils import timezone
 
-from brambling.models import OrganizationMember
+from brambling.models import OrganizationMember, BoughtItem
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
@@ -13,8 +15,13 @@ from brambling.tests.factories import (
     OrganizationFactory,
     DiscountFactory,
     PersonFactory,
+    TransactionFactory,
 )
-from brambling.views.orders import SummaryView
+from brambling.views.orders import (
+    SummaryView,
+    TransferView,
+    RegistrationWorkflow,
+)
 
 
 class SummaryViewTestCase(TestCase):
@@ -87,3 +94,87 @@ class SummaryViewTestCase(TestCase):
         response = view.post(view.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(mail.outbox), 2)
+
+
+class TransferViewTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def set_up_view(self, orderer=None, is_confirmed=False):
+        organization = OrganizationFactory(check_payment_allowed=True)
+        OrganizationMember.objects.create(
+            person=PersonFactory(),
+            organization=organization,
+            role=OrganizationMember.OWNER,
+        )
+        event = EventFactory(
+            collect_housing_data=False,
+            organization=organization,
+            check_postmark_cutoff=timezone.now().date() + timedelta(1),
+        )
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+
+        receiver = PersonFactory()
+        order_kwargs = dict(event=event)
+        if orderer:
+            order_kwargs['person'] = orderer
+        order = OrderFactory(**order_kwargs)
+        order.add_to_cart(item_option)
+        transaction = TransactionFactory(event=event, is_confirmed=is_confirmed)
+        order.mark_cart_paid(transaction)
+
+        # The BoughtItem should be in the correct state if we've set up this
+        # test Order correctly.
+        self.assertEqual(order.bought_items.first().status, BoughtItem.BOUGHT)
+
+        view = TransferView()
+        view.kwargs = dict(
+            event_slug=event.slug,
+            organization_slug=organization.slug,
+        )
+        view.request = self.factory.post('/', dict(
+            bought_item=order.bought_items.first().pk,
+            email=receiver.email,
+        ))
+        view.request.user = orderer if orderer else AnonymousUser()
+        view.event = event
+        view.order = order
+        view.workflow = RegistrationWorkflow(order=order, event=event)
+        view.current_step = view.workflow.steps.get(view.current_step_slug)
+        return view
+
+    def test_transfer_item(self):
+        """A user should be able to transfer an item on their order to an
+        email address."""
+        view = self.set_up_view(
+            orderer=PersonFactory(),
+            is_confirmed=True,
+        )
+        view.post(view.request)
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('offered an item transfer', mail.outbox[0].body)
+
+    def test_unauthenticated_transfer_fails(self):
+        """Only authenticated users should be allowed to transfer items,
+        despite unauthenticated visitors being allowed to place orders.
+        """
+        view = self.set_up_view(
+            orderer=None,
+            is_confirmed=True,
+        )
+        response = view.post(view.request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_pending_payment_transfer_fails(self):
+        """A transfer on an item with unconfirmed transactions should be prohibited."""
+        view = self.set_up_view(
+            orderer=PersonFactory(),
+            is_confirmed=False,
+        )
+        view.post(view.request)
+
+        self.assertEqual(len(mail.outbox), 0)

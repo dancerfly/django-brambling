@@ -142,6 +142,7 @@ class TransactionFactory(factory.DjangoModelFactory):
 
     event = factory.SubFactory(EventFactory)
     transaction_type = Transaction.PURCHASE
+    is_confirmed = False
 
 
 class ItemFactory(factory.DjangoModelFactory):
