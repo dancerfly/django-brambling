@@ -1,0 +1,21 @@
+{% if transferred_items %}
+<div class="panel panel-primary">
+	<header class="panel-heading">
+		<div class="panel-title">
+			Completed Transfers
+		</div>
+	</header>
+
+	<ul class="list-group">
+		{% for item in transferred_items %}
+		<li class="list-group-item">
+			{{ item.item_option_name }}
+			({{ item.item_name }})
+			accepted by
+			{{ item.order.person.email }}
+			{{ item.get_transfer.timestamp|timesince }} ago
+		</li>
+		{% endfor %}
+	</ul>
+</div>
+{% endif %}

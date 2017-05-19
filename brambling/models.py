@@ -1486,6 +1486,9 @@ class BoughtItem(models.Model):
             not self.transactions.filter(is_confirmed=False).exists()
         )
 
+    def get_transfer(self):
+        return self.transactions.get(transaction_type=Transaction.TRANSFER)
+
     class Meta:
         ordering = ('added',)
 

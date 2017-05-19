@@ -837,6 +837,14 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             for invite in invites
         ]
 
+        # This is pretty awful and hopefully only used as a stopgap measure
+        # before Invites get refactored. Then again, this comment is one of
+        # those kinds that stick around for years.
+        context['transferred_items'] = BoughtItem.objects.filter(
+            transactions__related_transaction__transaction_type=Transaction.TRANSFER,
+            transactions__related_transaction__order=self.order,
+        )
+
         return context
 
 
