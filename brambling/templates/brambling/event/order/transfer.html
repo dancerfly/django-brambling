@@ -12,8 +12,8 @@
 	{% if not user.is_authenticated %}
 	<div class='alert alert-danger'>
 		Sorry!
-		<b>You need to <a href="{% url 'brambling_signup' %}?email={{ order.email }}">create an account</a> to transfer an item.</b>
-		You'll be able to claim this order right away if you <a href="{% url 'brambling_signup' %}?email={{ order.email }}">create an account</a> with the same email address.
+		<b>You need to <a class="alert-link" href="{% url 'brambling_signup' %}?email={{ order.email }}">create an account</a> to transfer an item.</b>
+		You'll be able to claim this order right away if you <a class="alert-link" href="{% url 'brambling_signup' %}?email={{ order.email }}">create an account</a> with the same email address.
 	</div>
 	{% endif %}
 
