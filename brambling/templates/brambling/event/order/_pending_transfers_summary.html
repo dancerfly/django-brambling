@@ -1,0 +1,19 @@
+{% if pending_transfers %}
+<div class="panel panel-primary">
+	<header class="panel-heading">
+		<div class="panel-title">
+			Pending Transfers
+		</div>
+	</header>
+
+	<ul>
+		{% for transfer in pending_transfers %}
+		<li>
+			{{ transfer.bought_item.item_option_name }} ({{ transfer.bought_item.item_name }})
+			offered to
+			{{ transfer.invite.email }} {{ transfer.invite.created|timesince }} ago
+		</li>
+		{% endfor %}
+	</ul>
+</div>
+{% endif %}

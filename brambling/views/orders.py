@@ -823,6 +823,20 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 'dwolla_user_id': account.user_id
             })
         context.update(self.summary_data)
+
+        # TODO: Improve this overall assembly. It's possible the data model
+        # will need to change to allow this. Invite doesn't have a reference
+        # back to its content though, just an IntegerField content_id.
+        bought_items = self.order.bought_items.filter(status=BoughtItem.BOUGHT)
+        invites = TransferInvite.get_invites(bought_items)
+        context['pending_transfers'] = [
+            dict(
+                invite=invite,
+                bought_item=bought_items.get(pk=invite.content_id),
+            )
+            for invite in invites
+        ]
+
         return context
 
 
