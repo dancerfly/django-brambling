@@ -102,9 +102,8 @@ class TransferViewTestCase(TestCase):
 
     def set_up_view(self, orderer=None, is_confirmed=False):
         organization = OrganizationFactory(check_payment_allowed=True)
-        event_owner = PersonFactory()
         OrganizationMember.objects.create(
-            person=event_owner,
+            person=PersonFactory(),
             organization=organization,
             role=OrganizationMember.OWNER,
         )
