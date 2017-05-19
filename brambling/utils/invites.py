@@ -492,8 +492,7 @@ class TransferInvite(BaseInvite):
         except Order.DoesNotExist:
             return False
 
-        if order != content:
-            return False
+        return order == content.order
 
     def post_manage_url(self):
         content = self.get_content()
