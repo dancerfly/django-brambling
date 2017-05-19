@@ -68,6 +68,7 @@ class PersonFactory(factory.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: "test{}@test.com".format(n))
     confirmed_email = factory.LazyAttribute(lambda obj: obj.email)
+    password = factory.PostGenerationMethodCall('set_password', 'password')
 
 
 class OrganizationFactory(factory.DjangoModelFactory):
