@@ -36,6 +36,16 @@ class SignUpView(CreateView):
     form_class = SignUpForm
     template_name = 'registration/sign_up.html'
 
+    def get_initial(self):
+        initial = super(SignUpView, self).get_initial()
+        initial = initial.copy()
+        blacklist = ['password1', 'password2']
+        for key, value in self.request.GET.iteritems():
+            if key in blacklist:
+                continue
+            initial[key] = value
+        return initial
+
     def get_success_url(self):
         redirect_to = self.request.GET.get('next', '/')
         if not is_safe_url(url=redirect_to, host=self.request.get_host()):
