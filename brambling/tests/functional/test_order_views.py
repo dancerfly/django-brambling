@@ -158,7 +158,7 @@ class TransferViewTestCase(TestCase):
 
     def test_unauthenticated_transfer_fails(self):
         """Only authenticated users should be allowed to transfer items,
-        despite unauthenticated visitors being alloewd to place orders.
+        despite unauthenticated visitors being allowed to place orders.
         """
         view = self.set_up_view(
             orderer=None,
