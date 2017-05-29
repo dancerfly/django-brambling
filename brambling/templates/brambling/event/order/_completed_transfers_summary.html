@@ -13,7 +13,7 @@
 			({{ item.item_name }})
 			transferred to
 			{{ item.order.person.email }}
-			{{ item.get_transfer.timestamp|timesince }} ago
+			{{ item.transfer_transactions.0.timestamp|timesince }} ago
 		</li>
 		{% endfor %}
 	</ul>
