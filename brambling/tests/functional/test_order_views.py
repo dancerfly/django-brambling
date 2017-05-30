@@ -121,7 +121,7 @@ class TransferViewTestCase(TestCase):
             order_kwargs['person'] = orderer
         order = OrderFactory(**order_kwargs)
         order.add_to_cart(item_option)
-        transaction = TransactionFactory(event=event, is_confirmed=is_confirmed)
+        transaction = TransactionFactory(event=event, order=order, is_confirmed=is_confirmed)
         order.mark_cart_paid(transaction)
 
         # The BoughtItem should be in the correct state if we've set up this
