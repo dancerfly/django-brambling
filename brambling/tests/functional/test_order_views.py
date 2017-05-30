@@ -180,7 +180,6 @@ class TransferViewTestCase(TestCase):
         self.assertEqual(len(response.context_data['pending_transfers']), 0)
         self.assertEqual(len(response.context_data['transferred_items']), 1)
 
-
     def test_unauthenticated_transfer_fails(self):
         """Only authenticated users should be allowed to transfer items,
         despite unauthenticated visitors being allowed to place orders.
