@@ -22,6 +22,7 @@ from brambling.views.orders import (
     TransferView,
     RegistrationWorkflow,
 )
+from brambling.utils.invites import TransferInvite
 
 
 class SummaryViewTestCase(TestCase):
@@ -170,6 +171,15 @@ class TransferViewTestCase(TestCase):
         self.assertEqual(response.context_data['pending_transfers'][0]['bought_item'], view.order.bought_items.first())
         self.assertIn('invite', response.context_data['pending_transfers'][0])
         self.assertEqual(len(response.context_data['transferred_items']), 0)
+
+        # with self.subTest('summary view includes a completed transfer'):
+        invite = response.context_data['pending_transfers'][0]['invite']
+        transfer_invite = TransferInvite(summary_view.request, invite)
+        transfer_invite.accept()
+        response = summary_view.get(summary_view.request)
+        self.assertEqual(len(response.context_data['pending_transfers']), 0)
+        self.assertEqual(len(response.context_data['transferred_items']), 1)
+
 
     def test_unauthenticated_transfer_fails(self):
         """Only authenticated users should be allowed to transfer items,
