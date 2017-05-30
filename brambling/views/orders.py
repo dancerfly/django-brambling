@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -843,8 +843,11 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         context['transferred_items'] = BoughtItem.objects.filter(
             transactions__related_transaction__transaction_type=Transaction.TRANSFER,
             transactions__related_transaction__order=self.order,
-        )
-
+        ).prefetch_related(Prefetch(
+            'transactions',
+            queryset=Transaction.objects.filter(transaction_type=Transaction.TRANSFER),
+            to_attr='transfer_transactions',
+        ))
         return context
 
 

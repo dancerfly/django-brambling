@@ -110,10 +110,12 @@ class BaseInvite(object):
     @classmethod
     def get_invites(cls, content=None):
         kwargs = {'kind': cls.slug}
-        if type(content) is QuerySet:
+        if isinstance(content, QuerySet):
             kwargs['content_id__in'] = [obj.pk for obj in content]
         elif hasattr(content, 'pk'):
             kwargs['content_id'] = content.pk
+        else:
+            raise ValueError('Content is not an object with a pk or a QuerySet.')
         return Invite.objects.filter(**kwargs)
 
     @classmethod
