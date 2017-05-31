@@ -22,6 +22,7 @@ from brambling.views.orders import (
     TransferView,
     RegistrationWorkflow,
 )
+from brambling.utils.invites import TransferInvite
 
 
 class SummaryViewTestCase(TestCase):
@@ -121,7 +122,7 @@ class TransferViewTestCase(TestCase):
             order_kwargs['person'] = orderer
         order = OrderFactory(**order_kwargs)
         order.add_to_cart(item_option)
-        transaction = TransactionFactory(event=event, is_confirmed=is_confirmed)
+        transaction = TransactionFactory(event=event, order=order, is_confirmed=is_confirmed)
         order.mark_cart_paid(transaction)
 
         # The BoughtItem should be in the correct state if we've set up this
@@ -155,6 +156,29 @@ class TransferViewTestCase(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('offered an item transfer', mail.outbox[0].body)
+
+        # TODO: Use subTest after Python 3.4 upgrade
+        # with self.subTest('summary view includes a pending transfer'):
+        summary_view = SummaryView()
+        summary_view.request = self.factory.get('/')
+        summary_view.request.user = view.request.user
+        summary_view.event = view.event
+        summary_view.order = view.order
+        summary_view.workflow = RegistrationWorkflow(order=view.order, event=view.event)
+        summary_view.current_step = summary_view.workflow.steps.get(summary_view.current_step_slug)
+        response = summary_view.get(summary_view.request)
+        self.assertEqual(len(response.context_data['pending_transfers']), 1)
+        self.assertEqual(response.context_data['pending_transfers'][0]['bought_item'], view.order.bought_items.first())
+        self.assertIn('invite', response.context_data['pending_transfers'][0])
+        self.assertEqual(len(response.context_data['transferred_items']), 0)
+
+        # with self.subTest('summary view includes a completed transfer'):
+        invite = response.context_data['pending_transfers'][0]['invite']
+        transfer_invite = TransferInvite(summary_view.request, invite)
+        transfer_invite.accept()
+        response = summary_view.get(summary_view.request)
+        self.assertEqual(len(response.context_data['pending_transfers']), 0)
+        self.assertEqual(len(response.context_data['transferred_items']), 1)
 
     def test_unauthenticated_transfer_fails(self):
         """Only authenticated users should be allowed to transfer items,

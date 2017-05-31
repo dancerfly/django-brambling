@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -823,6 +823,31 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                 'dwolla_user_id': account.user_id
             })
         context.update(self.summary_data)
+
+        # TODO: Improve this overall assembly. It's possible the data model
+        # will need to change to allow this. Invite doesn't have a reference
+        # back to its content though, just an IntegerField content_id.
+        bought_items = self.order.bought_items.filter(status=BoughtItem.BOUGHT)
+        invites = TransferInvite.get_invites(bought_items)
+        context['pending_transfers'] = [
+            dict(
+                invite=invite,
+                bought_item=bought_items.get(pk=invite.content_id),
+            )
+            for invite in invites
+        ]
+
+        # This is pretty awful and hopefully only used as a stopgap measure
+        # before Invites get refactored. Then again, this comment is one of
+        # those kinds that stick around for years.
+        context['transferred_items'] = BoughtItem.objects.filter(
+            transactions__related_transaction__transaction_type=Transaction.TRANSFER,
+            transactions__related_transaction__order=self.order,
+        ).prefetch_related(Prefetch(
+            'transactions',
+            queryset=Transaction.objects.filter(transaction_type=Transaction.TRANSFER),
+            to_attr='transfer_transactions',
+        ))
         return context
 
 
