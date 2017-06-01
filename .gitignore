@@ -1,8 +1,13 @@
 *.pyc
 /*.egg-info/
-/test_project/media/
-/test_project/static/
+/media/
+/static/
 /db.sqlite3
 .sass-cache
 /.tox/
 /pillar/
+/test_project/local_settings.py
+
+# Deprecated after settings.py restructure
+/test_project/media/
+/test_project/static/

@@ -126,10 +126,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(os.path.dirname(__file__), 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = reverse_lazy('login')
@@ -214,3 +214,8 @@ if ACCEPT_FEEDBACK:
     INSTALLED_APPS += (
         'talkback',
     )
+
+try:
+    from .local_settings import *  # noqa: F403, F401
+except:
+    pass
