@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 import os
 import dj_database_url
 
+from django.contrib.messages import constants as messages
+from django.core.urlresolvers import reverse_lazy
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -125,11 +128,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
 
-import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(os.path.dirname(__file__), 'media')
-
-from django.core.urlresolvers import reverse_lazy
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = reverse_lazy('login')
@@ -178,7 +178,6 @@ COMPRESS_PRECOMPILERS = (
 )
 
 
-from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert alert-info',
     messages.INFO: 'alert alert-info',
