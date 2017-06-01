@@ -10,7 +10,11 @@ import mock
 import stripe
 import vcr
 
-from brambling.models import Transaction
+from brambling.models import (
+    ProcessedStripeLiveEvent,
+    ProcessedStripeTestEvent,
+    Transaction,
+)
 from brambling.payment.stripe.core import stripe_prep
 from brambling.payment.stripe.api import stripe_charge, stripe_refund
 from brambling.payment.core import TEST
@@ -252,6 +256,7 @@ class StripeWebhookRefundTestCase(TestCase):
     def test_transaction_not_found(self, event_retrieve):
         event_retrieve.return_value = stripe.Event.construct_from({
             'id': 'event_1',
+            'livemode': False,
             'type': 'charge.refunded',
             'data': {
                 'object': {'id': 'charge_id'},
@@ -267,6 +272,7 @@ class StripeWebhookRefundTestCase(TestCase):
     def test_charge_id_not_found(self, event_retrieve):
         event_retrieve.return_value = stripe.Event.construct_from({
             'id': 'event_1',
+            'livemode': False,
             'type': 'charge.refunded',
             'data': {
                 'object': {},
@@ -287,7 +293,8 @@ class SuccessfulRefundWebhookTestCase(TestCase):
 
         self.factory = RequestFactory()
         self.view = StripeWebhookView.as_view()
-        self.data = json.dumps({'id': 'evt_123_event_id'})
+        self.stripe_event = {'id': 'evt_123_event_id'}
+        self.data = json.dumps(self.stripe_event)
 
         self.request = self.factory.post(path='/',
                                          content_type='application/json',
@@ -317,7 +324,8 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         self.refund = stripe_refund(self.order, self.event, charge.id, 100)
 
         data = mock.Mock(object=mock.Mock(name='charge', id=charge.id))
-        self.mock_event = mock.Mock(data=data, type='charge.refunded')
+        self.mock_event = mock.Mock(
+            data=data, type='charge.refunded', livemode=False)
         self.order.mark_cart_paid(self.txn)
 
     @mock.patch('stripe.Event.retrieve')
@@ -346,3 +354,29 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         self.assertEqual(response2.status_code, 200)
         Transaction.objects.get(related_transaction=self.txn,
                                 transaction_type=Transaction.REFUND)
+
+    @mock.patch('stripe.Event.retrieve')
+    def test_events_should_be_processed_exactly_once_in_livemode(self, event_retrieve):
+        self.mock_event.livemode = True
+        event_retrieve.return_value = self.mock_event
+
+        response1 = self.view(self.request)
+        response2 = self.view(self.request)
+
+        self.assertEqual(response1.status_code, 200)
+        self.assertEqual(response2.status_code, 200)
+        Transaction.objects.get(related_transaction=self.txn,
+                                transaction_type=Transaction.REFUND)
+
+    @mock.patch('stripe.Event.retrieve')
+    def test_events_should_be_logged_in_test_mode(self, event_retrieve):
+        event_retrieve.return_value = self.mock_event
+        self.view(self.request)
+        ProcessedStripeTestEvent.objects.get(stripe_event_id=self.stripe_event['id'])
+
+    @mock.patch('stripe.Event.retrieve')
+    def test_events_should_be_logged_in_live_mode(self, event_retrieve):
+        self.mock_event.livemode = True
+        event_retrieve.return_value = self.mock_event
+        self.view(self.request)
+        ProcessedStripeLiveEvent.objects.get(stripe_event_id=self.stripe_event['id'])

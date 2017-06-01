@@ -12,8 +12,15 @@ from django.views.generic import View
 from dwolla import oauth, accounts, webhooks
 import stripe
 
-from brambling.models import (Organization, Order, Transaction, Person,
-                              DwollaAccount, ProcessedStripeEvent)
+from brambling.models import (
+    DwollaAccount,
+    Order,
+    Organization,
+    Person,
+    ProcessedStripeLiveEvent,
+    ProcessedStripeTestEvent,
+    Transaction,
+)
 from brambling.payment.core import LIVE, TEST
 from brambling.payment.dwolla.auth import dwolla_redirect_url
 from brambling.payment.dwolla.core import dwolla_prep
@@ -160,8 +167,12 @@ class StripeWebhookView(View):
         if event.type != 'charge.refunded':
             return HttpResponse(status=200)
 
-        _, new_event = ProcessedStripeEvent.objects.get_or_create(
-            stripe_event_id=stripe_event_id)
+        if event.livemode:
+            _, new_event = ProcessedStripeLiveEvent.objects.get_or_create(
+                stripe_event_id=stripe_event_id)
+        else:
+            _, new_event = ProcessedStripeTestEvent.objects.get_or_create(
+                stripe_event_id=stripe_event_id)
         if not new_event:
             return HttpResponse(status=200)
 

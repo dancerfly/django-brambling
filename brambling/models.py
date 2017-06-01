@@ -1979,8 +1979,13 @@ class SavedReport(models.Model):
     querystring = models.TextField()
 
 
-class ProcessedStripeEvent(models.Model):
-    stripe_event_id = models.CharField(max_length=35)
+class ProcessedStripeTestEvent(models.Model):
+    stripe_event_id = models.CharField(max_length=255, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+
+class ProcessedStripeLiveEvent(models.Model):
+    stripe_event_id = models.CharField(max_length=255, unique=True)
     created = models.DateTimeField(auto_now_add=True)
 
 
