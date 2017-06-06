@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.db.models import NOT_PROVIDED
+from django.db.models.query import QuerySet
 from django.core.urlresolvers import reverse
 from django.http import Http404
 
@@ -109,8 +110,12 @@ class BaseInvite(object):
     @classmethod
     def get_invites(cls, content=None):
         kwargs = {'kind': cls.slug}
-        if content is not None:
+        if isinstance(content, QuerySet):
+            kwargs['content_id__in'] = [obj.pk for obj in content]
+        elif hasattr(content, 'pk'):
             kwargs['content_id'] = content.pk
+        else:
+            raise ValueError('Content is not an object with a pk or a QuerySet.')
         return Invite.objects.filter(**kwargs)
 
     @classmethod

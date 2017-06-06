@@ -1,0 +1,30 @@
+{% if pending_transfers %}
+<div class="panel panel-primary">
+	<header class="panel-heading">
+		<div class="panel-title">
+			Pending Transfers
+		</div>
+	</header>
+
+	<ul class="list-group">
+		{% for transfer in pending_transfers %}
+		<li class="list-item list-group-item">
+			<span>
+				{{ transfer.bought_item.item_option_name }}
+				({{ transfer.bought_item.item_name }})
+				offered to
+				{{ transfer.invite.email }}
+				{{ transfer.invite.created|timesince }} ago
+			</span>
+
+			<a
+				href="#"
+				class="btn btn-default disabled{% comment %}Until #598 is completed {% endcomment %}"
+			>
+				Cancel
+			</a>
+		</li>
+		{% endfor %}
+	</ul>
+</div>
+{% endif %}
