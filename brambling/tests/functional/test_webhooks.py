@@ -11,8 +11,7 @@ import stripe
 import vcr
 
 from brambling.models import (
-    ProcessedStripeLiveEvent,
-    ProcessedStripeTestEvent,
+    ProcessedStripeEvent,
     Transaction,
 )
 from brambling.payment.stripe.core import stripe_prep
@@ -372,11 +371,17 @@ class SuccessfulRefundWebhookTestCase(TestCase):
     def test_events_should_be_logged_in_test_mode(self, event_retrieve):
         event_retrieve.return_value = self.mock_event
         self.view(self.request)
-        ProcessedStripeTestEvent.objects.get(stripe_event_id=self.stripe_event['id'])
+        ProcessedStripeEvent.objects.get(
+            api_type=ProcessedStripeEvent.TEST,
+            stripe_event_id=self.stripe_event['id'],
+        )
 
     @mock.patch('stripe.Event.retrieve')
     def test_events_should_be_logged_in_live_mode(self, event_retrieve):
         self.mock_event.livemode = True
         event_retrieve.return_value = self.mock_event
         self.view(self.request)
-        ProcessedStripeLiveEvent.objects.get(stripe_event_id=self.stripe_event['id'])
+        ProcessedStripeEvent.objects.get(
+            api_type=ProcessedStripeEvent.LIVE,
+            stripe_event_id=self.stripe_event['id'],
+        )

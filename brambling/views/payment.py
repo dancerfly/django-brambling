@@ -17,8 +17,7 @@ from brambling.models import (
     Order,
     Organization,
     Person,
-    ProcessedStripeLiveEvent,
-    ProcessedStripeTestEvent,
+    ProcessedStripeEvent,
     Transaction,
 )
 from brambling.payment.core import LIVE, TEST
@@ -168,11 +167,13 @@ class StripeWebhookView(View):
             return HttpResponse(status=200)
 
         if event.livemode:
-            _, new_event = ProcessedStripeLiveEvent.objects.get_or_create(
-                stripe_event_id=stripe_event_id)
+            api_type = ProcessedStripeEvent.LIVE
         else:
-            _, new_event = ProcessedStripeTestEvent.objects.get_or_create(
-                stripe_event_id=stripe_event_id)
+            api_type = ProcessedStripeEvent.TEST
+
+        _, new_event = ProcessedStripeEvent.objects.get_or_create(
+            api_type=api_type, stripe_event_id=stripe_event_id)
+
         if not new_event:
             return HttpResponse(status=200)
 

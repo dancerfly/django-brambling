@@ -258,3 +258,8 @@ class HomeFactory(factory.DjangoModelFactory):
 class HousingSlotFactory(factory.DjangoModelFactory):
     class Meta:
         model = HousingSlot
+
+
+class ProcessedStripeEventFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = ProcessedStripeEvent
