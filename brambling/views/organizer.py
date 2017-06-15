@@ -1167,7 +1167,7 @@ class AttendeeFilterView(EventTableView):
         qs = super(AttendeeFilterView, self).get_queryset()
         return qs.filter(
             order__event=self.event,
-            bought_items__status=BoughtItem.BOUGHT,
+            bought_items__status__in=(BoughtItem.BOUGHT, BoughtItem.TRANSFERRED),
         ).distinct()
 
 
