@@ -241,7 +241,7 @@ class ModelTableViewTestCase(TestCase):
 
 class AttendeeFilterViewTest(TestCase):
     def setUp(self):
-        self.event = EventFactory(collect_housing_data=True, currency='GBP')
+        self.event = EventFactory()
         self.order = OrderFactory(event=self.event)
         self.transaction = TransactionFactory(
             event=self.event,
