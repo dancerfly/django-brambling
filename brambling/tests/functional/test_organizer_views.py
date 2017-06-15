@@ -267,11 +267,16 @@ class AttendeeFilterViewTest(TestCase):
             [self.attendee],
         )
 
-    def test_get_queryset__includes_transferred(self):
+    def test_get_queryset__excludes_transferred(self):
+        """
+        Received transferred items use status: BOUGHT. Sent transferred
+        items use status: TRANSFERRED. These attendees shouldn't _exist_
+        but also shouldn't be displayed if they do.
+        """
         self.order.bought_items.update(status=BoughtItem.TRANSFERRED)
         self.assertEqual(
             list(self.view.get_queryset()),
-            [self.attendee],
+            [],
         )
 
 
