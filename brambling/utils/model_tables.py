@@ -461,10 +461,17 @@ class AttendeeTable(CustomDataTable):
                 queryset = queryset.prefetch_related('ef_cause')
             elif field == 'order_code':
                 queryset = queryset.select_related('order')
-            elif field == 'purchase_date':
-                queryset = queryset.annotate(
-                    purchase_date=Min('order__transactions__timestamp')
-                )
+
+        uses_purchase_date = (
+            'purchase_date' in fields or (
+                self.filter_form.is_valid() and
+                self.filter_form.cleaned_data.get('o') == '-purchase_date'
+            )
+        )
+        if uses_purchase_date:
+            queryset = queryset.annotate(
+                purchase_date=Min('order__transactions__timestamp')
+            )
         return queryset, use_distinct
 
     def _show_housing_data(self, attendee, form_entry):
