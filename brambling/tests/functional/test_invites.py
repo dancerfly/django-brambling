@@ -5,7 +5,10 @@ from django.forms.models import model_to_dict
 from django.test import TestCase, RequestFactory
 
 from brambling.forms.organizer import EventRegistrationForm
-from brambling.models import Order
+from brambling.models import (
+    Invite,
+    Order,
+)
 from brambling.tests.factories import (InviteFactory, EventFactory,
                                        OrderFactory, TransactionFactory,
                                        ItemFactory, OrganizationFactory,
@@ -14,6 +17,7 @@ from brambling.utils.invites import (
     EventInvite,
     EventEditInvite,
     EventViewInvite,
+    get_invite,
     OrganizationOwnerInvite,
     OrganizationEditInvite,
     OrganizationViewInvite,
@@ -187,26 +191,6 @@ class InviteTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "You've been invited to attend {}!".format(event.name))
 
-    def test_subject__transfer(self):
-        person = PersonFactory(first_name="Conan", last_name="O'Brien")
-        event = EventFactory()
-        order = OrderFactory(event=event, person=person)
-        TransactionFactory(event=event, order=order, amount=130)
-        item = ItemFactory(event=event, name='Multipass')
-        item_option1 = ItemOptionFactory(price=100, item=item, name='Gold')
-        order.add_to_cart(item_option1)
-        boughtitem = order.bought_items.all()[0]
-        request = self.factory.get('/')
-        request.user = person
-        invite, created = TransferInvite.get_or_create(
-            request=request,
-            email='test@test.com',
-            content=boughtitem,
-        )
-        invite.send()
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, "{} wants to transfer an item to you".format(person.get_full_name()))
-
 
 class EventRegistrationFormTestCase(TestCase):
     def test_clean_invite_attendees__valid(self):
@@ -292,3 +276,104 @@ class InviteAcceptViewTestCase(TestCase):
         orders = Order.objects.all()
         self.assertEqual(len(orders), 1)
         self.assertEqual(orders[0].person, view.request.user)
+
+
+class TransferInviteTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.person = PersonFactory(
+            first_name="Conan",
+            last_name="O'Brien",
+        )
+        self.event = EventFactory()
+        self.order = OrderFactory(
+            event=self.event,
+            person=self.person,
+        )
+        TransactionFactory(
+            event=self.event,
+            order=self.order,
+            amount=130,
+        )
+        self.item = ItemFactory(
+            event=self.event,
+            name='Multipass',
+        )
+        self.item_option1 = ItemOptionFactory(
+            price=100,
+            item=self.item,
+            name='Gold',
+        )
+        self.order.add_to_cart(self.item_option1)
+        self.bought_item = self.order.bought_items.all()[0]
+
+    def test_email_subject__transfer(self):
+        request = self.factory.get('/')
+        request.user = self.person
+        invite, created = TransferInvite.get_or_create(
+            request=request,
+            email='test@test.com',
+            content=self.bought_item,
+        )
+        invite.send()
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            mail.outbox[0].subject,
+            "{} wants to transfer an item to you".format(
+                self.person.get_full_name()
+            ),
+        )
+
+    def test_manage_not_allowed__no_order(self):
+        # A person who isn't signed up for the event
+        # shouldn't be able to manage it.
+        person2 = PersonFactory()
+        request = self.factory.get('/')
+        request.user = person2
+
+        session_middleware = SessionMiddleware()
+        session_middleware.process_request(request)
+
+        instance = Invite.objects.create(
+            email=person2.email,
+            user=self.person,
+            kind='transfer',
+            content_id=self.bought_item.id,
+        )
+        invite = get_invite(request, instance.code, self.bought_item)
+        self.assertFalse(invite.manage_allowed())
+
+    def test_manage_not_allowed__wrong_order(self):
+        # A person who doesn't have the originating order
+        # shouldn't be able to manage it.
+        person2 = PersonFactory()
+        OrderFactory(
+            person=person2,
+            event=self.event,
+        )
+        request = self.factory.get('/')
+        request.user = person2
+
+        instance = Invite.objects.create(
+            email=person2.email,
+            user=self.person,
+            kind='transfer',
+            content_id=self.bought_item.id,
+        )
+        invite = get_invite(request, instance.code, self.bought_item)
+        self.assertFalse(invite.manage_allowed())
+
+    def test_manage_allowed(self):
+        # Owner of a bought item should be able to manage transfer invites.
+        person2 = PersonFactory()
+        request = self.factory.get('/')
+        request.user = self.person
+
+        instance = Invite.objects.create(
+            email=person2.email,
+            user=self.person,
+            kind='transfer',
+            content_id=self.bought_item.id,
+        )
+        invite = get_invite(request, instance.code, self.bought_item)
+        self.assertTrue(invite.manage_allowed())
