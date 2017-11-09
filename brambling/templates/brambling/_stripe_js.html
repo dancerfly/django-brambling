@@ -1,38 +1,20 @@
-<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
 <script>
 	$(function(){
+		// External code must set stripe and card vars correctly.
 		$('#card-submit').on('click', function(e){
 			e.preventDefault();
 			$('.has-error').removeClass('has-error');
 			$('.help-block').remove();
 
-			Stripe.card.createToken({
-				number: $('#card-number').val(),
-				cvc: $('#card-cvc').val(),
-				exp_month: $('#card-expiry-month').val(),
-				exp_year: $('#card-expiry-year').val()
-			}, function(status, response) {
-				if (response.error) {
-					console.log(response.error);
-					var fieldId,
-						param=response.error.param;
-					if (param == 'number') {
-						fieldId = '#card-number';
-					} else if (param == 'exp_year') {
-						fieldId = '#card-expiry-year'
-					} else if (param == 'exp_month') {
-						fieldId = '#card-expiry-month'
-					} else if (param == 'cvc') {
-						fieldId = '#card-cvc'
-					}
-					if (fieldId) {
-						var group = $(fieldId).parent();
-						group.addClass('has-error');
-						group.append('<p class="help-block">' + response.error.message + '</p>');
-					}
+			stripe.createToken(card).then(function(result) {
+				if (result.error) {
+					console.log(result.error);
+					var group = $('#card-element').parent();
+					group.addClass('has-error');
+					group.append('<p class="help-block">' + result.error.message + '</p>');
 				} else {
 					var cardForm = $('#card-form');
-					cardForm.append("<input type='hidden' name='token' value='" + response['id'] + "'/>");
+					cardForm.append("<input type='hidden' name='token' value='" + result.token.id + "'/>");
 					cardForm.get(0).submit();
 				}
 			});

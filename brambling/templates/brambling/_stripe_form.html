@@ -8,31 +8,8 @@
 	</div>
 {% endif %}
 
-
-<div class='row'>
-	<div class='col-xs-6'>
-		<div class='form-group'>
-			<label for='card-number'>Card number</label>
-			<input type='text' class='form-control' id='card-number' maxlength='16' placeholder='4242424242424242'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
-		</div>
-		<div class='form-group'>
-			<label for='card-cvc'>CVC</label>
-			<input type='text' class='form-control' id='card-cvc' maxlength='4' placeholder='111'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
-		</div>
-		<div class='form-group'>
-			<label for='card-cvc'>Expiration Date</label>
-			<div class='row'>
-				<div class='col-sm-6 margin-trailer'>
-					<input type='text' class='form-control' id='card-expiry-month' placeholder='MM' maxlength='2'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
-				</div>
-				<div class='col-sm-6'>
-					<input type='text' class='form-control' id='card-expiry-year' placeholder='YY' maxlength='2'{% if not api_type == 'test' and not request.is_secure %} disabled{% endif %}>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class='col-xs-6'>
-		{% include 'brambling/_stripe_note.html' %}
-		<p class='text-muted'>A CVC code is an additional three or four digit number found on the back of your card.</p>
-	</div>
+<div class='form-group'>
+	<label for='card-element'>Credit or debit card</label>
+	<div id="card-element"></div>
 </div>
+{% include 'brambling/_stripe_note.html' %}
