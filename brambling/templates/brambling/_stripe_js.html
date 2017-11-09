@@ -8,7 +8,6 @@
 
 			stripe.createToken(card).then(function(result) {
 				if (result.error) {
-					console.log(result.error);
 					var group = $('#card-element').parent();
 					group.addClass('has-error');
 					group.append('<p class="help-block">' + result.error.message + '</p>');
