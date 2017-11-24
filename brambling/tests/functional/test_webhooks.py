@@ -251,7 +251,6 @@ class StripeWebhookRefundTestCase(TestCase):
             self.view(self.request)
 
     @mock.patch('stripe.Event.retrieve')
-    @vcr.use_cassette(os.path.join(VCR_DIR, 'test_stripe_webhook_refund.yaml'))
     def test_transaction_not_found(self, event_retrieve):
         event_retrieve.return_value = stripe.Event.construct_from({
             'id': 'event_1',
@@ -267,7 +266,6 @@ class StripeWebhookRefundTestCase(TestCase):
             Transaction.objects.get(remote_id='charge_id')
 
     @mock.patch('stripe.Event.retrieve')
-    @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_charge_id_not_found.yaml'))
     def test_charge_id_not_found(self, event_retrieve):
         event_retrieve.return_value = stripe.Event.construct_from({
             'id': 'event_1',
