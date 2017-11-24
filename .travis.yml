@@ -3,19 +3,18 @@ python:
 - '2.7'
 sudo: false
 env:
-- DB=sqlite3
-- DB=postgres
+- DATABASE_URL=postgres://postgres@localhost:5432/brambling_test
 cache: pip
 install:
 - pip install . --no-deps
 - pip install --no-deps -r requirements.txt
-- if [ $DB == 'postgres' ]; then pip install --no-deps psycopg2==2.5.3;
+- if [ $DATABASE_URL == 'postgres://postgres@localhost:5432/brambling_test' ]; then pip install --no-deps psycopg2==2.5.3;
   fi
 - pip install flake8
 before_script:
-- if [ $DB == 'postgres' ]; then psql -c 'drop database if exists brambling_test;'
+- if [ $DATABASE_URL == 'postgres://postgres@localhost:5432/brambling_test' ]; then psql -c 'drop database if exists brambling_test;'
   -U postgres; fi
-- if [ $DB == 'postgres' ]; then psql -c 'create database brambling_test;' -U postgres;
+- if [ $DATABASE_URL == 'postgres://postgres@localhost:5432/brambling_test' ]; then psql -c 'create database brambling_test;' -U postgres;
   fi
 - "flake8 --ignore=E501 brambling"
 script:

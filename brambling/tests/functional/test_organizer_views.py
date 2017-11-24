@@ -11,6 +11,7 @@ from django.test import TestCase, RequestFactory
 
 from brambling.models import (
     Attendee,
+    BoughtItem,
     OrganizationMember,
     Transaction,
     Person,
@@ -236,6 +237,47 @@ class ModelTableViewTestCase(TestCase):
         self.assertEqual(response['content-disposition'], 'attachment; filename="export.csv"')
         content = list(response)
         self.assertIn('£200.00', content[1])
+
+
+class AttendeeFilterViewTest(TestCase):
+    def setUp(self):
+        self.event = EventFactory()
+        self.order = OrderFactory(event=self.event)
+        self.transaction = TransactionFactory(
+            event=self.event,
+            order=self.order,
+        )
+        self.item = ItemFactory(event=self.event)
+        self.item_option = ItemOptionFactory(price=100, item=self.item)
+
+        self.order.add_to_cart(self.item_option)
+        self.order.mark_cart_paid(self.transaction)
+
+        self.attendee = AttendeeFactory(
+            order=self.order,
+            bought_items=self.order.bought_items.all(),
+        )
+
+        self.view = AttendeeFilterView()
+        self.view.event = self.event
+
+    def test_get_queryset__includes_bought(self):
+        self.assertEqual(
+            list(self.view.get_queryset()),
+            [self.attendee],
+        )
+
+    def test_get_queryset__excludes_transferred(self):
+        """
+        Received transferred items use status: BOUGHT. Sent transferred
+        items use status: TRANSFERRED. These attendees shouldn't _exist_
+        but also shouldn't be displayed if they do.
+        """
+        self.order.bought_items.update(status=BoughtItem.TRANSFERRED)
+        self.assertEqual(
+            list(self.view.get_queryset()),
+            [],
+        )
 
 
 class OrganizationRemoveMemberViewTestCase(TestCase):
