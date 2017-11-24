@@ -229,15 +229,6 @@ class StripeWebhookRefundTestCase(TestCase):
         with self.assertRaises(Http404):
             self.view(self.request)
 
-    @mock.patch('stripe.Refund.retrieve')
-    @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_refund_not_found.yaml'))
-    def test_stripe_refund_not_found(self, refund_retrieve):
-        refund_retrieve.side_effect = stripe.error.InvalidRequestError(
-            'not found', 1)
-
-        with self.assertRaises(Http404):
-            self.view(self.request)
-
     @mock.patch('stripe.Charge.retrieve')
     @vcr.use_cassette(os.path.join(VCR_DIR, 'stripe_webhook_charge_not_found.yaml'))
     def test_stripe_charge_not_found(self, charge_retrieve):
