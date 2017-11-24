@@ -179,7 +179,10 @@ class StripeWebhookView(View):
 
         try:
             charge_id = event.data.object.id
-            txn = Transaction.objects.get(remote_id=charge_id)
+            txn = Transaction.objects.get(
+                remote_id=charge_id,
+                api_type=api_type,
+            )
         except Transaction.DoesNotExist:
             return HttpResponse(status=200)
         except AttributeError:

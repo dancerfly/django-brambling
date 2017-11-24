@@ -318,6 +318,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
             charge,
             event=self.event,
             order=self.order,
+            api_type=self.event.api_type,
         )
 
         self.refund = stripe_refund(self.order, self.event, charge.id, 100)
@@ -357,6 +358,8 @@ class SuccessfulRefundWebhookTestCase(TestCase):
     @mock.patch('stripe.Event.retrieve')
     def test_events_should_be_processed_exactly_once_in_livemode(self, event_retrieve):
         self.mock_event.livemode = True
+        self.txn.api_type = Transaction.LIVE
+        self.txn.save()
         event_retrieve.return_value = self.mock_event
 
         response1 = self.view(self.request)
