@@ -325,7 +325,10 @@ class SuccessfulRefundWebhookTestCase(TestCase):
 
         data = mock.Mock(object=mock.Mock(name='charge', id=charge.id))
         self.mock_event = mock.Mock(
-            data=data, type='charge.refunded', livemode=False)
+            data=data,
+            type='charge.refunded',
+            livemode=False,
+        )
         self.order.mark_cart_paid(self.txn)
 
     @mock.patch('stripe.Event.retrieve')

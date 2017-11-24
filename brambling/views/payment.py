@@ -172,7 +172,9 @@ class StripeWebhookView(View):
             api_type = ProcessedStripeEvent.TEST
 
         _, new_event = ProcessedStripeEvent.objects.get_or_create(
-            api_type=api_type, stripe_event_id=stripe_event_id)
+            api_type=api_type,
+            stripe_event_id=stripe_event_id,
+        )
 
         if not new_event:
             return HttpResponse(status=200)
