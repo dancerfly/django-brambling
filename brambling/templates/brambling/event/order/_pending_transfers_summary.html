@@ -18,8 +18,8 @@
 			</span>
 
 			<a
-				href="#"
-				class="btn btn-default disabled{% comment %}Until #598 is completed {% endcomment %}"
+				href="{% url 'brambling_invite_delete' code=transfer.invite.code %}"
+				class="btn btn-default"
 			>
 				Cancel
 			</a>

@@ -1962,7 +1962,7 @@ class CustomFormEntry(models.Model):
     def get_value(self):
         try:
             return json.loads(self.value)
-        except:
+        except Exception:
             return ''
 
 

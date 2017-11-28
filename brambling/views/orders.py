@@ -46,7 +46,7 @@ class RactiveShopView(TemplateView):
         clear_expired_carts(event)
         try:
             order = Order.objects.get(event=event, person=self.request.user)
-        except:
+        except Exception:
             order = None
 
         # TODO: This will never allow anonymous users to get past the
