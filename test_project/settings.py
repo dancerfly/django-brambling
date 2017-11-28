@@ -217,5 +217,5 @@ if ACCEPT_FEEDBACK:
 
 try:
     from .local_settings import *  # noqa: F403, F401
-except:
+except Exception:
     pass
