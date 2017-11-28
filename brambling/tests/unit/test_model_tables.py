@@ -3,7 +3,7 @@ from unittest import TestCase
 from brambling.utils.model_tables import Row
 
 
-class PostalCodeTestCase(TestCase):
+class RowTestCase(TestCase):
     def test_iterable(self):
         data = [
             ('id', 5),
