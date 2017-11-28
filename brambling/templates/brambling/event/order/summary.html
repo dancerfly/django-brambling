@@ -12,20 +12,35 @@
 	</script>
 	{% include 'brambling/event/order/_use_discount_js.html' %}
 	{% if event.stripe_connected %}
-		{% include "brambling/_stripe_js.html" %}
 		<script>
+			var stripe, card;
 			function set_stripe_key() {
+				var publishableKey;
 				if ($('#id_save_card').prop('checked')) {
-					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+					publishableKey = '{% if event.api_type == event.TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}';
 				} else {
-					Stripe.setPublishableKey('{% if event.api_type == event.TEST %}{{ event.organization.stripe_test_publishable_key }}{% else %}{{ event.organization.stripe_publishable_key }}{% endif %}')
+					publishableKey = '{% if event.api_type == event.TEST %}{{ event.organization.stripe_test_publishable_key }}{% else %}{{ event.organization.stripe_publishable_key }}{% endif %}';
 				}
+				stripe = Stripe(publishableKey);
+				var elements = stripe.elements();
+				card = elements.create('card');
+				card.mount('#card-element');
+				card.addEventListener('change', function(event) {
+					$('.has-error').removeClass('has-error');
+					$('.help-block').remove();
+					if (event.error) {
+						var group = $('#card-element').parent();
+						group.addClass('has-error');
+						group.append('<p class="help-block">' + event.error.message + '</p>');
+					}
+				});
 			}
 			$('#id_save_card').on('change', function(e) {
 				set_stripe_key();
 			});
 			$(set_stripe_key);
 		</script>
+		{% include "brambling/_stripe_js.html" %}
 	{% endif %}
 	<script>
 		$(function() {
