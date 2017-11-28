@@ -7,10 +7,26 @@
 {% block javascripts %}
 	{{ block.super }}
 	{% if api_type == TEST or request.is_secure %}
-		{% include "brambling/_stripe_js.html" %}
 		<script>
-			Stripe.setPublishableKey('{% if api_type == TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}');
+			var publishableKey = '{% if api_type == TEST %}{{ STRIPE_TEST_PUBLISHABLE_KEY }}{% else %}{{ STRIPE_PUBLISHABLE_KEY }}{% endif %}';
+			var stripe = Stripe(publishableKey);
+			var elements = stripe.elements();
+			var card;
+			$(function() {
+				card = elements.create('card');
+				card.mount('#card-element');
+				card.addEventListener('change', function(event) {
+					$('.has-error').removeClass('has-error');
+					$('.help-block').remove();
+					if (event.error) {
+						var group = $('#card-element').parent();
+						group.addClass('has-error');
+						group.append('<p class="help-block">' + event.error.message + '</p>');
+					}
+				});
+			});
 		</script>
+		{% include "brambling/_stripe_js.html" %}
 	{% endif %}
 
 {% endblock %}

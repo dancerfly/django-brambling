@@ -32,7 +32,7 @@ class Command(BaseCommand):
         for recipient in recipients:
             try:
                 self.send_digest(recipient)
-            except:
+            except Exception:
                 self.stderr.write("Digest send raised an error for {recipient} ({pk})".format(
                     recipient=recipient.get_full_name(),
                     pk=recipient.pk

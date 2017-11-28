@@ -43,6 +43,42 @@ Then, to install:
     # Install python requirements. This may take a while.
     pip install -r django-brambling/test_project/requirements.txt
 
+Environment Variables
+---------------------
+
+Set the following optional environment variables to configure the server:
+
+============================================= ========================== =====================================================================================
+Variable                                      Default                    Usage
+============================================= ========================== =====================================================================================
+``SECRET_KEY``                                ``'NOT_SECRET'``           Django `secret key`_
+``DATABASE_URL``                              ``'sqlite:///db.sqlite3'`` 12-factor style database url ``[type]://[user][:password][@host][:port]/[dbname]``
+                                                                         (e.g., ``postgres://root@localhost/dancerfly``)
+``STRIPE_APPLICATION_ID``                     ``''``
+``STRIPE_SECRET_KEY``                         ``''``
+``STRIPE_PUBLISHABLE_KEY``                    ``''``
+``STRIPE_TEST_APPLICATION_ID``                ``''``
+``STRIPE_TEST_SECRET_KEY``                    ``''``
+``STRIPE_TEST_PUBLISHABLE_KEY``               ``''``
+``DWOLLA_APPLICATION_KEY``                    ``''``
+``DWOLLA_APPLICATION_SECRET``                 ``''``
+``DWOLLA_TEST_APPLICATION_KEY``               ``''``
+``DWOLLA_TEST_APPLICATION_SECRET``            ``''``
+``STRIPE_TEST_ORGANIZATION_ACCESS_TOKEN``     ``''``
+``STRIPE_TEST_ORGANIZATION_PUBLISHABLE_KEY``  ``''``
+``STRIPE_TEST_ORGANIZATION_REFRESH_TOKEN``    ``''``
+``STRIPE_TEST_ORGANIZATION_USER_ID``          ``''``
+``DWOLLA_TEST_ORGANIZATION_ACCESS_TOKEN``     ``''``
+``DWOLLA_TEST_ORGANIZATION_REFRESH_TOKEN``    ``''``
+``DWOLLA_TEST_ORGANIZATION_USER_ID``          ``''``
+``DWOLLA_TEST_ORGANIZATION_PIN``              ``''``
+``DWOLLA_TEST_USER_ACCESS_TOKEN``             ``''``
+``DWOLLA_TEST_USER_REFRESH_TOKEN``            ``''``
+``DWOLLA_TEST_USER_USER_ID``                  ``''``
+``DWOLLA_TEST_USER_PIN``                      ``''``
+============================================= ========================== =====================================================================================
+
+.. _`secret key`: https://docs.djangoproject.com/en/1.11/ref/settings/#secret-key
 
 Get it running
 --------------

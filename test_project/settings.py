@@ -8,8 +8,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/dev/ref/settings/
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import dj_database_url
+
+from django.contrib.messages import constants as messages
+from django.core.urlresolvers import reverse_lazy
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -17,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/dev/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'NOT_SECRET'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'NOT_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -87,24 +92,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
-if os.environ.get('DB') == 'postgres':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'brambling_test',
-            'USER': 'postgres',
-            'PASSWORD': '',
-            'HOST': 'localhost',
-            'PORT': 5432,
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.config(default="sqlite:///db.sqlite3")
+}
 
 # Uncomment to disable migrations temporarily, i.e. for tests
 # Source: https://gist.github.com/NotSqrt/5f3c76cd15e40ef62d09
@@ -136,13 +126,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(os.path.dirname(__file__), 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-import os
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(os.path.dirname(__file__), 'media')
-
-from django.core.urlresolvers import reverse_lazy
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = reverse_lazy('login')
@@ -191,7 +178,6 @@ COMPRESS_PRECOMPILERS = (
 )
 
 
-from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert alert-info',
     messages.INFO: 'alert alert-info',
@@ -228,3 +214,8 @@ if ACCEPT_FEEDBACK:
     INSTALLED_APPS += (
         'talkback',
     )
+
+try:
+    from .local_settings import *  # noqa: F403, F401
+except Exception:
+    pass

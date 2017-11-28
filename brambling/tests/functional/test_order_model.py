@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import TestCase, RequestFactory
+from mock import Mock
 
 from brambling.models import Order, Transaction
 from brambling.tests.factories import (
@@ -12,6 +13,7 @@ from brambling.tests.factories import (
     PersonFactory,
     TransactionFactory,
 )
+from brambling.utils.invites import TransferInvite
 
 
 class OrderModelTestCase(TestCase):
@@ -315,6 +317,81 @@ class OrderModelTestCase(TestCase):
         self.assertEqual(summary_data['gross_cost'], 100)
         self.assertEqual(summary_data['total_savings'], -20)
         self.assertEqual(summary_data['net_cost'], 80)
+
+    def test_summary_data__transfer(self):
+        """Items sent or received in a transfer shouldn't count towards net cost and savings"""
+        event = EventFactory()
+        order = OrderFactory(
+            event=event,
+            person=PersonFactory(),
+        )
+        person2 = PersonFactory()
+        transaction = TransactionFactory(
+            event=event,
+            order=order,
+            is_confirmed=True,
+            transaction_type=Transaction.PURCHASE,
+            amount=80,
+        )
+        item = ItemFactory(event=event)
+        item_option = ItemOptionFactory(price=100, item=item)
+        discount = DiscountFactory(amount=20, event=event, item_options=[item_option])
+
+        order.add_to_cart(item_option)
+        order.add_discount(discount)
+        order.mark_cart_paid(transaction)
+
+        bought_item = transaction.bought_items.get()
+        invite = TransferInvite.get_or_create(
+            request=Mock(user=person2, session={}),
+            email=person2.email,
+            content=bought_item,
+        )[0]
+        invite.accept()
+
+        summary_data = order.get_summary_data()
+        self.assertEqual(summary_data['gross_cost'], 100)
+        self.assertEqual(summary_data['total_savings'], -20)
+        self.assertEqual(summary_data['total_refunds'], 0)
+        self.assertEqual(summary_data['total_payments'], 80)
+        self.assertEqual(summary_data['net_cost'], 80)
+        self.assertEqual(summary_data['net_balance'], 0)
+        self.assertEqual(summary_data['unconfirmed_check_payments'], False)
+        transactions = summary_data['transactions']
+        self.assertEqual(len(transactions), 2)
+        transfer_txn, transfer_txn_dict = transactions.items()[0]
+        self.assertEqual(transfer_txn.transaction_type, Transaction.TRANSFER)
+        self.assertEqual(transfer_txn_dict['items'], [bought_item])
+        self.assertEqual(transfer_txn_dict['gross_cost'], 0)
+        self.assertEqual(transfer_txn_dict['discounts'], [])
+        self.assertEqual(transfer_txn_dict['total_savings'], 0)
+        self.assertEqual(transfer_txn_dict['net_cost'], 0)
+        purchase_txn, purchase_txn_dict = transactions.items()[1]
+        self.assertEqual(purchase_txn.transaction_type, Transaction.PURCHASE)
+        self.assertEqual(purchase_txn_dict['items'], [bought_item])
+        self.assertEqual(purchase_txn_dict['gross_cost'], 100)
+        self.assertEqual(purchase_txn_dict['discounts'], [bought_item.discounts.first()])
+        self.assertEqual(purchase_txn_dict['total_savings'], -20)
+        self.assertEqual(purchase_txn_dict['net_cost'], 80)
+
+        order2 = Order.objects.get(event=event, person=person2)
+        summary_data2 = order2.get_summary_data()
+        self.assertEqual(summary_data2['gross_cost'], 0)
+        self.assertEqual(summary_data2['total_savings'], 0)
+        self.assertEqual(summary_data2['total_refunds'], 0)
+        self.assertEqual(summary_data2['total_payments'], 0)
+        self.assertEqual(summary_data2['net_cost'], 0)
+        self.assertEqual(summary_data2['net_balance'], 0)
+        self.assertEqual(summary_data2['unconfirmed_check_payments'], False)
+        transactions2 = summary_data2['transactions']
+        self.assertEqual(len(transactions2), 1)
+        transfer_txn2, transfer_txn2_dict = transactions.items()[0]
+        self.assertEqual(transfer_txn2.transaction_type, Transaction.TRANSFER)
+        self.assertEqual(transfer_txn2_dict['items'], [bought_item])
+        self.assertEqual(transfer_txn2_dict['gross_cost'], 0)
+        self.assertEqual(transfer_txn2_dict['discounts'], [])
+        self.assertEqual(transfer_txn2_dict['total_savings'], 0)
+        self.assertEqual(transfer_txn2_dict['net_cost'], 0)
 
     def test_cart_boughtitem_caching(self):
         """
