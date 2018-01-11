@@ -2,7 +2,7 @@
 
 newrelic==2.54.0.41
 -e git+git://github.com/littleweaver/django-brambling.git@master#egg=django-brambling
-psycopg2==2.5.3
+psycopg2==2.7.3.2
 python-http-client==1.2.3
 sendgrid==2.2.1
 sendgrid-django==2.0.0

@@ -11,7 +11,7 @@ install:
 - pip install . --no-deps
 - pip install --no-deps -r requirements.txt
 - psql --version
-- pip install --no-deps psycopg2==2.5.3
+- pip install --no-deps psycopg2==2.7.3.2
 - pip install flake8==3.3.0
 before_script:
 - psql -c 'drop database if exists brambling_test;' -U postgres
