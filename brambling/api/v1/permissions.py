@@ -13,30 +13,7 @@ class IsAdminUserOrReadOnly(BasePermission):
         )
 
 
-class OrganizationPermission(BasePermission):
-    def has_permission(self, request, view):
-        # For now, disallow creation via the API.
-        if request.method == 'POST':
-            return False
-        return True
-
-    def has_object_permission(self, request, view, org):
-        # Anyone can get a list or detail view.
-        if request.method in SAFE_METHODS:
-            return True
-
-        # Anyone who can edit the org also has RUD permissions.
-        if request.user.has_perm('edit', org):
-            return True
-
-        # Disallow deletion (for now, just a blanket).
-        if request.method == 'DELETE':
-            return False
-
-        return False
-
-
-class EventPermission(BasePermission):
+class BaseEventPermission(BasePermission):
     def has_permission(self, request, view):
         # For now, disallow creation via the API.
         if request.method == 'POST':
@@ -55,29 +32,10 @@ class EventPermission(BasePermission):
         return False
 
     def has_object_permission(self, request, view, event):
-        # Disallow deletion of events (for now, just a blanket).
-        if request.method == 'DELETE':
-            return False
-
-        return self._has_event_permission(request, event)
+        raise NotImplementedError
 
 
-class ItemPermission(EventPermission):
-    def has_object_permission(self, request, view, item):
-        return self._has_event_permission(request, item.event)
-
-
-class ItemImagePermission(EventPermission):
-    def has_object_permission(self, request, view, itemimage):
-        return self._has_event_permission(request, itemimage.item.event)
-
-
-class ItemOptionPermission(EventPermission):
-    def has_object_permission(self, request, view, itemoption):
-        return self._has_event_permission(request, itemoption.item.event)
-
-
-class OrderPermission(BasePermission):
+class BaseOrderPermission(BasePermission):
     def _has_order_permission(self, request, order):
         if request.user.has_perm('edit', order.event):
             return True
@@ -108,71 +66,4 @@ class OrderPermission(BasePermission):
         return False
 
     def has_object_permission(self, request, view, obj):
-        # Disallow deletion (for now, just a blanket).
-        if request.method == 'DELETE':
-            return False
-
-        return self._has_order_permission(request, obj)
-
-
-class OrderSearchPermission(BasePermission):
-
-    def has_permission(self, request, view):
-        "Make sure the event is editable by the user trying to view orders."
-        event = view.get_event()
-        return request.user.has_perm('edit', event)
-
-
-class AttendeePermission(OrderPermission):
-    def has_permission(self, request, view):
-        # For now, disallow creation via the API.
-        if request.method == 'POST':
-            return False
-        return True
-
-    def has_object_permission(self, request, view, attendee):
-        return self._has_order_permission(request, attendee.order)
-
-
-class EventHousingPermission(OrderPermission):
-    def has_permission(self, request, view):
-        # For now, disallow creation via the API.
-        if request.method == 'POST':
-            return False
-        return True
-
-    def has_object_permission(self, request, view, eventhousing):
-        if request.method == 'DELETE':
-            return False
-
-        return self._has_order_permission(request, eventhousing.order)
-
-
-class BoughtItemPermission(OrderPermission):
-    def has_permission(self, request, view):
-        if request.method == 'POST':
-            order = view.get_serializer().fields['order'].to_internal_value(request.data.get('order'))
-            return self._has_order_permission(request, order)
-        return True
-
-    def has_object_permission(self, request, view, boughtitem):
-        # Don't allow deletion if we need this for tracking later.
-        if request.method == 'DELETE' and boughtitem.status in (BoughtItem.BOUGHT, BoughtItem.REFUNDED):
-            return False
-
-        return self._has_order_permission(request, boughtitem.order)
-
-
-class OrderDiscountPermission(OrderPermission):
-    def has_permission(self, request, view):
-        if request.method == 'POST':
-            order = view.get_serializer().fields['order'].to_internal_value(request.data.get('order'))
-            return self._has_order_permission(request, order)
-        return True
-
-    def has_object_permission(self, request, view, orderdiscount):
-        # For now, don't allow deletion via the API.
-        if request.method == 'DELETE':
-            return False
-
-        return self._has_order_permission(request, orderdiscount.order)
+        raise NotImplementedError
