@@ -8,15 +8,12 @@ cache: pip
 install:
 - pip install . --no-deps
 - pip install --no-deps -r requirements.txt
-- if [ $DATABASE_URL == 'postgres://postgres@localhost:5432/brambling_test' ]; then pip install --no-deps psycopg2==2.5.3;
-  fi
+- pip install --no-deps psycopg2==2.5.3
 - pip install flake8==3.3.0
 before_script:
-- if [ $DATABASE_URL == 'postgres://postgres@localhost:5432/brambling_test' ]; then psql -c 'drop database if exists brambling_test;'
-  -U postgres; fi
-- if [ $DATABASE_URL == 'postgres://postgres@localhost:5432/brambling_test' ]; then psql -c 'create database brambling_test;' -U postgres;
-  fi
-- "flake8 --ignore=E501 brambling"
+- psql -c 'drop database if exists brambling_test;' -U postgres
+- psql -c 'create database brambling_test;' -U postgres
+- flake8 brambling
 script:
 - "./manage.py test --verbosity=2 brambling"
 notifications:
