@@ -1980,6 +1980,21 @@ class SavedReport(models.Model):
     querystring = models.TextField()
 
 
+class ProcessedStripeEvent(models.Model):
+    LIVE = LIVE
+    TEST = TEST
+    API_CHOICES = (
+        (LIVE, _('Live')),
+        (TEST, _('Test')),
+    )
+    api_type = models.CharField(max_length=4, choices=API_CHOICES, default=LIVE)
+    stripe_event_id = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('api_type', 'stripe_event_id')
+
+
 # Update event / org last-modified stats on various changes
 @receiver(signals.post_save, sender=Transaction)
 @receiver(signals.post_save, sender=Item)

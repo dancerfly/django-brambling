@@ -4,11 +4,29 @@ from django.utils.timezone import now
 import factory
 
 from brambling.models import (
-    Event, Person, Order, CreditCard, Invite,
-    Organization, Transaction, Item, ItemOption,
-    Discount, Attendee, ItemImage, SavedReport,
-    CustomForm, CustomFormField, EnvironmentalFactor, HousingRequestNight,
-    HousingCategory, EventHousing, Home, HousingSlot, DwollaAccount,
+    CustomForm,
+    Discount,
+    Event,
+    HousingCategory,
+    Organization,
+    ProcessedStripeEvent,
+    Attendee,
+    CreditCard,
+    CustomFormField,
+    DwollaAccount,
+    EnvironmentalFactor,
+    EventHousing,
+    Home,
+    HousingRequestNight,
+    HousingSlot,
+    Invite,
+    Item,
+    ItemImage,
+    ItemOption,
+    Order,
+    Person,
+    SavedReport,
+    Transaction,
 )
 from brambling.payment.dwolla.auth import DWOLLA_SCOPES
 
@@ -258,3 +276,8 @@ class HomeFactory(factory.DjangoModelFactory):
 class HousingSlotFactory(factory.DjangoModelFactory):
     class Meta:
         model = HousingSlot
+
+
+class ProcessedStripeEventFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = ProcessedStripeEvent
