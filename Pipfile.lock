@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "faf9767d827934f5c80e2ba8bef26b2192f20ab462f3dd6ab624df9620b39a01"
+            "sha256": "3447c89628a62fb11c7887fa047f2c75c87e852f1086d19603c2da373e0aa163"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -87,6 +87,19 @@
                 "sha256:f9563b918fd2e17aba4d9fa12d8e4644953a4958609dcc21d311a9ab1429c65a"
             ],
             "version": "==2.1.2"
+        },
+        "django-debug-toolbar": {
+            "hashes": [
+                "sha256:852a37b80df9597048591ebc87d0ce85a4edceaef015dc5360ad89cc5960c27b",
+                "sha256:0cbae8760f4851d480a70b72ace5b075f8191ecf899bc97427715e50fb0e90b9"
+            ],
+            "version": "==1.4"
+        },
+        "django-debug-toolbar-template-timings": {
+            "hashes": [
+                "sha256:5d5ddb2ba1da4c861952fbc910a5acc1dc26424c94409157d90b98febdb26da8"
+            ],
+            "version": "==0.6.4"
         },
         "django-filter": {
             "hashes": [
@@ -384,33 +397,5 @@
             "version": "==1.10.5"
         }
     },
-    "develop": {
-        "django": {
-            "hashes": [
-                "sha256:54be9d6eab6cc0e2da558c12aea6cff7d5a0124c8a470e1ff61134ba9ed37f20",
-                "sha256:ec148be73548da090dd76c2e8c57c98e8b1e84f2cb87500b9be5420187a435fb"
-            ],
-            "version": "==1.8.11"
-        },
-        "django-debug-toolbar": {
-            "hashes": [
-                "sha256:852a37b80df9597048591ebc87d0ce85a4edceaef015dc5360ad89cc5960c27b",
-                "sha256:0cbae8760f4851d480a70b72ace5b075f8191ecf899bc97427715e50fb0e90b9"
-            ],
-            "version": "==1.4"
-        },
-        "django-debug-toolbar-template-timings": {
-            "hashes": [
-                "sha256:5d5ddb2ba1da4c861952fbc910a5acc1dc26424c94409157d90b98febdb26da8"
-            ],
-            "version": "==0.6.4"
-        },
-        "sqlparse": {
-            "hashes": [
-                "sha256:d9cf190f51cbb26da0412247dfe4fb5f4098edb73db84e02f9fc21fdca31fed4",
-                "sha256:ce028444cfab83be538752a2ffdb56bc417b7784ff35bb9a3062413717807dec"
-            ],
-            "version": "==0.2.4"
-        }
-    }
+    "develop": {}
 }
