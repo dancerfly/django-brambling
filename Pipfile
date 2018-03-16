@@ -49,6 +49,7 @@ sendgrid = "==2.2.1"
 sendgrid-django = "==2.0.0"
 smtpapi = "==0.3.1"
 python-http-client = "==1.2.3"
+gunicorn = "*"
 
 
 [dev-packages]
