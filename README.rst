@@ -41,7 +41,7 @@ Then, to install:
     pip install --no-deps -e django-brambling
 
     # Install python requirements. This may take a while.
-    pip install -r django-brambling/test_project/requirements.txt
+    pip install -r django-brambling/dancerfly_project/requirements.txt
 
 Environment Variables
 ---------------------
@@ -85,7 +85,7 @@ Get it running
 
 .. code:: bash
 
-    cd django-brambling/test_project
+    cd django-brambling/dancerfly_project
     python manage.py syncdb    # Create/sync the database.
     python manage.py runserver # Run the server!
 
