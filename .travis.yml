@@ -8,17 +8,16 @@ env:
 - DATABASE_URL=postgres://postgres@localhost:5432/brambling_test
 cache: pip
 install:
-- pip install . --no-deps
-- pip install --no-deps -r requirements.txt
+- pip install pipenv
+- pipenv install
 - psql --version
-- pip install --no-deps psycopg2==2.7.3.2
-- pip install flake8==3.3.0
+- pipenv run pip install flake8==3.3.0
 before_script:
 - psql -c 'drop database if exists brambling_test;' -U postgres
 - psql -c 'create database brambling_test;' -U postgres
-- flake8 brambling
+- pipenv run flake8 brambling
 script:
-- "./manage.py test --verbosity=2 brambling"
+- "pipenv run ./manage.py test --verbosity=2 brambling"
 notifications:
   slack:
     secure: U8uCS43H0wmkkolDc2VLdwN+vJTxfZtjP/1tHKejUGD6BKWJ5uKBjUjZFpy4O8FcfKkpybSobkK9bgo8/5UV9fi01/Ybli5oBp6gBQARQUKtzFBzLtSGReD5QHa/ezFcoFlxHkCFOZe4oZc/C2+l/x8IyaXxeB3pQvlFeKP+PSw=
