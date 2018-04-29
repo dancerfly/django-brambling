@@ -18,6 +18,7 @@ install:
 - pipenv --version
 - pipenv install --ignore-pipfile
 - pipenv graph
+- python -m pipenv.help
 - psql --version
 - pipenv run pip install flake8==3.3.0
 before_script:
