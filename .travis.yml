@@ -14,7 +14,10 @@ cache:
   - $HOME/.cache/pipenv
 install:
 - pip install pipenv
+- pipenv --version
 - pipenv install
+- pipenv graph
+- python -m pipenv.help
 - psql --version
 - pipenv run pip install flake8==3.3.0
 before_script:
@@ -22,6 +25,8 @@ before_script:
 - psql -c 'create database brambling_test;' -U postgres
 - pipenv run flake8 brambling
 script:
+- python -c "from pipenv.environments import user_cache_dir; print user_cache_dir('pipenv')"
+- pipenv run python -c "import django; print django.VERSION"
 - "pipenv run ./manage.py test --verbosity=2 brambling"
 notifications:
   slack:
