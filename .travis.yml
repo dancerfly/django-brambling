@@ -9,6 +9,8 @@ env:
   - DATABASE_URL=postgres://postgres@localhost:5432/brambling_test
   - PIPENV_IGNORE_VIRTUALENVS=1
   - PYTHONIOENCODING='utf-8'
+  - PIPENV_DONT_USE_PYENV=1
+  - PIPENV_VENV_IN_PROJECT=1
 cache:
   pip: true
   directories:
