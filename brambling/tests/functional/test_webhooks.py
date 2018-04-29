@@ -1,3 +1,4 @@
+from unittest import skipUnless
 import json
 import os
 
@@ -320,6 +321,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         )
         self.order.mark_cart_paid(self.txn)
 
+    @skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
     @mock.patch('stripe.Event.retrieve')
     def test_transaction_refunded_successfully(self, event_retrieve):
         event_retrieve.return_value = self.mock_event
@@ -336,6 +338,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         self.assertEqual(refund.order, self.order)
         self.assertEqual(refund.event, self.event)
 
+    @skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
     @mock.patch('stripe.Event.retrieve')
     def test_events_should_be_processed_exactly_once(self, event_retrieve):
         event_retrieve.return_value = self.mock_event
@@ -347,6 +350,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         Transaction.objects.get(related_transaction=self.txn,
                                 transaction_type=Transaction.REFUND)
 
+    @skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
     @mock.patch('stripe.Event.retrieve')
     def test_events_should_be_processed_exactly_once_in_livemode(self, event_retrieve):
         self.mock_event.livemode = True
@@ -362,6 +366,7 @@ class SuccessfulRefundWebhookTestCase(TestCase):
         Transaction.objects.get(related_transaction=self.txn,
                                 transaction_type=Transaction.REFUND)
 
+    @skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
     @mock.patch('stripe.Event.retrieve')
     def test_events_should_be_logged_in_test_mode(self, event_retrieve):
         event_retrieve.return_value = self.mock_event

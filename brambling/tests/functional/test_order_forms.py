@@ -1,5 +1,7 @@
 from decimal import Decimal
 from datetime import timedelta
+from unittest import skipUnless
+import os
 
 from django.test import TestCase
 from django.utils import timezone
@@ -324,6 +326,7 @@ class SavedCardPaymentFormTestCase(TestCase):
         self.assertEqual(form.errors['__all__'], [error_message])
 
 
+@skipUnless(os.environ.get('DWOLLA_TEST_APPLICATION_KEY'), 'dwolla test settings required')
 class DwollaPaymentFormTestCase(TestCase):
 
     @patch('brambling.forms.orders.dwolla_get_sources')
