@@ -30,7 +30,7 @@ before_script:
 script:
 - python -c "from pipenv.environments import user_cache_dir; print user_cache_dir('pipenv')"
 - pipenv run python -c "import django; print django.VERSION"
-- "pipenv run ./manage.py test --verbosity=2 brambling"
+- "pipenv run python manage.py test --verbosity=2 brambling"
 notifications:
   slack:
     secure: U8uCS43H0wmkkolDc2VLdwN+vJTxfZtjP/1tHKejUGD6BKWJ5uKBjUjZFpy4O8FcfKkpybSobkK9bgo8/5UV9fi01/Ybli5oBp6gBQARQUKtzFBzLtSGReD5QHa/ezFcoFlxHkCFOZe4oZc/C2+l/x8IyaXxeB3pQvlFeKP+PSw=
