@@ -35,7 +35,7 @@ markdown = "==2.6.5"
 bleach = "==1.4.2"
 "html5lib" = "==0.9999999"
 django-bootstrap = {git = "https://github.com/littleweaver/django-bootstrap.git", editable = true, ref = "bootstrap3"}
-django-zenaida = {git = "git://github.com/littleweaver/django-zenaida.git", editable = true, ref = "master"}
+django-zenaida = {git = "git://github.com/dancerfly/django-zenaida.git", editable = true, ref = "master"}
 mock = "==1.0.1"
 factory-boy = "==2.4.1"
 tox = "==1.8.1"

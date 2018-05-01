@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d52723785433ec049f8233dd6ee7ad289f4edab567492d5ba8984ea7e5430ad5"
+            "sha256": "e3b377cbe4302ab32bcb3180d77f8e743538251ddde6c1696a00c80f777fee7a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -144,7 +144,7 @@
         },
         "django-zenaida": {
             "editable": true,
-            "git": "git://github.com/littleweaver/django-zenaida.git",
+            "git": "git://github.com/dancerfly/django-zenaida.git",
             "ref": "master"
         },
         "djangorestframework": {
