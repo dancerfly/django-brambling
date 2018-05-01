@@ -18,7 +18,7 @@ cache:
 install:
 - pip install pipenv
 - pipenv --version
-- pipenv sync
+- pipenv install --sequential
 - pipenv graph
 - python -m pipenv.help
 - psql --version
