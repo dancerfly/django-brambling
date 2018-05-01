@@ -9,27 +9,22 @@ env:
   - DATABASE_URL=postgres://postgres@localhost:5432/brambling_test
   - PIPENV_IGNORE_VIRTUALENVS=1
   - PYTHONIOENCODING='utf-8'
-  - PIPENV_DONT_USE_PYENV=1
-  - PIPENV_VENV_IN_PROJECT=1
 cache:
   pip: true
   directories:
   - $HOME/.cache/pipenv
 install:
 - pip install pipenv
-- pipenv --version
 - pipenv install --sequential
-- pipenv graph
-- python -m pipenv.help
-- psql --version
 - pipenv run pip install flake8==3.3.0
+- psql --version
+- pipenv --version
+- pipenv graph
 before_script:
 - psql -c 'drop database if exists brambling_test;' -U postgres
 - psql -c 'create database brambling_test;' -U postgres
 - pipenv run flake8 brambling
 script:
-- python -c "from pipenv.environments import user_cache_dir; print user_cache_dir('pipenv')"
-- pipenv run python -c "import django; print django.VERSION"
 - "pipenv run python manage.py test --verbosity=2 brambling"
 notifications:
   slack:
