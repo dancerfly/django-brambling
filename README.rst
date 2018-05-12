@@ -16,37 +16,35 @@ Prerequisites
 
 The installation instructions below assume you have the following software on your machine:
 
-* `Python 2.7.x <http://www.python.org/download/releases/2.7.6/>`_
-* `Pip <https://pip.readthedocs.org/en/latest/installing.html>`_
-* `virtualenv <https://virtualenv.pypa.io/en/stable/installation/>`_ (optional)
-* `virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/install.html>`_ (optional)
+* `Python 2.7.x <https://www.python.org/downloads/release/python-2715/>`_
+* `pipenv <https://docs.pipenv.org/install/#installing-pipenv>`_
 
 Installation instructions
 -------------------------
 
-If you are using virtualenv or virtualenvwrapper, create and activate an environment. E.g.,
+Here's a one-liner to get you going!
 
 .. code:: bash
 
-    mkvirtualenv brambling # Using virtualenvwrapper.
+  pipenv install && pipenv run ./manage.py migrate && pipenv run ./manage.py runserver
 
-Then, to install:
+This will install all project dependencies, set up the database, and start a server.
+At this point you can visit `http://127.0.0.1:8000` in your favorite browser and see your locally running copy of Dancerfly!
 
-.. code:: bash
+.. note::
 
-    # Clone django-brambling to a location of your choice.
-    git clone https://github.com/littleweaver/django-brambling.git
+  If you experience issues installing the correct version of Django, try using ``pipenv install --sequential`` instead.
+  See `github.com/pypa/pipenv/issues/2088 <https://github.com/pypa/pipenv/issues/2088>`_ for details.
 
-    # Install django-brambling.
-    pip install --no-deps -e django-brambling
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/littleweaver/django-brambling
+   :target: https://gitter.im/littleweaver/django-brambling?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-    # Install python requirements. This may take a while.
-    pip install -r django-brambling/test_project/requirements.txt
+Environment Variables (optional)
+--------------------------------
 
-Environment Variables
----------------------
-
-Set the following optional environment variables to configure the server:
+Set the following optional environment variables in a local .env file if the default values don't work for you.
+See `pipenv's documentation <https://docs.pipenv.org/advanced/#automatic-loading-of-env>`_ for more details.
 
 ============================================= ========================== =====================================================================================
 Variable                                      Default                    Usage
@@ -79,39 +77,3 @@ Variable                                      Default                    Usage
 ============================================= ========================== =====================================================================================
 
 .. _`secret key`: https://docs.djangoproject.com/en/1.11/ref/settings/#secret-key
-
-Get it running
---------------
-
-.. code:: bash
-
-    cd django-brambling/test_project
-    python manage.py syncdb    # Create/sync the database.
-    python manage.py runserver # Run the server!
-
-Then, navigate to ``http://127.0.0.1:8000/`` in your favorite web browser!
-
-
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/littleweaver/django-brambling
-   :target: https://gitter.im/littleweaver/django-brambling?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
-
-Deploying to a server
----------------------
-
-First, set up an ubuntu server on whatever service and set up your ssh config
-appropriately. Once that's done, install fabric (if you don't have it already): `pip install fabric`
-
-Then, all you need to do is run `fab -H name-of-server deploy:branch-name`. This does the following:
-
-* Installs our server configuration tool, `salt <http://saltstack.com/>`_, which will handle most
-  of the heavy lifting for you. This only happens if salt isn't installed yet.
-* Syncs your local pillar data with the remote version using rsync.
-* Deploys the specified branch from Github.
-* Runs salt.
-* Runs migrations.
-* Collects static files.
-
-Each of these steps can also be run individually. Run `fab` with no arguments to see a full list of commands, or
-check out fabfile.py.

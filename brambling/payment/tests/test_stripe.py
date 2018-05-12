@@ -1,4 +1,6 @@
 from decimal import Decimal
+from unittest import skipUnless
+import os
 
 from django.test import TestCase
 import stripe
@@ -23,6 +25,7 @@ from brambling.tests.factories import (
 )
 
 
+@skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
 class StripeChargeTestCase(TestCase):
     def test_charge__negative_amount(self):
         event = EventFactory(api_type=TEST,
@@ -208,6 +211,7 @@ class StripeChargeTestCase(TestCase):
 
 
 class StripeCustomerTestCase(TestCase):
+    @skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
     def test_get_customer(self):
         user = PersonFactory()
         self.assertEqual(user.stripe_test_customer_id, '')
@@ -229,6 +233,7 @@ class StripeCustomerTestCase(TestCase):
         user.refresh_from_db()
         self.assertEqual(user.stripe_test_customer_id, '')
 
+    @skipUnless(os.environ.get('STRIPE_TEST_APPLICATION_ID'), 'stripe test settings required')
     def test_add_card(self):
         stripe_prep(TEST)
         token = stripe.Token.create(

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from unittest import skipUnless
 import os
 
 from django.conf import settings
@@ -51,7 +52,7 @@ CHARGE_DATA = {
 
 
 class DwollaChargeTestCase(TestCase):
-
+    @skipUnless(os.environ.get('DWOLLA_TEST_APPLICATION_KEY'), 'dwolla test settings required')
     def test_dolla_charge__negative(self):
         event = EventFactory(api_type=Event.TEST,
                              application_fee_percent=Decimal('2.5'))
@@ -74,6 +75,7 @@ class DwollaChargeTestCase(TestCase):
                 source='Balance',
             )
 
+    @skipUnless(os.environ.get('DWOLLA_TEST_APPLICATION_KEY'), 'dwolla test settings required')
     @vcr.use_cassette(os.path.join(VCR_DIR, 'test_dwolla_charge__user.yaml'))
     def test_dwolla_charge__user(self):
         event = EventFactory(api_type=Event.TEST,

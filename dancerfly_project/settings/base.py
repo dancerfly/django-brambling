@@ -1,5 +1,5 @@
 """
-Django settings for test_project project.
+Django settings for dancerfly_project project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/
@@ -15,7 +15,7 @@ from django.contrib.messages import constants as messages
 from django.core.urlresolvers import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
 # Quick-start development settings - unsuitable for production
@@ -83,9 +83,9 @@ AUTHENTICATION_BACKENDS = [
     'brambling.auth_backends.BramblingBackend',
 ]
 
-ROOT_URLCONF = 'test_project.urls'
+ROOT_URLCONF = 'dancerfly_project.urls'
 
-WSGI_APPLICATION = 'test_project.wsgi.application'
+WSGI_APPLICATION = 'dancerfly_project.wsgi.application'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
