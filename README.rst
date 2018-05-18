@@ -1,6 +1,9 @@
-Dance event registration and ticketing app.
+.. image:: https://dancerfly.com/static/brambling/images/all-dancers.gif
 
-.. image:: https://travis-ci.org/dancerfly/django-brambling.svg?branch=master
+Dancerfly |travis|
+++++++++++++++++++
+
+.. |travis| image:: https://travis-ci.org/dancerfly/django-brambling.svg?branch=master
     :target: https://travis-ci.org/dancerfly/django-brambling
 
 Naming
