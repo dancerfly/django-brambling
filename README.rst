@@ -1,7 +1,7 @@
 Dance event registration and ticketing app.
 
-.. image:: https://travis-ci.org/littleweaver/django-brambling.svg?branch=master
-    :target: https://travis-ci.org/littleweaver/django-brambling
+.. image:: https://travis-ci.org/dancerfly/django-brambling.svg?branch=master
+    :target: https://travis-ci.org/dancerfly/django-brambling
 
 Naming
 ======
