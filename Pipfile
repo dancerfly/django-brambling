@@ -1,12 +1,9 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 django = "==1.8.11"
 pytz = "==2015.2"
 sqlparse = "==0.1.14"
@@ -53,12 +50,10 @@ gunicorn = "*"
 django-debug-toolbar = "==1.4"
 django-debug-toolbar-template-timings = "==0.6.4"
 "psycopg2" = "*"
-
+django-storages = "*"
+"boto3" = "*"
 
 [dev-packages]
 
-
-
 [requires]
-
 python_version = "2.7"
