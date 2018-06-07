@@ -32,7 +32,8 @@ TEMPLATE_DEBUG = True
 
 ACCEPT_FEEDBACK = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = ALLOWED_HOSTS.split(',') if ALLOWED_HOSTS else []
 
 
 # Application definition
