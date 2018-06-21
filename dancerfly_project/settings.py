@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'NOT_SECRET')
 DEBUG = bool(os.environ.get('DEBUG', True))
 USE_DEBUG_TOOLBAR = DEBUG
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = DEBUG
 
 ACCEPT_FEEDBACK = True
 
