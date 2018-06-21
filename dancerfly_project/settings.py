@@ -25,14 +25,21 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 SECRET_KEY = os.environ.get('SECRET_KEY', 'NOT_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.environ.get('DEBUG', True))
 USE_DEBUG_TOOLBAR = DEBUG
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = DEBUG
 
 ACCEPT_FEEDBACK = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = ALLOWED_HOSTS.split(',') if ALLOWED_HOSTS else []
+
+SECURE_SSL_REDIRECT = bool(os.environ.get('SECURE_SSL_REDIRECT', False))
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 0))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
 
 
 # Application definition
@@ -58,6 +65,7 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,11 +91,43 @@ AUTHENTICATION_BACKENDS = [
     'brambling.auth_backends.BramblingBackend',
 ]
 
+if USE_DEBUG_TOOLBAR:
+    INSTALLED_APPS += (
+        'debug_toolbar.apps.DebugToolbarConfig',
+        'template_timings_panel',
+    )
+    DEBUG_TOOLBAR_PANELS = [
+        'debug_toolbar.panels.versions.VersionsPanel',
+        'debug_toolbar.panels.timer.TimerPanel',
+        'debug_toolbar.panels.settings.SettingsPanel',
+        'debug_toolbar.panels.headers.HeadersPanel',
+        'debug_toolbar.panels.request.RequestPanel',
+        'debug_toolbar.panels.sql.SQLPanel',
+        'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+        'debug_toolbar.panels.templates.TemplatesPanel',
+        'debug_toolbar.panels.cache.CachePanel',
+        'debug_toolbar.panels.signals.SignalsPanel',
+        'debug_toolbar.panels.logging.LoggingPanel',
+        'debug_toolbar.panels.redirects.RedirectsPanel',
+        'template_timings_panel.panels.TemplateTimings.TemplateTimings',
+    ]
+
+if ACCEPT_FEEDBACK:
+    MIDDLEWARE_CLASSES += (
+        'talkback.middleware.TalkbackMiddleware',
+    )
+    INSTALLED_APPS += (
+        'talkback',
+    )
+
 ROOT_URLCONF = 'dancerfly_project.urls'
 
 WSGI_APPLICATION = 'dancerfly_project.wsgi.application'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '')
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL', '')
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
@@ -125,11 +165,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = os.environ.get('STATIC_URL', '/static/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_STORAGE = os.environ.get('STATICFILES_STORAGE', 'django.contrib.staticfiles.storage.StaticFilesStorage')
 
-MEDIA_URL = '/media/'
+MEDIA_URL = os.environ.get('MEDIA_URL', '/media/')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DEFAULT_FILE_STORAGE = os.environ.get('DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage')
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_QUERYSTRING_AUTH = False
+AWS_PRELOAD_METADATA = True
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = reverse_lazy('login')
@@ -176,6 +224,7 @@ STATICFILES_FINDERS = (
 COMPRESS_PRECOMPILERS = (
     ('text/sass', 'django_libsass.SassCompiler'),
 )
+COMPRESS_STORAGE = STATICFILES_STORAGE
 
 
 MESSAGE_TAGS = {
@@ -185,35 +234,6 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert alert-warning',
     messages.ERROR: 'alert alert-danger'
 }
-
-if USE_DEBUG_TOOLBAR:
-    INSTALLED_APPS += (
-        'debug_toolbar.apps.DebugToolbarConfig',
-        'template_timings_panel',
-    )
-    DEBUG_TOOLBAR_PANELS = [
-        'debug_toolbar.panels.versions.VersionsPanel',
-        'debug_toolbar.panels.timer.TimerPanel',
-        'debug_toolbar.panels.settings.SettingsPanel',
-        'debug_toolbar.panels.headers.HeadersPanel',
-        'debug_toolbar.panels.request.RequestPanel',
-        'debug_toolbar.panels.sql.SQLPanel',
-        'debug_toolbar.panels.staticfiles.StaticFilesPanel',
-        'debug_toolbar.panels.templates.TemplatesPanel',
-        'debug_toolbar.panels.cache.CachePanel',
-        'debug_toolbar.panels.signals.SignalsPanel',
-        'debug_toolbar.panels.logging.LoggingPanel',
-        'debug_toolbar.panels.redirects.RedirectsPanel',
-        'template_timings_panel.panels.TemplateTimings.TemplateTimings',
-    ]
-
-if ACCEPT_FEEDBACK:
-    MIDDLEWARE_CLASSES += (
-        'talkback.middleware.TalkbackMiddleware',
-    )
-    INSTALLED_APPS += (
-        'talkback',
-    )
 
 try:
     from .local_settings import *  # noqa: F403, F401

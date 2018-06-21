@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e3b377cbe4302ab32bcb3180d77f8e743538251ddde6c1696a00c80f777fee7a"
+            "sha256": "f2c33f0a38ad82552cb96fc12af28643749efa43f2e285a2e8e35a77749c7335"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,6 +23,21 @@
             ],
             "index": "pypi",
             "version": "==1.4.2"
+        },
+        "boto3": {
+            "hashes": [
+                "sha256:6dd9a6fe523c3e4d4fc28fe7030453ee5b4e75e778144cf22008c79dfc031bd3",
+                "sha256:fccad296209cfbee668292d51bd3b258eb85d4bce1bf1a5dcb2e24942a00d48a"
+            ],
+            "index": "pypi",
+            "version": "==1.7.26"
+        },
+        "botocore": {
+            "hashes": [
+                "sha256:c63c77e41cd514d80da06eb626f5e9f50c94c44b0206957aca23a20f889abb05",
+                "sha256:ca23fb013a18584a3a7043c6cc0bf02250f2665937e73290f65f1f48ee9b4f78"
+            ],
+            "version": "==1.10.26"
         },
         "contextlib2": {
             "hashes": [
@@ -135,6 +150,14 @@
             "index": "pypi",
             "version": "==1.1"
         },
+        "django-storages": {
+            "hashes": [
+                "sha256:7339070cf0c8042f5a885783a0a909175a8dbb68e7f5697d597571c830a460c4",
+                "sha256:f1dd5668a4df9a23aff56c8321ea3aac3fda23d9d17473158d308d1b13e5363e"
+            ],
+            "index": "pypi",
+            "version": "==1.6.6"
+        },
         "django-talkback": {
             "hashes": [
                 "sha256:32242f51274128c51a319f976a2613a2062a16fafaaa075321efb7f7397e1d82"
@@ -155,6 +178,14 @@
             "index": "pypi",
             "version": "==3.3.0"
         },
+        "docutils": {
+            "hashes": [
+                "sha256:02aec4bd92ab067f6ff27a38a38a41173bf01bed8f89157768c1573f53e474a6",
+                "sha256:51e64ef2ebfb29cae1faa133b3710143496eca21c530f3f71424d77687764274",
+                "sha256:7a4bd47eaf6596e1295ecb11361139febe29b084a87bf005bf899f9a42edc3c6"
+            ],
+            "version": "==0.14"
+        },
         "dwolla": {
             "hashes": [
                 "sha256:23d5b665ccd2ac212d3fb4a59ce43f4c97931fca1432d0559071a98693f238c3"
@@ -168,6 +199,14 @@
             ],
             "index": "pypi",
             "version": "==2.4.1"
+        },
+        "futures": {
+            "hashes": [
+                "sha256:9ec02aa7d674acb8618afb127e27fde7fc68994c0437ad759fa094a574adb265",
+                "sha256:ec0a6cb848cc212002b9828c3e34c675e0c9ff6741dc445cab6fdd4e1085d1f1"
+            ],
+            "markers": "python_version == '2.6' or python_version == '2.7'",
+            "version": "==3.2.0"
         },
         "gunicorn": {
             "hashes": [
@@ -190,6 +229,13 @@
             ],
             "index": "pypi",
             "version": "==1.0.1"
+        },
+        "jmespath": {
+            "hashes": [
+                "sha256:6a81d4c9aa62caf061cb517b4d9ad1dd300374cd4706997aff9cd6aedd61fc64",
+                "sha256:f11b4461f425740a1d908e9a3f7365c3d2e569f6ca68a2ff8bc5bcd9676edd63"
+            ],
+            "version": "==0.9.3"
         },
         "libsass": {
             "hashes": [
@@ -312,6 +358,14 @@
             "index": "pypi",
             "version": "==1.4.26"
         },
+        "python-dateutil": {
+            "hashes": [
+                "sha256:1adb80e7a782c12e52ef9a8182bebeb73f1d7e24e374397af06fb4956c8dc5c0",
+                "sha256:e27001de32f627c22380a688bcc43ce83504a7bc5da472209b4c70f02829f0b8"
+            ],
+            "markers": "python_version >= '2.7'",
+            "version": "==2.7.3"
+        },
         "python-http-client": {
             "hashes": [
                 "sha256:3f25f2431c61dfbe494470d671672b2c6c86a9bcd24c340259e86813fe3dd5ac",
@@ -365,6 +419,13 @@
             ],
             "index": "pypi",
             "version": "==2.10.0"
+        },
+        "s3transfer": {
+            "hashes": [
+                "sha256:90dc18e028989c609146e241ea153250be451e05ecc0c2832565231dacdf59c1",
+                "sha256:c7a9ec356982d5e9ab2d4b46391a7d6a950e2b04c472419f5fdec70cc0ada72f"
+            ],
+            "version": "==0.1.13"
         },
         "sendgrid": {
             "hashes": [
