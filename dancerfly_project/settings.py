@@ -21,6 +21,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/dev/howto/deployment/checklist/
 
+ADMINS = [('Dancerfly Support', 'support@dancerfly.com'),]
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'NOT_SECRET')
 
@@ -41,6 +43,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
+GOOGLE_ANALYTICS_UA = os.environ.get('GOOGLE_ANALYTICS_UA', None)
+GOOGLE_ANALYTICS_DOMAIN = os.environ.get('GOOGLE_ANALYTICS_DOMAIN', None)
 
 # Application definition
 
@@ -84,6 +88,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.messages.context_processors.messages",
     "django.core.context_processors.request",
     'brambling.context_processors.current_site',
+    'brambling.context_processors.google_analytics',
 )
 
 AUTHENTICATION_BACKENDS = [
