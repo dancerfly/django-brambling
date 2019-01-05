@@ -1061,7 +1061,8 @@ class Order(AbstractDwollaModel):
     def add_to_cart(self, item_option):
         if self.cart_is_expired():
             self.delete_cart()
-        bought_item = BoughtItem.objects.create(
+
+        BoughtItem.objects.create(
             item_option=item_option,
             order=self,
             status=BoughtItem.RESERVED,
@@ -1070,19 +1071,7 @@ class Order(AbstractDwollaModel):
             item_option_name=item_option.name,
             price=item_option.price,
         )
-        discounts = self.discounts.filter(
-            discount__item_options=item_option
-        ).select_related('discount').distinct()
-        if discounts:
-            BoughtItemDiscount.objects.bulk_create([
-                BoughtItemDiscount(discount=discount.discount,
-                                   bought_item=bought_item,
-                                   name=discount.discount.name,
-                                   code=discount.discount.code,
-                                   discount_type=discount.discount.discount_type,
-                                   amount=discount.discount.amount)
-                for discount in discounts
-            ])
+
         if self.cart_start_time is None:
             self.cart_start_time = timezone.now()
             self.save()
