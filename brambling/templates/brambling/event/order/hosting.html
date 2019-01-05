@@ -8,8 +8,6 @@
 	{{ block.super }}
 	<script type="text/javascript" src="{% static "brambling/brambling.hostingform.js" %}"></script>
 
-	{% include 'brambling/event/order/_use_discount_js.html' %}
-
 	<script>
 		$(function(){
 			$('#id_providing_housing').on('change', function() {

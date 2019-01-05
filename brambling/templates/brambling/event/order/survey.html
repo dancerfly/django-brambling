@@ -7,8 +7,6 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	{% include 'brambling/event/order/_use_discount_js.html' %}
-
 	<script>
 		$(function(){
 			$('#id_heard_through').on('change', function() {

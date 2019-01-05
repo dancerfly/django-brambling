@@ -7,8 +7,6 @@
 {% block javascripts %}
 	{{ block.super }}
 
-	{% include 'brambling/event/order/_use_discount_js.html' %}
-
 	<script type="text/javascript" src="{% static "zenaida/js/bootstrap/carousel.js" %}"></script>
 {% endblock %}
 
@@ -48,31 +46,6 @@
 						</div>
 					{% endif %}
 				{% endwith %}
-
-				<div class='panel panel-default' id='discounts'>
-					<header class='panel-heading'>
-						<div class='panel-title'>
-							<i class="fa fa-fw fa-gift"></i> Discounts
-						</div>
-					</header>
-					<div class='list-group relative'>
-						{% for discount in discounts %}
-							<div class='list-group-item'>
-								{{ discount.name }} <em class='text-muted'>{{ discount.code }}</em>
-							</div>
-						{% endfor %}
-						<form id='discountForm'>
-						<div class='list-group-item'>
-							<div class='input-group'>
-								<input id='discountCode' class='form-control' placeholder='Discount code' autocomplete='off'>
-								<span class='input-group-btn'>
-									<button id='discountCodeButton' class='btn btn-default' type='submit'><span class='fa fa-plus'></span></button>
-								</span>
-							</div>
-						</div>
-						</form>
-					</div>{# /.list-group #}
-				</div>
 			</div>
 			<div class="col-md-7 col-md-pull-5 margin-leader margin-leader-md-0">
 				{% for options in option_list %}
