@@ -57,9 +57,10 @@ class AddDiscountTestCase(TestCase):
     def test_created_true_if_any_discounts_created(self):
         item_option2 = ItemOptionFactory(price=100, item=self.item)
         self.discount.item_options.add(item_option2)
+        self.order.add_to_cart(item_option2)
         BoughtItemDiscount.objects.create(
             discount=self.discount,
-            bought_item=self.order.bought_items.get(),
+            bought_item=self.order.bought_items.get(item_option=self.item_option),
             name=self.discount.name,
             code=self.discount.code,
             discount_type=self.discount.discount_type,
