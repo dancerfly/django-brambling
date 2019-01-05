@@ -24,7 +24,6 @@ from brambling.views.orders import (
     OrderEmailView,
     SummaryView,
     TransferView,
-    RactiveShopView,
     OrderCodeRedirectView,
 )
 from brambling.views.core import (
@@ -104,7 +103,6 @@ from brambling.views.user import (
 
 
 order_urlpatterns = [
-    url(r'^ractive-shop/$', RactiveShopView.as_view()),
     url(r'^shop/$',
         ChooseItemsView.as_view(),
         name="brambling_event_shop"),
