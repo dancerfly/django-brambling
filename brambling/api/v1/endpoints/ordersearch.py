@@ -32,7 +32,7 @@ class OrderSearchViewSet(viewsets.ReadOnlyModelViewSet):
         "Filter orders down to those which are for the specific event provided."
 
         qs = super(OrderSearchViewSet, self).get_queryset().prefetch_related(
-            'bought_items', 'discounts',
+            'bought_items',
         ).select_related(
             'event', 'person', 'eventhousing',
         )
