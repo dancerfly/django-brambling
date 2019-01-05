@@ -116,6 +116,9 @@ if USE_DEBUG_TOOLBAR:
         'debug_toolbar.panels.redirects.RedirectsPanel',
         'template_timings_panel.panels.TemplateTimings.TemplateTimings',
     ]
+    MIDDLEWARE_CLASSES += (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
 
 if ACCEPT_FEEDBACK:
     MIDDLEWARE_CLASSES += (
