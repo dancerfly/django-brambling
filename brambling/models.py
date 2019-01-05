@@ -1498,16 +1498,6 @@ class BoughtItem(models.Model):
         )
 
 
-class OrderDiscount(models.Model):
-    """Tracks whether a person has entered a code for an event."""
-    discount = models.ForeignKey(Discount)
-    order = models.ForeignKey(Order, related_name='discounts')
-    timestamp = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        unique_together = ('order', 'discount')
-
-
 class BoughtItemDiscount(models.Model):
     """"Tracks whether an item has had a discount applied to it."""
     PERCENT = 'percent'

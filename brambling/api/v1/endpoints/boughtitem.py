@@ -9,7 +9,6 @@ from brambling.models import (
     BoughtItem,
     BoughtItemDiscount,
     Order,
-    OrderDiscount,
 )
 
 

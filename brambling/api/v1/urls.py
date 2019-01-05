@@ -13,7 +13,6 @@ from brambling.api.v1.endpoints.itemimage import ItemImageViewSet
 from brambling.api.v1.endpoints.itemoption import ItemOptionViewSet
 from brambling.api.v1.endpoints.order import OrderViewSet
 from brambling.api.v1.endpoints.ordersearch import OrderSearchViewSet
-from brambling.api.v1.endpoints.orderdiscount import OrderDiscountViewSet
 from brambling.api.v1.endpoints.organization import OrganizationViewSet
 
 
@@ -30,7 +29,6 @@ router.register('itemimage', ItemImageViewSet)
 router.register('itemoption', ItemOptionViewSet)
 router.register('order', OrderViewSet)
 router.register('ordersearch', OrderSearchViewSet, base_name='ordersearch')
-router.register('orderdiscount', OrderDiscountViewSet)
 router.register('organization', OrganizationViewSet)
 
 urlpatterns = [

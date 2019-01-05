@@ -4,7 +4,6 @@ from rest_framework.response import Response
 
 from brambling.api.v1.permissions import BaseOrderPermission
 from brambling.api.v1.endpoints.boughtitem import BoughtItemSerializer
-from brambling.api.v1.endpoints.orderdiscount import OrderDiscountSerializer
 from brambling.api.v1.endpoints.eventhousing import EventHousingSerializer
 from brambling.models import (
     Event,
@@ -23,7 +22,6 @@ class OrderPermission(BaseOrderPermission):
 
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     bought_items = BoughtItemSerializer(many=True)
-    discounts = OrderDiscountSerializer(many=True)
     eventhousing = EventHousingSerializer()
     person = serializers.StringRelatedField()
     link = serializers.HyperlinkedIdentityField(view_name='order-detail')
