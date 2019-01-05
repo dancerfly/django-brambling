@@ -7,7 +7,7 @@
 .sass-cache
 /.tox/
 /pillar/
-/dancerfly_project/settings/local.py
+/dancerfly_project/local_settings.py
 
 # Deprecated after settings.py restructure
 /dancerfly_project/media/
