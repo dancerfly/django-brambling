@@ -3,7 +3,11 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import TestCase, RequestFactory
 from mock import Mock
 
-from brambling.models import Order, Transaction
+from brambling.models import (
+    BoughtItemDiscount,
+    Order,
+    Transaction,
+)
 from brambling.tests.factories import (
     EventFactory,
     OrderFactory,
@@ -14,6 +18,60 @@ from brambling.tests.factories import (
     TransactionFactory,
 )
 from brambling.utils.invites import TransferInvite
+
+
+class AddDiscountTestCase(TestCase):
+    def setUp(self):
+        self.event = EventFactory()
+        self.order = OrderFactory(event=self.event)
+        self.item = ItemFactory(event=self.event)
+        self.item_option = ItemOptionFactory(price=100, item=self.item)
+        self.order.add_to_cart(self.item_option)
+        self.discount = DiscountFactory(amount=20, event=self.event, item_options=[self.item_option])
+
+    def test_add_discount_creates_boughtitemdiscount(self):
+        created = self.order.add_discount(self.discount)
+        self.assertTrue(created)
+        bought_item = self.order.bought_items.get()
+        self.assertEqual(bought_item.discounts.count(), 1)
+        bought_item_discount = bought_item.discounts.get()
+        self.assertEqual(bought_item_discount.discount, self.discount)
+
+    def test_add_discount_does_not_duplicate_discounts(self):
+        existing_bought_item_discount = BoughtItemDiscount.objects.create(
+            discount=self.discount,
+            bought_item=self.order.bought_items.get(),
+            name=self.discount.name,
+            code=self.discount.code,
+            discount_type=self.discount.discount_type,
+            amount=self.discount.amount,
+        )
+
+        created = self.order.add_discount(self.discount)
+        self.assertFalse(created)
+        bought_item = self.order.bought_items.get()
+        self.assertEqual(bought_item.discounts.count(), 1)
+        bought_item_discount = bought_item.discounts.get()
+        self.assertEqual(bought_item_discount, existing_bought_item_discount)
+
+    def test_created_true_if_any_discounts_created(self):
+        item_option2 = ItemOptionFactory(price=100, item=self.item)
+        self.discount.item_options.add(item_option2)
+        BoughtItemDiscount.objects.create(
+            discount=self.discount,
+            bought_item=self.order.bought_items.get(),
+            name=self.discount.name,
+            code=self.discount.code,
+            discount_type=self.discount.discount_type,
+            amount=self.discount.amount,
+        )
+
+        created = self.order.add_discount(self.discount)
+        self.assertTrue(created)
+        bought_item = self.order.bought_items.get(item_option=item_option2)
+        self.assertEqual(bought_item.discounts.count(), 1)
+        bought_item_discount = bought_item.discounts.get()
+        self.assertEqual(bought_item_discount.discount, self.discount)
 
 
 class OrderModelTestCase(TestCase):

@@ -1023,28 +1023,37 @@ class Order(AbstractDwollaModel):
     class Meta:
         unique_together = ('event', 'code')
 
-    def add_discount(self, discount, force=False):
+    def add_discount(self, discount):
+        """
+        Add a discount to all items in the order that don't already have that discount.
+        Return True if any discounts are added and False otherwise.
+        """
         if discount.event_id != self.event_id:
             raise ValueError("Discount is not for the correct event")
-        event_person_discount, created = OrderDiscount.objects.get_or_create(
-            discount=discount,
-            order=self
-        )
-        if created or force:
-            bought_items = BoughtItem.objects.filter(
-                order=self,
-                item_option__discount=discount,
-            ).filter(status__in=(
+
+        bought_items = BoughtItem.objects.filter(
+            order=self,
+            item_option__discount=discount,
+            status__in=(
                 BoughtItem.UNPAID,
                 BoughtItem.RESERVED,
-            )).distinct()
+            ),
+        ).exclude(
+            discounts__discount=discount,
+        ).distinct()
+
+        created = bool(bought_items)
+
+        if created:
             BoughtItemDiscount.objects.bulk_create([
-                BoughtItemDiscount(discount=discount,
-                                   bought_item=bought_item,
-                                   name=discount.name,
-                                   code=discount.code,
-                                   discount_type=discount.discount_type,
-                                   amount=discount.amount)
+                BoughtItemDiscount(
+                    discount=discount,
+                    bought_item=bought_item,
+                    name=discount.name,
+                    code=discount.code,
+                    discount_type=discount.discount_type,
+                    amount=discount.amount,
+                )
                 for bought_item in bought_items
             ])
         return created
