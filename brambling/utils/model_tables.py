@@ -4,7 +4,6 @@ import operator
 
 from django.contrib.admin.utils import (lookup_field, lookup_needs_distinct,
                                         label_for_field)
-from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q, Min, Prefetch
 from django.forms.forms import pretty_name
@@ -276,8 +275,7 @@ class ModelTable(object):
 
         if field is not None:
             if field.flatchoices:
-                # EMPTY_CHANGELIST_VALUE is "(None)"
-                return dict(field.flatchoices).get(value, EMPTY_CHANGELIST_VALUE)
+                return dict(field.flatchoices).get(value, '(None)')
 
         return value
 

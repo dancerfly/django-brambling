@@ -485,7 +485,7 @@ class OrderDetailViewTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], 'http://testserver{}'.format(self.url))
+        self.assertEqual(response['Location'], self.url)
         self.order.refresh_from_db()
         self.assertEqual(self.order.notes, 'Hello')
 
@@ -501,6 +501,6 @@ class OrderDetailViewTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], 'http://testserver{}'.format(self.url))
+        self.assertEqual(response['Location'], self.url)
         self.attendee.refresh_from_db()
         self.assertEqual(self.attendee.notes, 'Hello')
