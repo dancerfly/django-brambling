@@ -7,7 +7,6 @@ from brambling.api.v1.permissions import BaseOrderPermission
 from brambling.models import (
     Attendee,
     BoughtItem,
-    BoughtItemDiscount,
     Order,
 )
 
