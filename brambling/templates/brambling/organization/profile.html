@@ -16,14 +16,14 @@
 
 			{% formrow form.name %}
 			{% if form.slug %}
-				{% formrow form.slug with prepend="https://dancerfly.com/" label="URL" %}
+				{% formrow form.slug with prepend="https://www.dancerfly.com/" label="URL" %}
 			{% else %}
 				<div class="form-group">
 					<label class="control-label" for="id_slug">
 					URL
 					</label>
 					<div class='input-group'>
-						<div class='input-group-addon'>https://dancerfly.com/</div>
+						<div class='input-group-addon'>https://www.dancerfly.com/</div>
 						<input class="form-control" type="text" value="{{ organization.slug }}" disabled>
 					</div>
 					<p class="help-block">{{ form.base_fields.slug.help_text }}</p>

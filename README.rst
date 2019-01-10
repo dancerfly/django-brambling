@@ -1,4 +1,4 @@
-.. image:: https://dancerfly.com/static/brambling/images/all-dancers.gif
+.. image:: https://www.dancerfly.com/static/brambling/images/all-dancers.gif
 
 Dancerfly |travis|
 ++++++++++++++++++
