@@ -442,9 +442,6 @@ brambling_boughtitem.status != 'refunded'
         })
 
         context['item_options'] = item_options
-        if self.order is not None:
-            context['discounts'] = Discount.objects.filter(
-                orderdiscount__order=self.order).distinct()
         return context
 
 
