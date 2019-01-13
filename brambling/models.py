@@ -1023,28 +1023,37 @@ class Order(AbstractDwollaModel):
     class Meta:
         unique_together = ('event', 'code')
 
-    def add_discount(self, discount, force=False):
+    def add_discount(self, discount):
+        """
+        Add a discount to all items in the order that don't already have that discount.
+        Return True if any discounts are added and False otherwise.
+        """
         if discount.event_id != self.event_id:
             raise ValueError("Discount is not for the correct event")
-        event_person_discount, created = OrderDiscount.objects.get_or_create(
-            discount=discount,
-            order=self
-        )
-        if created or force:
-            bought_items = BoughtItem.objects.filter(
-                order=self,
-                item_option__discount=discount,
-            ).filter(status__in=(
+
+        bought_items = BoughtItem.objects.filter(
+            order=self,
+            item_option__discount=discount,
+            status__in=(
                 BoughtItem.UNPAID,
                 BoughtItem.RESERVED,
-            )).distinct()
+            ),
+        ).exclude(
+            discounts__discount=discount,
+        ).distinct()
+
+        created = bool(bought_items)
+
+        if created:
             BoughtItemDiscount.objects.bulk_create([
-                BoughtItemDiscount(discount=discount,
-                                   bought_item=bought_item,
-                                   name=discount.name,
-                                   code=discount.code,
-                                   discount_type=discount.discount_type,
-                                   amount=discount.amount)
+                BoughtItemDiscount(
+                    discount=discount,
+                    bought_item=bought_item,
+                    name=discount.name,
+                    code=discount.code,
+                    discount_type=discount.discount_type,
+                    amount=discount.amount,
+                )
                 for bought_item in bought_items
             ])
         return created
@@ -1052,7 +1061,8 @@ class Order(AbstractDwollaModel):
     def add_to_cart(self, item_option):
         if self.cart_is_expired():
             self.delete_cart()
-        bought_item = BoughtItem.objects.create(
+
+        BoughtItem.objects.create(
             item_option=item_option,
             order=self,
             status=BoughtItem.RESERVED,
@@ -1061,19 +1071,7 @@ class Order(AbstractDwollaModel):
             item_option_name=item_option.name,
             price=item_option.price,
         )
-        discounts = self.discounts.filter(
-            discount__item_options=item_option
-        ).select_related('discount').distinct()
-        if discounts:
-            BoughtItemDiscount.objects.bulk_create([
-                BoughtItemDiscount(discount=discount.discount,
-                                   bought_item=bought_item,
-                                   name=discount.discount.name,
-                                   code=discount.discount.code,
-                                   discount_type=discount.discount.discount_type,
-                                   amount=discount.discount.amount)
-                for discount in discounts
-            ])
+
         if self.cart_start_time is None:
             self.cart_start_time = timezone.now()
             self.save()
@@ -1496,16 +1494,6 @@ class BoughtItem(models.Model):
             self.order.code,
             self.pk,
         )
-
-
-class OrderDiscount(models.Model):
-    """Tracks whether a person has entered a code for an event."""
-    discount = models.ForeignKey(Discount)
-    order = models.ForeignKey(Order, related_name='discounts')
-    timestamp = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        unique_together = ('order', 'discount')
 
 
 class BoughtItemDiscount(models.Model):

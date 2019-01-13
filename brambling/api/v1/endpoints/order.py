@@ -4,7 +4,6 @@ from rest_framework.response import Response
 
 from brambling.api.v1.permissions import BaseOrderPermission
 from brambling.api.v1.endpoints.boughtitem import BoughtItemSerializer
-from brambling.api.v1.endpoints.orderdiscount import OrderDiscountSerializer
 from brambling.api.v1.endpoints.eventhousing import EventHousingSerializer
 from brambling.models import (
     Event,
@@ -23,7 +22,6 @@ class OrderPermission(BaseOrderPermission):
 
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     bought_items = BoughtItemSerializer(many=True)
-    discounts = OrderDiscountSerializer(many=True)
     eventhousing = EventHousingSerializer()
     person = serializers.StringRelatedField()
     link = serializers.HyperlinkedIdentityField(view_name='order-detail')
@@ -37,7 +35,7 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
             'send_flyers', 'send_flyers_address', 'send_flyers_address_2',
             'send_flyers_city', 'send_flyers_state_or_province',
             'send_flyers_zip', 'send_flyers_country', 'providing_housing',
-            'notes', 'eventhousing', 'discounts',
+            'notes', 'eventhousing',
         )
 
     def to_representation(self, obj):
@@ -55,7 +53,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Order.objects.prefetch_related(
-            'bought_items', 'discounts',
+            'bought_items',
         ).select_related(
             'event', 'person', 'eventhousing',
         )

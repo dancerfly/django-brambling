@@ -7,9 +7,7 @@ from brambling.api.v1.permissions import BaseOrderPermission
 from brambling.models import (
     Attendee,
     BoughtItem,
-    BoughtItemDiscount,
     Order,
-    OrderDiscount,
 )
 
 
@@ -58,21 +56,6 @@ class BoughtItemSerializer(serializers.HyperlinkedModelSerializer):
             'price': item_option.price,
         })
         instance = super(BoughtItemSerializer, self).create(validated_data)
-
-        discounts = OrderDiscount.objects.filter(
-            order=validated_data['order'],
-            discount__item_options=instance.item_option
-        ).select_related('discount').distinct()
-        if discounts:
-            BoughtItemDiscount.objects.bulk_create([
-                BoughtItemDiscount(discount=discount.discount,
-                                   bought_item=instance,
-                                   name=discount.discount.name,
-                                   code=discount.discount.code,
-                                   discount_type=discount.discount.discount_type,
-                                   amount=discount.discount.amount)
-                for discount in discounts
-            ])
 
         if instance.order.cart_start_time is None:
             instance.order.cart_start_time = timezone.now()

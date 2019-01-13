@@ -368,7 +368,7 @@ class ApplyDiscountView(OrderMixin, View):
                 },
             })
 
-        created = self.order.add_discount(discount, force=False)
+        created = self.order.add_discount(discount)
         if created:
             return JsonResponse({
                 'success': True,
