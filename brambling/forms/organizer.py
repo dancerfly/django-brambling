@@ -19,7 +19,6 @@ from brambling.models import OrganizationMember
 from brambling.models import SavedReport
 from brambling.models import Transaction
 from brambling.models import UNAMBIGUOUS_CHARS
-from brambling.payment.core import LIVE, TEST
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
 

@@ -15,7 +15,6 @@ from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
                               Event, Transaction, BoughtItem,
                               EventHousing, Attendee)
 from brambling.mail import ConfirmationMailer
-from brambling.payment.core import LIVE
 from brambling.payment.stripe.api import (
     stripe_get_customer,
     stripe_delete_card,

@@ -1,10 +1,6 @@
 from decimal import Decimal
-from datetime import timedelta
-from unittest import skipUnless
-import os
 
 from django.test import TestCase
-from django.utils import timezone
 from mock import patch
 import stripe
 

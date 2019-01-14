@@ -1,20 +1,13 @@
 import json
 
-from django.contrib import messages
-from django.core.exceptions import SuspiciousOperation
-from django.core.urlresolvers import reverse
-from django.http import Http404, HttpResponseRedirect, HttpResponse
-from django.shortcuts import get_object_or_404
+from django.http import Http404
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
-from django.utils.http import is_safe_url
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 import stripe
 
 from brambling.models import (
-    Order,
-    Organization,
-    Person,
     ProcessedStripeEvent,
     Transaction,
 )

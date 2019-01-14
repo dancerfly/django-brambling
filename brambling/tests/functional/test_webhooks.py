@@ -3,7 +3,6 @@ import json
 import os
 
 from django.conf import settings
-from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.test import Client, TestCase, RequestFactory
@@ -22,7 +21,6 @@ from brambling.tests.factories import (TransactionFactory, OrderFactory,
                                        EventFactory, ItemFactory,
                                        ItemOptionFactory)
 from brambling.views.payment import StripeWebhookView
-from brambling.views.payment import webhooks
 
 
 VCR_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')

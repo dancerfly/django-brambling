@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from brambling.models import BoughtItem, Transaction
+from brambling.models import BoughtItem
 from brambling.forms.organizer import TransactionRefundForm
 from brambling.tests.factories import (
     TransactionFactory, ItemFactory, ItemOptionFactory, EventFactory,

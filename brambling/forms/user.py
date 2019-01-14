@@ -10,7 +10,6 @@ import floppyforms.__future__ as forms
 from brambling.mail import ConfirmationMailer
 from brambling.models import Home
 from brambling.models import Person
-from brambling.payment.core import LIVE
 from brambling.utils.international import clean_postal_code
 
 
