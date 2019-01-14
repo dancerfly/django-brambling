@@ -118,24 +118,6 @@
 				</div>
 			</div>
 		{% endif %}
-		{% if dwolla_user_id or dwolla_oauth_url %}
-			<div class="panel panel-default">
-				<header class="panel-heading">
-					<h4 class="panel-title">Dwolla</h4>
-				</header>
-				<div class="panel-body">
-					{% if dwolla_user_id %}
-						<p>Connected account: {{ dwolla_user_id }}</p>
-						{% formrow form.disconnect_dwolla with label="Disconnect" %}
-
-						<button class="btn btn-primary" type="submit">Save changes</button>
-						<a href="" class="btn btn-link">Cancel</a>
-					{% else %}
-						<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
-					{% endif %}
-				{% endif %}
-			</div>
-		</div>
 	</form>
 
 {% endblock %}
