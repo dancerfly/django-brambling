@@ -127,25 +127,6 @@ class TransactionRefundTestCase(TestCase):
         with self.assertRaises(ValueError):
             self.txn.refund(amount=Decimal("-20.00"))
 
-    @mock.patch('brambling.models.dwolla_refund')
-    def test_dwolla_refund(self, dwolla_refund):
-        dwolla_refund.return_value = {
-            'fundsSource': 'Balance',
-            'pin': 1234,
-            'Amount': 20.00,
-            'oauth_token': 'AN OAUTH TOKEN',
-            'TransactionId': self.txn.remote_id
-        }
-        self.txn.method = Transaction.DWOLLA
-        self.txn.amount = Decimal("20.00")
-        self.txn.save()
-        self.txn.refund(dwolla_pin="1234")
-        dwolla_refund.assert_called_once_with(order=self.txn.order,
-                                              event=self.txn.order.event,
-                                              payment_id=self.txn.remote_id,
-                                              amount=Decimal("20.00"),
-                                              pin="1234")
-
     @mock.patch('brambling.models.Transaction.from_stripe_refund')
     @mock.patch('brambling.models.stripe_refund')
     def test_stripe_refund(self, stripe_refund, from_stripe_refund):

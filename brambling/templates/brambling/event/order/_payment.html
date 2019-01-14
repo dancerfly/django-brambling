@@ -84,35 +84,6 @@
 				</div>
 			</div>
 		{% endif %}
-		{% if event.dwolla_connected %}
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">
-						<a data-toggle="collapse" data-parent="#accordion" href="#dwolla-panel">
-							Pay with Dwolla
-						</a>
-					</h4>
-				</div>
-				<div id="dwolla-panel" class="panel-collapse collapse{% if request.POST.dwolla %} in{% endif %}">
-					<div class='panel-body'>
-						{% if dwolla_is_connected %}
-							<p>Connected account: {{ dwolla_user_id }}</p>
-							<form novalidate action="" method="post">
-								{% csrf_token %}
-								<input name='dwolla' value='1' type='hidden'>
-
-								{% formrow dwolla_form.dwolla_pin with autocomplete="off" %}
-								{% formrow dwolla_form.source %}
-
-								<button type="submit" class="btn btn-primary">Pay now ({{ net_balance|format_money:event.currency }})</button>
-							</form>
-						{% else %}
-							<a href='{{ dwolla_oauth_url }}' class='btn btn-primary'>Connect to Dwolla <i class='fa fa-external-link'></i></a>
-						{% endif %}
-					</div>
-				</div>
-			</div>
-		{% endif %}
 
 		{# Payment by check #}
 		{# TODO: Disallowing payment by check after the cutoff should also be enforced on the view end. #}

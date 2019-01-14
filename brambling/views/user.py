@@ -16,11 +16,6 @@ from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
                               EventHousing, Attendee)
 from brambling.mail import ConfirmationMailer
 from brambling.payment.core import LIVE
-from brambling.payment.dwolla.auth import dwolla_oauth_url
-from brambling.payment.dwolla.core import (
-    dwolla_test_settings_valid,
-    dwolla_live_settings_valid,
-)
 from brambling.payment.stripe.api import (
     stripe_get_customer,
     stripe_delete_card,
@@ -173,14 +168,7 @@ class BillingView(UpdateView):
             },
             'stripe_live_settings_valid': stripe_live_settings_valid(),
             'stripe_test_settings_valid': stripe_test_settings_valid(),
-            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
-            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
         })
-        if self.object.dwolla_connected(LIVE):
-            context['dwolla_user_id'] = self.request.user.get_dwolla_account(LIVE).user_id
-        elif self.object.dwolla_can_connect(LIVE):
-            context['dwolla_oauth_url'] = dwolla_oauth_url(
-                self.request.user, LIVE, self.request)
         return context
 
 

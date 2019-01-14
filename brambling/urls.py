@@ -76,8 +76,6 @@ from brambling.views.organizer import (
     FinancesView,
 )
 from brambling.views.payment import (
-    DwollaConnectView,
-    DwollaWebhookView,
     StripeWebhookView,
 )
 from brambling.views.user import (
@@ -277,9 +275,6 @@ urlpatterns = [
     url(r'^stripe_connect/$',
         StripeConnectView.as_view(),
         name="brambling_stripe_connect"),
-    url(r'^dwolla_connect/$',
-        DwollaConnectView.as_view(),
-        name="brambling_dwolla_connect"),
 
     url(r'^login/$',
         'django.contrib.auth.views.login',
@@ -380,7 +375,6 @@ urlpatterns = [
     url(r'^mail/invite_transfer/$', InvitePreviewView.as_view(kind='transfer')),
     url(r'^mail/daily_digest/$', DailyDigestPreviewView.as_view()),
 
-    url(r'^webhooks/dwolla/$', DwollaWebhookView.as_view(), name='brambling_dwolla_webhook'),
     url(r'^webhooks/stripe/$', StripeWebhookView.as_view(), name='brambling_stripe_webhook'),
 
     url(r'^api/', include('brambling.api.urls')),

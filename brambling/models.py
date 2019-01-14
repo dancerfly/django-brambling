@@ -23,18 +23,10 @@ from django.utils.crypto import get_random_string
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django_countries.fields import CountryField
-from dwolla import oauth
 import floppyforms.__future__ as forms
 import pytz
 
 from brambling.payment.core import TEST, LIVE
-from brambling.payment.dwolla.api import dwolla_refund
-from brambling.payment.dwolla.auth import DWOLLA_SCOPES
-from brambling.payment.dwolla.core import (
-    dwolla_test_settings_valid,
-    dwolla_live_settings_valid,
-    dwolla_prep,
-)
 from brambling.payment.stripe.api import stripe_refund
 from brambling.payment.stripe.core import (
     stripe_test_settings_valid,
@@ -130,124 +122,6 @@ class AbstractNamedModel(models.Model):
         abstract = True
 
 
-class DwollaAccount(models.Model):
-    LIVE = LIVE
-    TEST = TEST
-    API_CHOICES = (
-        (LIVE, _('Live')),
-        (TEST, _('Test')),
-    )
-    api_type = models.CharField(max_length=4, choices=API_CHOICES)
-    user_id = models.CharField(max_length=20)
-    access_token = models.CharField(max_length=50)
-    access_token_expires = models.DateTimeField()
-    refresh_token = models.CharField(max_length=50)
-    refresh_token_expires = models.DateTimeField()
-    scopes = models.CharField(max_length=100)
-    #: This should get marked False if there are ever any issues
-    #: (for example) using the api key or refreshing it.
-    is_valid = models.BooleanField(default=True)
-
-    class Meta:
-        unique_together = (('api_type', 'user_id'),)
-
-    def __unicode__(self):
-        return unicode(self.user_id)
-
-    def is_connected(self):
-        if self.api_type == DwollaAccount.LIVE:
-            dwolla_settings_valid = dwolla_live_settings_valid()
-        else:
-            dwolla_settings_valid = dwolla_test_settings_valid()
-        return bool(
-            dwolla_settings_valid and
-            self.refresh_token_expires > timezone.now()
-        )
-
-    def has_correct_scopes(self):
-        return self.scopes == DWOLLA_SCOPES
-
-    def set_tokens(self, oauth_data):
-        if 'access_token' not in oauth_data:
-            if 'error_description' in oauth_data:
-                raise ValueError(oauth_data['error_description'])
-            else:
-                raise ValueError('Unknown error during token setting.')
-        expires = timezone.now() + timedelta(seconds=oauth_data['expires_in'])
-        refresh_expires = timezone.now() + timedelta(seconds=oauth_data['refresh_expires_in'])
-
-        self.access_token = oauth_data['access_token']
-        self.access_token_expires = expires
-        self.refresh_token = oauth_data['refresh_token']
-        self.refresh_token_expires = refresh_expires
-        self.is_valid = True
-        self.scopes = oauth_data['scope']
-
-    def get_token(self):
-        if not self.is_valid:
-            raise ValueError("Something is wrong with your dwolla connection. Please disconnect / reconnect it and try again.")
-        expires = self.access_token_expires
-        refresh_expires = self.refresh_token_expires
-        now = timezone.now()
-        if expires < now:
-            if refresh_expires < now:
-                self.is_valid = False
-                self.save()
-                raise ValueError("Token is expired and can't be refreshed.")
-            refresh_token = self.refresh_token
-            dwolla_prep(self.api_type)
-            oauth_data = oauth.refresh(refresh_token)
-            self.set_tokens(oauth_data)
-            self.save()
-        return self.access_token
-
-
-class AbstractDwollaModel(models.Model):
-    class Meta:
-        abstract = True
-
-    dwolla_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_set", on_delete=models.SET_NULL)
-    dwolla_test_account = models.ForeignKey(DwollaAccount, blank=True, null=True, related_name="%(class)s_test_set", on_delete=models.SET_NULL)
-
-    def dwolla_connected(self, api_type):
-        if api_type == DwollaAccount.LIVE:
-            return self.dwolla_account_id is not None and self.dwolla_account.is_connected()
-        else:
-            return self.dwolla_test_account_id is not None and self.dwolla_test_account.is_connected()
-
-    def dwolla_can_connect(self, api_type):
-        if api_type == DwollaAccount.LIVE:
-            return bool(
-                dwolla_live_settings_valid() and
-                (
-                    not self.dwolla_account_id or
-                    not self.dwolla_account.is_connected() or
-                    not self.dwolla_account.has_correct_scopes()
-                )
-            )
-        else:
-            return bool(
-                dwolla_test_settings_valid() and
-                (
-                    not self.dwolla_test_account_id or
-                    not self.dwolla_test_account.is_connected() or
-                    not self.dwolla_test_account.has_correct_scopes()
-                )
-            )
-
-    def clear_dwolla_data(self, api_type):
-        if api_type == DwollaAccount.LIVE:
-            self.dwolla_account = None
-        else:
-            self.dwolla_test_account = None
-
-    def get_dwolla_account(self, api_type):
-        if api_type == DwollaAccount.LIVE:
-            return self.dwolla_account
-        else:
-            return self.dwolla_test_account
-
-
 class DanceStyle(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
@@ -329,7 +203,7 @@ class OrganizationMember(models.Model):
         return u"{}: {}".format(self.organization, self.person)
 
 
-class Organization(AbstractDwollaModel):
+class Organization(models.Model):
     DEMO_SLUG = 'demo'
 
     name = models.CharField(max_length=50)
@@ -618,14 +492,6 @@ class Event(models.Model):
             return self.organization.stripe_live_can_connect()
         return self.organization.stripe_test_can_connect()
 
-    def dwolla_connected(self):
-        return self.organization.dwolla_connected(self.api_type)
-
-    def dwolla_can_connect(self):
-        if self.api_type == Event.LIVE:
-            return self.organization.dwolla_live_can_connect()
-        return self.organization.dwolla_test_can_connect()
-
     def is_demo(self):
         return self.organization.is_demo()
 
@@ -749,7 +615,7 @@ class PersonManager(BaseUserManager):
         return self._create_user(email, password, True, **extra_fields)
 
 
-class Person(AbstractDwollaModel, AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
+class Person(AbstractNamedModel, AbstractBaseUser, PermissionsMixin):
     NOTIFY_NEVER = 'never'
     NOTIFY_EACH = 'each'
     NOTIFY_DAILY = 'daily'
@@ -962,7 +828,7 @@ class OrderManager(models.Manager):
         return order, created
 
 
-class Order(AbstractDwollaModel):
+class Order(models.Model):
     """
     This model represents metadata connecting an event and a person.
     For example, it links to the items that a person has bought. It
@@ -1203,9 +1069,6 @@ class Order(AbstractDwollaModel):
                 self._eventhousing = None
         return self._eventhousing
 
-    def has_dwolla_payments(self):
-        return self.transactions.filter(method=Transaction.DWOLLA).exists()
-
 
 class Transaction(models.Model):
     STRIPE = 'stripe'
@@ -1247,10 +1110,6 @@ class Transaction(models.Model):
         (STRIPE, PURCHASE, TEST): 'https://dashboard.stripe.com/test/payments/{remote_id}',
         (STRIPE, REFUND, LIVE): 'https://dashboard.stripe.com/payments/{related_remote_id}',
         (STRIPE, REFUND, TEST): 'https://dashboard.stripe.com/test/payments/{related_remote_id}',
-        (DWOLLA, PURCHASE, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
-        (DWOLLA, PURCHASE, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
-        (DWOLLA, REFUND, LIVE): 'https://dwolla.com/activity#/detail/{remote_id}',
-        (DWOLLA, REFUND, TEST): 'https://uat.dwolla.com/activity#/detail/{remote_id}',
     }
     amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     application_fee = models.DecimalField(max_digits=9, decimal_places=2, default=0)
@@ -1323,40 +1182,6 @@ class Transaction(models.Model):
             **kwargs
         )
 
-    @classmethod
-    def from_dwolla_charge(cls, charge, **kwargs):
-        application_fee = 0
-        processing_fee = 0
-        if charge['Fees']:
-            for fee in charge['Fees']:
-                if fee['Type'] == 'Facilitator Fee':
-                    application_fee = Decimal(str(fee['Amount']))
-                elif fee['Type'] == 'Dwolla Fee':
-                    processing_fee = Decimal(str(fee['Amount']))
-        return Transaction.objects.create(
-            transaction_type=Transaction.PURCHASE,
-            amount=charge['Amount'],
-            method=Transaction.DWOLLA,
-            remote_id=charge['Id'],
-            application_fee=application_fee,
-            processing_fee=processing_fee,
-            is_confirmed=True if charge['Status'] == 'processed' else False,
-            **kwargs
-        )
-
-    @classmethod
-    def from_dwolla_refund(cls, refund, related_transaction, **kwargs):
-        # Dwolla refunds don't AFAICT refund fees.
-        return Transaction.objects.create(
-            transaction_type=Transaction.REFUND,
-            method=Transaction.DWOLLA,
-            amount=-1 * refund['Amount'],
-            is_confirmed=True,
-            related_transaction=related_transaction,
-            remote_id=refund['TransactionId'],
-            **kwargs
-        )
-
     def is_unconfirmed_check(self):
         return self.method == Transaction.CHECK and not self.is_confirmed
 
@@ -1371,7 +1196,7 @@ class Transaction(models.Model):
         # for 0-amount transactions.
         return self.amount if refunded is None else self.amount + refunded
 
-    def refund(self, amount=None, bought_items=None, issuer=None, dwolla_pin=None):
+    def refund(self, amount=None, bought_items=None, issuer=None):
         refundable_amount = self.get_refundable_amount()
         returnable_items = self.get_returnable_items()
 
@@ -1395,6 +1220,9 @@ class Transaction(models.Model):
         if any([item not in returnable_items for item in bought_items]):
             raise ValueError("Encountered item not in tranasction to refund")
 
+        if self.method == Transaction.DWOLLA:
+            raise ValueError('Dwolla transactions cannot be refunded through the Dancerfly website.')
+
         refund_kwargs = {
             'order': self.order,
             'related_transaction': self,
@@ -1413,18 +1241,9 @@ class Transaction(models.Model):
                     amount=amount,
                 )
                 txn = Transaction.from_stripe_refund(refund, **refund_kwargs)
-            elif self.method == Transaction.DWOLLA:
-                refund = dwolla_refund(
-                    order=self.order,
-                    event=self.order.event,
-                    payment_id=self.remote_id,
-                    amount=amount,
-                    pin=dwolla_pin,
-                )
-                txn = Transaction.from_dwolla_refund(refund, **refund_kwargs)
 
         # If no payment processor was involved, just make a transaction
-        if amount == 0 or self.method not in (Transaction.STRIPE, Transaction.DWOLLA):
+        if amount == 0 or self.method != Transaction.STRIPE:
             txn = Transaction.objects.create(
                 transaction_type=Transaction.REFUND,
                 amount=-1 * amount,

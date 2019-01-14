@@ -12,7 +12,6 @@ from brambling.forms.orders import (
     STRIPE_API_ERROR,
     OneTimePaymentForm,
     SavedCardPaymentForm,
-    DwollaPaymentForm,
     CheckPaymentForm,
 )
 from brambling.models import Transaction
@@ -21,8 +20,6 @@ from brambling.tests.factories import (
     OrderFactory,
     PersonFactory,
     CardFactory,
-    DwollaUserAccountFactory,
-    DwollaOrganizationAccountFactory,
     EventFactory,
 )
 
@@ -128,44 +125,6 @@ STRIPE_CHARGE = stripe.Charge.construct_from({
     "statement_descriptor": None,
     "status": "succeeded"
 }, 'FAKE')
-
-
-DWOLLA_CHARGE = {
-    u'Amount': 42.15,
-    u'ClearingDate': u'',
-    u'Date': u'2015-01-31T02:41:38Z',
-    u'Destination': {u'Id': u'FAKE_DEST',
-                     u'Image': u'http://uat.dwolla.com/avatars/FAKE_DEST',
-                     u'Name': u'Blah blah blah',
-                     u'Type': u'Dwolla'},
-    u'DestinationId': u'FAKE_DEST',
-    u'DestinationName': u'Blah blah blah',
-    u'Fees': [{u'Amount': 0.25, u'Id': 827529, u'Type': u'Dwolla Fee'},
-              {u'Amount': 1.05, u'Id': 827530, u'Type': u'Facilitator Fee'}],
-    u'Id': 827527,
-    u'Metadata': None,
-    u'Notes': u'',
-    u'OriginalTransactionId': None,
-    u'Source': {u'Id': u'FAKE_SOURCE',
-                u'Image': u'http://uat.dwolla.com/avatars/FAKE_SOURCE',
-                u'Name': u'John Doe',
-                u'Type': u'Dwolla'},
-    u'SourceId': u'FAKE_SOURCE',
-    u'SourceName': u'John Doe',
-    u'Status': u'processed',
-    u'Type': u'money_received',
-    u'UserType': u'Dwolla'
-}
-
-DWOLLA_SOURCES = [
-    {
-        "Id": "Balance",
-        "Name": "My Dwolla Balance",
-        "Type": "",
-        "Verified": "true",
-        "ProcessingType": ""
-    },
-]
 
 
 class OneTimePaymentFormTestCase(TestCase):
@@ -324,85 +283,6 @@ class SavedCardPaymentFormTestCase(TestCase):
         self.assertTrue(form.is_bound)
         self.assertTrue(form.errors)
         self.assertEqual(form.errors['__all__'], [error_message])
-
-
-@skipUnless(os.environ.get('DWOLLA_TEST_APPLICATION_KEY'), 'dwolla test settings required')
-class DwollaPaymentFormTestCase(TestCase):
-
-    @patch('brambling.forms.orders.dwolla_get_sources')
-    def test_negative_charge_adds_errors(self, dwolla_get_sources):
-        dwolla_get_sources.return_value = DWOLLA_SOURCES
-        order = OrderFactory()
-        event = order.event
-        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
-        event.organization.save()
-        person = PersonFactory()
-        person.dwolla_test_account = DwollaUserAccountFactory()
-        person.save()
-        pin = '1234'
-        source = 'Balance'
-        form = DwollaPaymentForm(order=order, amount=Decimal('-1.00'),
-                                 data={'dwolla_pin': pin, 'source': source},
-                                 user=person)
-        self.assertTrue(form.is_bound)
-        self.assertTrue(form.errors)
-        self.assertEqual(form.errors['__all__'],
-                         ["Cannot charge an amount less than zero."])
-
-    @patch('brambling.forms.orders.dwolla_get_sources')
-    @patch('brambling.forms.orders.dwolla_charge')
-    def test_dwolla_payment_form(self, dwolla_charge, dwolla_get_sources):
-        dwolla_charge.return_value = DWOLLA_CHARGE
-        dwolla_get_sources.return_value = DWOLLA_SOURCES
-        order = OrderFactory()
-        event = order.event
-        event.organization.dwolla_test_account = DwollaOrganizationAccountFactory()
-        event.organization.save()
-        person = PersonFactory()
-        person.dwolla_test_account = DwollaUserAccountFactory()
-        person.save()
-        pin = '1234'
-        source = 'Balance'
-        form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin, 'source': source}, user=person)
-        self.assertTrue(form.is_bound)
-        self.assertFalse(form.errors)
-        dwolla_charge.assert_called_once_with(
-            account=person.dwolla_test_account,
-            amount=42.15,
-            event=event,
-            pin=pin,
-            source=source,
-            order=order,
-        )
-        txn = form.save()
-        self.assertIsInstance(txn, Transaction)
-        self.assertEqual(txn.event, event)
-        self.assertEqual(Decimal(str(txn.amount)), Decimal('42.15'))
-        self.assertEqual(Decimal(str(txn.application_fee)), Decimal('1.05'))
-        self.assertEqual(Decimal(str(txn.processing_fee)), Decimal('0.25'))
-
-    @patch('brambling.forms.orders.dwolla_get_sources')
-    @patch('dwolla.oauth.refresh')
-    def test_dwolla_payment_form_handles_valueerror(self, oauth_refresh, dwolla_get_sources):
-        oauth_refresh.return_value = {
-            'error': 'access_denied',
-            'error_description': 'Arbitrary error code.'
-        }
-        dwolla_get_sources.return_value = DWOLLA_SOURCES
-        order = OrderFactory()
-        order.event.organization.dwolla_test_account = DwollaOrganizationAccountFactory(
-            access_token_expires=timezone.now() - timedelta(1)
-        )
-        order.event.organization.save()
-        person = PersonFactory()
-        person.dwolla_test_account = DwollaUserAccountFactory()
-        person.save()
-        pin = '1234'
-        source = 'Balance'
-        form = DwollaPaymentForm(order=order, amount=Decimal('42.15'), data={'dwolla_pin': pin, 'source': source}, user=person)
-        self.assertTrue(form.is_bound)
-        self.assertTrue(form.errors)
-        self.assertEqual(form.errors['__all__'], [oauth_refresh.return_value['error_description']])
 
 
 class CheckPaymentFormTestCase(TestCase):

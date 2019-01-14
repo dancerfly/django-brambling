@@ -59,7 +59,6 @@ from brambling.utils.invites import (
 )
 from brambling.utils.model_tables import Echo, AttendeeTable, OrderTable
 from brambling.payment.core import LIVE, TEST
-from brambling.payment.dwolla.auth import dwolla_oauth_url
 from brambling.payment.stripe.auth import stripe_organization_oauth_url
 
 
@@ -185,20 +184,10 @@ class OrganizationPaymentView(OrganizationUpdateView):
         context = super(OrganizationPaymentView, self).get_context_data(**kwargs)
 
         if self.object.is_demo():
-            context['dwolla_test_account'] = self.object.get_dwolla_account(TEST)
-            if self.object.dwolla_can_connect(TEST):
-                context['dwolla_test_oauth_url'] = dwolla_oauth_url(
-                    self.object, TEST, self.request)
-
             if self.object.stripe_test_can_connect():
                 context['stripe_test_oauth_url'] = stripe_organization_oauth_url(
                     self.object, TEST, self.request)
         else:
-            context['dwolla_account'] = self.object.get_dwolla_account(LIVE)
-            if self.object.dwolla_can_connect(LIVE):
-                context['dwolla_oauth_url'] = dwolla_oauth_url(
-                    self.object, LIVE, self.request)
-
             if self.object.stripe_live_can_connect():
                 context['stripe_oauth_url'] = stripe_organization_oauth_url(
                     self.object, LIVE, self.request)
@@ -1229,7 +1218,6 @@ class RefundView(FormView):
 
         refund_data = {
             'issuer': self.request.user,
-            'dwolla_pin': form.cleaned_data.get('dwolla_pin'),
             'amount': form.cleaned_data.get('amount'),
             'bought_items': bought_items
         }

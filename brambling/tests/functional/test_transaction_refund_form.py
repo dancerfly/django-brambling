@@ -57,18 +57,6 @@ class TransactionRefundFormTestCase(TestCase):
         form = TransactionRefundForm(self.txn, data)
         self.assertEqual(len(form.non_field_errors()), 1)
 
-    def test_dwolla_includes_dwolla_pin(self):
-        self.txn.method = Transaction.DWOLLA
-        self.txn.save()
-        form = TransactionRefundForm(self.txn)
-        self.assertIn('dwolla_pin', form.fields)
-
-    def test_stripe_not_includes_dwolla_pin(self):
-        self.txn.method = Transaction.STRIPE
-        self.txn.save()
-        form = TransactionRefundForm(self.txn)
-        self.assertNotIn('dwolla_pin', form.fields)
-
     def test_form_items_are_txn_items(self):
         form = TransactionRefundForm(self.txn)
         self.assertQuerysetEqual(form.fields['items'].queryset, [repr(r) for r in self.txn.bought_items.all()])  # WHY
