@@ -106,10 +106,9 @@
 			{% endif %}
 
 			<div class="row">
-				{% with stripe=event.stripe_connected dwolla=event.dwolla_connected check=event.organization.check_payment_allowed %}
-					<div class="col-sm-4"><div class='alert {% if stripe %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if stripe %}fa-check{% else %}fa-ban{% endif %}'></i> Stripe</div></div>
-					<div class="col-sm-4"><div class='alert {% if dwolla %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if dwolla %}fa-check{% else %}fa-ban{% endif %}'></i> Dwolla</div></div>
-					<div class="col-sm-4"><div class='alert {% if check %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if check %}fa-check{% else %}fa-ban{% endif %}'></i> Check</div></div>
+				{% with stripe=event.stripe_connected check=event.organization.check_payment_allowed %}
+					<div class="col-sm-6"><div class='alert {% if stripe %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if stripe %}fa-check{% else %}fa-ban{% endif %}'></i> Stripe</div></div>
+					<div class="col-sm-6"><div class='alert {% if check %}alert-success{% else %}alert-danger{% endif %}'><i class='fa fa-fw {% if check %}fa-check{% else %}fa-ban{% endif %}'></i> Check</div></div>
 				{% endwith %}
 			</div>{# /.row #}
 
