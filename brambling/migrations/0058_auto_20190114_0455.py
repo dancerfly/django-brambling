@@ -12,31 +12,31 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name='order',
+            name='dwolla_account',
+        ),
+        migrations.RemoveField(
+            model_name='order',
+            name='dwolla_test_account',
+        ),
+        migrations.RemoveField(
+            model_name='organization',
+            name='dwolla_account',
+        ),
+        migrations.RemoveField(
+            model_name='organization',
+            name='dwolla_test_account',
+        ),
+        migrations.RemoveField(
+            model_name='person',
+            name='dwolla_account',
+        ),
+        migrations.RemoveField(
+            model_name='person',
+            name='dwolla_test_account',
+        ),
         migrations.DeleteModel(
             name='DwollaAccount',
-        ),
-        migrations.RemoveField(
-            model_name='order',
-            name='dwolla_account',
-        ),
-        migrations.RemoveField(
-            model_name='order',
-            name='dwolla_test_account',
-        ),
-        migrations.RemoveField(
-            model_name='organization',
-            name='dwolla_account',
-        ),
-        migrations.RemoveField(
-            model_name='organization',
-            name='dwolla_test_account',
-        ),
-        migrations.RemoveField(
-            model_name='person',
-            name='dwolla_account',
-        ),
-        migrations.RemoveField(
-            model_name='person',
-            name='dwolla_test_account',
         ),
     ]
