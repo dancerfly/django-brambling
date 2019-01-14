@@ -10,7 +10,9 @@ from django.views.generic import (DetailView, CreateView, UpdateView,
 import floppyforms.__future__ as forms
 
 from brambling.forms.orders import AddCardForm
-from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
+from brambling.forms.user import AccountForm
+from brambling.forms.user import HomeForm
+from brambling.forms.user import SignUpForm
 from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
                               Event, Transaction, BoughtItem,
                               EventHousing, Attendee)
@@ -140,22 +142,9 @@ class NotificationsView(UpdateView):
         return self.request.path
 
 
-class BillingView(UpdateView):
+class BillingView(TemplateView):
     model = Person
-    form_class = BillingForm
     template_name = 'brambling/user/billing.html'
-
-    def get_object(self):
-        if self.request.user.is_authenticated():
-            return self.request.user
-        raise Http404
-
-    def form_valid(self, form):
-        messages.add_message(self.request, messages.SUCCESS, "Billing settings saved.")
-        return super(BillingView, self).form_valid(form)
-
-    def get_success_url(self):
-        return self.request.path
 
     def get_context_data(self, **kwargs):
         context = super(BillingView, self).get_context_data(**kwargs)

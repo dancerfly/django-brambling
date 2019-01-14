@@ -156,12 +156,6 @@ class AccountForm(forms.ModelForm):
         return person
 
 
-class BillingForm(forms.ModelForm):
-    class Meta:
-        model = Person
-        fields = ()
-
-
 class HomeForm(forms.ModelForm):
     class Meta:
         model = Home
