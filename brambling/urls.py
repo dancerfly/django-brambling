@@ -75,9 +75,7 @@ from brambling.views.organizer import (
     SendReceiptView,
     FinancesView,
 )
-from brambling.views.payment import (
-    StripeWebhookView,
-)
+from brambling.views.payment import StripeWebhookView
 from brambling.views.user import (
     AccountView,
     NotificationsView,
