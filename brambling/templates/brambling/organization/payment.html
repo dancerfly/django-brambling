@@ -15,15 +15,14 @@
 			{% formconfig row using "brambling/forms/rows/bootstrap.html" %}
 
 			<p>
-				We currently offer three payment methods: Stripe (Credit Cards),
-				Dwolla, or payments by mail. You may enable any combination of
-				these payment methods for your organization.
+				We currently offer two payment methods: Stripe (Credit Cards) and payments by mailed check.
+				You may enable any combination of these payment methods for your organization.
 			</p>
 			<p>
-				You must register for an account with Stripe or Dwolla if you
-				choose to use them. Sales go directly to those accounts with Dancerfly&#8217;s
-				fee automatically subtracted. Click the info icon next to each
-				payment method to learn more.
+				You must register for an account with Stripe if you
+				choose to use them.
+				Sales go directly to your account with Dancerfly&#8217;s fee automatically subtracted.
+				Click the info icon next to each payment method to learn more.
 			</p>
 			<table class="table">
 				<thead>
@@ -35,7 +34,7 @@
 				</thead>
 				<tbody>
 				{% if not organization.is_demo %}
-					{# Stripe / Dwolla Live: #}
+					{# Stripe Live: #}
 					{% if organization.stripe_live_connected or stripe_oauth_url %}
 						<tr>
 							<th>
@@ -62,36 +61,8 @@
 							{% endif %}
 						</tr>
 					{% endif %}
-					{% if dwolla_account or dwolla_oauth_url %}
-						<tr class="active">
-							<th>
-								<i class="fa fa-fw fa-money"></i>
-								Dwolla
-								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
-							</th>
-							{% if dwolla_account %}
-								<td>
-									Enabled ({{ dwolla_account.user_id }})
-								</td>
-								<td>
-									{% if 'edit' in organization_permissions %}
-										{% formrow form.disconnect_dwolla_live with label="Disconnect" %}
-									{% endif %}
-								</td>
-							{% else %}
-								<td>Not Enabled</td>
-								<td>
-									{% if 'edit' in organization_permissions %}
-										<a href='{{ dwolla_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
-									{% else %}
-										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
-									{% endif %}
-								</td>
-							{% endif %}
-						</tr>
-					{% endif %}
 				{% else %}
-					{# Stripe / Dwolla Test: #}
+					{# Stripe Test: #}
 					{% if organization.stripe_test_connected or stripe_test_oauth_url %}
 						<tr>
 							<th>
@@ -111,33 +82,6 @@
 								<td>
 									{% if 'edit' in organization_permissions %}
 										<a href='{{ stripe_test_oauth_url }}' class='btn btn-info btn-xs'>Connect</i></a>
-									{% else %}
-										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
-									{% endif %}
-								</td>
-							{% endif %}
-						</tr>
-					{% endif %}
-					{% if dwolla_test_account or dwolla_test_oauth_url %}
-						<tr class="active">
-							<th>
-								<i class="fa fa-fw fa-money"></i>
-								Dwolla (Test)
-								<a href="javascript:void(0);" class="popped" data-container="body" data-content="Dwolla allows payment from any user who has a Dwolla account. They don't charge any transaction fees."><i class="fa fa-info-circle"></i></a>
-							</th>
-							{% if dwolla_test_account %}
-								<td>
-									Enabled ({{ dwolla_test_account.user_id }})
-								<td>
-									{% if 'edit' in organization_permissions %}
-										{% formrow form.disconnect_dwolla_test with label="Disconnect" %}
-									{% endif %}
-								</td>
-							{% else %}
-								<td>Not Enabled</td>
-								<td>
-									{% if 'edit' in organization_permissions %}
-										<a href='{{ dwolla_test_oauth_url }}' class='btn btn-xs btn-info'>Connect</a>
 									{% else %}
 										<button type='button' class='btn btn-info btn-xs tipped' disabled title="Only available for users with permission to edit this organization">Connect</i></button>
 									{% endif %}

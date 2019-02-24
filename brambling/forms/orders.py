@@ -2,7 +2,6 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
-from dwolla.exceptions import DwollaAPIException
 import floppyforms.__future__ as forms
 import stripe
 from zenaida.forms import MemoModelForm
@@ -12,7 +11,6 @@ from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFa
                               Attendee, HousingSlot, BoughtItem,
                               Order, Event, CustomForm)
 from brambling.payment.core import InvalidAmountException
-from brambling.payment.dwolla.api import dwolla_charge, dwolla_get_sources
 from brambling.payment.stripe.api import (
     stripe_get_customer,
     stripe_add_card,
@@ -461,43 +459,6 @@ class SavedCardPaymentForm(BasePaymentForm):
 
     def save(self):
         return self.save_payment(self._charge, self.card)
-
-
-class DwollaPaymentForm(BasePaymentForm):
-    dwolla_pin = forms.RegexField(min_length=4, max_length=4, regex="\d+")
-
-    def __init__(self, user, *args, **kwargs):
-        self.user = user
-        super(DwollaPaymentForm, self).__init__(*args, **kwargs)
-        event = self.order.event
-        dwolla_obj = self.user if self.user.is_authenticated() else self.order
-        self.dwolla_account = dwolla_obj.get_dwolla_account(event.api_type)
-        if self.dwolla_account and self.dwolla_account.is_connected():
-            self.sources = dwolla_get_sources(self.dwolla_account, event)
-            source_choices = [(source['Id'], source['Name'])
-                              for source in self.sources]
-            self.fields['source'] = forms.ChoiceField(choices=source_choices, initial="Balance")
-
-    def _post_clean(self):
-        if 'dwolla_pin' in self.cleaned_data and 'source' in self.cleaned_data:
-            try:
-                self._charge = dwolla_charge(
-                    account=self.dwolla_account,
-                    amount=float(self.amount),
-                    order=self.order,
-                    event=self.order.event,
-                    pin=self.cleaned_data['dwolla_pin'],
-                    source=self.cleaned_data['source']
-                )
-            except (ValueError, DwollaAPIException) as e:
-                self.add_error(None, getattr(e, 'response', e.message))
-
-    def save(self):
-        return Transaction.from_dwolla_charge(
-            self._charge,
-            api_type=self.api_type,
-            order=self.order,
-            event=self.order.event)
 
 
 class CheckPaymentForm(BasePaymentForm):

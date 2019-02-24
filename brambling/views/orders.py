@@ -13,15 +13,18 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView, View, UpdateView, FormView
 import floppyforms.__future__ as floppyforms
 
-from brambling.forms.orders import (SavedCardPaymentForm, OneTimePaymentForm,
-                                    HostingForm, AttendeeBasicDataForm,
-                                    AttendeeHousingDataForm, DwollaPaymentForm,
-                                    SurveyDataForm, CheckPaymentForm, TransferForm)
+from brambling.forms.orders import AttendeeBasicDataForm
+from brambling.forms.orders import AttendeeHousingDataForm
+from brambling.forms.orders import CheckPaymentForm
+from brambling.forms.orders import HostingForm
+from brambling.forms.orders import OneTimePaymentForm
+from brambling.forms.orders import SavedCardPaymentForm
+from brambling.forms.orders import SurveyDataForm
+from brambling.forms.orders import TransferForm
 from brambling.mail import OrderReceiptMailer, OrderAlertMailer
 from brambling.models import (BoughtItem, ItemOption, Discount, Order,
                               Attendee, EventHousing, Event, Transaction,
                               Person, SavedAttendee, CustomForm)
-from brambling.payment.dwolla.auth import dwolla_oauth_url
 from brambling.utils.invites import TransferInvite
 from brambling.views.utils import (get_event_admin_nav, ajax_required,
                                    clear_expired_carts, Workflow, Step,
@@ -686,8 +689,6 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             if 'new_card' in request.POST:
                 # Get a new form.
                 form = self.new_card_form
-            if 'dwolla' in request.POST:
-                form = self.dwolla_form
             if 'check' in request.POST:
                 form = self.check_form
             if form and form.is_valid():
@@ -729,15 +730,12 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
         }
         choose_data = None
         new_data = None
-        dwolla_data = None
         check_data = None
         if self.request.method == 'POST':
             if 'choose_card' in self.request.POST and self.event.stripe_connected():
                 choose_data = self.request.POST
             elif 'new_card' in self.request.POST and self.event.stripe_connected():
                 new_data = self.request.POST
-            elif 'dwolla' in self.request.POST and self.event.dwolla_connected():
-                dwolla_data = self.request.POST
             elif 'check' in self.request.POST and self.event.organization.check_payment_allowed:
                 check_data = self.request.POST
         if self.event.stripe_connected():
@@ -746,8 +744,6 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             else:
                 self.choose_card_form = None
             self.new_card_form = OneTimePaymentForm(data=new_data, user=self.request.user, **kwargs)
-        if self.event.dwolla_connected():
-            self.dwolla_form = DwollaPaymentForm(data=dwolla_data, user=self.request.user, **kwargs)
         if self.event.organization.check_payment_allowed:
             self.check_form = CheckPaymentForm(data=check_data, **kwargs)
 
@@ -758,7 +754,6 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
             'attendees': self.order.attendees.all(),
             'new_card_form': getattr(self, 'new_card_form', None),
             'choose_card_form': getattr(self, 'choose_card_form', None),
-            'dwolla_form': getattr(self, 'dwolla_form', None),
             'check_form': getattr(self, 'check_form', None),
             'net_balance': self.net_balance,
             'STRIPE_PUBLISHABLE_KEY': getattr(settings,
@@ -768,24 +763,6 @@ class SummaryView(OrderMixin, WorkflowMixin, TemplateView):
                                                    'STRIPE_TEST_PUBLISHABLE_KEY',
                                                    ''),
         })
-        user = self.request.user
-        dwolla_obj = user if user.is_authenticated() else self.order
-        account = dwolla_obj.get_dwolla_account(self.event.api_type)
-        dwolla_connected = account and account.is_connected()
-        dwolla_can_connect = dwolla_obj.dwolla_can_connect(self.event.api_type)
-        if dwolla_can_connect:
-            kwargs = {
-                'event_slug': self.event.slug,
-                'organization_slug': self.event.organization.slug,
-            }
-            next_url = reverse('brambling_event_order_summary', kwargs=kwargs)
-            context['dwolla_oauth_url'] = dwolla_oauth_url(
-                dwolla_obj, self.event.api_type, self.request, next_url)
-        if dwolla_connected:
-            context.update({
-                'dwolla_is_connected': True,
-                'dwolla_user_id': account.user_id
-            })
         context.update(self.summary_data)
 
         # TODO: Improve this overall assembly. It's possible the data model

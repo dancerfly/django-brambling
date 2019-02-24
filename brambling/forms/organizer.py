@@ -4,12 +4,21 @@ from django.db.models import Q
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
-from brambling.models import (Attendee, Event, Item, ItemOption, Discount,
-                              ItemImage, Transaction, CustomForm,
-                              CustomFormField, Order, Organization, SavedReport,
-                              DwollaAccount, UNAMBIGUOUS_CHARS,
-                              OrganizationMember, BoughtItem)
-from brambling.payment.core import LIVE, TEST
+from brambling.models import Attendee
+from brambling.models import BoughtItem
+from brambling.models import CustomForm
+from brambling.models import CustomFormField
+from brambling.models import Discount
+from brambling.models import Event
+from brambling.models import Item
+from brambling.models import ItemImage
+from brambling.models import ItemOption
+from brambling.models import Order
+from brambling.models import Organization
+from brambling.models import OrganizationMember
+from brambling.models import SavedReport
+from brambling.models import Transaction
+from brambling.models import UNAMBIGUOUS_CHARS
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
 
@@ -39,8 +48,6 @@ class OrganizationProfileForm(forms.ModelForm):
 class OrganizationPaymentForm(forms.ModelForm):
     disconnect_stripe_live = forms.BooleanField(required=False)
     disconnect_stripe_test = forms.BooleanField(required=False)
-    disconnect_dwolla_live = forms.BooleanField(required=False)
-    disconnect_dwolla_test = forms.BooleanField(required=False)
 
     class Meta:
         model = Organization
@@ -59,10 +66,6 @@ class OrganizationPaymentForm(forms.ModelForm):
             del self.fields['disconnect_stripe_live']
         if not self.instance.stripe_test_connected():
             del self.fields['disconnect_stripe_test']
-        if not self.instance.dwolla_connected(DwollaAccount.LIVE):
-            del self.fields['disconnect_dwolla_live']
-        if not self.instance.dwolla_connected(DwollaAccount.TEST):
-            del self.fields['disconnect_dwolla_test']
         self.request = request
         if self.instance.pk is None:
             self.instance.owner = request.user
@@ -104,10 +107,6 @@ class OrganizationPaymentForm(forms.ModelForm):
             self.instance.stripe_test_access_token = ''
             self.instance.stripe_test_refresh_token = ''
             self.instance.stripe_test_publishable_key = ''
-        if self.cleaned_data.get('disconnect_dwolla_live'):
-            self.instance.clear_dwolla_data(LIVE)
-        if self.cleaned_data.get('disconnect_dwolla_test'):
-            self.instance.clear_dwolla_data(TEST)
         return super(OrganizationPaymentForm, self).save()
 
 
@@ -570,8 +569,6 @@ class TransactionRefundForm(forms.Form):
         self.fields['amount'].initial = self.transaction.get_refundable_amount()
         self.fields['items'].queryset = self.transaction.bought_items.all()
         self.fields['items'].initial = self.fields['items'].queryset
-        if self.transaction.method == Transaction.DWOLLA:
-            self.fields['dwolla_pin'] = forms.RegexField(min_length=4, max_length=4, regex="\d+")
 
     def clean_items(self):
         """

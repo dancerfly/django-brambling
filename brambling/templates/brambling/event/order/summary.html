@@ -59,7 +59,7 @@
 		{{ block.super }}
 	{% endwith %}
 
-	{% if not event.stripe_connected and not event.dwolla_connected and not event.organization.check_payment_allowed %}
+	{% if not event.stripe_connected and not event.organization.check_payment_allowed %}
 		<div class='alert alert-danger'>
 			<p>No payment methods are currently available. Please alert the event organizers if you think this is in error.</p>
 		</div>

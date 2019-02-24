@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "fdb0631d1b0184bcd8fe8e9a3de28de31a5c11e6d440de65aefcbeca3a55c634"
+            "sha256": "3199d307a239c1bca0cbb074c1bbf3bc720242ee1865bdaaad5e9d78d80ff4c5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -201,13 +201,6 @@
                 "sha256:7a4bd47eaf6596e1295ecb11361139febe29b084a87bf005bf899f9a42edc3c6"
             ],
             "version": "==0.14"
-        },
-        "dwolla": {
-            "hashes": [
-                "sha256:23d5b665ccd2ac212d3fb4a59ce43f4c97931fca1432d0559071a98693f238c3"
-            ],
-            "index": "pypi",
-            "version": "==2.0.7"
         },
         "factory-boy": {
             "hashes": [

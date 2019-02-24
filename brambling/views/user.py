@@ -10,17 +10,13 @@ from django.views.generic import (DetailView, CreateView, UpdateView,
 import floppyforms.__future__ as forms
 
 from brambling.forms.orders import AddCardForm
-from brambling.forms.user import AccountForm, BillingForm, HomeForm, SignUpForm
+from brambling.forms.user import AccountForm
+from brambling.forms.user import HomeForm
+from brambling.forms.user import SignUpForm
 from brambling.models import (Person, Home, CreditCard, Order, SavedAttendee,
                               Event, Transaction, BoughtItem,
                               EventHousing, Attendee)
 from brambling.mail import ConfirmationMailer
-from brambling.payment.core import LIVE
-from brambling.payment.dwolla.auth import dwolla_oauth_url
-from brambling.payment.dwolla.core import (
-    dwolla_test_settings_valid,
-    dwolla_live_settings_valid,
-)
 from brambling.payment.stripe.api import (
     stripe_get_customer,
     stripe_delete_card,
@@ -146,22 +142,9 @@ class NotificationsView(UpdateView):
         return self.request.path
 
 
-class BillingView(UpdateView):
+class BillingView(TemplateView):
     model = Person
-    form_class = BillingForm
     template_name = 'brambling/user/billing.html'
-
-    def get_object(self):
-        if self.request.user.is_authenticated():
-            return self.request.user
-        raise Http404
-
-    def form_valid(self, form):
-        messages.add_message(self.request, messages.SUCCESS, "Billing settings saved.")
-        return super(BillingView, self).form_valid(form)
-
-    def get_success_url(self):
-        return self.request.path
 
     def get_context_data(self, **kwargs):
         context = super(BillingView, self).get_context_data(**kwargs)
@@ -173,14 +156,7 @@ class BillingView(UpdateView):
             },
             'stripe_live_settings_valid': stripe_live_settings_valid(),
             'stripe_test_settings_valid': stripe_test_settings_valid(),
-            'dwolla_live_settings_valid': dwolla_live_settings_valid(),
-            'dwolla_test_settings_valid': dwolla_test_settings_valid(),
         })
-        if self.object.dwolla_connected(LIVE):
-            context['dwolla_user_id'] = self.request.user.get_dwolla_account(LIVE).user_id
-        elif self.object.dwolla_can_connect(LIVE):
-            context['dwolla_oauth_url'] = dwolla_oauth_url(
-                self.request.user, LIVE, self.request)
         return context
 
 
