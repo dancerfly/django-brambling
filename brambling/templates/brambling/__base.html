@@ -1,101 +1,112 @@
-{% extends 'zenaida/__base.html' %}
-
 {% load staticfiles compress %}
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+	<head>
 
-{% block title %}Dancerfly{% endblock %}
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% block body-classes %}dancerfly brambling {{ block.super }}{% endblock %}
+		<title>{% block title %}Dancerfly{% endblock %}</title>
 
-{% block stylesheets %}
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
-	{% compress css %}
-		<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
-		<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
-	{% endcompress %}
-	{% compress css %}
-		{# must be separate to keep @fontface declarations on top #}
-		<link rel="stylesheet" type="text/sass" href="{% static "brambling/sass/styles.sass" %}" />
-	{% endcompress %}
-{% endblock stylesheets %}
+		{% block meta %}
+			<meta property="og:site_name" content="Dancerfly" />
+			<meta property="og:title" content="Dancerfly" />
 
-{% block meta %}
-	<meta property="og:site_name" content="Dancerfly" />
-	<meta property="og:title" content="Dancerfly" />
+			<meta name="description" content="Dancerfly is an event platform built by dancers, for dancers. Leave registration to us – go make the rest of your event amazing!" />
+			<meta property="og:description" content="Dancerfly is an event platform built by dancers, for dancers. Leave registration to us – go make the rest of your event amazing!" />
 
-	<meta name="description" content="Dancerfly is an event platform built by dancers, for dancers. Leave registration to us – go make the rest of your event amazing!" />
-	<meta property="og:description" content="Dancerfly is an event platform built by dancers, for dancers. Leave registration to us – go make the rest of your event amazing!" />
+			<meta property="og:url" content="https://{{ site.domain }}{{ request.path }}" />
+		{% endblock %}
 
-	<meta property="og:url" content="https://{{ site.domain }}{{ request.path }}" />
-{% endblock %}
+		{% block stylesheets %}
+			<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+			{% compress css %}
+				<link rel="stylesheet" type="text/css" href="{% static "zenaida/lib/chosen/chosen.min.css" %}" />
+				<link rel="stylesheet" type="text/css" href="{% static "brambling/lib/bootstrap-datepicker/datepicker3.css" %}" />
+			{% endcompress %}
+			{% compress css %}
+				{# must be separate to keep @fontface declarations on top #}
+				<link rel="stylesheet" type="text/sass" href="{% static "brambling/sass/styles.sass" %}" />
+			{% endcompress %}
+		{% endblock %}
 
-{% block body %}
-	{% block top %}
-		{% include "brambling/_navbar.html" %}
-	{% endblock %}
+	</head>
+	<body class="{% block body-classes %}dancerfly brambling zenaida{% endblock %}">
 
-	<!--[if lt IE 7]>
-		<div class="container">
-			<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-		</div>
-    <![endif]-->
-	{% block content %}{% endblock %}
+		{% block body %}
+			{% block top %}
+				{% include "brambling/_navbar.html" %}
+			{% endblock %}
 
-	{% block bottom %}
-		{% include "brambling/_footer.html" %}
-	{% endblock bottom %}
-{% endblock body %}
+			<!--[if lt IE 7]>
+				<div class="container">
+					<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+				</div>
+		    <![endif]-->
+			{% block content %}{% endblock %}
 
-{% block javascripts %}
-	{% compress js %}
-		<script type="text/javascript" src="{% static "zenaida/js/jquery-1.11.0.min.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/jquery-ui-1.10.4.custom.min.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/lib/underscore.1.8.3.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/transition.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/alert.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/collapse.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/lib/chosen/chosen.jquery.min.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/lib/modernizr.js" %}"></script>
-		<script type="text/javascript">
-			window._brambling_chosen_init = function (idx, ele) {
-				var $this = $(ele),
-					first_child = $this.children("option").eq(0),
-					options = {
-						width: $this.hasClass('chosen-width-auto') ? "auto" : "100%",
-						allow_single_deselect: (typeof $this.attr('required')) === "undefined" && first_child.val() === "",
-						placeholder_text_multiple: "Select all that apply",
-						placeholder_text_single: "Select one",
-						inherit_select_classes: true,
-						disable_search_threshold: 5
+			{% block bottom %}
+				{% include "brambling/_footer.html" %}
+			{% endblock bottom %}
+		{% endblock body %}
+
+		{% block javascripts %}
+			{% compress js %}
+				<script type="text/javascript" src="{% static "zenaida/js/jquery-1.11.0.min.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/jquery-ui-1.10.4.custom.min.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/lib/underscore.1.8.3.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/transition.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/alert.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/collapse.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/modal.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/lib/chosen/chosen.jquery.min.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/lib/modernizr.js" %}"></script>
+				<script type="text/javascript">
+					window._brambling_chosen_init = function (idx, ele) {
+						var $this = $(ele),
+							first_child = $this.children("option").eq(0),
+							options = {
+								width: $this.hasClass('chosen-width-auto') ? "auto" : "100%",
+								allow_single_deselect: (typeof $this.attr('required')) === "undefined" && first_child.val() === "",
+								placeholder_text_multiple: "Select all that apply",
+								placeholder_text_single: "Select one",
+								inherit_select_classes: true,
+								disable_search_threshold: 5
+							};
+						// If the first child has no value, blank its label.
+						if (first_child.val() === "") first_child.html("");
+						$this.chosen(options);
 					};
-				// If the first child has no value, blank its label.
-				if (first_child.val() === "") first_child.html("");
-				$this.chosen(options);
-			};
-			$('select.chosen-select').each(_brambling_chosen_init);
-		</script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/bootstrap/dropdown.js" %}"></script>
-		<script type="text/javascript" src="{% static "zenaida/js/jquery.shorten.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/lib/bootstrap-datepicker/bootstrap-datepicker.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/brambling.utils.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/javascript/namespaces.js" %}"></script>
-		<script type="text/javascript" src="{% static "brambling/jquery.formset.js" %}"></script>
-		{% if GOOGLE_ANALYTICS_UA and GOOGLE_ANALYTICS_DOMAIN %}
-			<script>
-				(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-				(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-				m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-				})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+					$('select.chosen-select').each(_brambling_chosen_init);
+				</script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/tooltip.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/popover.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/bootstrap/dropdown.js" %}"></script>
+				<script type="text/javascript" src="{% static "zenaida/js/jquery.shorten.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/lib/bootstrap-datepicker/bootstrap-datepicker.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/brambling.kickoff.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/brambling.utils.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/brambling.countdown.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/javascript/namespaces.js" %}"></script>
+				<script type="text/javascript" src="{% static "brambling/jquery.formset.js" %}"></script>
+				{% if GOOGLE_ANALYTICS_UA and GOOGLE_ANALYTICS_DOMAIN %}
+					<script>
+						(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+						(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+						m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+						})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-				ga('create', '{{ GOOGLE_ANALYTICS_UA }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}', {'siteSpeedSampleRate': 100});
-				ga('send', 'pageview');
-			</script>
-		{% endif %}
-	{% endcompress %}
+						ga('create', '{{ GOOGLE_ANALYTICS_UA }}', '{{ GOOGLE_ANALYTICS_DOMAIN }}', {'siteSpeedSampleRate': 100});
+						ga('send', 'pageview');
+					</script>
+				{% endif %}
+			{% endcompress %}
 
-	<script src="https://js.stripe.com/v3/"></script>
-{% endblock %}
+			<script src="https://js.stripe.com/v3/"></script>
+		{% endblock javascripts %}
+	</body>
+</html>
