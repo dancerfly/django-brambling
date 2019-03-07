@@ -4,6 +4,8 @@ from django.db.models import Q
 from django.utils.crypto import get_random_string
 import floppyforms.__future__ as forms
 
+from brambling.forms.base import GroupedModelChoiceField
+from brambling.forms.base import GroupedModelMultipleChoiceField
 from brambling.models import Attendee
 from brambling.models import BoughtItem
 from brambling.models import CustomForm
@@ -22,9 +24,6 @@ from brambling.models import UNAMBIGUOUS_CHARS
 from brambling.templatetags.zenaida import format_money
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
-
-from zenaida.forms import (GroupedModelMultipleChoiceField,
-                           GroupedModelChoiceField)
 
 
 class OrganizationProfileForm(forms.ModelForm):

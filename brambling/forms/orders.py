@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
 import floppyforms.__future__ as forms
 import stripe
-from zenaida.forms import MemoModelForm
 
+from brambling.forms.base import MemoModelForm
 from brambling.models import (HousingRequestNight, EventHousing, EnvironmentalFactor,
                               HousingCategory, CreditCard, Transaction, Home,
                               Attendee, HousingSlot, BoughtItem,
