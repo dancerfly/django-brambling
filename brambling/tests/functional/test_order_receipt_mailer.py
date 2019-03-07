@@ -1,10 +1,10 @@
 from datetime import date, timedelta
 from django.test import TestCase
 
-from zenaida.templatetags.zenaida import format_money
 
 from brambling.mail import OrderReceiptMailer
 from brambling.models import Transaction
+from brambling.templatetags.zenaida import format_money
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
                                        ItemOptionFactory, DiscountFactory,

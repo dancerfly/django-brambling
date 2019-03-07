@@ -9,9 +9,9 @@ from django.db.models import Max, Min
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from zenaida.templatetags.zenaida import format_money
 
 from brambling.models import Event, BoughtItem
+from brambling.templatetags.zenaida import format_money
 from brambling.utils.model_tables import Cell, Row
 
 

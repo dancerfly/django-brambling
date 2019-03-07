@@ -1,9 +1,9 @@
 from django.test import TestCase
 
-from zenaida.templatetags.zenaida import format_money
 
 from brambling.mail import OrderAlertMailer
 from brambling.models import Transaction, OrganizationMember
+from brambling.templatetags.zenaida import format_money
 from brambling.tests.factories import (EventFactory, OrderFactory,
                                        TransactionFactory, ItemFactory,
                                        ItemOptionFactory, DiscountFactory,
