@@ -23,7 +23,6 @@ from openpyxl.writer.excel import save_virtual_workbook
 import requests
 import unicodecsv as csv
 
-from zenaida.templatetags.zenaida import format_money
 
 from brambling.forms.invites import (
     BaseInviteFormSet,
@@ -44,6 +43,7 @@ from brambling.models import (Event, Item, Discount, Transaction,
                               ItemOption, Attendee, Order,
                               BoughtItem, CustomForm, Organization,
                               SavedReport, EventMember, OrganizationMember)
+from brambling.templatetags.zenaida import format_money
 from brambling.views.utils import (get_event_admin_nav,
                                    get_organization_admin_nav,
                                    clear_expired_carts,

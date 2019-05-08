@@ -9,11 +9,11 @@ from django.db.models import Q, Min, Prefetch
 from django.forms.forms import pretty_name
 from django.utils.text import capfirst
 import floppyforms as forms
-from zenaida.templatetags.zenaida import format_money
 import six
 
 from brambling.filters import FloppyFilterSet, AttendeeFilterSet, OrderFilterSet
 from brambling.models import Attendee, Order, BoughtItem, Transaction
+from brambling.templatetags.zenaida import format_money
 from brambling.utils.timezones import format_as_localtime
 
 

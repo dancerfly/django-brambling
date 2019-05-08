@@ -19,12 +19,12 @@ from brambling.models import OrganizationMember
 from brambling.models import SavedReport
 from brambling.models import Transaction
 from brambling.models import UNAMBIGUOUS_CHARS
+from brambling.templatetags.zenaida import format_money
 from brambling.utils.international import clean_postal_code
 from brambling.utils.invites import EventInvite
 
 from zenaida.forms import (GroupedModelMultipleChoiceField,
                            GroupedModelChoiceField)
-from zenaida.templatetags.zenaida import format_money
 
 
 class OrganizationProfileForm(forms.ModelForm):
