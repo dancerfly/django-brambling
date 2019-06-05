@@ -233,15 +233,15 @@ class Organization(models.Model):
                                                           validators=[MaxValueValidator(100), MinValueValidator(0)])
 
     # These are obtained with Stripe Connect via Oauth.
-    stripe_user_id = models.CharField(max_length=32, blank=True, default='')
-    stripe_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_refresh_token = models.CharField(max_length=60, blank=True, default='')
-    stripe_publishable_key = models.CharField(max_length=32, blank=True, default='')
+    stripe_user_id = models.CharField(max_length=255, blank=True, default='')
+    stripe_access_token = models.CharField(max_length=255, blank=True, default='')
+    stripe_refresh_token = models.CharField(max_length=255, blank=True, default='')
+    stripe_publishable_key = models.CharField(max_length=255, blank=True, default='')
 
-    stripe_test_user_id = models.CharField(max_length=32, blank=True, default='')
-    stripe_test_access_token = models.CharField(max_length=32, blank=True, default='')
-    stripe_test_refresh_token = models.CharField(max_length=60, blank=True, default='')
-    stripe_test_publishable_key = models.CharField(max_length=32, blank=True, default='')
+    stripe_test_user_id = models.CharField(max_length=255, blank=True, default='')
+    stripe_test_access_token = models.CharField(max_length=255, blank=True, default='')
+    stripe_test_refresh_token = models.CharField(max_length=255, blank=True, default='')
+    stripe_test_publishable_key = models.CharField(max_length=255, blank=True, default='')
 
     check_payment_allowed = models.BooleanField(default=False)
     check_payable_to = models.CharField(max_length=50, blank=True)
