@@ -199,6 +199,14 @@ class OneTimePaymentFormTestCase(TestCase):
         self.assertTrue(form.errors)
         self.assertEqual(form.errors['__all__'], [error_message])
 
+    @patch('brambling.forms.orders.stripe_charge')
+    def test_handles_missing_token(self, stripe_charge):
+        form = OneTimePaymentForm(order=self.order, amount=Decimal('42.15'),
+                                  data={}, user=self.person)
+        self.assertTrue(form.is_bound)
+        self.assertTrue(form.errors)
+        self.assertEqual(form.errors['token'], [OneTimePaymentForm.base_fields['token'].error_messages['required']])
+
 
 class SavedCardPaymentFormTestCase(TestCase):
 

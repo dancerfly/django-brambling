@@ -392,26 +392,27 @@ class OneTimePaymentForm(BasePaymentForm, AddCardForm):
             del self.fields['save_card']
 
     def _post_clean(self):
-        kwargs = {
-            'amount': self.amount,
-            'event': self.order.event,
-            'order': self.order,
-        }
-        try:
-            if self.cleaned_data.get('save_card'):
-                self.card = self.add_card(self.cleaned_data['token'])
-                self._charge = stripe_charge(self.card.id, customer=self.customer, **kwargs)
-            else:
-                self._charge = stripe_charge(self.cleaned_data['token'], **kwargs)
-                self.card = self._charge.source
-        except stripe.error.CardError, e:
-            self.add_error(None, e.message)
-        except stripe.error.APIError, e:
-            self.add_error(None, STRIPE_API_ERROR)
-        except stripe.error.InvalidRequestError, e:
-            self.add_error(None, e.message)
-        except InvalidAmountException, e:
-            self.add_error(None, e.message)
+        if 'token' in self.cleaned_data:
+            kwargs = {
+                'amount': self.amount,
+                'event': self.order.event,
+                'order': self.order,
+            }
+            try:
+                if self.cleaned_data.get('save_card'):
+                    self.card = self.add_card(self.cleaned_data['token'])
+                    self._charge = stripe_charge(self.card.id, customer=self.customer, **kwargs)
+                else:
+                    self._charge = stripe_charge(self.cleaned_data['token'], **kwargs)
+                    self.card = self._charge.source
+            except stripe.error.CardError, e:
+                self.add_error(None, e.message)
+            except stripe.error.APIError, e:
+                self.add_error(None, STRIPE_API_ERROR)
+            except stripe.error.InvalidRequestError, e:
+                self.add_error(None, e.message)
+            except InvalidAmountException, e:
+                self.add_error(None, e.message)
 
     def save(self):
         if self.cleaned_data.get('save_card'):
