@@ -11,8 +11,49 @@ Naming
 
 The name of this software is django-brambling. The name for use within the content of the application and for marketing purposes is Dancerfly.
 
-Development
-=============
+Development Using Docker Compose
+================================
+
+As of April 2020, Dancerfly experimentally allows you to use Docker Compose to spin up a development environment with one line. If you prefer to use the older method of relying on your system Python, skip below to "Development Using System Python."
+
+Prerequisites
+-------------
+
+These instructions assume you have the following software on your machine:
+
+* `Docker Compose <https://docs.docker.com/compose/install/>`_
+
+Installation instructions
+-------------------------
+
+Here's a one-liner to get you going. This runs a database container using PostgreSQL and an application container with the Django application. It will run the necessary initial database migrations.
+
+.. code:: bash
+
+   docker-compose up
+
+Quick Tips
+----------
+
+Use ``docker-compose exec`` to run commands on a currently running application container or ``docker-compose run`` to start a container and run a command:
+
+.. code:: bash
+
+   docker-compose exec ./manage.py makemigrations
+   docker-compose run pipenv install bleach
+
+You can attach interactively to the Django process using this command:
+
+.. code:: bash
+
+   docker attach (docker-compose ps -q django)
+
+Learn more about Docker Compose in `the documentation <https://docs.docker.com/compose/>`_.
+
+Development Using System Python
+===============================
+
+Use these instructions if you'd rather not use Docker Compose.
 
 Prerequisites
 -------------
