@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+    postgresql:
+        image: 'postgres:10.5-alpine'
+        environment:
+            POSTGRES_USER: dancerfly
+            POSTGRES_PASSWORD: dancerflypassword
+            POSTGRES_DB: dancerfly
+        ports:
+            - "127.0.0.1::5432"
+    django:
+        stdin_open: true
+        tty: true
+        ports:
+            - "127.0.0.1:8000:8000"
+        build: .
+        environment:
+            DATABASE_URL: postgres://dancerfly:dancerflypassword@postgresql/dancerfly
+        volumes:
+            - ./:/django
+        depends_on:
+            - postgresql
