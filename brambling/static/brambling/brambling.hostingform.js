@@ -6,7 +6,7 @@
  * This is very Brambling-specific and currently refers specifically to
  * Brambling-specific field names and classes.
  *
- * Copyright (c) 2014, Little Weaver Web Collective
+ * Copyright (c) 2020, Harris Lapiroff
  * All rights reserved.
  *
  * Licensed under the New BSD License

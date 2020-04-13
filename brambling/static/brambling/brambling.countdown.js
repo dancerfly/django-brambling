@@ -3,7 +3,7 @@
  * @author Harris Lapiroff
  * @requires jQuery
  *
- * Copyright (c) 2014, Little Weaver Web Collective
+ * Copyright (c) 2020, Harris Lapiroff
  * All rights reserved.
  *
  * Licensed under the New BSD License
