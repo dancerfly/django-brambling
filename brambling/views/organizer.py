@@ -239,13 +239,7 @@ class OrganizationDetailView(DetailView):
     slug_url_kwarg = 'organization_slug'
 
     def get(self, request, *args, **kwargs):
-        try:
-            self.object = self.get_object()
-        except Http404:
-            # Backwards-compatibility for pre-org event links
-            # Added March 2015
-            event = get_object_or_404(Event, slug=kwargs['organization_slug'])
-            return HttpResponseRedirect(event.get_absolute_url())
+        self.object = self.get_object()
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
