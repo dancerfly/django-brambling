@@ -30,4 +30,4 @@ View and edit your order at the following URL:
 {{ protocol }}://{{ site.domain }}{{ url }}{% endautoescape %}
 
 
-Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
+Dancerfly (dancerfly.com) is a project of Harris Lapiroff

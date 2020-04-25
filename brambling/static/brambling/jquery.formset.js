@@ -1,9 +1,9 @@
 /**
  * jQuery Formset
- * @author Harris Lapiroff, Little Weaver Web Collective
+ * @author Harris Lapiroff
  * @requires jQuery 1.2.6 or later
  *
- * Copyright (c) 2015, Little Weaver Web Collective
+ * Copyright (c) 2020, Harris Lapiroff
  * All rights reserved.
  *
  * Licensed under the New BSD License

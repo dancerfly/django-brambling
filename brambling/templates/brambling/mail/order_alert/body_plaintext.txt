@@ -21,4 +21,4 @@ View more details at the following URL:
 Update your notification settings here: {{ protocol }}://{{ site.domain }}{% url "brambling_user_notifications" %}
 {% endautoescape %}
 
-Dancerfly (dancerfly.com) is a project of Little Weaver Web Collective, LLC (littleweaverweb.com)
+Dancerfly (dancerfly.com) is a project of Harris Lapiroff
