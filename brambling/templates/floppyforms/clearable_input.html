@@ -1,0 +1,10 @@
+{% load i18n daguerre %}{% if display_image %}<div><img src="{% adjust value 'fit' width=200 height=200 %}" /></div>{% endif %}
+<div>{% if value.url %}{% trans "Currently:" %} <a target="_blank" href="{{ value.url }}">{{ value }}</a>
+{% if not required %}
+<input type="checkbox" name="{{ checkbox_name }}" id="{{ checkbox_id }}">
+<label for="{{ checkbox_id }}">{% trans "Clear" %}</label>
+{% endif %}<br />
+{% trans "Change:" %}
+{% endif %}
+<input type="{{ type }}" name="{{ name }}"{% if required %} required{% endif %}{% include "floppyforms/attrs.html" %}>
+</div>

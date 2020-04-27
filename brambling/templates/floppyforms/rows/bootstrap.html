@@ -1,0 +1,60 @@
+{% load floppyforms zenaida %}{% block row %}{% for field in fields %}
+<div class="{% block field_classes %}form-group{% if field.errors %} has-error{% endif %}{% endblock %}">
+	{% with classes=field.css_classes label=label|default:field.label help_text=help_text|default:field.help_text is_checkbox=field|is_checkbox %}
+		{% block field %}
+			{% if is_checkbox %}
+				{% block checkbox %}
+					<div class="checkbox">
+						<label for="{{ field|id }}">
+							{% if using %}{% formfield field using using %}{% else %}{% formfield field %}{% endif %} {{ label }} {% if field.field.required %} <span class="required">*</span>{% endif %}
+						</label>
+					</div>
+				{% endblock %}
+			{% else %}
+				{% block label %}
+					{% if field|id %}<label class="control-label" for="{{ field|id }}">{% endif %}
+					{{ label }}
+					{% if field.field.required %} <span class="required">*</span>{% endif %}
+					{% if field|id %}</label>{% endif %}
+				{% endblock %}
+				{% block widget %}
+					{% if not is_checkbox %}
+						{% if append or prepend %}
+							<div class='input-group'>
+								{% if prepend %}
+									<div class='input-group-addon'>
+										{{ prepend }}
+									</div>
+								{% endif %}
+						{% endif %}
+						{% if using %}{% formfield field using using %}{% else %}{% formfield field %}{% endif %}
+						{% if append or prepend %}
+								{% if append %}
+									<div class='input-group-addon'>
+										{{ append }}
+									</div>
+								{% endif %}
+							</div>
+						{% endif %}
+					{% endif %}
+				{% endblock %}
+			{% endif %}
+			{% block errors %}
+				{% if field.errors %}
+					{% include "floppyforms/errors.html" with errors=field.errors %}
+				{% endif %}
+			{% endblock %}
+			{% block help_text %}
+				{% if help_text %}
+					<p class="help-block">{{ help_text }}</p>
+				{% endif %}
+			{% endblock %}
+			{% block hidden_fields %}
+				{% for field in hidden_fields %}
+					{{ field.as_hidden }}
+				{% endfor %}
+			{% endblock %}
+		{% endblock field %}
+	{% endwith %}
+</div>{# /.form-group #}
+{% endfor %}{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'floppyforms/rows/bootstrap.html' %}
+
+{% load floppyforms %}
+
+{% block field_classes %}form-group{% if field.errors or confirm.errors %} has-error{% endif %}{% endblock %}
+
+{% block widget %}
+	{% if not is_checkbox %}
+		<div class='input-group'>
+			{% formfield field %}
+			<span class='input-group-addon'>{% formfield confirm %}</span>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block errors %}
+	{{ block.super }}
+	{% if confirm.errors %}
+		{% include "floppyforms/errors.html" with errors=confirm.errors %}
+	{% endif %}
+{% endblock %}
