@@ -1,9 +1,11 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Max, Sum, Q
 from django.http import Http404, HttpResponseRedirect, HttpResponse
+from django.utils.decorators import method_decorator
 from django.utils.http import urlsafe_base64_decode, is_safe_url
 from django.views.generic import (DetailView, CreateView, UpdateView,
                                   TemplateView, View, ListView, DeleteView)
@@ -145,6 +147,10 @@ class NotificationsView(UpdateView):
 class BillingView(TemplateView):
     model = Person
     template_name = 'brambling/user/billing.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(BillingView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(BillingView, self).get_context_data(**kwargs)
