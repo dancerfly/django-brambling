@@ -504,3 +504,25 @@ class OrderDetailViewTest(TestCase):
         self.assertEqual(response['Location'], self.url)
         self.attendee.refresh_from_db()
         self.assertEqual(self.attendee.notes, 'Hello')
+
+
+class OrganizationDetailViewTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.organization = OrganizationFactory()
+
+    def test_view_succeeds(self):
+        url = reverse(
+            'brambling_organization_detail',
+            kwargs={'organization_slug': self.organization.slug},
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_404s_if_org_does_not_exist(self):
+        url = reverse(
+            'brambling_organization_detail',
+            kwargs={'organization_slug': 'not_a_real_org'},
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
