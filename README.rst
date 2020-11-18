@@ -19,7 +19,7 @@ As of April 2020, Dancerfly experimentally allows you to use Docker Compose to s
 Prerequisites
 -------------
 
-These instructions assume you have the following software on your machine:
+ When you follow all instructions step by step thenyou will find the following software on your machine:
 
 * `Docker Compose <https://docs.docker.com/compose/install/>`_
 
